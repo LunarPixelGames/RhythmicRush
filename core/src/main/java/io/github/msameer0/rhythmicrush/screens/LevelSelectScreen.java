@@ -30,6 +30,8 @@ public class LevelSelectScreen implements Screen {
 
     private ShapeRenderer shapeRenderer;
 
+    private float backX, backY, backW, backH;
+
     public LevelSelectScreen(RhythmicRushGame game) {
         this.game = game;
         this.batch = game.getBatch();
@@ -47,6 +49,11 @@ public class LevelSelectScreen implements Screen {
         camera = new OrthographicCamera();
         viewport = new FitViewport(800, 480, camera);
         viewport.apply();
+
+        backW = 100;
+        backH = 40;
+        backX = 20;
+        backY = viewport.getWorldHeight() - backH - 20;
 
         font = new BitmapFont();
     }
@@ -80,10 +87,35 @@ public class LevelSelectScreen implements Screen {
         shapeRenderer.rect(700, 240, 50, 50);
         shapeRenderer.end();
 
+        //draw back button
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(Color.DARK_GRAY);
+        shapeRenderer.rect(backX, backY, backW, backH);
+        shapeRenderer.end();
+
+        batch.begin();
+        font.draw(batch, "BACK", backX + 20, backY + 25);
+        batch.end();
+
         handleInput();
     }
 
     private void handleInput() {
+        //keyboard support
+        if (Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.LEFT)) {
+            selectedLevel = (selectedLevel - 1 + levels.size()) % levels.size();
+        }
+
+        if (Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.RIGHT)) {
+            selectedLevel = (selectedLevel + 1) % levels.size();
+        }
+
+        if (Gdx.input.isKeyJustPressed(com.badlogic.gdx.Input.Keys.ESCAPE)) {
+            game.setScreen(new MainMenuScreen(game));
+            return;
+        }
+
+        //mouse and touch inputs on buttons
         if (!Gdx.input.justTouched()) return;
 
         Vector2 touch = new Vector2(Gdx.input.getX(), Gdx.input.getY());
@@ -92,14 +124,20 @@ public class LevelSelectScreen implements Screen {
         float x = touch.x;
         float y = touch.y;
 
-        // left arrow (50,240,50,50)
+        //left arrow
         if (x >= 50 && x <= 100 && y >= 240 && y <= 290) {
             selectedLevel = (selectedLevel - 1 + levels.size()) % levels.size();
         }
 
-        // right arrow (700,240,50,50)
+        //right arrow
         if (x >= 700 && x <= 750 && y >= 240 && y <= 290) {
             selectedLevel = (selectedLevel + 1) % levels.size();
+        }
+
+        //back button
+        if (x >= backX && x <= backX + backW &&
+            y >= backY && y <= backY + backH) {
+            game.setScreen(new MainMenuScreen(game));
         }
     }
 
