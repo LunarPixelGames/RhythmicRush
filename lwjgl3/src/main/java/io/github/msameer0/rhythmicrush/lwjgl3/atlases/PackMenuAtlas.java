@@ -1,4 +1,4 @@
-package io.github.msameer0.rhythmicrush.lwjgl3;
+package io.github.msameer0.rhythmicrush.lwjgl3.atlases;
 
 import com.badlogic.gdx.tools.texturepacker.TexturePacker;
 

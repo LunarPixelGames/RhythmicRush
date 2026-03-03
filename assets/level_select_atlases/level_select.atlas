@@ -1,0 +1,61 @@
+
+level_select.png
+size: 2048, 2048
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+1_diff
+  rotate: false
+  xy: 1, 1199
+  size: 702, 702
+  orig: 702, 702
+  offset: 0, 0
+  index: -1
+2_diff
+  rotate: false
+  xy: 1, 495
+  size: 702, 702
+  orig: 702, 702
+  offset: 0, 0
+  index: -1
+3_diff
+  rotate: false
+  xy: 705, 1199
+  size: 702, 702
+  orig: 702, 702
+  offset: 0, 0
+  index: -1
+4_diff
+  rotate: false
+  xy: 705, 495
+  size: 702, 702
+  orig: 702, 702
+  offset: 0, 0
+  index: -1
+back
+  rotate: false
+  xy: 1, 1
+  size: 549, 492
+  orig: 549, 492
+  offset: 0, 0
+  index: -1
+
+level_select2.png
+size: 2048, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+left_arrow
+  rotate: false
+  xy: 1, 1
+  size: 702, 702
+  orig: 702, 702
+  offset: 0, 0
+  index: -1
+right_arrow
+  rotate: false
+  xy: 705, 1
+  size: 702, 702
+  orig: 702, 702
+  offset: 0, 0
+  index: -1
