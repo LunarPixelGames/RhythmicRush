@@ -116,6 +116,10 @@ public class MainMenuScreen implements Screen {
             Gdx.app.exit();
         }
 
+        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_0)) {
+            game.setScreen(new GameScreen(game));
+        }
+
         if (!Gdx.input.justTouched()) return;
 
         Vector2 touch = new Vector2(Gdx.input.getX(), Gdx.input.getY());
