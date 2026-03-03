@@ -1,4 +1,4 @@
-package io.github.msameer0.rhythmicrush;
+package io.github.msameer0.rhythmicrush.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
@@ -8,10 +8,13 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
 import java.util.Random;
+
+import io.github.msameer0.rhythmicrush.RhythmicRushGame;
 
 public class MainMenuScreen implements Screen {
     private final RhythmicRushGame game;
@@ -48,7 +51,9 @@ public class MainMenuScreen implements Screen {
 
         //random background color
         Random rand = new Random();
-        bgColor = new Color(rand.nextFloat(), rand.nextFloat(), rand.nextFloat(), 1);
+        bgColor = new Color(0.2f + 0.6f*rand.nextFloat(),
+            0.2f + 0.6f*rand.nextFloat(),
+            0.2f + 0.6f*rand.nextFloat(), 1);
 
         //initialize scaled sizes/positions
         updateScaledSizes();
@@ -105,19 +110,20 @@ public class MainMenuScreen implements Screen {
     private void handleInput() {
         if (!Gdx.input.justTouched()) return;
 
-        float x = Gdx.input.getX();
-        float y = viewport.getWorldHeight() - Gdx.input.getY(); // flip Y
+        Vector2 touch = new Vector2(Gdx.input.getX(), Gdx.input.getY());
+        viewport.unproject(touch);
 
-        //start button click
+        float x = touch.x;
+        float y = touch.y;
+
         if (x >= startX && x <= startX + startW &&
             y >= startY && y <= startY + startH) {
-            // TODO: Open game screen
+            game.setScreen(new LevelSelectScreen(game));
         }
 
-        //settings button click
         if (x >= settingsX && x <= settingsX + settingsW &&
             y >= settingsY && y <= settingsY + settingsH) {
-            // TODO: Open settings screen
+            // settings
         }
     }
 
