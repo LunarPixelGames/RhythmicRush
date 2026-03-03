@@ -5,10 +5,14 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -19,30 +23,35 @@ import io.github.msameer0.rhythmicrush.RhythmicRushGame;
 import io.github.msameer0.rhythmicrush.screens.util.Level;
 
 public class LevelSelectScreen implements Screen {
+
+    private static final float PANEL_CORNER_RADIUS = 40f;
+
     private final RhythmicRushGame game;
     private OrthographicCamera camera;
     private Viewport viewport;
-    private SpriteBatch batch;
 
     private ArrayList<Level> levels;
     private int selectedLevel = 0;
 
     private BitmapFont font;
+    private GlyphLayout layout;
 
-    // Texture atlas
     private TextureAtlas levelAtlas;
     private TextureRegion backButton, leftArrow, rightArrow;
     private TextureRegion[] difficultyTextures;
 
-    // Scaled positions/sizes
+    private Texture panelTexture;
+    private int lastPanelW = -1;
+    private int lastPanelH = -1;
+
     private float backX, backY, backW, backH;
     private float leftX, leftY, leftW, leftH;
     private float rightX, rightY, rightW, rightH;
-    private float diffX, diffY, diffW, diffH;
+
+    private float panelX, panelY, panelW, panelH;
 
     public LevelSelectScreen(RhythmicRushGame game) {
         this.game = game;
-        this.batch = game.getBatch();
 
         levels = new ArrayList<>();
         levels.add(new Level("Level 1", "Easy", 0));
@@ -52,12 +61,14 @@ public class LevelSelectScreen implements Screen {
 
     @Override
     public void show() {
+
         camera = new OrthographicCamera();
         viewport = new FitViewport(800, 480, camera);
         viewport.apply(true);
 
-        font = new BitmapFont();
+        layout = new GlyphLayout();
 
+        // loads atlas
         levelAtlas = new TextureAtlas("level_select_atlases/level_select.atlas");
 
         backButton = levelAtlas.findRegion("back");
@@ -71,20 +82,56 @@ public class LevelSelectScreen implements Screen {
             levelAtlas.findRegion("4_diff")
         };
 
+        // zendots font
+        FreeTypeFontGenerator generator =
+            new FreeTypeFontGenerator(Gdx.files.internal("fonts/zendots-regular.ttf"));
+
+        FreeTypeFontGenerator.FreeTypeFontParameter parameter =
+            new FreeTypeFontGenerator.FreeTypeFontParameter();
+
+        parameter.size = 48; // 1080p friendly
+        parameter.magFilter = Texture.TextureFilter.Linear;
+        parameter.minFilter = Texture.TextureFilter.Linear;
+
+        font = generator.generateFont(parameter);
+        generator.dispose();
+
         updateScaledSizes();
     }
 
+    private Texture createRoundedRectangleTexture(int width, int height, int radius, Color color) {
+
+        Pixmap pixmap = new Pixmap(width, height, Pixmap.Format.RGBA8888);
+        pixmap.setColor(0, 0, 0, 0);
+        pixmap.fill();
+
+        pixmap.setColor(color);
+
+        // center rectangles
+        pixmap.fillRectangle(radius, 0, width - 2 * radius, height);
+        pixmap.fillRectangle(0, radius, width, height - 2 * radius);
+
+        // corners
+        pixmap.fillCircle(radius, radius, radius);
+        pixmap.fillCircle(width - radius, radius, radius);
+        pixmap.fillCircle(radius, height - radius, radius);
+        pixmap.fillCircle(width - radius, height - radius, radius);
+
+        Texture texture = new Texture(pixmap);
+        pixmap.dispose();
+        return texture;
+    }
+
     private void updateScaledSizes() {
+
         float vw = viewport.getWorldWidth();
         float vh = viewport.getWorldHeight();
 
-        // Back button — top left
         backW = vw * 0.08f;
         backH = backW;
         backX = 10;
         backY = vh - backH - 10;
 
-        // Arrows — centered vertically, pinned to left/right edges
         leftW = vw * 0.08f;
         leftH = leftW;
         leftX = 10;
@@ -95,47 +142,103 @@ public class LevelSelectScreen implements Screen {
         rightX = vw - rightW - 10;
         rightY = vh / 2f - rightH / 2f;
 
-        // Difficulty texture — centered
-        diffW = vw * 0.15f;
-        diffH = diffW;
-        diffX = vw / 2f - diffW / 2f;
-        diffY = vh / 2f - diffH / 2f + 50;
+        panelW = vw * 0.6f;
+        panelH = vh * 0.28f;
+        panelX = vw / 2f - panelW / 2f;
+        panelY = vh / 2f - panelH / 2f + 40;
     }
 
     @Override
     public void render(float delta) {
+
         Gdx.gl.glClearColor(0.15f, 0.15f, 0.2f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         Level current = levels.get(selectedLevel);
 
-        batch.setProjectionMatrix(camera.combined);
-        batch.begin();
+        game.getBatch().setProjectionMatrix(camera.combined);
+        game.getBatch().begin();
 
-        batch.draw(backButton, backX, backY, backW, backH);
-        batch.draw(leftArrow, leftX, leftY, leftW, leftH);
-        batch.draw(rightArrow, rightX, rightY, rightW, rightH);
+        // high res panel regenerator
+        int texW = (int) panelW;
+        int texH = (int) panelH;
 
+        if (panelTexture == null || texW != lastPanelW || texH != lastPanelH) {
+
+            if (panelTexture != null)
+                panelTexture.dispose();
+
+            panelTexture = createRoundedRectangleTexture(
+                texW,
+                texH,
+                (int) (PANEL_CORNER_RADIUS * (panelW / 800f)),
+                new Color(0.2f, 0.2f, 0.28f, 1f)
+            );
+
+            panelTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+
+            lastPanelW = texW;
+            lastPanelH = texH;
+        }
+
+        // navigation
+        game.getBatch().draw(backButton, backX, backY, backW, backH);
+        game.getBatch().draw(leftArrow, leftX, leftY, leftW, leftH);
+        game.getBatch().draw(rightArrow, rightX, rightY, rightW, rightH);
+
+        // panel, rounded edges
+        game.getBatch().draw(panelTexture, panelX, panelY);
+
+        // icon and level name (centered)
         int diffIndex = Math.min(difficultyTextures.length - 1, selectedLevel);
-        batch.draw(difficultyTextures[diffIndex], diffX, diffY, diffW, diffH);
+        TextureRegion diffRegion = difficultyTextures[diffIndex];
 
-        float vw = viewport.getWorldWidth();
-        font.draw(batch, current.name, vw / 2f - 30, diffY - 20);
-        font.draw(batch, "Progress: " + current.progress + "%", vw / 2f - 40, diffY - 50);
+        float iconSize = panelH * 0.55f;
+        float spacing = panelW * 0.05f;
 
-        batch.end();
+        font.getData().setScale(0.85f);
+
+        layout.setText(font, current.name);
+
+        float totalWidth = iconSize + spacing + layout.width;
+        float startX = panelX + (panelW - totalWidth) / 2f;
+
+        float iconX = startX;
+        float iconY = panelY + panelH / 2f - iconSize / 2f;
+
+        float textX = iconX + iconSize + spacing;
+        float textY = panelY + panelH / 2f + layout.height / 2f;
+
+        game.getBatch().draw(diffRegion, iconX, iconY, iconSize, iconSize);
+        font.draw(game.getBatch(), current.name, textX, textY);
+
+        font.getData().setScale(1f);
+
+        // progress text
+        String progressText = "Progress: " + current.progress + "%";
+        font.getData().setScale(0.575f);
+
+        layout.setText(font, progressText);
+
+        font.draw(game.getBatch(),
+            progressText,
+            viewport.getWorldWidth() / 2f - layout.width / 2f,
+            panelY - 25);
+
+        font.getData().setScale(1f);
+
+        game.getBatch().end();
 
         handleInput();
     }
 
     private void handleInput() {
+
         if (Gdx.input.justTouched()) {
-            // viewport.unproject() correctly accounts for:
-            //   1. Letterbox/pillarbox black bar offsets (camera.unproject does NOT)
-            //   2. The viewport scale from world size to screen size
-            //   3. Y-axis flip (input is top-down, world is bottom-up)
-            // This is why hitboxes were drifting on resize — always use viewport.unproject().
-            Vector2 touch = viewport.unproject(new Vector2(Gdx.input.getX(), Gdx.input.getY()));
+
+            Vector2 touch = viewport.unproject(
+                new Vector2(Gdx.input.getX(), Gdx.input.getY()));
+
             float x = touch.x;
             float y = touch.y;
 
@@ -151,10 +254,8 @@ public class LevelSelectScreen implements Screen {
 
             if (x >= backX && x <= backX + backW &&
                 y >= backY && y <= backY + backH) {
-                game.setScreen(new io.github.msameer0.rhythmicrush.screens.MainMenuScreen(game));
+                game.setScreen(new MainMenuScreen(game));
             }
-
-            // TODO: add level selection
         }
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT)) {
@@ -164,10 +265,7 @@ public class LevelSelectScreen implements Screen {
             selectedLevel = (selectedLevel + 1) % levels.size();
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            game.setScreen(new io.github.msameer0.rhythmicrush.screens.MainMenuScreen(game));
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
-            // TODO: enter selected level
+            game.setScreen(new MainMenuScreen(game));
         }
     }
 
@@ -185,5 +283,7 @@ public class LevelSelectScreen implements Screen {
     public void dispose() {
         font.dispose();
         levelAtlas.dispose();
+        if (panelTexture != null)
+            panelTexture.dispose();
     }
 }
