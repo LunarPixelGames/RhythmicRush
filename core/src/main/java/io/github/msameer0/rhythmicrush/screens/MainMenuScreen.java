@@ -1,6 +1,7 @@
 package io.github.msameer0.rhythmicrush.screens;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -108,6 +109,13 @@ public class MainMenuScreen implements Screen {
     }
 
     private void handleInput() {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+            game.setScreen(new LevelSelectScreen(game));
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            Gdx.app.exit();
+        }
+
         if (!Gdx.input.justTouched()) return;
 
         Vector2 touch = new Vector2(Gdx.input.getX(), Gdx.input.getY());
