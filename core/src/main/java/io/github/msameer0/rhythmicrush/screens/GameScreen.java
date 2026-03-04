@@ -5,6 +5,7 @@ import com.badlogic.gdx.Input;
 
 import io.github.msameer0.rhythmicrush.RhythmicRushGame;
 import io.github.msameer0.rhythmicrush.game.GameWorld;
+import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.CubePortal;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.ShipPortal;
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
@@ -28,6 +29,10 @@ public class GameScreen extends AbstractScreen {
         handleDebugInput();
 
         world.update(delta);
+
+        if (world.isPlayerDead()) {
+            game.setScreen(new MainMenuScreen(game));
+        }
     }
 
     @Override
@@ -46,6 +51,13 @@ public class GameScreen extends AbstractScreen {
             world.addPortal(new ShipPortal(
                 world.getPlayer().getX() + 200,
                 world.getPlayer().getY()));
+        }
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.BACKSPACE)) {
+            world.addHazard(new Spike(
+                world.getPlayer().getX() + 200,
+                world.getGroundY()
+            ));
         }
     }
 

@@ -2,11 +2,15 @@ package io.github.msameer0.rhythmicrush.game.gameplay.players;
 
 import com.badlogic.gdx.math.Rectangle;
 
+import io.github.msameer0.rhythmicrush.game.GameWorld;
+
 public abstract class AbstractPlayer {
     public float x, y;
     public float width = 50, height = 50;
     public float velocityY = 0;
     public Rectangle bounds;
+
+    protected GameWorld world;
 
     public AbstractPlayer(float startX, float startY) {
         this.x = startX;
@@ -35,5 +39,13 @@ public abstract class AbstractPlayer {
 
     public float getY() {
         return y;
+    }
+
+    public void setWorld(GameWorld world) {
+        this.world = world;
+    }
+
+    public GameWorld getWorld() {
+        return world;
     }
 }
