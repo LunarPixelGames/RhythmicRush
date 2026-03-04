@@ -29,6 +29,8 @@ public class LevelEditorApp extends ApplicationAdapter {
         config.setResizable(true);
         config.useVsync(true);
 
+        System.setProperty("user.dir", System.getProperty("user.dir").replace("\\lwjgl3", ""));
+
         new Lwjgl3Application(new LevelEditorApp(), config);
     }
 

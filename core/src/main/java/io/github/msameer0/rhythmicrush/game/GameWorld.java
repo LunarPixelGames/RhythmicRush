@@ -2,6 +2,7 @@ package io.github.msameer0.rhythmicrush.game;
 
 import com.badlogic.gdx.graphics.Color;
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Block;
+import io.github.msameer0.rhythmicrush.game.gameplay.blocks.BlockType;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.AbstractHazard;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.AbstractPortal;
@@ -65,7 +66,13 @@ public class GameWorld {
         for (LevelData.ObjectEntry e : data.objects) {
             switch (e.type) {
                 case "block":
-                    blocks.add(new Block(e.x, e.y, e.size));
+                    BlockType bt = BlockType.DEFAULT;
+                    if (e.blockType != null) {
+                        for (BlockType t : BlockType.values()) {
+                            if (t.textureName.equals(e.blockType)) { bt = t; break; }
+                        }
+                    }
+                    blocks.add(new Block(e.x, e.y, e.size, bt));
                     break;
                 case "spike":
                     hazards.add(new Spike(e.x, e.y));

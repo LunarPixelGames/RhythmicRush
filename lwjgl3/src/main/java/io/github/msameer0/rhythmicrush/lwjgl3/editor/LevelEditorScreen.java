@@ -13,6 +13,8 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector3;
+
+import io.github.msameer0.rhythmicrush.game.gameplay.blocks.BlockType;
 import io.github.msameer0.rhythmicrush.game.level.LevelData;
 import io.github.msameer0.rhythmicrush.game.level.LevelSerializer;
 
@@ -34,6 +36,8 @@ import java.util.List;
  *   ENTER                 — launch playtest window
  */
 public class LevelEditorScreen implements Screen {
+
+    private int blockTypeIndex = 0;
 
     // ── Constants ─────────────────────────────────────────────────────────────
     private static final float GROUND_Y       = 50f;
@@ -144,6 +148,12 @@ public class LevelEditorScreen implements Screen {
         // text-input modes consume all other keys
         if (musicSelectorOpen || filePromptOpen) return;
 
+        // in handleKeyboard()
+        if (Gdx.input.isKeyJustPressed(Input.Keys.TAB)) {
+            BlockType[] types = BlockType.values();
+            blockTypeIndex = (blockTypeIndex + 1) % types.length;
+        }
+
         // palette cycling
         if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT)) {
             paletteIndex = (paletteIndex + 1) % PALETTE.length;
@@ -157,17 +167,21 @@ public class LevelEditorScreen implements Screen {
             snapToGrid = !snapToGrid;
         }
 
-        // music selector  SHIFT + `
-        if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) &&
-            Gdx.input.isKeyJustPressed(Input.Keys.GRAVE)) {
-            musicSelectorOpen = true;
-            musicInputBuffer.setLength(0);
-            return;
-        }
-
         // play / pause music  `
         if (Gdx.input.isKeyJustPressed(Input.Keys.GRAVE)) {
-            toggleMusic();
+            if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) ||
+                Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) {
+                // SHIFT + ` = open music selector (existing)
+                musicSelectorOpen = true;
+                musicInputBuffer.setLength(0);
+            } else if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) ||
+                Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT)) {
+                // CTRL + ` = stop music (resets position, line goes back to start)
+                if (music != null) music.stop();
+            } else {
+                // ` alone = play / pause
+                toggleMusic();
+            }
         }
 
         // save  CTRL + S
@@ -326,6 +340,13 @@ public class LevelEditorScreen implements Screen {
         font.draw(batch, "CTRL+S Save  CTRL+O Load  ENTER Playtest  ` Play/Pause  SHIFT+` Select Music",
             cameraX + 10, 28);
 
+        String paletteLabel = "[ " + PALETTE[paletteIndex].name;
+        if (PALETTE[paletteIndex].type.equals("block")) {
+            paletteLabel += " | " + BlockType.values()[blockTypeIndex].textureName;
+        }
+        paletteLabel += " ]  (←/→ cycle object,  TAB cycle block type)";
+        font.draw(batch, paletteLabel, cameraX + 10, screenH - 100);
+
         batch.end();
     }
 
@@ -369,7 +390,13 @@ public class LevelEditorScreen implements Screen {
     private void placeObjectAtCursor() {
         float[] wp = cursorWorldPos();
         String type = PALETTE[paletteIndex].type;
-        placed.add(new LevelData.ObjectEntry(type, wp[0], wp[1], OBJECT_SIZE));
+        String blockType = null;
+        if (type.equals("block")) {
+            blockType = BlockType.values()[blockTypeIndex].textureName;
+        }
+        LevelData.ObjectEntry entry = new LevelData.ObjectEntry(type, wp[0], wp[1], OBJECT_SIZE);
+        entry.blockType = blockType; // store which block variant this is
+        placed.add(entry);
     }
 
     // ── Music ─────────────────────────────────────────────────────────────────
@@ -377,11 +404,24 @@ public class LevelEditorScreen implements Screen {
     private void loadMusic(String filename) {
         if (music != null) { music.stop(); music.dispose(); }
         try {
+            // try internal (assets folder) first
             FileHandle fh = Gdx.files.internal("musics/" + filename);
-            if (!fh.exists()) fh = Gdx.files.absolute(filename);
+            if (!fh.exists()) {
+                // try local relative to working directory
+                fh = Gdx.files.local("assets/musics/" + filename);
+            }
+            if (!fh.exists()) {
+                // try absolute path in case user typed full path
+                fh = Gdx.files.absolute(filename);
+            }
+            if (!fh.exists()) {
+                System.err.println("[Editor] Music file not found: " + filename);
+                return;
+            }
             music = Gdx.audio.newMusic(fh);
             music.setLooping(false);
             levelMeta.musicFile = filename;
+            System.out.println("[Editor] Loaded music: " + fh.path());
         } catch (Exception ex) {
             System.err.println("[Editor] Could not load music: " + filename + " — " + ex.getMessage());
         }

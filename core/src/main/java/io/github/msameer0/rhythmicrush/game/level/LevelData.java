@@ -22,19 +22,13 @@ public class LevelData {
 
     /** Every placeable object is stored as one of these. */
     public static class ObjectEntry {
-        public String type;   // "block" | "spike" | "cube_portal" | "ship_portal"
-        public float  x;
-        public float  y;
-        public float  size;   // used by block (width == height == size)
+        public String type;
+        public float  x, y, size;
+        public String blockType; // null for non-blocks, textureName for blocks
 
-        /** No-arg constructor required by LibGDX Json deserialiser. */
         public ObjectEntry() {}
-
         public ObjectEntry(String type, float x, float y, float size) {
-            this.type = type;
-            this.x    = x;
-            this.y    = y;
-            this.size = size;
+            this.type = type; this.x = x; this.y = y; this.size = size;
         }
     }
 
