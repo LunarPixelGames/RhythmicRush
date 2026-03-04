@@ -52,6 +52,8 @@ public class LevelSelectScreen extends AbstractScreen {
 
     @Override
     public void show() {
+        super.show();
+
         layout = new GlyphLayout();
 
         //load atlas

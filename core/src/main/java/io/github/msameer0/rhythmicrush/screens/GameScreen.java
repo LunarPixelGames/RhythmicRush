@@ -133,4 +133,9 @@ public class GameScreen extends AbstractScreen {
             world.addBlock(new Block(player.getX() + 200, player.getY(), player.width));
         }
     }
+
+    @Override
+    public void show() {
+        game.getSoundManager().stopMenuMusic();
+    }
 }

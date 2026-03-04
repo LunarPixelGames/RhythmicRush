@@ -29,6 +29,8 @@ public class MainMenuScreen extends AbstractScreen {
 
     @Override
     public void show() {
+        super.show();
+
         //load atlas
         atlas = new TextureAtlas("menu.atlas");
         title = atlas.findRegion("title");

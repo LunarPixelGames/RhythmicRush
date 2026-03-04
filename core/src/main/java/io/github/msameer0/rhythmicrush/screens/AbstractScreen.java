@@ -45,7 +45,10 @@ public abstract class AbstractScreen implements Screen {
         viewport.update(width, height, true);
     }
 
-    @Override public void show() {}
+    @Override public void show() {
+        game.getSoundManager().playMenuMusic();
+    }
+
     @Override public void hide() {}
     @Override public void pause() {}
     @Override public void resume() {}
