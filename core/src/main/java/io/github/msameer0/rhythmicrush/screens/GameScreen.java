@@ -6,6 +6,9 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
+
 import io.github.msameer0.rhythmicrush.RhythmicRushGame;
 import io.github.msameer0.rhythmicrush.game.GameWorld;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.CubePortal;
@@ -20,12 +23,16 @@ public class GameScreen implements Screen {
     private SpriteBatch batch;
     private GameWorld world;
     private GameRenderer renderer;
+    private Viewport viewport;
 
     public GameScreen(RhythmicRushGame game) {
         this.game = game;
         this.batch = game.getBatch();
+
         camera = new OrthographicCamera();
-        camera.setToOrtho(false, 800, 480);
+        viewport = new FitViewport(800, 480, camera);
+        viewport.apply();
+        camera.position.set(400, 240, 0); // center camera
 
         world = new GameWorld();
         renderer = new GameRenderer(world, camera, batch);
@@ -73,7 +80,10 @@ public class GameScreen implements Screen {
         player.setJumpHeld(jumpPressed);
     }
 
-    @Override public void resize(int width, int height) {}
+    @Override public void resize(int width, int height) {
+        viewport.update(width, height);
+    }
+
     @Override public void pause() {}
     @Override public void resume() {}
     @Override public void hide() {}
