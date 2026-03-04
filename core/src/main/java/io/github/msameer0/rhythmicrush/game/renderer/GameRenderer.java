@@ -21,28 +21,41 @@ public class GameRenderer {
 
     public void render() {
         camera.update();
-
-        // draw ground
         shape.setProjectionMatrix(camera.combined);
+
+        float groundY = world.getGroundY();
+
+        //get visible world bounds
+        float worldWidth = camera.viewportWidth;
+        float worldLeft = camera.position.x - worldWidth / 2f;
+
         shape.begin(ShapeRenderer.ShapeType.Filled);
         shape.setColor(0.2f, 0.2f, 0.5f, 1f);
-        shape.rect(0, world.getGroundY(), 2000, 50); // long ground for testing
+
+        //draw ground from left edge to right edge of camera
+        shape.rect(
+            worldLeft,
+            0,
+            worldWidth,
+            groundY
+        );
+
         shape.end();
 
-        // draw player
+        //draw player
         shape.begin(ShapeRenderer.ShapeType.Filled);
         shape.setColor(1f, 0.5f, 0.2f, 1f);
         shape.rect(world.getPlayer().x, world.getPlayer().y,
             world.getPlayer().width, world.getPlayer().height);
         shape.end();
 
-        // draw portals
+        //draw portals
         shape.begin(ShapeRenderer.ShapeType.Filled);
         for (AbstractPortal portal : world.getPortals()) {
             if (portal instanceof io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.CubePortal)
-                shape.setColor(0f, 0.8f, 0f, 1f); // green
+                shape.setColor(0f, 0.8f, 0f, 1f); //green
             else
-                shape.setColor(0f, 0.5f, 1f, 1f); // blue
+                shape.setColor(0f, 0.5f, 1f, 1f); //blue
             shape.rect(portal.getX(), portal.getY(), portal.getWidth(), portal.getHeight());
         }
         shape.end();

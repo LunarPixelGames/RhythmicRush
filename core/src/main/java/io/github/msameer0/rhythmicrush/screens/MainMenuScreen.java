@@ -2,26 +2,16 @@ package io.github.msameer0.rhythmicrush.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.badlogic.gdx.utils.viewport.Viewport;
 
 import java.util.Random;
 
 import io.github.msameer0.rhythmicrush.RhythmicRushGame;
 
-public class MainMenuScreen implements Screen {
-    private final RhythmicRushGame game;
-    private OrthographicCamera camera;
-    private Viewport viewport;
-    private SpriteBatch batch;
+public class MainMenuScreen extends AbstractScreen {
 
     private TextureAtlas atlas;
     private TextureRegion title, startButton, settingsButton;
@@ -34,16 +24,11 @@ public class MainMenuScreen implements Screen {
     private float settingsX, settingsY, settingsW, settingsH;
 
     public MainMenuScreen(RhythmicRushGame game) {
-        this.game = game;
-        this.batch = game.getBatch();
+        super(game);
     }
 
     @Override
     public void show() {
-        camera = new OrthographicCamera();
-        viewport = new FitViewport(800, 480, camera);
-        viewport.apply();
-
         //load atlas
         atlas = new TextureAtlas("menu.atlas");
         title = atlas.findRegion("title");
@@ -52,11 +37,10 @@ public class MainMenuScreen implements Screen {
 
         //random background color
         Random rand = new Random();
-        bgColor = new Color(0.2f + 0.6f*rand.nextFloat(),
-            0.2f + 0.6f*rand.nextFloat(),
-            0.2f + 0.6f*rand.nextFloat(), 1);
+        bgColor = new Color(0.2f + 0.6f * rand.nextFloat(),
+            0.2f + 0.6f * rand.nextFloat(),
+            0.2f + 0.6f * rand.nextFloat(), 1);
 
-        //initialize scaled sizes/positions
         updateScaledSizes();
     }
 
@@ -64,15 +48,15 @@ public class MainMenuScreen implements Screen {
         float vw = viewport.getWorldWidth();
         float vh = viewport.getWorldHeight();
 
-        //title scale to 90% of screen width, then multiply by 0.675, move slightly up
+        //title
         float maxTitleWidth = vw * 0.9f;
         float titleScale = (maxTitleWidth / title.getRegionWidth()) * 0.675f;
         titleW = title.getRegionWidth() * titleScale;
         titleH = title.getRegionHeight() * titleScale;
         titleX = vw / 2f - titleW / 2f;
-        titleY = vh - titleH - 20 + 30; // move 30 pixels upward
+        titleY = vh - titleH - 20 + 30;
 
-        //start button 25% of screen width, 0.75 scale
+        //start button
         float maxStartW = vw * 0.25f * 0.75f;
         float startScale = maxStartW / startButton.getRegionWidth();
         startW = startButton.getRegionWidth() * startScale;
@@ -80,32 +64,35 @@ public class MainMenuScreen implements Screen {
         startX = vw / 2f - startW / 2f;
         startY = vh / 2f - startH / 2f;
 
-        //settings button 10% of screen width, 0.85 scale, nudged slightly down
+        //settings button
         float maxSettingsW = vw * 0.1f * 0.85f;
         float settingsScale = maxSettingsW / settingsButton.getRegionWidth();
         settingsW = settingsButton.getRegionWidth() * settingsScale;
         settingsH = settingsButton.getRegionHeight() * settingsScale;
         settingsX = 20;
-        settingsY = 20 - 10; // nudge 10 pixels down
+        settingsY = 20 - 10;
     }
 
     @Override
-    public void render(float delta) {
-        //clear screen with random bg
-        Gdx.gl.glClearColor(bgColor.r, bgColor.g, bgColor.b, 1f);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
-        batch.setProjectionMatrix(camera.combined);
-        batch.begin();
-
-        //draw scaled textures
-        batch.draw(title, titleX, titleY, titleW, titleH);
-        batch.draw(startButton, startX, startY, startW, startH);
-        batch.draw(settingsButton, settingsX, settingsY, settingsW, settingsH);
-
-        batch.end();
-
+    protected void update(float delta) {
         handleInput();
+    }
+
+    @Override
+    protected void draw() {
+        //clear screen with random background
+        Gdx.gl.glClearColor(bgColor.r, bgColor.g, bgColor.b, 1f);
+        Gdx.gl.glClear(Gdx.gl.GL_COLOR_BUFFER_BIT);
+
+        game.getBatch().setProjectionMatrix(camera.combined);
+        game.getBatch().begin();
+
+        //draw textures
+        game.getBatch().draw(title, titleX, titleY, titleW, titleH);
+        game.getBatch().draw(startButton, startX, startY, startW, startH);
+        game.getBatch().draw(settingsButton, settingsX, settingsY, settingsW, settingsH);
+
+        game.getBatch().end();
     }
 
     private void handleInput() {
@@ -115,7 +102,6 @@ public class MainMenuScreen implements Screen {
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             Gdx.app.exit();
         }
-
         if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_0)) {
             game.setScreen(new GameScreen(game));
         }
@@ -135,20 +121,18 @@ public class MainMenuScreen implements Screen {
 
         if (x >= settingsX && x <= settingsX + settingsW &&
             y >= settingsY && y <= settingsY + settingsH) {
-            // settings
+            //TODO: settings
         }
     }
 
     @Override
     public void resize(int width, int height) {
         viewport.update(width, height, true);
-        updateScaledSizes(); //recalc positions on resize
+        updateScaledSizes();
     }
 
-    @Override public void pause() {}
-    @Override public void resume() {}
-    @Override public void hide() {}
-    @Override public void dispose() {
+    @Override
+    public void dispose() {
         atlas.dispose();
     }
 }
