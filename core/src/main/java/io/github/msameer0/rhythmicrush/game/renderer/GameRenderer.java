@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import io.github.msameer0.rhythmicrush.game.GameWorld;
+import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Block;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.AbstractHazard;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.AbstractPortal;
 
@@ -66,6 +67,14 @@ public class GameRenderer {
         shape.setColor(1f, 0f, 0f, 1f); //red
         for (AbstractHazard hazard : world.getHazards()) {
             shape.rect(hazard.getX(), hazard.getY(), hazard.getWidth(), hazard.getHeight());
+        }
+        shape.end();
+
+        //draw blocks
+        shape.begin(ShapeRenderer.ShapeType.Filled);
+        shape.setColor(0f, 0f, 1f, 1f); // all blocks are blue in debug
+        for (Block block : world.getBlocks()) {
+            shape.rect(block.getX(), block.getY(), block.getWidth(), block.getHeight());
         }
         shape.end();
     }

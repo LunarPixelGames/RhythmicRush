@@ -48,4 +48,24 @@ public abstract class AbstractPlayer {
     public GameWorld getWorld() {
         return world;
     }
+
+    public void setY(float y) {
+        this.y = y;
+        updateBounds();
+    }
+
+    public void setVelocityY(int vel) {
+        velocityY = vel;
+    }
+
+    public void setGrounded(boolean grounded) {}
+    public void tryJump() {}
+
+    public boolean isGrounded() {
+        return false;
+    }
+
+    public boolean isSafeFromBelow() {
+        return false;
+    }
 }

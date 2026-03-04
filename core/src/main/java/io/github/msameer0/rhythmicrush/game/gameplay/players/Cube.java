@@ -4,6 +4,7 @@ public class Cube extends AbstractPlayer {
     public float gravity = -1055f;
     public float jumpVelocity = 425f;
     private boolean jumpHeld = false;
+    private boolean isGrounded = false;
 
     public Cube(float startX, float groundY) {
         super(startX, groundY);
@@ -11,31 +12,45 @@ public class Cube extends AbstractPlayer {
 
     @Override
     public void update(float delta, float groundY) {
+        isGrounded = false; // reset each frame, blocks/ground will set it back
+
         velocityY += gravity * delta;
         y += velocityY * delta;
 
         if (y <= groundY) {
             y = groundY;
             velocityY = 0;
+            isGrounded = true;
         }
 
         updateBounds();
-
-        // Continuous jump if holding input
-        if (jumpHeld && velocityY == 0) {
-            jump();
-        }
     }
 
     @Override
     public void jump() {
-        if (velocityY == 0) {
+        if (isGrounded) {
             velocityY = jumpVelocity;
+            isGrounded = false;
         }
     }
 
     @Override
     public void setJumpHeld(boolean held) {
         this.jumpHeld = held;
+    }
+
+    public void setGrounded(boolean grounded) {
+        this.isGrounded = grounded;
+    }
+
+    @Override
+    public void tryJump() {
+        if (jumpHeld && isGrounded) {
+            jump();
+        }
+    }
+
+    public boolean isGrounded() {
+        return isGrounded;
     }
 }

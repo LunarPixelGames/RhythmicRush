@@ -1,10 +1,12 @@
 package io.github.msameer0.rhythmicrush.game;
 
+import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Block;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.AbstractHazard;
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
 import io.github.msameer0.rhythmicrush.game.gameplay.players.Cube;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.AbstractPortal;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 public class GameWorld {
@@ -12,6 +14,7 @@ public class GameWorld {
     private float groundY = 50;
     private ArrayList<AbstractPortal> portals;
     private ArrayList<AbstractHazard> hazards;
+    private ArrayList<Block> blocks;
 
     private float scrollSpeed = 200f; // units per second
 
@@ -22,6 +25,7 @@ public class GameWorld {
         player.setWorld(this);
         portals = new ArrayList<>();
         hazards = new ArrayList<>();
+        blocks = new ArrayList<>();
     }
 
     public void update(float delta) {
@@ -33,19 +37,31 @@ public class GameWorld {
             player.setWorld(this);
         }
 
-        // move portals behind player to simulate forward movement
-        for (AbstractPortal portal : portals) {
-            portal.updatePosition(scrollSpeed, delta);
-        }
-
         //check hazard collisions
         for (AbstractHazard hazard : hazards) {
             hazard.tryTouch(player);
         }
 
+        //check block collisions
+        for (Block block : blocks) {
+            block.tryTouch(player);
+        }
+
+        player.tryJump();
+
+        // move portals behind player to simulate forward movement
+        for (AbstractPortal portal : portals) {
+            portal.updatePosition(scrollSpeed, delta);
+        }
+
         //move hazards behind
         for (AbstractHazard hazard : hazards) {
             hazard.updatePosition(scrollSpeed, delta);
+        }
+
+        //move blocks behind
+        for (Block block : blocks) {
+            block.updatePosition(scrollSpeed, delta);
         }
 
         // remove offscreen portals
@@ -71,9 +87,17 @@ public class GameWorld {
         return hazards;
     }
 
+    public ArrayList<Block> getBlocks() {
+        return blocks;
+    }
+
     public void addPortal(AbstractPortal portal) { portals.add(portal); }
 
     public void addHazard(AbstractHazard hazard) {
         hazards.add(hazard);
+    }
+
+    public void addBlock(Block block) {
+        blocks.add(block);
     }
 }

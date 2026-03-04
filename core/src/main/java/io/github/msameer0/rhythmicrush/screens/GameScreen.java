@@ -5,6 +5,7 @@ import com.badlogic.gdx.Input;
 
 import io.github.msameer0.rhythmicrush.RhythmicRushGame;
 import io.github.msameer0.rhythmicrush.game.GameWorld;
+import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Block;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.CubePortal;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.ShipPortal;
@@ -58,6 +59,11 @@ public class GameScreen extends AbstractScreen {
                 world.getPlayer().getX() + 200,
                 world.getGroundY()
             ));
+        }
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+            float size = world.getPlayer().width; // block same size as player
+            world.addBlock(new Block(world.getPlayer().getX() + 200, world.getPlayer().getY(), size));
         }
     }
 

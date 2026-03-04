@@ -50,4 +50,9 @@ public class Ship extends AbstractPlayer {
     public void setJumpHeld(boolean held) {
         flyHeld = held;
     }
+
+    @Override
+    public boolean isSafeFromBelow() {
+        return true;
+    }
 }
