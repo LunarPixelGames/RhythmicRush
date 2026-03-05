@@ -37,6 +37,8 @@ import java.util.List;
  */
 public class LevelEditorScreen implements Screen {
 
+    private EditorObjectRenderer objectRenderer;
+
     private int blockTypeIndex = 0;
 
     // ── Constants ─────────────────────────────────────────────────────────────
@@ -110,6 +112,8 @@ public class LevelEditorScreen implements Screen {
         shapes = new ShapeRenderer();
         font   = new BitmapFont();
         font.getData().setScale(1.3f);
+
+        objectRenderer = new EditorObjectRenderer(batch, shapes, camera);
 
         Gdx.input.setInputProcessor(new EditorInputAdapter());
     }
@@ -263,23 +267,7 @@ public class LevelEditorScreen implements Screen {
     }
 
     private void drawPlacedObjects() {
-        shapes.begin(ShapeRenderer.ShapeType.Filled);
-        for (LevelData.ObjectEntry e : placed) {
-            Color c = colorFor(e.type);
-            shapes.setColor(c);
-            shapes.rect(e.x, e.y, e.size, e.size);
-        }
-        shapes.end();
-
-        // labels
-        batch.begin();
-        font.getData().setScale(0.8f);
-        for (LevelData.ObjectEntry e : placed) {
-            font.setColor(Color.WHITE);
-            font.draw(batch, labelFor(e.type), e.x + 2, e.y + e.size - 2);
-        }
-        font.getData().setScale(1.3f);
-        batch.end();
+        objectRenderer.draw(placed);
     }
 
     private void drawMusicLine() {
@@ -300,20 +288,9 @@ public class LevelEditorScreen implements Screen {
 
     private void drawCursorPreview() {
         float[] wp = cursorWorldPos();
-        float wx = wp[0], wy = wp[1];
-
-        Color c = new Color(colorFor(PALETTE[paletteIndex].type));
-        c.a = 0.5f;
-
-        shapes.begin(ShapeRenderer.ShapeType.Filled);
-        shapes.setColor(c);
-        shapes.rect(wx, wy, OBJECT_SIZE, OBJECT_SIZE);
-        shapes.end();
-
-        shapes.begin(ShapeRenderer.ShapeType.Line);
-        shapes.setColor(Color.WHITE);
-        shapes.rect(wx, wy, OBJECT_SIZE, OBJECT_SIZE);
-        shapes.end();
+        BlockType currentBlockType = BlockType.values()[blockTypeIndex];
+        objectRenderer.drawCursorPreview(wp[0], wp[1], OBJECT_SIZE,
+            PALETTE[paletteIndex].type, currentBlockType);
     }
 
     private void drawHUD() {
@@ -519,6 +496,8 @@ public class LevelEditorScreen implements Screen {
         shapes.dispose();
         font.dispose();
         if (music != null) music.dispose();
+
+        objectRenderer.dispose();
     }
 
     private void deleteObjectAtCursor() {

@@ -2,10 +2,12 @@ package io.github.msameer0.rhythmicrush.lwjgl3.editor;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Window;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3WindowConfiguration;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL20;
 
 import io.github.msameer0.rhythmicrush.game.level.LevelData;
@@ -91,6 +93,7 @@ public class LevelEditorApp extends ApplicationAdapter {
         private com.badlogic.gdx.graphics.OrthographicCamera camera;
         private com.badlogic.gdx.graphics.g2d.SpriteBatch batch;
         private com.badlogic.gdx.graphics.g2d.BitmapFont font;
+        private Music music;
 
         PlaytestListener(LevelData levelData) {
             this.levelData = levelData;
@@ -112,6 +115,20 @@ public class LevelEditorApp extends ApplicationAdapter {
             world    = new io.github.msameer0.rhythmicrush.game.GameWorld();
             renderer = new io.github.msameer0.rhythmicrush.game.renderer.GameRenderer(world, camera, batch);
             world.loadLevel(levelData);
+
+            if (levelData.musicFile != null && !levelData.musicFile.isEmpty()) {
+                try{
+                    FileHandle fh = Gdx.files.internal("musics/" + levelData.musicFile);
+                    if (!fh.exists()) fh = Gdx.files.local("assets/musics/" + levelData.musicFile);
+                    if (fh.exists()) {
+                        music = Gdx.audio.newMusic(fh);
+                        music.setLooping(false);
+                        music.play();
+                    }
+                } catch (RuntimeException e) {
+                    System.err.println("couldnt load music: " + e.getMessage());
+                }
+            }
         }
 
         @Override
@@ -150,6 +167,7 @@ public class LevelEditorApp extends ApplicationAdapter {
             }
 
             if (world.isPlayerDead() || world.isLevelComplete()) {
+                if (music != null) music.stop();
                 playtestWindow.closeWindow();
             }
         }
@@ -158,6 +176,7 @@ public class LevelEditorApp extends ApplicationAdapter {
         public void dispose() {
             batch.dispose();
             font.dispose();
+            if (music != null) music.dispose();
         }
     }
 }

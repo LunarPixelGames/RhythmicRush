@@ -78,6 +78,7 @@ public class GameScreen extends AbstractScreen {
     public void dispose() {
         super.dispose();
         font.dispose();
+        renderer.dispose();
     }
 
     // ── Progress HUD ─────────────────────────────────────────────────────────
