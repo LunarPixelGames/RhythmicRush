@@ -65,6 +65,10 @@ public abstract class AbstractPlayer {
         return false;
     }
 
+    public float getVelocityY() {
+        return velocityY;
+    }
+
     public boolean isSafeFromBelow() {
         return false;
     }

@@ -158,7 +158,7 @@ public class LevelEditorApp extends ApplicationAdapter {
             }
 
             world.update(delta);
-            renderer.render();
+            renderer.render(delta);
 
             float progress = world.getProgress();
             if (progress > 0f) {

@@ -3,23 +3,8 @@
 "musicFile": "654553_-Everybody-Bounce-.mp3",
 "bgColor": "1a1a2e",
 "groundColor": "16213e",
+"difficulty": "hard",
 "objects": [
-	{
-		"type": "spike",
-		"x": 500,
-		"y": 50,
-		"size": 50,
-		"blockType": null,
-		"rotation": 0
-	},
-	{
-		"type": "spike",
-		"x": 550,
-		"y": 50,
-		"size": 50,
-		"blockType": null,
-		"rotation": 0
-	},
 	{
 		"type": "block",
 		"x": 750,
@@ -6805,54 +6790,6 @@
 		"rotation": 0
 	},
 	{
-		"type": "spike",
-		"x": 10500,
-		"y": 300,
-		"size": 50,
-		"blockType": null,
-		"rotation": 0
-	},
-	{
-		"type": "spike",
-		"x": 10550,
-		"y": 300,
-		"size": 50,
-		"blockType": null,
-		"rotation": 0
-	},
-	{
-		"type": "spike",
-		"x": 10600,
-		"y": 300,
-		"size": 50,
-		"blockType": null,
-		"rotation": 0
-	},
-	{
-		"type": "spike",
-		"x": 10500,
-		"y": 400,
-		"size": 50,
-		"blockType": null,
-		"rotation": 180
-	},
-	{
-		"type": "spike",
-		"x": 10550,
-		"y": 400,
-		"size": 50,
-		"blockType": null,
-		"rotation": 180
-	},
-	{
-		"type": "spike",
-		"x": 10600,
-		"y": 400,
-		"size": 50,
-		"blockType": null,
-		"rotation": 180
-	},
-	{
 		"type": "block",
 		"x": 9600,
 		"y": 200,
@@ -8490,6 +8427,22 @@
 		"y": 650,
 		"size": 50,
 		"blockType": "default_no_outline",
+		"rotation": 0
+	},
+	{
+		"type": "spike",
+		"x": 10400,
+		"y": 400,
+		"size": 50,
+		"blockType": null,
+		"rotation": 180
+	},
+	{
+		"type": "spike",
+		"x": 10600,
+		"y": 300,
+		"size": 50,
+		"blockType": null,
 		"rotation": 0
 	}
 ]

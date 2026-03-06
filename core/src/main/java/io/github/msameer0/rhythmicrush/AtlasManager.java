@@ -13,12 +13,14 @@ public class AtlasManager {
     private final TextureAtlas levelSelectAtlas;
     private final TextureAtlas blocksAtlas;
     private final TextureAtlas spikesAtlas;
+    private final TextureAtlas gamemodesAtlas;
 
     public AtlasManager() {
         menuAtlas        = new TextureAtlas(Gdx.files.internal("menu.atlas"));
         levelSelectAtlas = new TextureAtlas(Gdx.files.internal("level_select_atlases/level_select.atlas"));
         blocksAtlas      = new TextureAtlas(Gdx.files.internal("game/objects/blocks.atlas"));
         spikesAtlas      = new TextureAtlas(Gdx.files.internal("game/objects/spikes.atlas"));
+        gamemodesAtlas = new TextureAtlas(Gdx.files.internal("game/objects/gamemodes.atlas"));
     }
 
     public TextureAtlas getMenuAtlas()        { return menuAtlas; }
@@ -26,10 +28,15 @@ public class AtlasManager {
     public TextureAtlas getBlocksAtlas()      { return blocksAtlas; }
     public TextureAtlas getSpikesAtlas()      { return spikesAtlas; }
 
+    public TextureAtlas getGamemodesAtlas() {
+        return gamemodesAtlas;
+    }
+
     public void dispose() {
         menuAtlas.dispose();
         levelSelectAtlas.dispose();
         blocksAtlas.dispose();
         spikesAtlas.dispose();
+        gamemodesAtlas.dispose();
     }
 }

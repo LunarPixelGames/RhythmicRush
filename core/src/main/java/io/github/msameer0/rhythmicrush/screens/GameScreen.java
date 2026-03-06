@@ -37,9 +37,9 @@ public class GameScreen extends AbstractScreen {
 
     private LevelData levelData;
 
-    // ── Death pause state ─────────────────────────────────────────────────────
-    private boolean deathPaused   = false;
-    private float   deathTimer    = 0f;
+    private boolean deathPaused = false;
+    private float   deathTimer  = 0f;
+    private float   lastDelta   = 0f; // stored so draw() can forward it to renderer
 
     // ── Constructors ──────────────────────────────────────────────────────────
 
@@ -81,7 +81,8 @@ public class GameScreen extends AbstractScreen {
 
     @Override
     protected void update(float delta) {
-        // ── Death pause — world is frozen, wait then respawn ──────────────────
+        lastDelta = delta;
+
         if (deathPaused) {
             deathTimer += delta;
             if (deathTimer >= DEATH_PAUSE_DURATION) {
@@ -90,7 +91,7 @@ public class GameScreen extends AbstractScreen {
                 world.reset();
                 startMusic();
             }
-            return; // skip all other updates while paused
+            return;
         }
 
         handleInput();
@@ -99,7 +100,6 @@ public class GameScreen extends AbstractScreen {
         world.update(delta);
 
         if (world.isPlayerDead()) {
-            // stop music immediately, freeze world, start pause countdown
             stopAndDisposeMusic();
             deathPaused = true;
             deathTimer  = 0f;
@@ -115,7 +115,8 @@ public class GameScreen extends AbstractScreen {
     @Override
     protected void draw() {
         gameViewport.apply();
-        renderer.render();
+        // pass 0 delta during death pause so player rotation freezes in place
+        renderer.render(deathPaused ? 0f : lastDelta);
         drawProgressBar();
     }
 
