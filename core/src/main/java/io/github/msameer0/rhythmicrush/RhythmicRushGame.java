@@ -8,9 +8,10 @@ import io.github.msameer0.rhythmicrush.screens.MainMenuScreen;
 
 public class RhythmicRushGame extends Game {
 
-    private SpriteBatch  batch;
-    private SoundManager soundManager;
-    private AtlasManager atlasManager;
+    private SpriteBatch      batch;
+    private SoundManager     soundManager;
+    private AtlasManager     atlasManager;
+    private WindowController windowController;
 
     @Override
     public void create() {
@@ -21,9 +22,20 @@ public class RhythmicRushGame extends Game {
         setScreen(new MainMenuScreen(this));
     }
 
-    public SpriteBatch  getBatch()        { return batch; }
-    public SoundManager getSoundManager() { return soundManager; }
-    public AtlasManager getAtlasManager() { return atlasManager; }
+    public SpriteBatch      getBatch()            { return batch; }
+    public SoundManager     getSoundManager()     { return soundManager; }
+    public AtlasManager     getAtlasManager()     { return atlasManager; }
+    public WindowController getWindowController() { return windowController; }
+
+    /**
+     * Called by Lwjgl3Launcher after constructing the game but the LibGDX
+     * Lwjgl3Application constructor itself calls create() synchronously, so we
+     * need the controller set BEFORE new Lwjgl3Application(...) is called.
+     * See Lwjgl3Launcher for the correct order.
+     */
+    public void setWindowController(WindowController wc) {
+        this.windowController = wc;
+    }
 
     @Override
     public void dispose() {

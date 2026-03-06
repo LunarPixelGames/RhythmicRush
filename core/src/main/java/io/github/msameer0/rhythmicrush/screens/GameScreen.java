@@ -151,8 +151,8 @@ public class GameScreen extends AbstractScreen {
         game.getBatch().begin();
         font.setColor(Color.WHITE);
         glyphLayout.setText(font, text, Color.WHITE, 0, Align.center, false);
-        float x = (gameViewport.getScreenWidth() - glyphLayout.width) / 2f;
-        float y = gameViewport.getScreenHeight() - 12f;
+        float x = (gameViewport.getWorldWidth() - glyphLayout.width) / 2f;
+        float y = gameViewport.getWorldHeight() - 12f;
         font.draw(game.getBatch(), text, x, y);
         game.getBatch().end();
     }
