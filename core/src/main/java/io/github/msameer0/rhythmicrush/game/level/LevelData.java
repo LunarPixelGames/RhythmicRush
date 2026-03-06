@@ -14,6 +14,7 @@ public class LevelData {
     public String musicFile   = "";          // e.g. "musics/song.mp3"
     public String bgColor     = "1a1a2e";    // hex, no #
     public String groundColor = "16213e";    // hex, no #
+    public String difficulty = "normal";    //easy normal hard insane extreme
 
     // ── Objects ───────────────────────────────────────────────────────────────
     public List<ObjectEntry> objects = new ArrayList<>();
