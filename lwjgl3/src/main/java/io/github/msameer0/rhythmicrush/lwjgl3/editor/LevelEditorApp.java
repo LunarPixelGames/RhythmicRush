@@ -10,6 +10,7 @@ import com.badlogic.gdx.backends.lwjgl3.Lwjgl3WindowConfiguration;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL20;
 
+import io.github.msameer0.rhythmicrush.AtlasManager;
 import io.github.msameer0.rhythmicrush.game.level.LevelData;
 import io.github.msameer0.rhythmicrush.game.level.LevelSerializer;
 
@@ -95,6 +96,8 @@ public class LevelEditorApp extends ApplicationAdapter {
         private com.badlogic.gdx.graphics.g2d.BitmapFont font;
         private Music music;
 
+        private AtlasManager atlasManager;
+
         PlaytestListener(LevelData levelData) {
             this.levelData = levelData;
         }
@@ -112,8 +115,10 @@ public class LevelEditorApp extends ApplicationAdapter {
             font  = new com.badlogic.gdx.graphics.g2d.BitmapFont();
             font.getData().setScale(1.5f);
 
+            atlasManager = new AtlasManager();
+
             world    = new io.github.msameer0.rhythmicrush.game.GameWorld();
-            renderer = new io.github.msameer0.rhythmicrush.game.renderer.GameRenderer(world, camera, batch);
+            renderer = new io.github.msameer0.rhythmicrush.game.renderer.GameRenderer(world, camera, batch, atlasManager);
             world.loadLevel(levelData);
 
             if (levelData.musicFile != null && !levelData.musicFile.isEmpty()) {
@@ -177,6 +182,7 @@ public class LevelEditorApp extends ApplicationAdapter {
             batch.dispose();
             font.dispose();
             if (music != null) music.dispose();
+            atlasManager.dispose();
         }
     }
 }

@@ -30,9 +30,8 @@ public class GameScreen extends AbstractScreen {
     private GlyphLayout  glyphLayout;
     private Music        levelMusic;
 
-    // dedicated camera at actual screen resolution — matches playtest zoom exactly
     private OrthographicCamera gameCamera;
-    private Viewport gameViewport;
+    private Viewport           gameViewport;
 
     private LevelData levelData;
 
@@ -46,15 +45,12 @@ public class GameScreen extends AbstractScreen {
         super(game);
         this.levelData = levelData;
 
-        // match the playtest camera setup exactly — screen resolution, no viewport scaling
-        float w = Gdx.graphics.getWidth();
-        float h = Gdx.graphics.getHeight();
-        gameCamera = new OrthographicCamera();
+        gameCamera   = new OrthographicCamera();
         gameViewport = new ExtendViewport(1280, 720, gameCamera);
         gameViewport.update(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
 
         world    = new GameWorld();
-        renderer = new GameRenderer(world, gameCamera, game.getBatch());
+        renderer = new GameRenderer(world, gameCamera, game.getBatch(), game.getAtlasManager());
         font     = new BitmapFont();
         font.getData().setScale(1.5f);
         glyphLayout = new GlyphLayout();
@@ -69,28 +65,11 @@ public class GameScreen extends AbstractScreen {
     @Override
     public void show() {
         game.getSoundManager().stopMenuMusic();
-
-        // load and play level music
-        if (levelData != null &&
-            levelData.musicFile != null &&
-            !levelData.musicFile.isEmpty()) {
-            try {
-                FileHandle fh = Gdx.files.internal("musics/" + levelData.musicFile);
-                if (!fh.exists()) fh = Gdx.files.local("assets/musics/" + levelData.musicFile);
-                if (fh.exists()) {
-                    levelMusic = Gdx.audio.newMusic(fh);
-                    levelMusic.setLooping(false);
-                    levelMusic.play();
-                }
-            } catch (Exception e) {
-                Gdx.app.error("GameScreen", "Could not load music: " + e.getMessage());
-            }
-        }
+        startMusic();
     }
 
     @Override
     public void resize(int width, int height) {
-        // keep gameCamera in sync with screen size
         gameViewport.update(width, height, true);
     }
 
@@ -102,13 +81,16 @@ public class GameScreen extends AbstractScreen {
         world.update(delta);
 
         if (world.isPlayerDead()) {
-            stopMusic();
-            game.setScreen(new MainMenuScreen(game));
+            // stop and dispose current music, reset world, restart music
+            stopAndDisposeMusic();
+            world.reset();
+            startMusic();
         }
 
         if (world.isLevelComplete()) {
-            stopMusic();
-            game.setScreen(new MainMenuScreen(game));
+            stopAndDisposeMusic();
+            world.reset();
+            game.setScreen(new MainMenuScreen(game)); // replace with results screen later
         }
     }
 
@@ -124,8 +106,33 @@ public class GameScreen extends AbstractScreen {
         super.dispose();
         font.dispose();
         renderer.dispose();
-        stopMusic();
+        stopAndDisposeMusic();
+    }
+
+    // ── Music ─────────────────────────────────────────────────────────────────
+
+    /** Loads and plays the level music. Safe to call on respawn. */
+    private void startMusic() {
+        if (levelData == null ||
+            levelData.musicFile == null ||
+            levelData.musicFile.isEmpty()) return;
+        try {
+            FileHandle fh = Gdx.files.internal("musics/" + levelData.musicFile);
+            if (!fh.exists()) fh = Gdx.files.local("assets/musics/" + levelData.musicFile);
+            if (fh.exists()) {
+                levelMusic = Gdx.audio.newMusic(fh);
+                levelMusic.setLooping(false);
+                levelMusic.play();
+            }
+        } catch (Exception e) {
+            Gdx.app.error("GameScreen", "Could not load music: " + e.getMessage());
+        }
+    }
+
+    /** Stops, disposes, and nulls the music instance. */
+    private void stopAndDisposeMusic() {
         if (levelMusic != null) {
+            if (levelMusic.isPlaying()) levelMusic.stop();
             levelMusic.dispose();
             levelMusic = null;
         }
@@ -144,18 +151,10 @@ public class GameScreen extends AbstractScreen {
         game.getBatch().begin();
         font.setColor(Color.WHITE);
         glyphLayout.setText(font, text, Color.WHITE, 0, Align.center, false);
-        float x = (Gdx.graphics.getWidth() - glyphLayout.width) / 2f;
-        float y = Gdx.graphics.getHeight() - 12f;
+        float x = (gameViewport.getScreenWidth() - glyphLayout.width) / 2f;
+        float y = gameViewport.getScreenHeight() - 12f;
         font.draw(game.getBatch(), text, x, y);
         game.getBatch().end();
-    }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    private void stopMusic() {
-        if (levelMusic != null && levelMusic.isPlaying()) {
-            levelMusic.stop();
-        }
     }
 
     // ── Input ─────────────────────────────────────────────────────────────────

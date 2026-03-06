@@ -23,34 +23,19 @@ public class LevelSelectScreen extends AbstractScreen {
 
     private static final float PANEL_CORNER_RADIUS = 40f;
 
-    // ── Level entries loaded from assets/levels/ ──────────────────────────────
     private static class LevelEntry {
         final LevelData data;
         final int       index;
-        LevelEntry(LevelData data, int index) {
-            this.data  = data;
-            this.index = index;
-        }
+        LevelEntry(LevelData data, int index) { this.data = data; this.index = index; }
     }
 
     private ArrayList<LevelEntry> levels = new ArrayList<>();
     private int selectedLevel = 0;
 
-    // ── UI ────────────────────────────────────────────────────────────────────
-    private BitmapFont   font;
-    private GlyphLayout  layout;
+    private BitmapFont  font;
+    private GlyphLayout layout;
 
-    private TextureAtlas  levelAtlas;
-    private TextureRegion backButton, leftArrow, rightArrow;
-
-    /**
-     * Difficulty textures indexed 0–4:
-     *   0 = easy      (1_diff)
-     *   1 = normal    (2_diff)
-     *   2 = hard      (3_diff)
-     *   3 = insane    (4_diff)
-     *   4 = extreme   (5_diff) — may be null if texture not yet added
-     */
+    private TextureRegion   backButton, leftArrow, rightArrow;
     private TextureRegion[] difficultyTextures;
 
     private Texture panelTexture;
@@ -60,8 +45,6 @@ public class LevelSelectScreen extends AbstractScreen {
     private float leftX, leftY, leftW, leftH;
     private float rightX, rightY, rightW, rightH;
     private float panelX, panelY, panelW, panelH;
-
-    // ─────────────────────────────────────────────────────────────────────────
 
     public LevelSelectScreen(RhythmicRushGame game) {
         super(game);
@@ -73,32 +56,30 @@ public class LevelSelectScreen extends AbstractScreen {
 
         layout = new GlyphLayout();
 
-        // load atlas
-        levelAtlas     = new TextureAtlas("level_select_atlases/level_select.atlas");
-        backButton     = levelAtlas.findRegion("back");
-        leftArrow      = levelAtlas.findRegion("left_arrow");
-        rightArrow     = levelAtlas.findRegion("right_arrow");
+        // pull regions from shared atlas — no load/dispose here
+        TextureAtlas atlas = game.getAtlasManager().getLevelSelectAtlas();
+        backButton  = atlas.findRegion("back");
+        leftArrow   = atlas.findRegion("left_arrow");
+        rightArrow  = atlas.findRegion("right_arrow");
 
-        // difficulty textures — 5_diff may be null if not yet added
-        difficultyTextures = new TextureRegion[] {
-            levelAtlas.findRegion("1_diff"),
-            levelAtlas.findRegion("2_diff"),
-            levelAtlas.findRegion("3_diff"),
-            levelAtlas.findRegion("4_diff"),
-            levelAtlas.findRegion("5_diff"),  // may be null — handled in draw
+        difficultyTextures = new TextureRegion[]{
+            atlas.findRegion("1_diff"),
+            atlas.findRegion("2_diff"),
+            atlas.findRegion("3_diff"),
+            atlas.findRegion("4_diff"),
+            atlas.findRegion("5_diff"), // may be null — handled gracefully
         };
 
-        // load font
         try {
-            FreeTypeFontGenerator generator =
-                new FreeTypeFontGenerator(Gdx.files.internal("fonts/zendots-regular.ttf"));
+            FreeTypeFontGenerator gen = new FreeTypeFontGenerator(
+                Gdx.files.internal("fonts/zendots-regular.ttf"));
             FreeTypeFontGenerator.FreeTypeFontParameter p =
                 new FreeTypeFontGenerator.FreeTypeFontParameter();
             p.size      = 48;
             p.magFilter = Texture.TextureFilter.Linear;
             p.minFilter = Texture.TextureFilter.Linear;
-            font = generator.generateFont(p);
-            generator.dispose();
+            font = gen.generateFont(p);
+            gen.dispose();
         } catch (Exception e) {
             font = new BitmapFont();
         }
@@ -107,12 +88,6 @@ public class LevelSelectScreen extends AbstractScreen {
         updateScaledSizes();
     }
 
-    // ── Dynamic level scanning ────────────────────────────────────────────────
-
-    /**
-     * Scans assets/levels/ for 0.json, 1.json, 2.json … stopping at the first
-     * missing index. Levels are ordered by their filename index.
-     */
     private void loadLevels() {
         levels.clear();
         int index = 0;
@@ -128,23 +103,17 @@ public class LevelSelectScreen extends AbstractScreen {
                 break;
             }
         }
-
         if (levels.isEmpty()) {
-            // fallback: show a placeholder so the screen doesn't crash
             LevelData placeholder = new LevelData();
             placeholder.name       = "No Levels Found";
             placeholder.difficulty = "normal";
             levels.add(new LevelEntry(placeholder, -1));
         }
-
         selectedLevel = 0;
     }
 
-    // ── Difficulty helpers ────────────────────────────────────────────────────
-
-    /** Maps difficulty string → texture index (0–4). */
     private int difficultyIndex(String difficulty) {
-        if (difficulty == null) return 1; // default to normal
+        if (difficulty == null) return 1;
         switch (difficulty.toLowerCase()) {
             case "easy":    return 0;
             case "normal":  return 1;
@@ -155,43 +124,27 @@ public class LevelSelectScreen extends AbstractScreen {
         }
     }
 
-    /** Returns the difficulty texture, falling back to normal if null. */
     private TextureRegion difficultyTexture(String difficulty) {
         int idx = difficultyIndex(difficulty);
-        TextureRegion region = difficultyTextures[idx];
-        if (region == null) {
-            // fallback to normal (index 1) if texture not yet added
-            region = difficultyTextures[1];
-        }
-        return region;
+        TextureRegion r = difficultyTextures[idx];
+        return r != null ? r : difficultyTextures[1];
     }
-
-    // ── Layout ────────────────────────────────────────────────────────────────
 
     private void updateScaledSizes() {
         float vw = viewport.getWorldWidth();
         float vh = viewport.getWorldHeight();
 
-        backW = vw * 0.08f; backH = backW;
-        backX = 10; backY = vh - backH - 10;
-
-        leftW = vw * 0.08f; leftH = leftW;
-        leftX = 10; leftY = vh / 2f - leftH / 2f;
-
+        backW = vw * 0.08f; backH = backW; backX = 10; backY = vh - backH - 10;
+        leftW = vw * 0.08f; leftH = leftW; leftX = 10; leftY = vh / 2f - leftH / 2f;
         rightW = vw * 0.08f; rightH = rightW;
         rightX = vw - rightW - 10; rightY = vh / 2f - rightH / 2f;
-
         panelW = vw * 0.6f; panelH = vh * 0.28f;
         panelX = vw / 2f - panelW / 2f;
         panelY = vh / 2f - panelH / 2f + 40;
     }
 
-    // ── Update / Draw ─────────────────────────────────────────────────────────
-
     @Override
-    protected void update(float delta) {
-        handleInput();
-    }
+    protected void update(float delta) { handleInput(); }
 
     @Override
     protected void draw() {
@@ -203,29 +156,24 @@ public class LevelSelectScreen extends AbstractScreen {
         game.getBatch().setProjectionMatrix(camera.combined);
         game.getBatch().begin();
 
-        // rebuild panel texture if size changed
         int texW = (int) panelW, texH = (int) panelH;
         if (panelTexture == null || texW != lastPanelW || texH != lastPanelH) {
             if (panelTexture != null) panelTexture.dispose();
-            panelTexture = createRoundedRectangleTexture(
-                texW, texH,
+            panelTexture = createRoundedRect(texW, texH,
                 (int)(PANEL_CORNER_RADIUS * (panelW / 800f)),
-                new Color(0.2f, 0.2f, 0.28f, 1f)
-            );
+                new Color(0.2f, 0.2f, 0.28f, 1f));
             panelTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
             lastPanelW = texW; lastPanelH = texH;
         }
 
-        // nav buttons + panel
-        game.getBatch().draw(backButton,  backX,  backY,  backW,  backH);
-        game.getBatch().draw(leftArrow,   leftX,  leftY,  leftW,  leftH);
-        game.getBatch().draw(rightArrow,  rightX, rightY, rightW, rightH);
+        game.getBatch().draw(backButton,   backX,  backY,  backW,  backH);
+        game.getBatch().draw(leftArrow,    leftX,  leftY,  leftW,  leftH);
+        game.getBatch().draw(rightArrow,   rightX, rightY, rightW, rightH);
         game.getBatch().draw(panelTexture, panelX, panelY);
 
-        // difficulty icon + level name
         TextureRegion diffRegion = difficultyTexture(current.difficulty);
-        float iconSize  = panelH * 0.55f;
-        float spacing   = panelW * 0.05f;
+        float iconSize = panelH * 0.55f;
+        float spacing  = panelW * 0.05f;
 
         font.getData().setScale(0.85f);
         GlyphLayout nameLayout = new GlyphLayout(font, current.name);
@@ -239,47 +187,35 @@ public class LevelSelectScreen extends AbstractScreen {
         game.getBatch().draw(diffRegion, iconX, iconY, iconSize, iconSize);
         font.draw(game.getBatch(), current.name, textX, textY);
 
-        // difficulty label below name
         font.getData().setScale(0.55f);
         String diffLabel = current.difficulty != null
             ? current.difficulty.substring(0,1).toUpperCase() + current.difficulty.substring(1)
             : "Normal";
         GlyphLayout diffLayout = new GlyphLayout(font, diffLabel);
         font.draw(game.getBatch(), diffLabel,
-            panelX + panelW / 2f - diffLayout.width / 2f,
-            panelY + panelH * 0.3f);
+            panelX + panelW / 2f - diffLayout.width / 2f, panelY + panelH * 0.3f);
 
-        // level counter  e.g. "1 / 3"
         font.getData().setScale(0.5f);
         String counter = (selectedLevel + 1) + " / " + levels.size();
         GlyphLayout counterLayout = new GlyphLayout(font, counter);
         font.draw(game.getBatch(), counter,
-            viewport.getWorldWidth() / 2f - counterLayout.width / 2f,
-            panelY - 25);
+            viewport.getWorldWidth() / 2f - counterLayout.width / 2f, panelY - 25);
 
         font.getData().setScale(1f);
         game.getBatch().end();
     }
 
-    // ── Input ─────────────────────────────────────────────────────────────────
-
     private void handleInput() {
         if (Gdx.input.justTouched()) {
             Vector2 touch = viewport.unproject(new Vector2(Gdx.input.getX(), Gdx.input.getY()));
             float x = touch.x, y = touch.y;
-
-            if (x >= leftX && x <= leftX + leftW && y >= leftY && y <= leftY + leftH)
-                navigate(-1);
-            if (x >= rightX && x <= rightX + rightW && y >= rightY && y <= rightY + rightH)
-                navigate(1);
-            if (x >= backX && x <= backX + backW && y >= backY && y <= backY + backH)
+            if (x >= leftX  && x <= leftX  + leftW  && y >= leftY  && y <= leftY  + leftH)  navigate(-1);
+            if (x >= rightX && x <= rightX + rightW && y >= rightY && y <= rightY + rightH) navigate(1);
+            if (x >= backX  && x <= backX  + backW  && y >= backY  && y <= backY  + backH)
                 game.setScreen(new MainMenuScreen(game));
-
-            // tap panel to play
             if (x >= panelX && x <= panelX + panelW && y >= panelY && y <= panelY + panelH)
                 playSelected();
         }
-
         if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT))   navigate(-1);
         if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT))  navigate(1);
         if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER))  playSelected();
@@ -292,29 +228,22 @@ public class LevelSelectScreen extends AbstractScreen {
 
     private void playSelected() {
         LevelEntry entry = levels.get(selectedLevel);
-        if (entry.index < 0) return; // placeholder, no real level to play
+        if (entry.index < 0) return;
         game.setScreen(new GameScreen(game, entry.data));
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    private Texture createRoundedRectangleTexture(int width, int height, int radius, Color color) {
-        Pixmap pixmap = new Pixmap(width, height, Pixmap.Format.RGBA8888);
-        pixmap.setColor(0, 0, 0, 0);
-        pixmap.fill();
+    private Texture createRoundedRect(int w, int h, int r, Color color) {
+        Pixmap pixmap = new Pixmap(w, h, Pixmap.Format.RGBA8888);
+        pixmap.setColor(0, 0, 0, 0); pixmap.fill();
         pixmap.setColor(color);
-        pixmap.fillRectangle(radius, 0, width - 2 * radius, height);
-        pixmap.fillRectangle(0, radius, width, height - 2 * radius);
-        pixmap.fillCircle(radius, radius, radius);
-        pixmap.fillCircle(width - radius, radius, radius);
-        pixmap.fillCircle(radius, height - radius, radius);
-        pixmap.fillCircle(width - radius, height - radius, radius);
-        Texture texture = new Texture(pixmap);
+        pixmap.fillRectangle(r, 0, w - 2*r, h);
+        pixmap.fillRectangle(0, r, w, h - 2*r);
+        pixmap.fillCircle(r, r, r); pixmap.fillCircle(w-r, r, r);
+        pixmap.fillCircle(r, h-r, r); pixmap.fillCircle(w-r, h-r, r);
+        Texture t = new Texture(pixmap);
         pixmap.dispose();
-        return texture;
+        return t;
     }
-
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     @Override
     public void resize(int width, int height) {
@@ -325,7 +254,7 @@ public class LevelSelectScreen extends AbstractScreen {
     @Override
     public void dispose() {
         font.dispose();
-        levelAtlas.dispose();
         if (panelTexture != null) panelTexture.dispose();
+        // atlas NOT disposed — owned by AtlasManager
     }
 }
