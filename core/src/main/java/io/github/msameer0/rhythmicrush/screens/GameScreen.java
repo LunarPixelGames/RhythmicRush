@@ -24,6 +24,8 @@ import io.github.msameer0.rhythmicrush.game.renderer.GameRenderer;
 
 public class GameScreen extends AbstractScreen {
 
+    private static final float DEATH_PAUSE_DURATION = 0.75f;
+
     private GameWorld    world;
     private GameRenderer renderer;
     private BitmapFont   font;
@@ -34,6 +36,10 @@ public class GameScreen extends AbstractScreen {
     private Viewport           gameViewport;
 
     private LevelData levelData;
+
+    // ── Death pause state ─────────────────────────────────────────────────────
+    private boolean deathPaused   = false;
+    private float   deathTimer    = 0f;
 
     // ── Constructors ──────────────────────────────────────────────────────────
 
@@ -75,22 +81,34 @@ public class GameScreen extends AbstractScreen {
 
     @Override
     protected void update(float delta) {
+        // ── Death pause — world is frozen, wait then respawn ──────────────────
+        if (deathPaused) {
+            deathTimer += delta;
+            if (deathTimer >= DEATH_PAUSE_DURATION) {
+                deathPaused = false;
+                deathTimer  = 0f;
+                world.reset();
+                startMusic();
+            }
+            return; // skip all other updates while paused
+        }
+
         handleInput();
         if (levelData == null) handleDebugInput();
 
         world.update(delta);
 
         if (world.isPlayerDead()) {
-            // stop and dispose current music, reset world, restart music
+            // stop music immediately, freeze world, start pause countdown
             stopAndDisposeMusic();
-            world.reset();
-            startMusic();
+            deathPaused = true;
+            deathTimer  = 0f;
         }
 
         if (world.isLevelComplete()) {
             stopAndDisposeMusic();
             world.reset();
-            game.setScreen(new MainMenuScreen(game)); // replace with results screen later
+            game.setScreen(new MainMenuScreen(game));
         }
     }
 
@@ -111,7 +129,6 @@ public class GameScreen extends AbstractScreen {
 
     // ── Music ─────────────────────────────────────────────────────────────────
 
-    /** Loads and plays the level music. Safe to call on respawn. */
     private void startMusic() {
         if (levelData == null ||
             levelData.musicFile == null ||
@@ -129,7 +146,6 @@ public class GameScreen extends AbstractScreen {
         }
     }
 
-    /** Stops, disposes, and nulls the music instance. */
     private void stopAndDisposeMusic() {
         if (levelMusic != null) {
             if (levelMusic.isPlaying()) levelMusic.stop();
@@ -151,8 +167,8 @@ public class GameScreen extends AbstractScreen {
         game.getBatch().begin();
         font.setColor(Color.WHITE);
         glyphLayout.setText(font, text, Color.WHITE, 0, Align.center, false);
-        float x = (gameViewport.getWorldWidth() - glyphLayout.width) / 2f;
-        float y = gameViewport.getWorldHeight() - 12f;
+        float x = (gameViewport.getWorldWidth()  - glyphLayout.width) / 2f;
+        float y =  gameViewport.getWorldHeight() - 12f;
         font.draw(game.getBatch(), text, x, y);
         game.getBatch().end();
     }

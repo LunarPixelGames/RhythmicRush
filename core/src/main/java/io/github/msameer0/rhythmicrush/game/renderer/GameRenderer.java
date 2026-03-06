@@ -100,16 +100,6 @@ public class GameRenderer {
             }
         }
         batch.end();
-
-        // Hitbox overlay — uncomment + wire to settings toggle when ready
-        /*
-        shape.begin(ShapeRenderer.ShapeType.Filled);
-        shape.setColor(0f, 0f, 1f, 0.75f);
-        for (Block block : world.getBlocks()) {
-            shape.rect(block.getX(), block.getY(), block.getWidth(), block.getHeight());
-        }
-        shape.end();
-        */
     }
 
     // Only dispose what GameRenderer created — ShapeRenderer only
