@@ -10,6 +10,7 @@ import io.github.msameer0.rhythmicrush.game.GameWorld;
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Block;
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.BlockType;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.AbstractHazard;
+import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.AbstractPortal;
 
 public class GameRenderer {
@@ -99,9 +100,17 @@ public class GameRenderer {
         // draw hazards
         batch.begin();
         for (AbstractHazard hazard : world.getHazards()) {
-            if (spikeRegion != null) {
-                batch.draw(spikeRegion, hazard.getX(), hazard.getY(),
-                    hazard.getWidth(), hazard.getHeight());
+            if (spikeRegion != null && hazard instanceof Spike) {
+                Spike spike = (Spike) hazard;
+                float cx = hazard.getX() + hazard.getWidth()  / 2f;
+                float cy = hazard.getY() + hazard.getHeight() / 2f;
+                batch.draw(spikeRegion,
+                    hazard.getX(), hazard.getY(),          // position
+                    hazard.getWidth()  / 2f,               // originX (center)
+                    hazard.getHeight() / 2f,               // originY (center)
+                    hazard.getWidth(), hazard.getHeight(),  // size
+                    1f, 1f,                                // scale
+                    spike.getRotation());                  // rotation
             }
         }
         batch.end();

@@ -79,7 +79,12 @@ public class EditorObjectRenderer {
                     batch.draw(region, e.x, e.y, e.size, e.size);
                 }
             } else if (e.type.equals("spike") && spikeRegion != null) {
-                batch.draw(spikeRegion, e.x, e.y, e.size, e.size);
+                batch.draw(spikeRegion,
+                    e.x, e.y,
+                    e.size / 2f, e.size / 2f,
+                    e.size, e.size,
+                    1f, 1f,
+                    e.rotation);
             }
         }
         batch.end();
@@ -117,7 +122,7 @@ public class EditorObjectRenderer {
      * For blocks, shows the actual texture tinted at 50% alpha if atlas is loaded.
      */
     public void drawCursorPreview(float wx, float wy, float size,
-                                  String paletteType, BlockType blockType) {
+                                  String paletteType, BlockType blockType, float rotation) {
         TextureRegion previewRegion = null;
 
         if (paletteType.equals("block") && atlasLoaded) {
@@ -139,6 +144,22 @@ public class EditorObjectRenderer {
             shapes.setColor(Color.WHITE);
             shapes.rect(wx, wy, size, size);
             shapes.end();
+            return;
+        }
+
+        if (previewRegion != null) {
+            batch.setProjectionMatrix(camera.combined);
+            batch.begin();
+            batch.setColor(1f, 1f, 1f, 0.5f);
+            batch.draw(previewRegion,
+                wx, wy,
+                size / 2f, size / 2f,   // origin = center
+                size, size,
+                1f, 1f,
+                rotation);              // ← apply rotation
+            batch.setColor(Color.WHITE);
+            batch.end();
+            // outline...
             return;
         }
 

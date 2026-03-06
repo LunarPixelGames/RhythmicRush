@@ -25,7 +25,7 @@ public class LevelData {
         public String type;
         public float  x, y, size;
         public String blockType; // null for non-blocks, textureName for blocks
-
+        public float rotation;  //0 default, 90/180/270 for spikes
         public ObjectEntry() {}
         public ObjectEntry(String type, float x, float y, float size) {
             this.type = type; this.x = x; this.y = y; this.size = size;

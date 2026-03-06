@@ -41,6 +41,8 @@ public class LevelEditorScreen implements Screen {
 
     private int blockTypeIndex = 0;
 
+    private float currentSpikeRotation = 0f;
+
     // ── Constants ─────────────────────────────────────────────────────────────
     private static final float GROUND_Y       = 50f;
     private static final float SCROLL_SPEED   = 200f; // must match GameWorld
@@ -156,6 +158,16 @@ public class LevelEditorScreen implements Screen {
         if (Gdx.input.isKeyJustPressed(Input.Keys.TAB)) {
             BlockType[] types = BlockType.values();
             blockTypeIndex = (blockTypeIndex + 1) % types.length;
+        }
+
+        // in handleKeyboard(), after TAB block type cycling:
+        if (PALETTE[paletteIndex].type.equals("spike")) {
+            if (Gdx.input.isKeyJustPressed(Input.Keys.Q)) {
+                currentSpikeRotation = (currentSpikeRotation + 90f) % 360f;
+            }
+            if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
+                currentSpikeRotation = (currentSpikeRotation - 90f + 360f) % 360f;
+            }
         }
 
         // palette cycling
@@ -290,7 +302,7 @@ public class LevelEditorScreen implements Screen {
         float[] wp = cursorWorldPos();
         BlockType currentBlockType = BlockType.values()[blockTypeIndex];
         objectRenderer.drawCursorPreview(wp[0], wp[1], OBJECT_SIZE,
-            PALETTE[paletteIndex].type, currentBlockType);
+            PALETTE[paletteIndex].type, currentBlockType, currentSpikeRotation);
     }
 
     private void drawHUD() {
@@ -323,6 +335,11 @@ public class LevelEditorScreen implements Screen {
         }
         paletteLabel += " ]  (←/→ cycle object,  TAB cycle block type)";
         font.draw(batch, paletteLabel, cameraX + 10, screenH - 100);
+
+        if (PALETTE[paletteIndex].type.equals("spike")) {
+            font.draw(batch, "Rotation: " + (int)currentSpikeRotation + "°  (Q/E)",
+                cameraX + 10, screenH - 124);
+        }
 
         batch.end();
     }
@@ -372,7 +389,8 @@ public class LevelEditorScreen implements Screen {
             blockType = BlockType.values()[blockTypeIndex].textureName;
         }
         LevelData.ObjectEntry entry = new LevelData.ObjectEntry(type, wp[0], wp[1], OBJECT_SIZE);
-        entry.blockType = blockType; // store which block variant this is
+        entry.blockType = blockType;
+        entry.rotation  = type.equals("spike") ? currentSpikeRotation : 0f;
         placed.add(entry);
     }
 

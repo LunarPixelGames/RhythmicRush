@@ -75,7 +75,7 @@ public class GameWorld {
                     blocks.add(new Block(e.x, e.y, e.size, bt));
                     break;
                 case "spike":
-                    hazards.add(new Spike(e.x, e.y));
+                    hazards.add(new Spike(e.x, e.y, e.rotation));
                     break;
                 case "cube_portal":
                     portals.add(new CubePortal(e.x, e.y));
