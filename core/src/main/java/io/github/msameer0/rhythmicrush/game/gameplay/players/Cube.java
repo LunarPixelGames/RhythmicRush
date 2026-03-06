@@ -1,8 +1,8 @@
 package io.github.msameer0.rhythmicrush.game.gameplay.players;
 
 public class Cube extends AbstractPlayer {
-    public float gravity = -1100f;
-    public float jumpVelocity = 465f;
+    public float gravity = -1800f;
+    public float jumpVelocity = 600f;
     private boolean jumpHeld = false;
     private boolean isGrounded = false;
 

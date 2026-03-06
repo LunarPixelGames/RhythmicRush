@@ -19,7 +19,7 @@ public class GameWorld {
     // ── Core state ────────────────────────────────────────────────────────────
     private AbstractPlayer player;
     private float groundY      = 50f;
-    private float scrollSpeed  = 315f;
+    private float scrollSpeed  = 300f;
     private boolean playerDead = false;
 
     // ── Object lists ──────────────────────────────────────────────────────────
