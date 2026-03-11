@@ -4,7 +4,6 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-
 import io.github.msameer0.rhythmicrush.AtlasManager;
 import io.github.msameer0.rhythmicrush.game.GameWorld;
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Block;
@@ -23,10 +22,10 @@ import java.util.Map;
 
 public class GameRenderer {
 
-    private final GameWorld world;
+    private final GameWorld          world;
     private final OrthographicCamera camera;
-    private final SpriteBatch batch;
-    private final ShapeRenderer shape;
+    private final SpriteBatch        batch;
+    private final ShapeRenderer      shape;
 
     // ── Game object regions ───────────────────────────────────────────────────
     private final Map<BlockType, TextureRegion> blockRegions;
@@ -39,30 +38,34 @@ public class GameRenderer {
     // ── Player visual rotation (persists across frames) ───────────────────────
     private float playerVisualRotation = 0f;
 
+    // How far left of center the camera is positioned relative to the player.
+    // Positive value = player appears further right on screen. Tune to taste.
+    private static final float CAMERA_X_OFFSET = 425f;
+
     // Cube spin: degrees per unit of |velocityY| per second while airborne
-    private static final float CUBE_SPIN_FACTOR = 0.7f;
+    private static final float CUBE_SPIN_FACTOR = 0.5f;
     // Ship tilt: maps velocityY → target angle, then lerps
-    private static final float SHIP_TILT_FACTOR = 0.12f;
-    private static final float SHIP_MAX_TILT = 45f;
-    private static final float SHIP_TILT_LERP = 8f;
+    private static final float SHIP_TILT_FACTOR = 0.18f;
+    private static final float SHIP_MAX_TILT    = 50f;
+    private static final float SHIP_TILT_LERP   = 8f;
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
     public GameRenderer(GameWorld world, OrthographicCamera camera,
                         SpriteBatch batch, AtlasManager atlasManager) {
-        this.world = world;
+        this.world  = world;
         this.camera = camera;
-        this.batch = batch;
-        this.shape = new ShapeRenderer();
+        this.batch  = batch;
+        this.shape  = new ShapeRenderer();
 
         blockRegions = new EnumMap<>(BlockType.class);
         for (BlockType type : BlockType.values()) {
             TextureRegion r = atlasManager.getBlocksAtlas().findRegion(type.textureName);
             if (r != null) blockRegions.put(type, r);
         }
-        spikeRegion = atlasManager.getSpikesAtlas().findRegion("spike");
-        cubeRegion = atlasManager.getGamemodesAtlas().findRegion("cube");
-        shipRegion = atlasManager.getGamemodesAtlas().findRegion("ship");
+        spikeRegion      = atlasManager.getSpikesAtlas().findRegion("spike");
+        cubeRegion       = atlasManager.getGamemodesAtlas().findRegion("cube");
+        shipRegion       = atlasManager.getGamemodesAtlas().findRegion("ship");
         cubePortalRegion = atlasManager.getPortalsAtlas().findRegion("cube_portal");
         shipPortalRegion = atlasManager.getPortalsAtlas().findRegion("ship_portal");
     }
@@ -70,14 +73,19 @@ public class GameRenderer {
     // ── Render ────────────────────────────────────────────────────────────────
 
     public void render(float delta) {
+        AbstractPlayer player = world.getPlayer();
+
+        // offset camera so player sits further right on screen
+        camera.position.x = player.x + CAMERA_X_OFFSET;
         camera.update();
         shape.setProjectionMatrix(camera.combined);
         batch.setProjectionMatrix(camera.combined);
 
         float worldWidth = camera.viewportWidth;
-        float worldLeft = camera.position.x - worldWidth / 2f;
+        float worldLeft  = camera.position.x - worldWidth / 2f;
 
-        AbstractPlayer player = world.getPlayer();
+        // tell GameWorld where the left screen edge is so it culls correctly
+        world.setCullX(worldLeft);
 
         // ── Ground ────────────────────────────────────────────────────────────
         shape.begin(ShapeRenderer.ShapeType.Filled);
@@ -113,7 +121,7 @@ public class GameRenderer {
                 Spike spike = (Spike) hazard;
                 batch.draw(spikeRegion,
                     hazard.getX(), hazard.getY(),
-                    hazard.getWidth() / 2f,
+                    hazard.getWidth()  / 2f,
                     hazard.getHeight() / 2f,
                     hazard.getWidth(), hazard.getHeight(),
                     1f, 1f,
@@ -145,12 +153,16 @@ public class GameRenderer {
 
         if (player instanceof Cube) {
             if (player.isGrounded()) {
+                // snap to nearest 90° when landing
                 float nearest90 = Math.round(playerVisualRotation / 90f) * 90f;
                 playerVisualRotation = lerp(playerVisualRotation, nearest90, delta * 15f);
-            } else if (!world.isPlayerDead()) {
-                playerVisualRotation -= ((Math.abs(vy) * CUBE_SPIN_FACTOR * delta) + 5);
+            } else {
+                if (!world.isPlayerDead()) {
+                    // spin forward (clockwise) at speed proportional to |velocityY|
+                    playerVisualRotation -= ((Math.abs(vy) * CUBE_SPIN_FACTOR * delta) + 5);
+                }
             }
-            // if dead and airborne — do nothing, rotation stays frozen
+
         } else if (player instanceof Ship) {
             float targetAngle = vy * SHIP_TILT_FACTOR;
             targetAngle = Math.max(-SHIP_MAX_TILT, Math.min(SHIP_MAX_TILT, targetAngle));
@@ -178,7 +190,7 @@ public class GameRenderer {
         batch.begin();
         batch.draw(region,
             player.x, player.y,
-            player.width / 2f,
+            player.width  / 2f,
             player.height / 2f,
             player.width, player.height,
             scaleX, scaleY,

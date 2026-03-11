@@ -22,6 +22,9 @@ public class GameWorld {
     private float scrollSpeed = 300f;
     private boolean playerDead = false;
 
+    // set each frame by the renderer so culling matches the actual left screen edge
+    private float cullX = 0f;
+
     // ── Object lists ──────────────────────────────────────────────────────────
     private ArrayList<AbstractPortal> portals = new ArrayList<>();
     private ArrayList<AbstractHazard> hazards = new ArrayList<>();
@@ -139,9 +142,9 @@ public class GameWorld {
 
         worldScrolled += scrollSpeed * delta;
 
-        portals.removeIf(p -> p.getX() + p.getWidth() < 0);
-        hazards.removeIf(h -> h.getX() + h.getWidth() < 0);
-        blocks.removeIf(b -> b.getX() + b.getWidth() < -200);
+        portals.removeIf(p -> p.getX() + p.getWidth() < cullX);
+        hazards.removeIf(h -> h.getX() + h.getWidth() < cullX);
+        blocks.removeIf(b -> b.getX() + b.getWidth() < cullX - 200);
 
         if (levelEndX > 0 && worldScrolled >= levelEndX) {
             if (postEndTimer < 0) postEndTimer = 0f;
@@ -179,6 +182,7 @@ public class GameWorld {
     public Color                     getBackgroundColor() { return backgroundColor; }
     public Color                     getGroundColor()     { return groundColor; }
     public void playerDied() { playerDead = true; }
+    public void setCullX(float x) { cullX = x; }
 
     // ── Util ──────────────────────────────────────────────────────────────────
 

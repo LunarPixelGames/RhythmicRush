@@ -81,8 +81,6 @@ public class GameScreen extends AbstractScreen {
 
     @Override
     protected void update(float delta) {
-        lastDelta = delta;
-
         if (deathPaused) {
             deathTimer += delta;
             if (deathTimer >= DEATH_PAUSE_DURATION) {
@@ -91,8 +89,10 @@ public class GameScreen extends AbstractScreen {
                 world.reset();
                 startMusic();
             }
-            return;
+            return; // lastDelta stays 0f — renderer freezes rotation
         }
+
+        lastDelta = delta; // only update when actually playing
 
         handleInput();
         if (levelData == null) handleDebugInput();
@@ -103,6 +103,7 @@ public class GameScreen extends AbstractScreen {
             stopAndDisposeMusic();
             deathPaused = true;
             deathTimer  = 0f;
+            lastDelta   = 0f; // freeze renderer delta so rotation stops immediately
         }
 
         if (world.isLevelComplete()) {
@@ -115,8 +116,7 @@ public class GameScreen extends AbstractScreen {
     @Override
     protected void draw() {
         gameViewport.apply();
-        // pass 0 delta during death pause so player rotation freezes in place
-        renderer.render(deathPaused ? 0f : lastDelta);
+        renderer.render(lastDelta);
         drawProgressBar();
     }
 
@@ -168,8 +168,9 @@ public class GameScreen extends AbstractScreen {
         game.getBatch().begin();
         font.setColor(Color.WHITE);
         glyphLayout.setText(font, text, Color.WHITE, 0, Align.center, false);
-        float x = (gameViewport.getWorldWidth()  - glyphLayout.width) / 2f;
-        float y =  gameViewport.getWorldHeight() - 12f;
+        // center relative to camera position, not world origin
+        float x = gameCamera.position.x - glyphLayout.width / 2f;
+        float y = gameCamera.position.y + gameViewport.getWorldHeight() / 2f - 12f;
         font.draw(game.getBatch(), text, x, y);
         game.getBatch().end();
     }
