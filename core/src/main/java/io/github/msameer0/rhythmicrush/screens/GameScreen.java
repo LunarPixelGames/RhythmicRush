@@ -14,10 +14,6 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 
 import io.github.msameer0.rhythmicrush.RhythmicRushGame;
 import io.github.msameer0.rhythmicrush.game.GameWorld;
-import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Block;
-import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike;
-import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.CubePortal;
-import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.ShipPortal;
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
 import io.github.msameer0.rhythmicrush.game.level.LevelData;
 import io.github.msameer0.rhythmicrush.game.renderer.GameRenderer;
@@ -39,13 +35,9 @@ public class GameScreen extends AbstractScreen {
 
     private boolean deathPaused = false;
     private float   deathTimer  = 0f;
-    private float   lastDelta   = 0f; // stored so draw() can forward it to renderer
+    private float   lastDelta   = 0f;
 
     // ── Constructors ──────────────────────────────────────────────────────────
-
-    public GameScreen(RhythmicRushGame game) {
-        this(game, null);
-    }
 
     public GameScreen(RhythmicRushGame game, LevelData levelData) {
         super(game);
@@ -89,21 +81,19 @@ public class GameScreen extends AbstractScreen {
                 world.reset();
                 startMusic();
             }
-            return; // lastDelta stays 0f — renderer freezes rotation
+            return;
         }
 
-        lastDelta = delta; // only update when actually playing
+        lastDelta = delta;
 
         handleInput();
-        if (levelData == null) handleDebugInput();
-
         world.update(delta);
 
         if (world.isPlayerDead()) {
             stopAndDisposeMusic();
             deathPaused = true;
             deathTimer  = 0f;
-            lastDelta   = 0f; // freeze renderer delta so rotation stops immediately
+            lastDelta   = 0f;
         }
 
         if (world.isLevelComplete()) {
@@ -168,7 +158,6 @@ public class GameScreen extends AbstractScreen {
         game.getBatch().begin();
         font.setColor(Color.WHITE);
         glyphLayout.setText(font, text, Color.WHITE, 0, Align.center, false);
-        // center relative to camera position, not world origin
         float x = gameCamera.position.x - glyphLayout.width / 2f;
         float y = gameCamera.position.y + gameViewport.getWorldHeight() / 2f - 12f;
         font.draw(game.getBatch(), text, x, y);
@@ -185,17 +174,5 @@ public class GameScreen extends AbstractScreen {
                 Gdx.input.isKeyPressed(Input.Keys.UP)    ||
                 Gdx.input.isTouched();
         player.setJumpHeld(jumpPressed);
-    }
-
-    private void handleDebugInput() {
-        AbstractPlayer player = world.getPlayer();
-        if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET))
-            world.addPortal(new CubePortal(player.getX() + 200, player.getY()));
-        if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT_BRACKET))
-            world.addPortal(new ShipPortal(player.getX() + 200, player.getY()));
-        if (Gdx.input.isKeyJustPressed(Input.Keys.BACKSPACE))
-            world.addHazard(new Spike(player.getX() + 200, world.getGroundY()));
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER))
-            world.addBlock(new Block(player.getX() + 200, player.getY(), player.width));
     }
 }

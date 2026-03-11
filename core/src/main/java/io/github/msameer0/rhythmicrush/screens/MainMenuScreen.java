@@ -25,9 +25,8 @@ public class MainMenuScreen extends AbstractScreen {
 
     @Override
     public void show() {
-        super.show(); // starts menu music
+        super.show();
 
-        // pull regions from shared atlas — no load, no dispose here
         title          = game.getAtlasManager().getMenuAtlas().findRegion("title");
         startButton    = game.getAtlasManager().getMenuAtlas().findRegion("start_button");
         settingsButton = game.getAtlasManager().getMenuAtlas().findRegion("settings_button");
@@ -88,7 +87,6 @@ public class MainMenuScreen extends AbstractScreen {
     private void handleInput() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE))  game.setScreen(new LevelSelectScreen(game));
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) Gdx.app.exit();
-        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_0))  game.setScreen(new GameScreen(game));
 
         if (!Gdx.input.justTouched()) return;
         Vector2 touch = new Vector2(Gdx.input.getX(), Gdx.input.getY());
