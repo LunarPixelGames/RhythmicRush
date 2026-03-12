@@ -72,7 +72,7 @@ public class GameRenderer {
 
     // ── Render ────────────────────────────────────────────────────────────────
 
-    public void render(float delta) {
+    public void render(float delta, boolean paused) {
         AbstractPlayer player = world.getPlayer();
 
         // offset camera so player sits further right on screen
@@ -142,13 +142,13 @@ public class GameRenderer {
         batch.end();
 
         // ── Player (textured, velocity-driven rotation) ───────────────────────
-        updatePlayerRotation(player, delta);
+        updatePlayerRotation(player, delta, paused);
         drawPlayer(player);
     }
 
     // ── Player rotation logic ─────────────────────────────────────────────────
 
-    private void updatePlayerRotation(AbstractPlayer player, float delta) {
+    private void updatePlayerRotation(AbstractPlayer player, float delta, boolean paused) {
         float vy = player.getVelocityY();
 
         if (player instanceof Cube) {
@@ -157,7 +157,7 @@ public class GameRenderer {
                 float nearest90 = Math.round(playerVisualRotation / 90f) * 90f;
                 playerVisualRotation = lerp(playerVisualRotation, nearest90, delta * 15f);
             } else {
-                if (!world.isPlayerDead()) {
+                if (!world.isPlayerDead() && !paused) {
                     // spin forward (clockwise) at speed proportional to |velocityY|
                     playerVisualRotation -= ((Math.abs(vy) * CUBE_SPIN_FACTOR * delta) + 5);
                 }

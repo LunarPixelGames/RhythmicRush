@@ -5,9 +5,16 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -22,33 +29,53 @@ import io.github.msameer0.rhythmicrush.game.renderer.GameRenderer;
 public class GameScreen extends AbstractScreen {
 
     private static final float DEATH_PAUSE_DURATION = 0.75f;
+    private static final float MUSIC_FADE_DURATION  = 3f;
 
+    // ── Core ──────────────────────────────────────────────────────────────────
     private GameWorld    world;
     private GameRenderer renderer;
     private BitmapFont   font;
+    private BitmapFont   pauseFont;
     private GlyphLayout  glyphLayout;
     private Music        levelMusic;
 
     private OrthographicCamera gameCamera;
     private Viewport           gameViewport;
+    private LevelData          levelData;
 
-    private LevelData levelData;
-
-    private boolean deathPaused = false;
-    private float   deathTimer  = 0f;
-    private float   lastDelta   = 0f;
-
-    private static final float MUSIC_FADE_DURATION = 3f;
-    private boolean musicFading   = false;
+    // ── State ─────────────────────────────────────────────────────────────────
+    private boolean deathPaused    = false;
+    private float   deathTimer     = 0f;
+    private float   lastDelta      = 0f;
+    private boolean musicFading    = false;
     private float   musicFadeTimer = 0f;
+    private boolean paused         = false;
 
-    // ── Progress tracking ─────────────────────────────────────────────────────
-    /** Attempts made during this play session (resets when screen is constructed). */
-    private int sessionAttempts = 0;
-    /** Level key used to look up / save progress — derived from levelData filename. */
-    private String levelKey = null;
+    // ── Progress ──────────────────────────────────────────────────────────────
+    private int    sessionAttempts = 0;
+    private String levelKey        = null;
 
-    // ── Constructors ──────────────────────────────────────────────────────────
+    // ── Pause overlay rendering ───────────────────────────────────────────────
+    private ShapeRenderer  shapes;
+    private Texture        panelTexture;
+    private int            lastPanelW = -1, lastPanelH = -1;
+
+    // pause panel size (constant, positioned in world-space each frame)
+    private static final float PANEL_W    = 520f;
+    private static final float PANEL_H    = 300f;
+    private static final float BTN_SIZE   = 72f;   // square hit area for both buttons
+    private static final float PAUSE_BTN  = 44f;   // pause circle radius * 2
+
+    private TextureRegion resumeRegion; // start_button from menu atlas
+    private TextureRegion backRegion;   // back from level select atlas
+
+    private static final Color COL_OVERLAY = new Color(0f,    0f,    0f,    0.65f);
+    private static final Color COL_PANEL   = new Color(0.11f, 0.11f, 0.17f, 1f);
+    private static final Color COL_HEADING = new Color(1f,    0.85f, 0.35f, 1f);
+    private static final Color COL_LABEL   = new Color(1f,    1f,    1f,    0.85f);
+    private static final Color COL_DIM     = new Color(1f,    1f,    1f,    0.50f);
+
+    // ── Constructor ───────────────────────────────────────────────────────────
 
     public GameScreen(RhythmicRushGame game, LevelData levelData) {
         super(game);
@@ -63,14 +90,45 @@ public class GameScreen extends AbstractScreen {
         font     = new BitmapFont();
         font.getData().setScale(1.5f);
         glyphLayout = new GlyphLayout();
+        shapes      = new ShapeRenderer();
+
+        pauseFont = loadFont(28);
+
+        resumeRegion = game.getAtlasManager().getMenuAtlas().findRegion("start_button");
+        backRegion   = game.getAtlasManager().getLevelSelectAtlas().findRegion("back");
 
         if (levelData != null) {
             world.loadLevel(levelData);
-            // derive a stable key from the level filename (e.g. "0.json")
             levelKey = levelData.fileName != null ? levelData.fileName : levelData.name + ".json";
-            recordAttempt(); // count entering the level as attempt #1
+            recordAttempt();
         }
     }
+
+    // ── World-space helpers — computed fresh each frame from camera ───────────
+
+    /** World-space center of the screen. */
+    private float camCX() { return gameCamera.position.x; }
+    private float camCY() { return gameCamera.position.y; }
+    private float camLeft()  { return gameCamera.position.x - gameViewport.getWorldWidth()  / 2f; }
+    private float camBot()   { return gameCamera.position.y - gameViewport.getWorldHeight() / 2f; }
+    private float camRight() { return gameCamera.position.x + gameViewport.getWorldWidth()  / 2f; }
+    private float camTop()   { return gameCamera.position.y + gameViewport.getWorldHeight() / 2f; }
+
+    /** Panel bottom-left in world-space. */
+    private float panelX() { return camCX() - PANEL_W / 2f; }
+    private float panelY() { return camCY() - PANEL_H / 2f; }
+
+    /** Resume button world-space rect (right of center inside panel). */
+    private float resumeX() { return camCX() + 16f; }
+    private float resumeY() { return panelY() + 20f; }
+
+    /** Back button world-space rect (left of center inside panel). */
+    private float backX()   { return camCX() - BTN_SIZE - 16f; }
+    private float backY()   { return panelY() + 20f; }
+
+    /** Pause circle center in world-space (top-right corner). */
+    private float pauseCircleCX() { return camRight() - PAUSE_BTN / 2f - 14f; }
+    private float pauseCircleCY() { return camTop()   - PAUSE_BTN / 2f - 14f; }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -85,10 +143,51 @@ public class GameScreen extends AbstractScreen {
     @Override
     public void resize(int width, int height) {
         gameViewport.update(width, height, true);
+        lastPanelW = -1; // invalidate panel texture on resize
     }
 
     @Override
+    public void hide() {
+        Gdx.input.setCursorCatched(false);
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        font.dispose();
+        pauseFont.dispose();
+        renderer.dispose();
+        shapes.dispose();
+        if (panelTexture != null) panelTexture.dispose();
+        stopAndDisposeMusic();
+        Gdx.input.setCursorCatched(false);
+    }
+
+    // ── Update ────────────────────────────────────────────────────────────────
+
+    @Override
     protected void update(float delta) {
+
+        // ── Pause input (always checked, even during death pause) ──────────────
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            if (paused) exitToLevelSelect();
+            else        setPaused(true);
+            return;
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE) && paused) {
+            setPaused(false); return;
+        }
+        if (paused) {
+            handlePauseTouched(); return;
+        }
+
+        // ── R = instant respawn ────────────────────────────────────────────────
+        if (Gdx.input.isKeyJustPressed(Input.Keys.R) && !deathPaused && !musicFading) {
+            triggerRespawn();
+            return;
+        }
+
+        // ── Death pause countdown ──────────────────────────────────────────────
         if (deathPaused) {
             deathTimer += delta;
             if (deathTimer >= DEATH_PAUSE_DURATION) {
@@ -98,18 +197,18 @@ public class GameScreen extends AbstractScreen {
                 musicFadeTimer = 0f;
                 world.reset();
                 startMusic();
-                recordAttempt(); // each respawn is a new attempt
+                recordAttempt();
             }
             return;
         }
 
         lastDelta = delta;
 
-        // advance music fade if active
+        // ── Music fade (level complete) ────────────────────────────────────────
         if (musicFading && levelMusic != null) {
             musicFadeTimer += delta;
-            float baseVolume = game.getSettingsManager().musicVolume;
-            float volume = baseVolume * (1f - Math.min(musicFadeTimer / MUSIC_FADE_DURATION, 1f));
+            float base   = game.getSettingsManager().musicVolume;
+            float volume = base * (1f - Math.min(musicFadeTimer / MUSIC_FADE_DURATION, 1f));
             levelMusic.setVolume(volume);
             if (musicFadeTimer >= MUSIC_FADE_DURATION) {
                 stopAndDisposeMusic();
@@ -117,7 +216,15 @@ public class GameScreen extends AbstractScreen {
                 world.reset();
                 game.setScreen(new MainMenuScreen(game));
             }
-            return; // don't process anything else while fading out
+            return;
+        }
+
+        // ── Check pause button touch ───────────────────────────────────────────
+        if (Gdx.input.justTouched()) {
+            Vector2 t = unprojectWorld();
+            float cx = pauseCircleCX(), cy = pauseCircleCY(), r = PAUSE_BTN / 2f + 8f;
+            float dx = t.x - cx, dy = t.y - cy;
+            if (dx*dx + dy*dy <= r*r) { setPaused(true); return; }
         }
 
         handleInput();
@@ -134,27 +241,162 @@ public class GameScreen extends AbstractScreen {
 
         if (world.isLevelComplete()) {
             recordComplete();
-            // start fade — transition to menu happens after fade finishes
             musicFading    = true;
             musicFadeTimer = 0f;
         }
     }
 
+    // ── Draw ──────────────────────────────────────────────────────────────────
+
     @Override
     protected void draw() {
         gameViewport.apply();
-        // clear with world's current bg color — respects color triggers
-        com.badlogic.gdx.graphics.Color bg = world.getBackgroundColor();
+
+        Color bg = world.getBackgroundColor();
         Gdx.gl.glClearColor(bg.r, bg.g, bg.b, 1f);
-        Gdx.gl.glClear(Gdx.gl.GL_COLOR_BUFFER_BIT);
-        renderer.render(lastDelta);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        renderer.render(lastDelta, paused);
         drawProgressBar();
         drawSessionAttempts();
+        drawPauseButton();
+
+        if (paused) drawPauseOverlay();
     }
 
-    // ── Progress tracking helpers ─────────────────────────────────────────────
+    // ── Pause button (top-right, drawn with ShapeRenderer) ────────────────────
 
-    /** Increments session and total attempt counters and saves. */
+    private void drawPauseButton() {
+        float cx = pauseCircleCX(), cy = pauseCircleCY(), r = PAUSE_BTN / 2f;
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.setProjectionMatrix(gameCamera.combined);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        // circle background
+        shapes.setColor(0.2f, 0.2f, 0.2f, 0.75f);
+        shapes.circle(cx, cy, r, 32);
+        // two pause bars (hollow-out effect)
+        float barW = r * 0.22f, barH = r * 0.75f;
+        float gap   = r * 0.18f;
+        shapes.setColor(1f, 1f, 1f, 0.9f);
+        shapes.rect(cx - gap - barW, cy - barH / 2f, barW, barH);
+        shapes.rect(cx + gap,        cy - barH / 2f, barW, barH);
+        shapes.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+    }
+
+    // ── Pause overlay ─────────────────────────────────────────────────────────
+
+    private void drawPauseOverlay() {
+        float px = panelX(), py = panelY();
+
+        // dark overlay
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.setProjectionMatrix(gameCamera.combined);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        shapes.setColor(COL_OVERLAY);
+        shapes.rect(camLeft(), camBot(), gameViewport.getWorldWidth(), gameViewport.getWorldHeight());
+        shapes.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+
+        // panel background
+        int texW = (int) PANEL_W, texH = (int) PANEL_H;
+        if (panelTexture == null || texW != lastPanelW || texH != lastPanelH) {
+            if (panelTexture != null) panelTexture.dispose();
+            panelTexture = createRoundedRect(texW, texH, 24, COL_PANEL);
+            lastPanelW = texW; lastPanelH = texH;
+        }
+
+        game.getBatch().setProjectionMatrix(gameCamera.combined);
+        game.getBatch().begin();
+        game.getBatch().draw(panelTexture, px, py);
+
+        // level name
+        String levelName = (levelData != null && levelData.name != null) ? levelData.name : "Level";
+        pauseFont.getData().setScale(1f);
+        pauseFont.setColor(COL_HEADING);
+        glyphLayout.setText(pauseFont, levelName);
+        pauseFont.draw(game.getBatch(), levelName,
+            px + PANEL_W / 2f - glyphLayout.width / 2f,
+            py + PANEL_H - 18f);
+
+        // stats
+        float sy = py + PANEL_H - 18f - glyphLayout.height - 22f;
+        if (levelKey != null) {
+            LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
+            pauseFont.getData().setScale(0.62f);
+            pauseFont.setColor(COL_LABEL);
+            String best = "Personal Best: " + p.bestPercent + "%";
+            glyphLayout.setText(pauseFont, best);
+            pauseFont.draw(game.getBatch(), best, px + PANEL_W / 2f - glyphLayout.width / 2f, sy);
+            sy -= glyphLayout.height + 12f;
+            pauseFont.setColor(COL_DIM);
+            String att = "Total: " + p.totalAttempts + "   Session: " + sessionAttempts;
+            glyphLayout.setText(pauseFont, att);
+            pauseFont.draw(game.getBatch(), att, px + PANEL_W / 2f - glyphLayout.width / 2f, sy);
+        }
+
+        // back button (square)
+        if (backRegion != null)
+            game.getBatch().draw(backRegion, backX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE * 0.9f);
+
+        // resume button (same square size as back)
+        if (resumeRegion != null)
+            game.getBatch().draw(resumeRegion,
+                resumeX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE * 0.9f);
+
+        // labels under buttons
+        pauseFont.getData().setScale(0.45f);
+        pauseFont.setColor(COL_DIM);
+        glyphLayout.setText(pauseFont, "Back");
+        pauseFont.draw(game.getBatch(), "Back",
+            backX()    + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f, backY() - 4f);
+        glyphLayout.setText(pauseFont, "Resume");
+        pauseFont.draw(game.getBatch(), "Resume",
+            resumeX()  + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f, backY() - 4f);
+
+        pauseFont.getData().setScale(1f);
+        game.getBatch().end();
+    }
+
+    // ── Pause helpers ─────────────────────────────────────────────────────────
+
+    private void setPaused(boolean p) {
+        paused = p;
+        if (levelMusic != null) { if (paused) levelMusic.pause(); else levelMusic.play(); }
+        if (game.getSettingsManager().lockCursorInGame)
+            Gdx.input.setCursorCatched(!paused);
+    }
+
+    private void handlePauseTouched() {
+        if (!Gdx.input.justTouched()) return;
+        Vector2 t = unprojectWorld();
+
+        // back button
+        if (hits(t, backX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE)) { exitToLevelSelect(); return; }
+
+        // resume button (same square size)
+        if (hits(t, resumeX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE)) { setPaused(false); return; }
+    }
+
+    private void exitToLevelSelect() {
+        stopAndDisposeMusic();
+        game.setScreen(new LevelSelectScreen(game));
+    }
+
+    private void triggerRespawn() {
+        recordDeath(); // save best% at current position
+        stopAndDisposeMusic();
+        deathPaused    = true;
+        deathTimer     = 0f;
+        musicFading    = false;
+        musicFadeTimer = 0f;
+        lastDelta      = 0f;
+    }
+
+    // ── Progress tracking ─────────────────────────────────────────────────────
+
     private void recordAttempt() {
         sessionAttempts++;
         if (levelKey == null) return;
@@ -163,18 +405,13 @@ public class GameScreen extends AbstractScreen {
         game.getProgressManager().save();
     }
 
-    /** Updates best percent on death, then saves. */
     private void recordDeath() {
         if (levelKey == null) return;
-        int currentPercent = Math.round(world.getProgress() * 100f);
+        int pct = Math.round(world.getProgress() * 100f);
         LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
-        if (currentPercent > p.bestPercent) {
-            p.bestPercent = currentPercent;
-            game.getProgressManager().save();
-        }
+        if (pct > p.bestPercent) { p.bestPercent = pct; game.getProgressManager().save(); }
     }
 
-    /** Marks 100% best on level complete, then saves. */
     private void recordComplete() {
         if (levelKey == null) return;
         LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
@@ -182,26 +419,53 @@ public class GameScreen extends AbstractScreen {
         game.getProgressManager().save();
     }
 
-    @Override
-    public void hide() {
-        Gdx.input.setCursorCatched(false);
+    // ── HUD ───────────────────────────────────────────────────────────────────
+
+    private void drawProgressBar() {
+        float progress = world.getProgress();
+        if (progress <= 0f) return;
+        String text = Math.round(progress * 100f) + "%";
+        game.getBatch().setProjectionMatrix(gameCamera.combined);
+        game.getBatch().begin();
+        font.setColor(Color.WHITE);
+        glyphLayout.setText(font, text, Color.WHITE, 0, Align.center, false);
+        float x = gameCamera.position.x - glyphLayout.width / 2f;
+        float y = gameCamera.position.y + gameViewport.getWorldHeight() / 2f - 12f;
+        font.draw(game.getBatch(), text, x, y);
+        game.getBatch().end();
     }
 
-    @Override
-    public void dispose() {
-        super.dispose();
-        font.dispose();
-        renderer.dispose();
-        stopAndDisposeMusic();
-        Gdx.input.setCursorCatched(false); // always release cursor on exit
+    private void drawSessionAttempts() {
+        float left = gameCamera.position.x - gameViewport.getWorldWidth()  / 2f + 12f;
+        float top  = gameCamera.position.y + gameViewport.getWorldHeight() / 2f - 12f;
+        game.getBatch().setProjectionMatrix(gameCamera.combined);
+        game.getBatch().begin();
+        font.setColor(new Color(1f, 1f, 1f, 0.85f));
+        font.draw(game.getBatch(), "Attempt  " + sessionAttempts, left, top);
+        if (levelKey != null) {
+            LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
+            font.setColor(new Color(1f, 1f, 1f, 0.55f));
+            font.draw(game.getBatch(), "Best  " + p.bestPercent + "%", left, top - 26f);
+        }
+        game.getBatch().end();
+    }
+
+    // ── Input ─────────────────────────────────────────────────────────────────
+
+    private void handleInput() {
+        AbstractPlayer player = world.getPlayer();
+        boolean jump =
+            Gdx.input.isKeyPressed(Input.Keys.SPACE) ||
+                Gdx.input.isKeyPressed(Input.Keys.W)     ||
+                Gdx.input.isKeyPressed(Input.Keys.UP)    ||
+                Gdx.input.isTouched();
+        player.setJumpHeld(jump);
     }
 
     // ── Music ─────────────────────────────────────────────────────────────────
 
     private void startMusic() {
-        if (levelData == null ||
-            levelData.musicFile == null ||
-            levelData.musicFile.isEmpty()) return;
+        if (levelData == null || levelData.musicFile == null || levelData.musicFile.isEmpty()) return;
         try {
             FileHandle fh = Gdx.files.internal("musics/" + levelData.musicFile);
             if (!fh.exists()) fh = Gdx.files.local("assets/musics/" + levelData.musicFile);
@@ -224,52 +488,43 @@ public class GameScreen extends AbstractScreen {
         }
     }
 
-    // ── Progress HUD ──────────────────────────────────────────────────────────
+    // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private void drawProgressBar() {
-        float progress = world.getProgress();
-        if (progress <= 0f) return;
-
-        int percent = Math.round(progress * 100f);
-        String text = percent + "%";
-
-        game.getBatch().setProjectionMatrix(gameCamera.combined);
-        game.getBatch().begin();
-        font.setColor(Color.WHITE);
-        glyphLayout.setText(font, text, Color.WHITE, 0, Align.center, false);
-        float x = gameCamera.position.x - glyphLayout.width / 2f;
-        float y = gameCamera.position.y + gameViewport.getWorldHeight() / 2f - 12f;
-        font.draw(game.getBatch(), text, x, y);
-        game.getBatch().end();
+    /** Unprojects screen touch into world-space using the game camera. */
+    private Vector2 unprojectWorld() {
+        com.badlogic.gdx.math.Vector3 v = new com.badlogic.gdx.math.Vector3(
+            Gdx.input.getX(), Gdx.input.getY(), 0);
+        gameCamera.unproject(v);
+        return new Vector2(v.x, v.y);
     }
 
-    /** Draws session attempts (top-left) and best % (below it). */
-    private void drawSessionAttempts() {
-        float left = gameCamera.position.x - gameViewport.getWorldWidth() / 2f + 12f;
-        float top  = gameCamera.position.y + gameViewport.getWorldHeight() / 2f - 12f;
-
-        game.getBatch().setProjectionMatrix(gameCamera.combined);
-        game.getBatch().begin();
-        font.setColor(new Color(1f, 1f, 1f, 0.85f));
-        font.draw(game.getBatch(), "Attempt  " + sessionAttempts, left, top);
-
-        if (levelKey != null) {
-            LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
-            font.setColor(new Color(1f, 1f, 1f, 0.55f));
-            font.draw(game.getBatch(), "Best  " + p.bestPercent + "%", left, top - 26f);
-        }
-        game.getBatch().end();
+    private static boolean hits(Vector2 t, float x, float y, float w, float h) {
+        return t.x >= x && t.x <= x + w && t.y >= y && t.y <= y + h;
     }
 
-    // ── Input ─────────────────────────────────────────────────────────────────
+    private static boolean hits(float tx, float ty, float x, float y, float w, float h) {
+        return tx >= x && tx <= x + w && ty >= y && ty <= y + h;
+    }
 
-    private void handleInput() {
-        AbstractPlayer player = world.getPlayer();
-        boolean jumpPressed =
-            Gdx.input.isKeyPressed(Input.Keys.SPACE) ||
-                Gdx.input.isKeyPressed(Input.Keys.W)     ||
-                Gdx.input.isKeyPressed(Input.Keys.UP)    ||
-                Gdx.input.isTouched();
-        player.setJumpHeld(jumpPressed);
+    private BitmapFont loadFont(int size) {
+        try {
+            FreeTypeFontGenerator gen = new FreeTypeFontGenerator(
+                Gdx.files.internal("fonts/zendots-regular.ttf"));
+            FreeTypeFontGenerator.FreeTypeFontParameter p =
+                new FreeTypeFontGenerator.FreeTypeFontParameter();
+            p.size = size; p.magFilter = Texture.TextureFilter.Linear;
+            p.minFilter = Texture.TextureFilter.Linear;
+            BitmapFont f = gen.generateFont(p); gen.dispose(); return f;
+        } catch (Exception e) { return new BitmapFont(); }
+    }
+
+    private Texture createRoundedRect(int w, int h, int r, Color color) {
+        Pixmap pm = new Pixmap(w, h, Pixmap.Format.RGBA8888);
+        pm.setColor(0, 0, 0, 0); pm.fill();
+        pm.setColor(color);
+        pm.fillRectangle(r, 0, w - 2*r, h); pm.fillRectangle(0, r, w, h - 2*r);
+        pm.fillCircle(r,   r,   r); pm.fillCircle(w-r, r,   r);
+        pm.fillCircle(r,   h-r, r); pm.fillCircle(w-r, h-r, r);
+        Texture t = new Texture(pm); pm.dispose(); return t;
     }
 }

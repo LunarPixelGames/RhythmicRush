@@ -243,6 +243,7 @@ public class LevelSelectScreen extends AbstractScreen {
         if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT))   navigate(-1);
         if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT))  navigate(1);
         if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER))  playSelected();
+        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE))  playSelected();
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) game.setScreen(new MainMenuScreen(game));
     }
 
