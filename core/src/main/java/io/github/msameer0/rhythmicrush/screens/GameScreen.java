@@ -78,6 +78,8 @@ public class GameScreen extends AbstractScreen {
     public void show() {
         game.getSoundManager().stopMenuMusic();
         startMusic();
+        if (game.getSettingsManager().lockCursorInGame)
+            Gdx.input.setCursorCatched(true);
     }
 
     @Override
@@ -106,7 +108,8 @@ public class GameScreen extends AbstractScreen {
         // advance music fade if active
         if (musicFading && levelMusic != null) {
             musicFadeTimer += delta;
-            float volume = 1f - Math.min(musicFadeTimer / MUSIC_FADE_DURATION, 1f);
+            float baseVolume = game.getSettingsManager().musicVolume;
+            float volume = baseVolume * (1f - Math.min(musicFadeTimer / MUSIC_FADE_DURATION, 1f));
             levelMusic.setVolume(volume);
             if (musicFadeTimer >= MUSIC_FADE_DURATION) {
                 stopAndDisposeMusic();
@@ -180,11 +183,17 @@ public class GameScreen extends AbstractScreen {
     }
 
     @Override
+    public void hide() {
+        Gdx.input.setCursorCatched(false);
+    }
+
+    @Override
     public void dispose() {
         super.dispose();
         font.dispose();
         renderer.dispose();
         stopAndDisposeMusic();
+        Gdx.input.setCursorCatched(false); // always release cursor on exit
     }
 
     // ── Music ─────────────────────────────────────────────────────────────────
@@ -198,7 +207,7 @@ public class GameScreen extends AbstractScreen {
             if (!fh.exists()) fh = Gdx.files.local("assets/musics/" + levelData.musicFile);
             if (fh.exists()) {
                 levelMusic = Gdx.audio.newMusic(fh);
-                levelMusic.setVolume(1f);
+                levelMusic.setVolume(game.getSettingsManager().musicVolume);
                 levelMusic.setLooping(false);
                 levelMusic.play();
             }

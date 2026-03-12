@@ -23,7 +23,9 @@ public class RhythmicRushGame extends Game {
         settingsManager = new SettingsManager();
         soundManager    = new SoundManager();
         progressManager = new ProgressManager();
-        soundManager.playMenuMusic();
+        // apply saved volume before playing anything
+        soundManager.setMusicVolume(settingsManager.musicVolume);
+        if (settingsManager.menuMusicEnabled) soundManager.playMenuMusic();
         setScreen(new MainMenuScreen(this));
     }
 

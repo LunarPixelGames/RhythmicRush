@@ -39,7 +39,7 @@ public class MainMenuScreen extends AbstractScreen {
     private float backX,  backY,  backW,  backH;
     private float rowStartY;
 
-    private static final int   ROW_COUNT = 4;
+    private static final int   ROW_COUNT = 5;
     private static final float ROW_STEP  = 64f;
 
     // Slider drag
@@ -85,6 +85,12 @@ public class MainMenuScreen extends AbstractScreen {
         shapes = new ShapeRenderer();
         font   = loadFont(32);
         layout = new GlyphLayout();
+
+        // respect setting when returning to menu (e.g. after a level)
+        if (game.getSettingsManager().menuMusicEnabled)
+            game.getSoundManager().playMenuMusic();
+        else
+            game.getSoundManager().stopMenuMusic();
 
         updateScaledSizes();
     }
@@ -204,6 +210,10 @@ public class MainMenuScreen extends AbstractScreen {
         drawSliderRow (1, "Music Volume",          s.musicVolume);
         drawToggleRow(2, "Show Hitboxes",          s.showHitboxes);
         drawToggleRow(3, "Show Hitboxes on Death", s.showHitboxesOnDeath);
+        // lock cursor — desktop only
+        if (Gdx.app.getType() == com.badlogic.gdx.Application.ApplicationType.Desktop) {
+            drawToggleRow(4, "Lock Cursor in Game", s.lockCursorInGame);
+        }
     }
 
     private void drawToggleRow(int row, String label, boolean value) {
@@ -315,17 +325,26 @@ public class MainMenuScreen extends AbstractScreen {
             Vector2 t = unproject();
             if (hits(t, backX, backY, backW, backH)) { closeSettings(); return; }
 
-            if (hitRow(t, 0)) { s.menuMusicEnabled    = !s.menuMusicEnabled;    s.save(); }
+            if (hitRow(t, 0)) {
+                s.menuMusicEnabled = !s.menuMusicEnabled;
+                if (s.menuMusicEnabled) game.getSoundManager().playMenuMusic();
+                else                    game.getSoundManager().stopMenuMusic();
+                s.save();
+            }
             if (hitRow(t, 2)) { s.showHitboxes        = !s.showHitboxes;        s.save(); }
             if (hitRow(t, 3)) { s.showHitboxesOnDeath = !s.showHitboxesOnDeath; s.save(); }
+            if (Gdx.app.getType() == com.badlogic.gdx.Application.ApplicationType.Desktop) {
+                if (hitRow(t, 4)) { s.lockCursorInGame = !s.lockCursorInGame; s.save(); }
+            }
             if (sliderHit(t)) draggingSlider = true;
         }
 
         if (Gdx.input.isTouched() && draggingSlider) {
-            float tx   = unproject().x;
+            float tx     = unproject().x;
             float trackX = sliderTrackX();
             float trackW = panelW * 0.36f;
             s.musicVolume = Math.max(0f, Math.min(1f, (tx - trackX) / trackW));
+            game.getSoundManager().setMusicVolume(s.musicVolume);
             s.save();
         }
 
