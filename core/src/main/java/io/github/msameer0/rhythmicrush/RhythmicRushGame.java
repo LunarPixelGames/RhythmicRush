@@ -14,11 +14,13 @@ public class RhythmicRushGame extends Game {
     private AtlasManager     atlasManager;
     private WindowController windowController;
     private ProgressManager  progressManager;
+    private SettingsManager  settingsManager;
 
     @Override
     public void create() {
         batch           = new SpriteBatch();
         atlasManager    = new AtlasManager();
+        settingsManager = new SettingsManager();
         soundManager    = new SoundManager();
         progressManager = new ProgressManager();
         soundManager.playMenuMusic();
@@ -30,6 +32,7 @@ public class RhythmicRushGame extends Game {
     public AtlasManager     getAtlasManager()     { return atlasManager; }
     public WindowController getWindowController() { return windowController; }
     public ProgressManager  getProgressManager()  { return progressManager; }
+    public SettingsManager  getSettingsManager()  { return settingsManager; }
 
     /**
      * Called by Lwjgl3Launcher after constructing the game but the LibGDX
