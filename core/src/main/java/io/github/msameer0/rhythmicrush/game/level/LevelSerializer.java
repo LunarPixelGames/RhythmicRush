@@ -31,7 +31,9 @@ public class LevelSerializer {
 
     /** Deserialises a JSON file back into a LevelData. */
     public static LevelData load(FileHandle file) {
-        return json.fromJson(LevelData.class, file);
+        LevelData data = json.fromJson(LevelData.class, file);
+        if (data != null) data.fileName = file.name(); // e.g. "0.json"
+        return data;
     }
 
     /** Deserialises from a raw JSON string (useful for testing). */

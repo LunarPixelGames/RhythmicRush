@@ -11,6 +11,7 @@ public class LevelData {
 
     // ── Metadata ──────────────────────────────────────────────────────────────
     public String name        = "Unnamed Level";
+    public String fileName    = null;          // set by LevelSerializer on load, e.g. "0.json"
     public String musicFile   = "";
     public String bgColor     = "1a1a2e";   // hex, no #
     public String groundColor = "16213e";   // hex, no #

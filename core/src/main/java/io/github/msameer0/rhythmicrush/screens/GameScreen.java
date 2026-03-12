@@ -16,6 +16,7 @@ import io.github.msameer0.rhythmicrush.RhythmicRushGame;
 import io.github.msameer0.rhythmicrush.game.GameWorld;
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
 import io.github.msameer0.rhythmicrush.game.level.LevelData;
+import io.github.msameer0.rhythmicrush.game.level.LevelProgress;
 import io.github.msameer0.rhythmicrush.game.renderer.GameRenderer;
 
 public class GameScreen extends AbstractScreen {
@@ -41,6 +42,12 @@ public class GameScreen extends AbstractScreen {
     private boolean musicFading   = false;
     private float   musicFadeTimer = 0f;
 
+    // ── Progress tracking ─────────────────────────────────────────────────────
+    /** Attempts made during this play session (resets when screen is constructed). */
+    private int sessionAttempts = 0;
+    /** Level key used to look up / save progress — derived from levelData filename. */
+    private String levelKey = null;
+
     // ── Constructors ──────────────────────────────────────────────────────────
 
     public GameScreen(RhythmicRushGame game, LevelData levelData) {
@@ -59,6 +66,9 @@ public class GameScreen extends AbstractScreen {
 
         if (levelData != null) {
             world.loadLevel(levelData);
+            // derive a stable key from the level filename (e.g. "0.json")
+            levelKey = levelData.fileName != null ? levelData.fileName : levelData.name + ".json";
+            recordAttempt(); // count entering the level as attempt #1
         }
     }
 
@@ -86,6 +96,7 @@ public class GameScreen extends AbstractScreen {
                 musicFadeTimer = 0f;
                 world.reset();
                 startMusic();
+                recordAttempt(); // each respawn is a new attempt
             }
             return;
         }
@@ -110,6 +121,7 @@ public class GameScreen extends AbstractScreen {
         world.update(delta);
 
         if (world.isPlayerDead()) {
+            recordDeath();
             stopAndDisposeMusic();
             musicFading = false;
             deathPaused = true;
@@ -118,6 +130,7 @@ public class GameScreen extends AbstractScreen {
         }
 
         if (world.isLevelComplete()) {
+            recordComplete();
             // start fade — transition to menu happens after fade finishes
             musicFading    = true;
             musicFadeTimer = 0f;
@@ -133,6 +146,37 @@ public class GameScreen extends AbstractScreen {
         Gdx.gl.glClear(Gdx.gl.GL_COLOR_BUFFER_BIT);
         renderer.render(lastDelta);
         drawProgressBar();
+        drawSessionAttempts();
+    }
+
+    // ── Progress tracking helpers ─────────────────────────────────────────────
+
+    /** Increments session and total attempt counters and saves. */
+    private void recordAttempt() {
+        sessionAttempts++;
+        if (levelKey == null) return;
+        LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
+        p.totalAttempts++;
+        game.getProgressManager().save();
+    }
+
+    /** Updates best percent on death, then saves. */
+    private void recordDeath() {
+        if (levelKey == null) return;
+        int currentPercent = Math.round(world.getProgress() * 100f);
+        LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
+        if (currentPercent > p.bestPercent) {
+            p.bestPercent = currentPercent;
+            game.getProgressManager().save();
+        }
+    }
+
+    /** Marks 100% best on level complete, then saves. */
+    private void recordComplete() {
+        if (levelKey == null) return;
+        LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
+        p.bestPercent = 100;
+        game.getProgressManager().save();
     }
 
     @Override
@@ -187,6 +231,24 @@ public class GameScreen extends AbstractScreen {
         float x = gameCamera.position.x - glyphLayout.width / 2f;
         float y = gameCamera.position.y + gameViewport.getWorldHeight() / 2f - 12f;
         font.draw(game.getBatch(), text, x, y);
+        game.getBatch().end();
+    }
+
+    /** Draws session attempts (top-left) and best % (below it). */
+    private void drawSessionAttempts() {
+        float left = gameCamera.position.x - gameViewport.getWorldWidth() / 2f + 12f;
+        float top  = gameCamera.position.y + gameViewport.getWorldHeight() / 2f - 12f;
+
+        game.getBatch().setProjectionMatrix(gameCamera.combined);
+        game.getBatch().begin();
+        font.setColor(new Color(1f, 1f, 1f, 0.85f));
+        font.draw(game.getBatch(), "Attempt  " + sessionAttempts, left, top);
+
+        if (levelKey != null) {
+            LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
+            font.setColor(new Color(1f, 1f, 1f, 0.55f));
+            font.draw(game.getBatch(), "Best  " + p.bestPercent + "%", left, top - 26f);
+        }
         game.getBatch().end();
     }
 

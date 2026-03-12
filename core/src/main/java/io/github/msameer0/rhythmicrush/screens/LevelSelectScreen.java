@@ -17,6 +17,7 @@ import java.util.ArrayList;
 
 import io.github.msameer0.rhythmicrush.RhythmicRushGame;
 import io.github.msameer0.rhythmicrush.game.level.LevelData;
+import io.github.msameer0.rhythmicrush.game.level.LevelProgress;
 import io.github.msameer0.rhythmicrush.game.level.LevelSerializer;
 
 public class LevelSelectScreen extends AbstractScreen {
@@ -180,28 +181,51 @@ public class LevelSelectScreen extends AbstractScreen {
         float totalWidth = iconSize + spacing + nameLayout.width;
         float startX     = panelX + (panelW - totalWidth) / 2f;
         float iconX      = startX;
-        float iconY      = panelY + panelH / 2f - iconSize / 2f;
+        float iconY      = panelY + panelH / 2f - iconSize / 2f + 10f;
         float textX      = iconX + iconSize + spacing;
-        float textY      = panelY + panelH / 2f + nameLayout.height / 2f;
+        float textY      = panelY + panelH / 2f + nameLayout.height / 2f + 10f;
 
         game.getBatch().draw(diffRegion, iconX, iconY, iconSize, iconSize);
         font.draw(game.getBatch(), current.name, textX, textY);
 
-        font.getData().setScale(0.55f);
+        // difficulty label — smaller, sits just below the level name
+        font.getData().setScale(0.38f);
         String diffLabel = current.difficulty != null
             ? current.difficulty.substring(0,1).toUpperCase() + current.difficulty.substring(1)
             : "Normal";
         GlyphLayout diffLayout = new GlyphLayout(font, diffLabel);
+        font.setColor(new Color(1f, 1f, 1f, 0.55f));
         font.draw(game.getBatch(), diffLabel,
-            panelX + panelW / 2f - diffLayout.width / 2f, panelY + panelH * 0.3f);
+            textX, textY - nameLayout.height - 4f);
+        font.setColor(Color.WHITE);
 
-        font.getData().setScale(0.5f);
+        // ── Stats below panel ─────────────────────────────────────────────────
+        String levelKey = levels.get(selectedLevel).index + ".json";
+        LevelProgress progress = game.getProgressManager().getOrCreate(levelKey);
+
+        font.getData().setScale(0.42f);
+        String bestText     = "Best: " + progress.bestPercent + "%";
+        String attemptsText = "Total Attempts: " + progress.totalAttempts;
+        GlyphLayout bestLayout     = new GlyphLayout(font, bestText);
+        GlyphLayout attemptsLayout = new GlyphLayout(font, attemptsText);
+        float statsX = panelX + panelW / 2f;
+        font.setColor(new Color(1f, 1f, 1f, 0.8f));
+        font.draw(game.getBatch(), bestText,
+            statsX - bestLayout.width / 2f, panelY - 18f);
+        font.setColor(new Color(1f, 1f, 1f, 0.55f));
+        font.draw(game.getBatch(), attemptsText,
+            statsX - attemptsLayout.width / 2f, panelY - 44f);
+
+        // ── Level counter — small, very bottom center ─────────────────────────
+        font.getData().setScale(0.35f);
+        font.setColor(new Color(1f, 1f, 1f, 0.4f));
         String counter = (selectedLevel + 1) + " / " + levels.size();
         GlyphLayout counterLayout = new GlyphLayout(font, counter);
         font.draw(game.getBatch(), counter,
-            viewport.getWorldWidth() / 2f - counterLayout.width / 2f, panelY - 25);
+            viewport.getWorldWidth() / 2f - counterLayout.width / 2f, 22f);
 
         font.getData().setScale(1f);
+        font.setColor(Color.WHITE);
         game.getBatch().end();
     }
 

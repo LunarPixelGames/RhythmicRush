@@ -4,6 +4,7 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 import io.github.msameer0.rhythmicrush.audio.SoundManager;
+import io.github.msameer0.rhythmicrush.game.level.ProgressManager;
 import io.github.msameer0.rhythmicrush.screens.MainMenuScreen;
 
 public class RhythmicRushGame extends Game {
@@ -12,12 +13,14 @@ public class RhythmicRushGame extends Game {
     private SoundManager     soundManager;
     private AtlasManager     atlasManager;
     private WindowController windowController;
+    private ProgressManager  progressManager;
 
     @Override
     public void create() {
-        batch        = new SpriteBatch();
-        atlasManager = new AtlasManager();
-        soundManager = new SoundManager();
+        batch           = new SpriteBatch();
+        atlasManager    = new AtlasManager();
+        soundManager    = new SoundManager();
+        progressManager = new ProgressManager();
         soundManager.playMenuMusic();
         setScreen(new MainMenuScreen(this));
     }
@@ -26,6 +29,7 @@ public class RhythmicRushGame extends Game {
     public SoundManager     getSoundManager()     { return soundManager; }
     public AtlasManager     getAtlasManager()     { return atlasManager; }
     public WindowController getWindowController() { return windowController; }
+    public ProgressManager  getProgressManager()  { return progressManager; }
 
     /**
      * Called by Lwjgl3Launcher after constructing the game but the LibGDX
