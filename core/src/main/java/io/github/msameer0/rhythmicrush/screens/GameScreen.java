@@ -106,6 +106,10 @@ public class GameScreen extends AbstractScreen {
     @Override
     protected void draw() {
         gameViewport.apply();
+        // clear with world's current bg color — respects color triggers
+        com.badlogic.gdx.graphics.Color bg = world.getBackgroundColor();
+        Gdx.gl.glClearColor(bg.r, bg.g, bg.b, 1f);
+        Gdx.gl.glClear(Gdx.gl.GL_COLOR_BUFFER_BIT);
         renderer.render(lastDelta);
         drawProgressBar();
     }

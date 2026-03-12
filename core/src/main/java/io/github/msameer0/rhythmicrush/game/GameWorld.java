@@ -18,9 +18,9 @@ public class GameWorld {
 
     // ── Core state ────────────────────────────────────────────────────────────
     private AbstractPlayer player;
-    private float groundY     = 50f;
-    private float scrollSpeed = 300f;
-    private boolean playerDead = false;
+    private float   groundY     = 50f;
+    private float   scrollSpeed = 300f;
+    private boolean playerDead  = false;
 
     // set each frame by the renderer so culling matches the actual left screen edge
     private float cullX = 0f;
@@ -30,12 +30,48 @@ public class GameWorld {
     private ArrayList<AbstractHazard> hazards = new ArrayList<>();
     private ArrayList<Block>          blocks  = new ArrayList<>();
 
-    // ── Level / progress ──────────────────────────────────────────────────────
-    private LevelData currentLevelData = null; // stored for reset()
+    // ── Color triggers ────────────────────────────────────────────────────────
 
-    private float levelEndX       = 0f;
-    private float worldScrolled   = 0f;
-    private float postEndTimer    = -1f;
+    /** Lightweight descriptor loaded from LevelData — never modified at runtime. */
+    private static class ColorTrigger {
+        final float  worldX;       // absolute world-space X (not scrolled)
+        final Color  targetBg;     // null = don't change bg
+        final Color  targetGround; // null = don't change ground
+        final float  fadeDuration;
+        boolean fired = false;
+
+        ColorTrigger(float worldX, Color targetBg, Color targetGround, float fadeDuration) {
+            this.worldX       = worldX;
+            this.targetBg     = targetBg;
+            this.targetGround = targetGround;
+            this.fadeDuration = fadeDuration;
+        }
+    }
+
+    /** Active fade in progress. One per color channel (bg / ground). */
+    private static class ColorFade {
+        Color from;
+        Color to;
+        float duration;
+        float elapsed = 0f;
+
+        ColorFade(Color from, Color to, float duration) {
+            this.from     = new Color(from);
+            this.to       = new Color(to);
+            this.duration = duration;
+        }
+    }
+
+    private ArrayList<ColorTrigger> colorTriggers = new ArrayList<>();
+    private ColorFade bgFade     = null;
+    private ColorFade groundFade = null;
+
+    // ── Level / progress ──────────────────────────────────────────────────────
+    private LevelData currentLevelData = null;
+
+    private float   levelEndX     = 0f;
+    private float   worldScrolled = 0f;
+    private float   postEndTimer  = -1f;
     private static final float POST_END_DELAY = 2f;
     private boolean levelComplete = false;
 
@@ -53,15 +89,23 @@ public class GameWorld {
     // ── Level loading ─────────────────────────────────────────────────────────
 
     public void loadLevel(LevelData data) {
-        currentLevelData = data; // store for reset
+        currentLevelData = data;
 
         portals.clear();
         hazards.clear();
         blocks.clear();
+        colorTriggers.clear();
+        bgFade        = null;
+        groundFade    = null;
         playerDead    = false;
         levelComplete = false;
         worldScrolled = 0f;
         postEndTimer  = -1f;
+
+        if (data.bgColor != null && !data.bgColor.isEmpty())
+            backgroundColor = hexToColor(data.bgColor);
+        if (data.groundColor != null && !data.groundColor.isEmpty())
+            groundColor = hexToColor(data.groundColor);
 
         for (LevelData.ObjectEntry e : data.objects) {
             switch (e.type) {
@@ -83,6 +127,13 @@ public class GameWorld {
                 case "ship_portal":
                     portals.add(new ShipPortal(e.x, e.y));
                     break;
+                case "color_trigger":
+                    Color targetBg     = (e.triggerBgColor     != null && !e.triggerBgColor.isEmpty())
+                        ? hexToColor(e.triggerBgColor) : null;
+                    Color targetGround = (e.triggerGroundColor != null && !e.triggerGroundColor.isEmpty())
+                        ? hexToColor(e.triggerGroundColor) : null;
+                    colorTriggers.add(new ColorTrigger(e.x, targetBg, targetGround, e.fadeDuration));
+                    break;
                 default:
                     break;
             }
@@ -90,25 +141,22 @@ public class GameWorld {
 
         levelEndX = data.getLevelEndX();
 
-        if (data.bgColor != null && !data.bgColor.isEmpty())
-            backgroundColor = hexToColor(data.bgColor);
-        if (data.groundColor != null && !data.groundColor.isEmpty())
-            groundColor = hexToColor(data.groundColor);
-
         player = new Cube(100, groundY);
         player.setWorld(this);
     }
 
-    // ── Reset — respawn at start of current level ─────────────────────────────
+    // ── Reset ─────────────────────────────────────────────────────────────────
 
     public void reset() {
         if (currentLevelData != null) {
-            loadLevel(currentLevelData); // full reload, reuses stored data
+            loadLevel(currentLevelData);
         } else {
-            // freeplay / debug — just clear and respawn player
             portals.clear();
             hazards.clear();
             blocks.clear();
+            colorTriggers.clear();
+            bgFade        = null;
+            groundFade    = null;
             playerDead    = false;
             levelComplete = false;
             worldScrolled = 0f;
@@ -130,10 +178,8 @@ public class GameWorld {
             player = portal.tryTouch(player);
             player.setWorld(this);
         }
-
         for (AbstractHazard hazard : hazards) hazard.tryTouch(player);
         for (Block block : blocks)           block.tryTouch(player);
-
         player.tryJump();
 
         for (AbstractPortal portal : portals) portal.updatePosition(scrollSpeed, delta);
@@ -141,6 +187,40 @@ public class GameWorld {
         for (Block block : blocks)             block.updatePosition(scrollSpeed, delta);
 
         worldScrolled += scrollSpeed * delta;
+
+        // ── Color trigger check — fire when player's world x passes trigger x ──
+        float playerWorldX = 100f + worldScrolled; // player is always at screen x=100, world scrolls
+        for (ColorTrigger ct : colorTriggers) {
+            if (!ct.fired && playerWorldX >= ct.worldX) {
+                ct.fired = true;
+                if (ct.targetBg != null)
+                    bgFade = new ColorFade(backgroundColor, ct.targetBg, ct.fadeDuration);
+                if (ct.targetGround != null)
+                    groundFade = new ColorFade(groundColor, ct.targetGround, ct.fadeDuration);
+            }
+        }
+
+        // ── Advance active color fades ─────────────────────────────────────────
+        if (bgFade != null) {
+            bgFade.elapsed += delta;
+            float t = Math.min(bgFade.elapsed / bgFade.duration, 1f);
+            backgroundColor.set(
+                lerp(bgFade.from.r, bgFade.to.r, t),
+                lerp(bgFade.from.g, bgFade.to.g, t),
+                lerp(bgFade.from.b, bgFade.to.b, t),
+                1f);
+            if (t >= 1f) bgFade = null;
+        }
+        if (groundFade != null) {
+            groundFade.elapsed += delta;
+            float t = Math.min(groundFade.elapsed / groundFade.duration, 1f);
+            groundColor.set(
+                lerp(groundFade.from.r, groundFade.to.r, t),
+                lerp(groundFade.from.g, groundFade.to.g, t),
+                lerp(groundFade.from.b, groundFade.to.b, t),
+                1f);
+            if (t >= 1f) groundFade = null;
+        }
 
         portals.removeIf(p -> p.getX() + p.getWidth() < cullX);
         hazards.removeIf(h -> h.getX() + h.getWidth() < cullX);
@@ -151,9 +231,7 @@ public class GameWorld {
         }
         if (postEndTimer >= 0) {
             postEndTimer += delta;
-            if (postEndTimer >= POST_END_DELAY) {
-                levelComplete = true;
-            }
+            if (postEndTimer >= POST_END_DELAY) levelComplete = true;
         }
     }
 
@@ -168,7 +246,7 @@ public class GameWorld {
 
     public void addPortal(AbstractPortal portal) { portals.add(portal); }
     public void addHazard(AbstractHazard hazard) { hazards.add(hazard); }
-    public void addBlock(Block block)            { blocks.add(block);   }
+    public void addBlock(Block block)            { blocks.add(block); }
 
     // ── Getters ───────────────────────────────────────────────────────────────
 
@@ -181,12 +259,15 @@ public class GameWorld {
     public ArrayList<Block>          getBlocks()          { return blocks; }
     public Color                     getBackgroundColor() { return backgroundColor; }
     public Color                     getGroundColor()     { return groundColor; }
-    public void playerDied() { playerDead = true; }
-    public void setCullX(float x) { cullX = x; }
+    public void playerDied()          { playerDead = true; }
+    public void setCullX(float x)     { cullX = x; }
 
     // ── Util ──────────────────────────────────────────────────────────────────
 
-    private static Color hexToColor(String hex) {
+    private static float lerp(float a, float b, float t) { return a + (b - a) * t; }
+
+    public static Color hexToColor(String hex) {
+        if (hex == null || hex.isEmpty()) return new Color(0, 0, 0, 1);
         if (hex.startsWith("#")) hex = hex.substring(1);
         long val = Long.parseLong(hex, 16);
         float r = ((val >> 16) & 0xFF) / 255f;

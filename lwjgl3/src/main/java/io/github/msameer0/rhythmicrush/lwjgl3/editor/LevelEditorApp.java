@@ -8,6 +8,7 @@ import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Window;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3WindowConfiguration;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 
 import io.github.msameer0.rhythmicrush.AtlasManager;
@@ -139,7 +140,8 @@ public class LevelEditorApp extends ApplicationAdapter {
         @Override
         public void render() {
             // clear each frame — fixes the trailing ghost frames
-            Gdx.gl.glClearColor(0.1f, 0.1f, 0.18f, 1f);
+            Color bg = world.getBackgroundColor();
+            Gdx.gl.glClearColor(bg.r, bg.g, bg.b, bg.a);
             Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
             float delta = Math.min(Gdx.graphics.getDeltaTime(), 0.05f);
