@@ -37,6 +37,10 @@ public class GameScreen extends AbstractScreen {
     private float   deathTimer  = 0f;
     private float   lastDelta   = 0f;
 
+    private static final float MUSIC_FADE_DURATION = 3f;
+    private boolean musicFading   = false;
+    private float   musicFadeTimer = 0f;
+
     // ── Constructors ──────────────────────────────────────────────────────────
 
     public GameScreen(RhythmicRushGame game, LevelData levelData) {
@@ -76,8 +80,10 @@ public class GameScreen extends AbstractScreen {
         if (deathPaused) {
             deathTimer += delta;
             if (deathTimer >= DEATH_PAUSE_DURATION) {
-                deathPaused = false;
-                deathTimer  = 0f;
+                deathPaused    = false;
+                deathTimer     = 0f;
+                musicFading    = false;
+                musicFadeTimer = 0f;
                 world.reset();
                 startMusic();
             }
@@ -86,20 +92,35 @@ public class GameScreen extends AbstractScreen {
 
         lastDelta = delta;
 
+        // advance music fade if active
+        if (musicFading && levelMusic != null) {
+            musicFadeTimer += delta;
+            float volume = 1f - Math.min(musicFadeTimer / MUSIC_FADE_DURATION, 1f);
+            levelMusic.setVolume(volume);
+            if (musicFadeTimer >= MUSIC_FADE_DURATION) {
+                stopAndDisposeMusic();
+                musicFading = false;
+                world.reset();
+                game.setScreen(new MainMenuScreen(game));
+            }
+            return; // don't process anything else while fading out
+        }
+
         handleInput();
         world.update(delta);
 
         if (world.isPlayerDead()) {
             stopAndDisposeMusic();
+            musicFading = false;
             deathPaused = true;
             deathTimer  = 0f;
             lastDelta   = 0f;
         }
 
         if (world.isLevelComplete()) {
-            stopAndDisposeMusic();
-            world.reset();
-            game.setScreen(new MainMenuScreen(game));
+            // start fade — transition to menu happens after fade finishes
+            musicFading    = true;
+            musicFadeTimer = 0f;
         }
     }
 
@@ -133,6 +154,7 @@ public class GameScreen extends AbstractScreen {
             if (!fh.exists()) fh = Gdx.files.local("assets/musics/" + levelData.musicFile);
             if (fh.exists()) {
                 levelMusic = Gdx.audio.newMusic(fh);
+                levelMusic.setVolume(1f);
                 levelMusic.setLooping(false);
                 levelMusic.play();
             }
