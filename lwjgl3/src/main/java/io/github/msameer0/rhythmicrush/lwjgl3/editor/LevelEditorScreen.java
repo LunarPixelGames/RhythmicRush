@@ -49,7 +49,7 @@ public class LevelEditorScreen implements Screen {
 
     // ── Constants ─────────────────────────────────────────────────────────────
     private static final float GROUND_Y           = 50f;
-    private static final float SCROLL_SPEED       = 300f;
+    private static final float SCROLL_SPEED       = 320f;
     private static final float GRID_SIZE          = 50f;
     private static final float OBJECT_SIZE        = 50f;
     private static final Color SPAWN_LINE_COLOR   = new Color(1f,  0.2f,  0.2f,  1f);

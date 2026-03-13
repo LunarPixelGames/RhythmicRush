@@ -19,7 +19,7 @@ public class GameWorld {
     // ── Core state ────────────────────────────────────────────────────────────
     private AbstractPlayer player;
     private float   groundY     = 50f;
-    private float   scrollSpeed = 300f;
+    private float   scrollSpeed = 320f;
     private boolean playerDead  = false;
 
     // set each frame by the renderer so culling matches the actual left screen edge
