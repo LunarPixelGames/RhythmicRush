@@ -1,10 +1,10 @@
 {
-  "name": "Unnamed Level",
+  "name": "Bounce",
   "fileName": null,
   "musicFile": "654553_-Everybody-Bounce-.mp3",
   "bgColor": "1a1a2e",
   "groundColor": "16213e",
-  "difficulty": "normal",
+  "difficulty": "hard",
   "objects": [
     {
       "type": "block",
