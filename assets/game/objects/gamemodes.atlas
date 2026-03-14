@@ -1,0 +1,20 @@
+
+gamemodes.png
+size: 512, 256
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+cube
+  rotate: false
+  xy: 1, 1
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: -1
+ship
+  rotate: false
+  xy: 131, 1
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: -1

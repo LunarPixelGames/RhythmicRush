@@ -3,25 +3,54 @@ package io.github.msameer0.rhythmicrush;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
+import io.github.msameer0.rhythmicrush.audio.SoundManager;
+import io.github.msameer0.rhythmicrush.game.level.ProgressManager;
 import io.github.msameer0.rhythmicrush.screens.MainMenuScreen;
 
-/** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class RhythmicRushGame extends Game {
-    private SpriteBatch batch;
+
+    private SpriteBatch      batch;
+    private SoundManager     soundManager;
+    private AtlasManager     atlasManager;
+    private WindowController windowController;
+    private ProgressManager  progressManager;
+    private SettingsManager  settingsManager;
 
     @Override
     public void create() {
-        batch = new SpriteBatch();
+        batch           = new SpriteBatch();
+        atlasManager    = new AtlasManager();
+        settingsManager = new SettingsManager();
+        soundManager    = new SoundManager();
+        progressManager = new ProgressManager();
+        // apply saved volume before playing anything
+        soundManager.setMusicVolume(settingsManager.musicVolume);
+        if (settingsManager.menuMusicEnabled) soundManager.playMenuMusic();
         setScreen(new MainMenuScreen(this));
     }
 
-    public SpriteBatch getBatch() {
-        return batch;
+    public SpriteBatch      getBatch()            { return batch; }
+    public SoundManager     getSoundManager()     { return soundManager; }
+    public AtlasManager     getAtlasManager()     { return atlasManager; }
+    public WindowController getWindowController() { return windowController; }
+    public ProgressManager  getProgressManager()  { return progressManager; }
+    public SettingsManager  getSettingsManager()  { return settingsManager; }
+
+    /**
+     * Called by Lwjgl3Launcher after constructing the game but the LibGDX
+     * Lwjgl3Application constructor itself calls create() synchronously, so we
+     * need the controller set BEFORE new Lwjgl3Application(...) is called.
+     * See Lwjgl3Launcher for the correct order.
+     */
+    public void setWindowController(WindowController wc) {
+        this.windowController = wc;
     }
 
     @Override
     public void dispose() {
         super.dispose();
         batch.dispose();
+        soundManager.dispose();
+        atlasManager.dispose();
     }
 }

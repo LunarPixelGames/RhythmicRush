@@ -3,25 +3,65 @@ package io.github.msameer0.rhythmicrush.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 
 import java.util.Random;
 
 import io.github.msameer0.rhythmicrush.RhythmicRushGame;
+import io.github.msameer0.rhythmicrush.SettingsManager;
 
 public class MainMenuScreen extends AbstractScreen {
 
-    private TextureAtlas atlas;
-    private TextureRegion title, startButton, settingsButton;
-
+    // ── Menu regions ──────────────────────────────────────────────────────────
+    private TextureRegion title, startButton, settingsButton, backArrow;
     private Color bgColor;
 
-    //scaled positions and sizes
-    private float titleX, titleY, titleW, titleH;
-    private float startX, startY, startW, startH;
+    private float titleX,    titleY,    titleW,    titleH;
+    private float startX,    startY,    startW,    startH;
     private float settingsX, settingsY, settingsW, settingsH;
+
+    // ── Settings overlay ──────────────────────────────────────────────────────
+    private boolean       settingsOpen  = false;
+    private ShapeRenderer shapes;
+    private BitmapFont    font;
+    private GlyphLayout   layout;
+
+    // Panel geometry (recomputed in updateScaledSizes)
+    private float panelX, panelY, panelW, panelH;
+    private float backX,  backY,  backW,  backH;
+    private float rowStartY;
+
+    private static final int   ROW_COUNT = 5;
+    private static final float ROW_STEP  = 64f;
+
+    // Slider drag
+    private boolean draggingSlider = false;
+
+    // Rounded panel texture (regenerated on resize)
+    private Texture panelTexture;
+    private int     lastPanelW = -1, lastPanelH = -1;
+
+    // ── Colors ────────────────────────────────────────────────────────────────
+    private static final Color COL_OVERLAY = new Color(0f,    0f,    0f,    0.62f);
+    private static final Color COL_PANEL   = new Color(0.13f, 0.13f, 0.19f, 1f);
+    private static final Color COL_LABEL   = new Color(1f,    1f,    1f,    0.90f);
+    private static final Color COL_DIM     = new Color(1f,    1f,    1f,    0.45f);
+    private static final Color COL_ON      = new Color(0.35f, 0.85f, 0.55f, 1f);
+    private static final Color COL_OFF     = new Color(0.50f, 0.50f, 0.55f, 1f);
+    private static final Color COL_TRACK   = new Color(0.28f, 0.28f, 0.35f, 1f);
+    private static final Color COL_FILL    = new Color(0.35f, 0.65f, 1.00f, 1f);
+    private static final Color COL_THUMB   = new Color(1f,    1f,    1f,    1f);
+    private static final Color COL_HEADING = new Color(1f,    0.85f, 0.35f, 1f);
+
+    // ─────────────────────────────────────────────────────────────────────────
 
     public MainMenuScreen(RhythmicRushGame game) {
         super(game);
@@ -29,101 +69,350 @@ public class MainMenuScreen extends AbstractScreen {
 
     @Override
     public void show() {
-        //load atlas
-        atlas = new TextureAtlas("menu.atlas");
-        title = atlas.findRegion("title");
-        startButton = atlas.findRegion("start_button");
-        settingsButton = atlas.findRegion("settings_button");
+        super.show();
 
-        //random background color
+        title          = game.getAtlasManager().getMenuAtlas().findRegion("title");
+        startButton    = game.getAtlasManager().getMenuAtlas().findRegion("start_button");
+        settingsButton = game.getAtlasManager().getMenuAtlas().findRegion("settings_button");
+        backArrow      = game.getAtlasManager().getLevelSelectAtlas().findRegion("back");
+
         Random rand = new Random();
-        bgColor = new Color(0.2f + 0.6f * rand.nextFloat(),
+        bgColor = new Color(
             0.2f + 0.6f * rand.nextFloat(),
-            0.2f + 0.6f * rand.nextFloat(), 1);
+            0.2f + 0.6f * rand.nextFloat(),
+            0.2f + 0.6f * rand.nextFloat(), 1f);
+
+        shapes = new ShapeRenderer();
+        font   = loadFont(32);
+        layout = new GlyphLayout();
+
+        // respect setting when returning to menu (e.g. after a level)
+        if (game.getSettingsManager().menuMusicEnabled)
+            game.getSoundManager().playMenuMusic();
+        else
+            game.getSoundManager().stopMenuMusic();
 
         updateScaledSizes();
     }
+
+    // ── Geometry ─────────────────────────────────────────────────────────────
 
     private void updateScaledSizes() {
         float vw = viewport.getWorldWidth();
         float vh = viewport.getWorldHeight();
 
-        //title
+        // main menu
         float maxTitleWidth = vw * 0.9f;
-        float titleScale = (maxTitleWidth / title.getRegionWidth()) * 0.675f;
-        titleW = title.getRegionWidth() * titleScale;
+        float titleScale    = (maxTitleWidth / title.getRegionWidth()) * 0.675f;
+        titleW = title.getRegionWidth()  * titleScale;
         titleH = title.getRegionHeight() * titleScale;
         titleX = vw / 2f - titleW / 2f;
         titleY = vh - titleH - 20 + 30;
 
-        //start button
-        float maxStartW = vw * 0.25f * 0.75f;
+        float maxStartW  = vw * 0.25f * 0.75f;
         float startScale = maxStartW / startButton.getRegionWidth();
-        startW = startButton.getRegionWidth() * startScale;
+        startW = startButton.getRegionWidth()  * startScale;
         startH = startButton.getRegionHeight() * startScale;
         startX = vw / 2f - startW / 2f;
         startY = vh / 2f - startH / 2f;
 
-        //settings button
-        float maxSettingsW = vw * 0.1f * 0.85f;
+        float maxSettingsW  = vw * 0.1f * 0.85f;
         float settingsScale = maxSettingsW / settingsButton.getRegionWidth();
-        settingsW = settingsButton.getRegionWidth() * settingsScale;
+        settingsW = settingsButton.getRegionWidth()  * settingsScale;
         settingsH = settingsButton.getRegionHeight() * settingsScale;
         settingsX = 20;
         settingsY = 20 - 10;
+
+        // settings panel
+        panelW = Math.min(vw * 0.72f, 740f);
+        panelH = ROW_COUNT * ROW_STEP + 110f;
+        panelX = vw / 2f - panelW / 2f;
+        panelY = vh / 2f - panelH / 2f;
+
+        backW = vw * 0.065f;
+        backH = backW;
+        backX = panelX + 12f;
+        backY = panelY + panelH - backH - 12f;
+
+        rowStartY = panelY + panelH - 80f;
+
+        lastPanelW = -1; // invalidate cached texture
     }
+
+    // ── Update ────────────────────────────────────────────────────────────────
 
     @Override
     protected void update(float delta) {
-        handleInput();
+        if (settingsOpen) handleSettingsInput();
+        else              handleMenuInput();
     }
+
+    // ── Draw ──────────────────────────────────────────────────────────────────
 
     @Override
     protected void draw() {
-        //clear screen with random background
         Gdx.gl.glClearColor(bgColor.r, bgColor.g, bgColor.b, 1f);
-        Gdx.gl.glClear(Gdx.gl.GL_COLOR_BUFFER_BIT);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         game.getBatch().setProjectionMatrix(camera.combined);
         game.getBatch().begin();
-
-        //draw textures
-        game.getBatch().draw(title, titleX, titleY, titleW, titleH);
-        game.getBatch().draw(startButton, startX, startY, startW, startH);
+        game.getBatch().draw(title,          titleX,    titleY,    titleW,    titleH);
+        game.getBatch().draw(startButton,    startX,    startY,    startW,    startH);
         game.getBatch().draw(settingsButton, settingsX, settingsY, settingsW, settingsH);
+        game.getBatch().end();
 
+        if (!settingsOpen) return;
+
+        // dark overlay
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.setProjectionMatrix(camera.combined);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        shapes.setColor(COL_OVERLAY);
+        shapes.rect(0, 0, viewport.getWorldWidth(), viewport.getWorldHeight());
+        shapes.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+
+        // panel background
+        int texW = (int) panelW, texH = (int) panelH;
+        if (panelTexture == null || texW != lastPanelW || texH != lastPanelH) {
+            if (panelTexture != null) panelTexture.dispose();
+            panelTexture = createRoundedRect(texW, texH,
+                (int)(26f * (panelW / 740f)), COL_PANEL);
+            lastPanelW = texW; lastPanelH = texH;
+        }
+        game.getBatch().setProjectionMatrix(camera.combined);
+        game.getBatch().begin();
+        game.getBatch().draw(panelTexture, panelX, panelY);
+        game.getBatch().draw(backArrow, backX, backY, backW, backH);
+        game.getBatch().end();
+
+        drawSettingsRows();
+    }
+
+    // ── Settings rows ─────────────────────────────────────────────────────────
+
+    private void drawSettingsRows() {
+        SettingsManager s = game.getSettingsManager();
+
+        // heading
+        game.getBatch().setProjectionMatrix(camera.combined);
+        game.getBatch().begin();
+        font.getData().setScale(1f);
+        font.setColor(COL_HEADING);
+        layout.setText(font, "Settings");
+        font.draw(game.getBatch(), "Settings",
+            panelX + panelW / 2f - layout.width / 2f,
+            panelY + panelH - 16f);
+        game.getBatch().end();
+
+        drawToggleRow(0, "Menu Music",            s.menuMusicEnabled);
+        drawSliderRow (1, "Music Volume",          s.musicVolume);
+        drawToggleRow(2, "Show Hitboxes",          s.showHitboxes);
+        drawToggleRow(3, "Show Hitboxes on Death", s.showHitboxesOnDeath);
+        // lock cursor — desktop only
+        if (Gdx.app.getType() == com.badlogic.gdx.Application.ApplicationType.Desktop) {
+            drawToggleRow(4, "Lock Cursor in Game", s.lockCursorInGame);
+        }
+    }
+
+    private void drawToggleRow(int row, String label, boolean value) {
+        float ry        = rowY(row);
+        float rightEdge = panelX + panelW - 28f;
+        float pillW = 54f, pillH = 28f;
+        float pillX = rightEdge - pillW;
+        float pillY = ry - pillH / 2f;
+        float r     = pillH / 2f;
+
+        // pill
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.setProjectionMatrix(camera.combined);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        shapes.setColor(value ? COL_ON : COL_OFF);
+        shapes.circle(pillX + r,         pillY + r, r, 24);
+        shapes.circle(pillX + pillW - r, pillY + r, r, 24);
+        shapes.rect(pillX + r, pillY, pillW - pillH, pillH);
+        // thumb
+        shapes.setColor(COL_THUMB);
+        float thumbCX = value ? (pillX + pillW - r) : (pillX + r);
+        shapes.circle(thumbCX, pillY + r, r - 4f, 24);
+        shapes.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+
+        // text
+        game.getBatch().setProjectionMatrix(camera.combined);
+        game.getBatch().begin();
+        font.getData().setScale(0.70f);
+        font.setColor(COL_LABEL);
+        layout.setText(font, label);
+        font.draw(game.getBatch(), label, panelX + 28f, ry + layout.height / 2f);
+        // ON/OFF micro label inside pill
+        font.getData().setScale(0.44f);
+        font.setColor(value ? COL_ON : COL_DIM);
+        String hint = value ? "ON" : "OFF";
+        layout.setText(font, hint);
+        font.draw(game.getBatch(), hint,
+            pillX + pillW / 2f - layout.width / 2f,
+            ry + layout.height / 2f);
+        font.getData().setScale(1f);
         game.getBatch().end();
     }
 
-    private void handleInput() {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
-            game.setScreen(new LevelSelectScreen(game));
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            Gdx.app.exit();
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_0)) {
-            game.setScreen(new GameScreen(game));
-        }
+    private void drawSliderRow(int row, String label, float value) {
+        float ry        = rowY(row);
+        float rightEdge = panelX + panelW - 28f;
+        float trackW    = panelW * 0.36f;
+        float trackH    = 6f;
+        float trackX    = rightEdge - trackW;
+        float trackY    = ry - trackH / 2f;
+        float thumbR    = 12f;
+        float fillW     = trackW * value;
+        float thumbCX   = trackX + fillW;
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.setProjectionMatrix(camera.combined);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        // track bg
+        shapes.setColor(COL_TRACK);
+        shapes.rect(trackX, trackY, trackW, trackH);
+        // fill
+        shapes.setColor(COL_FILL);
+        if (fillW > 0) shapes.rect(trackX, trackY, fillW, trackH);
+        // thumb
+        shapes.setColor(COL_THUMB);
+        shapes.circle(thumbCX, ry, thumbR, 24);
+        shapes.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+
+        game.getBatch().setProjectionMatrix(camera.combined);
+        game.getBatch().begin();
+        font.getData().setScale(0.70f);
+        font.setColor(COL_LABEL);
+        layout.setText(font, label);
+        font.draw(game.getBatch(), label, panelX + 28f, ry + layout.height / 2f);
+        // percent to the left of the track
+        font.getData().setScale(0.52f);
+        font.setColor(COL_DIM);
+        String pct = Math.round(value * 100f) + "%";
+        layout.setText(font, pct);
+        font.draw(game.getBatch(), pct,
+            trackX - layout.width - 12f,
+            ry + layout.height / 2f);
+        font.getData().setScale(1f);
+        game.getBatch().end();
+    }
+
+    // ── Input ─────────────────────────────────────────────────────────────────
+
+    private void handleMenuInput() {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE))  game.setScreen(new LevelSelectScreen(game));
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) Gdx.app.exit();
 
         if (!Gdx.input.justTouched()) return;
+        Vector2 t = unproject();
+        if (hits(t, startX,    startY,    startW,    startH))   game.setScreen(new LevelSelectScreen(game));
+        if (hits(t, settingsX, settingsY, settingsW, settingsH)) settingsOpen = true;
+    }
 
-        Vector2 touch = new Vector2(Gdx.input.getX(), Gdx.input.getY());
-        viewport.unproject(touch);
+    private void handleSettingsInput() {
+        SettingsManager s = game.getSettingsManager();
 
-        float x = touch.x;
-        float y = touch.y;
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) { closeSettings(); return; }
 
-        if (x >= startX && x <= startX + startW &&
-            y >= startY && y <= startY + startH) {
-            game.setScreen(new LevelSelectScreen(game));
+        if (Gdx.input.justTouched()) {
+            Vector2 t = unproject();
+            if (hits(t, backX, backY, backW, backH)) { closeSettings(); return; }
+
+            if (hitRow(t, 0)) {
+                s.menuMusicEnabled = !s.menuMusicEnabled;
+                if (s.menuMusicEnabled) game.getSoundManager().playMenuMusic();
+                else                    game.getSoundManager().stopMenuMusic();
+                s.save();
+            }
+            if (hitRow(t, 2)) { s.showHitboxes        = !s.showHitboxes;        s.save(); }
+            if (hitRow(t, 3)) { s.showHitboxesOnDeath = !s.showHitboxesOnDeath; s.save(); }
+            if (Gdx.app.getType() == com.badlogic.gdx.Application.ApplicationType.Desktop) {
+                if (hitRow(t, 4)) { s.lockCursorInGame = !s.lockCursorInGame; s.save(); }
+            }
+            if (sliderHit(t)) draggingSlider = true;
         }
 
-        if (x >= settingsX && x <= settingsX + settingsW &&
-            y >= settingsY && y <= settingsY + settingsH) {
-            //TODO: settings
+        if (Gdx.input.isTouched() && draggingSlider) {
+            float tx     = unproject().x;
+            float trackX = sliderTrackX();
+            float trackW = panelW * 0.36f;
+            s.musicVolume = Math.max(0f, Math.min(1f, (tx - trackX) / trackW));
+            game.getSoundManager().setMusicVolume(s.musicVolume);
+            s.save();
+        }
+
+        if (!Gdx.input.isTouched()) draggingSlider = false;
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private void closeSettings() { settingsOpen = false; draggingSlider = false; }
+
+    private float rowY(int row)  { return rowStartY - row * ROW_STEP; }
+
+    private boolean hitRow(Vector2 t, int row) {
+        float ry = rowY(row);
+        return t.x >= panelX + 10f && t.x <= panelX + panelW - 10f
+            && t.y >= ry - 26f    && t.y <= ry + 26f;
+    }
+
+    private float sliderTrackX() { return panelX + panelW - 28f - panelW * 0.36f; }
+
+    private boolean sliderHit(Vector2 t) {
+        float ry = rowY(1);
+        float tx = sliderTrackX();
+        float tw = panelW * 0.36f;
+        return t.x >= tx - 16f && t.x <= tx + tw + 16f && t.y >= ry - 20f && t.y <= ry + 20f;
+    }
+
+    private static boolean hits(Vector2 t, float x, float y, float w, float h) {
+        return t.x >= x && t.x <= x + w && t.y >= y && t.y <= y + h;
+    }
+
+    private Vector2 unproject() {
+        Vector2 v = new Vector2(Gdx.input.getX(), Gdx.input.getY());
+        viewport.unproject(v);
+        return v;
+    }
+
+    private BitmapFont loadFont(int size) {
+        try {
+            FreeTypeFontGenerator gen = new FreeTypeFontGenerator(
+                Gdx.files.internal("fonts/zendots-regular.ttf"));
+            FreeTypeFontGenerator.FreeTypeFontParameter p =
+                new FreeTypeFontGenerator.FreeTypeFontParameter();
+            p.size = size;
+            p.magFilter = Texture.TextureFilter.Linear;
+            p.minFilter = Texture.TextureFilter.Linear;
+            BitmapFont f = gen.generateFont(p);
+            gen.dispose();
+            return f;
+        } catch (Exception e) {
+            return new BitmapFont();
         }
     }
+
+    private Texture createRoundedRect(int w, int h, int r, Color color) {
+        Pixmap pm = new Pixmap(w, h, Pixmap.Format.RGBA8888);
+        pm.setColor(0, 0, 0, 0); pm.fill();
+        pm.setColor(color);
+        pm.fillRectangle(r, 0, w - 2*r, h);
+        pm.fillRectangle(0, r, w, h - 2*r);
+        pm.fillCircle(r,   r,   r); pm.fillCircle(w-r, r,   r);
+        pm.fillCircle(r,   h-r, r); pm.fillCircle(w-r, h-r, r);
+        Texture t = new Texture(pm);
+        pm.dispose();
+        return t;
+    }
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     @Override
     public void resize(int width, int height) {
@@ -133,6 +422,8 @@ public class MainMenuScreen extends AbstractScreen {
 
     @Override
     public void dispose() {
-        atlas.dispose();
+        if (shapes      != null) shapes.dispose();
+        if (font        != null) font.dispose();
+        if (panelTexture != null) panelTexture.dispose();
     }
 }

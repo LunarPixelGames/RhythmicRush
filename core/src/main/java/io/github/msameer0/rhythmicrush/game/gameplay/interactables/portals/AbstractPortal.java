@@ -5,7 +5,7 @@ import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
 
 public abstract class AbstractPortal {
     protected float x, y;
-    protected float width = 60, height = 80; // size of portal
+    protected float width = 50, height = 100; // size of portal
     protected Rectangle bounds;
     protected boolean used = false;
 

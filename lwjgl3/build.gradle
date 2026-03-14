@@ -48,10 +48,11 @@ def os = System.properties['os.name'].toLowerCase(Locale.ROOT)
 
 run {
   workingDir = rootProject.file('assets').path
-// You can uncomment the next line if your IDE claims a build failure even when the app closed properly.
   //setIgnoreExitValue(true)
 
   if (os.contains('mac')) jvmArgs += "-XstartOnFirstThread"
+  jvmArgs += "-Xss8m"
+  jvmArgs += "-Xmx512m"
 }
 
 jar {
