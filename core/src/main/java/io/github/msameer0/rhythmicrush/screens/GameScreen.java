@@ -21,6 +21,7 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 
 import io.github.msameer0.rhythmicrush.RhythmicRushGame;
 import io.github.msameer0.rhythmicrush.game.GameWorld;
+import io.github.msameer0.rhythmicrush.game.engine.FixedTickEngine;
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
 import io.github.msameer0.rhythmicrush.game.level.LevelData;
 import io.github.msameer0.rhythmicrush.game.level.LevelProgress;
@@ -32,12 +33,13 @@ public class GameScreen extends AbstractScreen {
     private static final float MUSIC_FADE_DURATION  = 3f;
 
     // ── Core ──────────────────────────────────────────────────────────────────
-    private GameWorld    world;
-    private GameRenderer renderer;
-    private BitmapFont   font;
-    private BitmapFont   pauseFont;
-    private GlyphLayout  glyphLayout;
-    private Music        levelMusic;
+    private GameWorld        world;
+    private FixedTickEngine  engine;
+    private GameRenderer     renderer;
+    private BitmapFont       font;
+    private BitmapFont       pauseFont;
+    private GlyphLayout      glyphLayout;
+    private Music            levelMusic;
 
     private OrthographicCamera gameCamera;
     private Viewport           gameViewport;
@@ -53,8 +55,8 @@ public class GameScreen extends AbstractScreen {
 
     /**
      * Tracks whether hitboxes should currently be shown.
-     * Set to true permanently if showHitboxes is on, or temporarily
-     * after death if showHitboxesOnDeath is on (cleared on next respawn).
+     * Permanently true when showHitboxes is on; temporarily true after death
+     * when showHitboxesOnDeath is on (cleared on next respawn).
      */
     private boolean hitboxesActive = false;
 
@@ -63,9 +65,9 @@ public class GameScreen extends AbstractScreen {
     private String levelKey        = null;
 
     // ── Pause overlay rendering ───────────────────────────────────────────────
-    private ShapeRenderer  shapes;
-    private Texture        panelTexture;
-    private int            lastPanelW = -1, lastPanelH = -1;
+    private ShapeRenderer shapes;
+    private Texture       panelTexture;
+    private int           lastPanelW = -1, lastPanelH = -1;
 
     private static final float PANEL_W   = 520f;
     private static final float PANEL_H   = 300f;
@@ -92,6 +94,7 @@ public class GameScreen extends AbstractScreen {
         gameViewport.update(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
 
         world    = new GameWorld();
+        engine   = new FixedTickEngine(world);
         renderer = new GameRenderer(world, gameCamera, game.getBatch(), game.getAtlasManager());
         font     = new BitmapFont();
         font.getData().setScale(1.5f);
@@ -109,7 +112,6 @@ public class GameScreen extends AbstractScreen {
             recordAttempt();
         }
 
-        // Initialise hitbox state from settings
         hitboxesActive = game.getSettingsManager().showHitboxes;
     }
 
@@ -122,14 +124,14 @@ public class GameScreen extends AbstractScreen {
     private float camRight() { return gameCamera.position.x + gameViewport.getWorldWidth()  / 2f; }
     private float camTop()   { return gameCamera.position.y + gameViewport.getWorldHeight() / 2f; }
 
-    private float panelX()       { return camCX() - PANEL_W / 2f; }
-    private float panelY()       { return camCY() - PANEL_H / 2f; }
-    private float resumeX()      { return camCX() + 16f; }
-    private float resumeY()      { return panelY() + 20f; }
-    private float backX()        { return camCX() - BTN_SIZE - 16f; }
-    private float backY()        { return panelY() + 20f; }
-    private float pauseCircleCX(){ return camRight() - PAUSE_BTN / 2f - 14f; }
-    private float pauseCircleCY(){ return camTop()   - PAUSE_BTN / 2f - 14f; }
+    private float panelX()        { return camCX() - PANEL_W / 2f; }
+    private float panelY()        { return camCY() - PANEL_H / 2f; }
+    private float resumeX()       { return camCX() + 16f; }
+    private float resumeY()       { return panelY() + 20f; }
+    private float backX()         { return camCX() - BTN_SIZE - 16f; }
+    private float backY()         { return panelY() + 20f; }
+    private float pauseCircleCX() { return camRight() - PAUSE_BTN / 2f - 14f; }
+    private float pauseCircleCY() { return camTop()   - PAUSE_BTN / 2f - 14f; }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -182,7 +184,7 @@ public class GameScreen extends AbstractScreen {
             handlePauseTouched(); return;
         }
 
-        // ── R = instant respawn ────────────────────────────────────────────────
+        // ── R = instant respawn (no death pause) ──────────────────────────────
         if (Gdx.input.isKeyJustPressed(Input.Keys.R) && !deathPaused && !musicFading) {
             triggerRespawn();
             return;
@@ -197,9 +199,9 @@ public class GameScreen extends AbstractScreen {
                 musicFading    = false;
                 musicFadeTimer = 0f;
                 world.reset();
+                engine.reset();
                 startMusic();
                 recordAttempt();
-                // Clear the on-death hitbox flag now that we've respawned
                 hitboxesActive = game.getSettingsManager().showHitboxes;
             }
             return;
@@ -217,6 +219,7 @@ public class GameScreen extends AbstractScreen {
                 stopAndDisposeMusic();
                 musicFading = false;
                 world.reset();
+                engine.reset();
                 game.setScreen(new MainMenuScreen(game));
             }
             return;
@@ -231,7 +234,9 @@ public class GameScreen extends AbstractScreen {
         }
 
         handleInput();
-        world.update(delta);
+
+        // ── Fixed-rate physics tick (240 TPS, decoupled from frame rate) ───────
+        engine.update(delta);
 
         if (world.isPlayerDead()) {
             recordDeath();
@@ -240,7 +245,7 @@ public class GameScreen extends AbstractScreen {
             deathPaused = true;
             deathTimer  = 0f;
             lastDelta   = 0f;
-            // Activate hitboxes on death if the setting is enabled
+            engine.reset();
             if (game.getSettingsManager().showHitboxesOnDeath)
                 hitboxesActive = true;
         }
@@ -262,7 +267,6 @@ public class GameScreen extends AbstractScreen {
         Gdx.gl.glClearColor(bg.r, bg.g, bg.b, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        // Pass both paused and hitbox flags to the renderer
         renderer.render(lastDelta, paused, hitboxesActive);
 
         drawProgressBar();
@@ -283,7 +287,7 @@ public class GameScreen extends AbstractScreen {
         shapes.setColor(0.2f, 0.2f, 0.2f, 0.75f);
         shapes.circle(cx, cy, r, 32);
         float barW = r * 0.22f, barH = r * 0.75f;
-        float gap   = r * 0.18f;
+        float gap  = r * 0.18f;
         shapes.setColor(1f, 1f, 1f, 0.9f);
         shapes.rect(cx - gap - barW, cy - barH / 2f, barW, barH);
         shapes.rect(cx + gap,        cy - barH / 2f, barW, barH);
@@ -381,14 +385,16 @@ public class GameScreen extends AbstractScreen {
     private void triggerRespawn() {
         recordDeath();
         stopAndDisposeMusic();
-        deathPaused    = true;
+        deathPaused    = false;
         deathTimer     = 0f;
         musicFading    = false;
         musicFadeTimer = 0f;
         lastDelta      = 0f;
-        // If showHitboxesOnDeath is on, show them during the death pause too
-        if (game.getSettingsManager().showHitboxesOnDeath)
-            hitboxesActive = true;
+        world.reset();
+        engine.reset();
+        startMusic();
+        recordAttempt();
+        hitboxesActive = game.getSettingsManager().showHitboxes;
     }
 
     // ── Progress tracking ─────────────────────────────────────────────────────
