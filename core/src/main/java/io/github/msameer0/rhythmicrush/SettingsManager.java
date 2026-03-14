@@ -91,8 +91,10 @@ public class SettingsManager {
         Gdx.graphics.setForegroundFPS(capFps ? fpsCapValue : 0);
     }
 
-    /** Applies the current vsync setting to the graphics backend. Call after load or change. */
+    /** Applies the current vsync setting. On non-desktop platforms vsync is always on. */
     public void applyVsync() {
-        Gdx.graphics.setVSync(enableVsync);
+        boolean vsync = (Gdx.app.getType() != com.badlogic.gdx.Application.ApplicationType.Desktop)
+            || enableVsync;
+        Gdx.graphics.setVSync(vsync);
     }
 }

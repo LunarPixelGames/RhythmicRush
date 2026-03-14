@@ -232,8 +232,8 @@ public class MainMenuScreen extends AbstractScreen {
         drawToggleRow(ROW_CAP_FPS,        "Cap FPS",               s.capFps);
         if (s.capFps)
             drawIntFieldRow(ROW_FPS_VALUE, "FPS Limit", s.fpsCapValue);
-        drawToggleRow(ROW_VSYNC,          "VSync",                 s.enableVsync);
-    }
+        if (Gdx.app.getType() == com.badlogic.gdx.Application.ApplicationType.Desktop)
+            drawToggleRow(ROW_VSYNC, "VSync", s.enableVsync);    }
 
     // ── Row renderers ─────────────────────────────────────────────────────────
 
@@ -438,12 +438,13 @@ public class MainMenuScreen extends AbstractScreen {
                 fpsInputBuffer.setLength(0);
                 fpsInputBuffer.append(s.fpsCapValue);
             }
-            if (hitRow(t, ROW_VSYNC)) {
-                s.enableVsync = !s.enableVsync;
-                s.applyVsync();
-                s.save();
+            if (Gdx.app.getType() == com.badlogic.gdx.Application.ApplicationType.Desktop) {
+                if (hitRow(t, ROW_VSYNC)) {
+                    s.enableVsync = !s.enableVsync;
+                    s.applyVsync();
+                    s.save();
+                }
             }
-
             if (sliderHit(t)) draggingSlider = true;
         }
 
