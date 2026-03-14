@@ -60,9 +60,6 @@ public class GameRenderer {
     private static final Color HB_BLOCK_LINE   = new Color(0.2f, 0.5f, 1.0f, 1.0f);
     private static final Color HB_PORTAL_LINE  = new Color(0.2f, 1.0f, 0.4f, 1.0f);
 
-    // Matches Block.tryTouch() inner-hitbox margin: 25% on each side → 50% inner rect
-    private static final float BLOCK_HB_MARGIN = 0.25f;
-
     // ── Constructor ───────────────────────────────────────────────────────────
 
     public GameRenderer(GameWorld world, OrthographicCamera camera,
@@ -240,6 +237,10 @@ public class GameRenderer {
         Gdx.gl.glDisable(GL20.GL_BLEND);
     }
 
+    /**
+     * Computes the inner 50% hitbox for a block (25% margin on each axis),
+     * exactly matching the death check in Block.tryTouch().
+     */
     private static final Rectangle _tmpRect = new Rectangle();
     private Rectangle blockInnerHitbox(Block b) {
         _tmpRect.set(b.getX(), b.getY(), b.getWidth(), b.getHeight());
@@ -257,7 +258,8 @@ public class GameRenderer {
                 playerVisualRotation = lerp(playerVisualRotation, nearest90, delta * 15f);
             } else {
                 if (!world.isPlayerDead() && !paused) {
-                    playerVisualRotation -= ((Math.abs(vy) * CUBE_SPIN_FACTOR * delta) + 5);
+                    float t = delta * 60f;
+                    playerVisualRotation -= (Math.abs(vy) * CUBE_SPIN_FACTOR / 60f + 5f / 60f) * t + 300f * delta;
                 }
             }
         } else if (player instanceof Ship) {

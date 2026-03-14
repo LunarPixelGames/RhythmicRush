@@ -7,9 +7,6 @@ import com.badlogic.gdx.utils.JsonWriter;
 
 /**
  * Holds all user-configurable settings and persists them to {@code saves/settings.json}.
- *
- * Add new fields here freely — they'll be saved/loaded automatically via LibGDX Json.
- * Defaults are applied if the file doesn't exist yet.
  */
 public class SettingsManager {
 
@@ -21,14 +18,22 @@ public class SettingsManager {
     public boolean showHitboxes        = false;
     public boolean showHitboxesOnDeath = false;
     public boolean lockCursorInGame    = false;
+    public boolean showFps             = false;
+    public boolean capFps              = false;
+    public int     fpsCapValue         = 60;
+    public boolean enableVsync         = false;
 
-    // ── Plain data class used only for deserialization — no constructor side effects ──
+    // ── Plain data class used only for deserialization ────────────────────────
     public static class Data {
         public boolean menuMusicEnabled    = true;
         public float   musicVolume         = 1f;
         public boolean showHitboxes        = false;
         public boolean showHitboxesOnDeath = false;
         public boolean lockCursorInGame    = false;
+        public boolean showFps             = false;
+        public boolean capFps              = false;
+        public int     fpsCapValue         = 60;
+        public boolean enableVsync         = false;
     }
 
     // ── Internal ──────────────────────────────────────────────────────────────
@@ -43,13 +48,16 @@ public class SettingsManager {
 
     public void save() {
         try {
-            // Serialize a Data snapshot — not `this` — to avoid including the Json field
             Data snapshot = new Data();
             snapshot.menuMusicEnabled    = menuMusicEnabled;
             snapshot.musicVolume         = musicVolume;
             snapshot.showHitboxes        = showHitboxes;
             snapshot.showHitboxesOnDeath = showHitboxesOnDeath;
             snapshot.lockCursorInGame    = lockCursorInGame;
+            snapshot.showFps             = showFps;
+            snapshot.capFps              = capFps;
+            snapshot.fpsCapValue         = fpsCapValue;
+            snapshot.enableVsync         = enableVsync;
             FileHandle file = Gdx.files.local(SAVE_PATH);
             file.parent().mkdirs();
             file.writeString(json.prettyPrint(snapshot), false);
@@ -62,7 +70,6 @@ public class SettingsManager {
         try {
             FileHandle file = Gdx.files.local(SAVE_PATH);
             if (!file.exists()) return;
-            // Deserialize into Data (plain POJO, no constructor side effects)
             Data d = json.fromJson(Data.class, file);
             if (d == null) return;
             menuMusicEnabled    = d.menuMusicEnabled;
@@ -70,8 +77,24 @@ public class SettingsManager {
             showHitboxes        = d.showHitboxes;
             showHitboxesOnDeath = d.showHitboxesOnDeath;
             lockCursorInGame    = d.lockCursorInGame;
+            showFps             = d.showFps;
+            capFps              = d.capFps;
+            fpsCapValue         = d.fpsCapValue;
+            enableVsync         = d.enableVsync;
         } catch (Exception e) {
             Gdx.app.error("SettingsManager", "Failed to load: " + e.getMessage());
         }
+    }
+
+    /** Applies the current fps cap setting to the graphics backend. Call after load or change. */
+    public void applyFpsCap() {
+        Gdx.graphics.setForegroundFPS(capFps ? fpsCapValue : 0);
+    }
+
+    /** Applies the current vsync setting. On non-desktop platforms vsync is always on. */
+    public void applyVsync() {
+        boolean vsync = (Gdx.app.getType() != com.badlogic.gdx.Application.ApplicationType.Desktop)
+            || enableVsync;
+        Gdx.graphics.setVSync(vsync);
     }
 }

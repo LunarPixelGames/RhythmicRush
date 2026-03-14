@@ -1,6 +1,7 @@
 package io.github.msameer0.rhythmicrush.game;
 
 import com.badlogic.gdx.graphics.Color;
+import io.github.msameer0.rhythmicrush.game.engine.Tickable;
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Block;
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.BlockType;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.AbstractHazard;
@@ -14,7 +15,7 @@ import io.github.msameer0.rhythmicrush.game.level.LevelData;
 
 import java.util.ArrayList;
 
-public class GameWorld {
+public class GameWorld implements Tickable {
 
     // ── Core state ────────────────────────────────────────────────────────────
     private AbstractPlayer player;
@@ -34,9 +35,9 @@ public class GameWorld {
 
     /** Lightweight descriptor loaded from LevelData — never modified at runtime. */
     private static class ColorTrigger {
-        final float  worldX;       // absolute world-space X (not scrolled)
-        final Color  targetBg;     // null = don't change bg
-        final Color  targetGround; // null = don't change ground
+        final float  worldX;
+        final Color  targetBg;
+        final Color  targetGround;
         final float  fadeDuration;
         boolean fired = false;
 
@@ -167,6 +168,14 @@ public class GameWorld {
         }
     }
 
+    // ── Tickable ──────────────────────────────────────────────────────────────
+
+    /** Called by {@link io.github.msameer0.rhythmicrush.game.engine.FixedTickEngine} at 240 TPS. */
+    @Override
+    public void tick(float delta) {
+        update(delta);
+    }
+
     // ── Update ────────────────────────────────────────────────────────────────
 
     public void update(float delta) {
@@ -188,8 +197,8 @@ public class GameWorld {
 
         worldScrolled += scrollSpeed * delta;
 
-        // ── Color trigger check — fire when player's world x passes trigger x ──
-        float playerWorldX = 100f + worldScrolled; // player is always at screen x=100, world scrolls
+        // ── Color trigger check ────────────────────────────────────────────────
+        float playerWorldX = 100f + worldScrolled;
         for (ColorTrigger ct : colorTriggers) {
             if (!ct.fired && playerWorldX >= ct.worldX) {
                 ct.fired = true;
