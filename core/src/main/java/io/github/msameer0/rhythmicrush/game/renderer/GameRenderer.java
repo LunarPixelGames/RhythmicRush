@@ -1,9 +1,13 @@
 package io.github.msameer0.rhythmicrush.game.renderer;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Rectangle;
 import io.github.msameer0.rhythmicrush.AtlasManager;
 import io.github.msameer0.rhythmicrush.game.GameWorld;
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Block;
@@ -27,7 +31,7 @@ public class GameRenderer {
     private final SpriteBatch        batch;
     private final ShapeRenderer      shape;
 
-    // ── Game object regions ───────────────────────────────────────────────────
+    // ── Texture regions ───────────────────────────────────────────────────────
     private final Map<BlockType, TextureRegion> blockRegions;
     private final TextureRegion spikeRegion;
     private final TextureRegion cubeRegion;
@@ -35,19 +39,29 @@ public class GameRenderer {
     private final TextureRegion cubePortalRegion;
     private final TextureRegion shipPortalRegion;
 
-    // ── Player visual rotation (persists across frames) ───────────────────────
+    // ── Player visual rotation ────────────────────────────────────────────────
     private float playerVisualRotation = 0f;
 
-    // How far left of center the camera is positioned relative to the player.
-    // Positive value = player appears further right on screen. Tune to taste.
     private static final float CAMERA_X_OFFSET = 425f;
-
-    // Cube spin: degrees per unit of |velocityY| per second while airborne
     private static final float CUBE_SPIN_FACTOR = 0.5f;
-    // Ship tilt: maps velocityY → target angle, then lerps
     private static final float SHIP_TILT_FACTOR = 0.18f;
     private static final float SHIP_MAX_TILT    = 50f;
     private static final float SHIP_TILT_LERP   = 8f;
+
+    // ── Hitbox colors ─────────────────────────────────────────────────────────
+    // Fill: 75% opacity. Border: fully opaque same hue.
+    private static final Color HB_PLAYER_FILL  = new Color(1.0f, 0.9f, 0.0f, 0.75f); // yellow
+    private static final Color HB_HAZARD_FILL  = new Color(1.0f, 0.2f, 0.2f, 0.75f); // red
+    private static final Color HB_BLOCK_FILL   = new Color(0.2f, 0.5f, 1.0f, 0.75f); // blue
+    private static final Color HB_PORTAL_FILL  = new Color(0.2f, 1.0f, 0.4f, 0.75f); // green
+
+    private static final Color HB_PLAYER_LINE  = new Color(1.0f, 0.9f, 0.0f, 1.0f);
+    private static final Color HB_HAZARD_LINE  = new Color(1.0f, 0.2f, 0.2f, 1.0f);
+    private static final Color HB_BLOCK_LINE   = new Color(0.2f, 0.5f, 1.0f, 1.0f);
+    private static final Color HB_PORTAL_LINE  = new Color(0.2f, 1.0f, 0.4f, 1.0f);
+
+    // Matches Block.tryTouch() inner-hitbox margin: 25% on each side → 50% inner rect
+    private static final float BLOCK_HB_MARGIN = 0.25f;
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -72,10 +86,14 @@ public class GameRenderer {
 
     // ── Render ────────────────────────────────────────────────────────────────
 
-    public void render(float delta, boolean paused) {
+    /**
+     * @param delta        time since last frame
+     * @param paused       suppresses player rotation update
+     * @param showHitboxes draws hitbox overlays on top of all game objects
+     */
+    public void render(float delta, boolean paused, boolean showHitboxes) {
         AbstractPlayer player = world.getPlayer();
 
-        // offset camera so player sits further right on screen
         camera.position.x = player.x + CAMERA_X_OFFSET;
         camera.update();
         shape.setProjectionMatrix(camera.combined);
@@ -83,8 +101,6 @@ public class GameRenderer {
 
         float worldWidth = camera.viewportWidth;
         float worldLeft  = camera.position.x - worldWidth / 2f;
-
-        // tell GameWorld where the left screen edge is so it culls correctly
         world.setCullX(worldLeft);
 
         // ── Ground ────────────────────────────────────────────────────────────
@@ -93,7 +109,7 @@ public class GameRenderer {
         shape.rect(worldLeft, 0, worldWidth, world.getGroundY());
         shape.end();
 
-        // ── Portals (textured) ────────────────────────────────────────────────
+        // ── Portals ───────────────────────────────────────────────────────────
         batch.begin();
         for (AbstractPortal portal : world.getPortals()) {
             TextureRegion region = (portal instanceof CubePortal) ? cubePortalRegion : shipPortalRegion;
@@ -101,12 +117,11 @@ public class GameRenderer {
                 batch.draw(region, portal.getX(), portal.getY(),
                     portal.getWidth(), portal.getHeight());
             } else {
-                // fallback colored rect if atlas region missing
                 batch.end();
                 shape.begin(ShapeRenderer.ShapeType.Filled);
                 shape.setColor(portal instanceof CubePortal
-                    ? new com.badlogic.gdx.graphics.Color(0f, 0.8f, 0f, 1f)
-                    : new com.badlogic.gdx.graphics.Color(0f, 0.5f, 1f, 1f));
+                    ? new Color(0f, 0.8f, 0f, 1f)
+                    : new Color(0f, 0.5f, 1f, 1f));
                 shape.rect(portal.getX(), portal.getY(), portal.getWidth(), portal.getHeight());
                 shape.end();
                 batch.begin();
@@ -114,7 +129,7 @@ public class GameRenderer {
         }
         batch.end();
 
-        // ── Spikes (textured, rotation aware) ─────────────────────────────────
+        // ── Spikes ────────────────────────────────────────────────────────────
         batch.begin();
         for (AbstractHazard hazard : world.getHazards()) {
             if (hazard instanceof Spike && spikeRegion != null) {
@@ -130,7 +145,7 @@ public class GameRenderer {
         }
         batch.end();
 
-        // ── Blocks (textured) ─────────────────────────────────────────────────
+        // ── Blocks ────────────────────────────────────────────────────────────
         batch.begin();
         for (Block block : world.getBlocks()) {
             TextureRegion region = blockRegions.get(block.getType());
@@ -141,33 +156,125 @@ public class GameRenderer {
         }
         batch.end();
 
-        // ── Player (textured, velocity-driven rotation) ───────────────────────
+        // ── Player ────────────────────────────────────────────────────────────
         updatePlayerRotation(player, delta, paused);
         drawPlayer(player);
+
+        // ── Hitboxes (always on top) ──────────────────────────────────────────
+        if (showHitboxes) drawHitboxes(player);
     }
 
-    // ── Player rotation logic ─────────────────────────────────────────────────
+    // ── Hitbox overlay ────────────────────────────────────────────────────────
+
+    private void drawHitboxes(AbstractPlayer player) {
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shape.setProjectionMatrix(camera.combined);
+
+        // ── Filled pass ───────────────────────────────────────────────────────
+        shape.begin(ShapeRenderer.ShapeType.Filled);
+
+        // Blocks: inner 50% rect (25% margin each side) — matches Block.tryTouch() death check
+        shape.setColor(HB_BLOCK_FILL);
+        for (Block b : world.getBlocks()) {
+            Rectangle r = blockInnerHitbox(b);
+            shape.rect(r.x, r.y, r.width, r.height);
+        }
+
+        // Portals: full bounds rectangle
+        shape.setColor(HB_PORTAL_FILL);
+        for (AbstractPortal p : world.getPortals()) {
+            Rectangle r = p.getBounds();
+            shape.rect(r.x, r.y, r.width, r.height);
+        }
+
+        // Spikes: their own rotated-aware spikeHitbox from getHitbox()
+        shape.setColor(HB_HAZARD_FILL);
+        for (AbstractHazard h : world.getHazards()) {
+            if (h instanceof Spike) {
+                Rectangle r = ((Spike) h).getHitbox();
+                shape.rect(r.x, r.y, r.width, r.height);
+            } else {
+                // Non-spike hazards: full bounds
+                shape.rect(h.getX(), h.getY(), h.getWidth(), h.getHeight());
+            }
+        }
+
+        // Player: full bounds rectangle
+        shape.setColor(HB_PLAYER_FILL);
+        Rectangle pb = player.getBounds();
+        shape.rect(pb.x, pb.y, pb.width, pb.height);
+
+        shape.end();
+
+        // ── Border pass ───────────────────────────────────────────────────────
+        shape.begin(ShapeRenderer.ShapeType.Line);
+
+        shape.setColor(HB_BLOCK_LINE);
+        for (Block b : world.getBlocks()) {
+            Rectangle r = blockInnerHitbox(b);
+            shape.rect(r.x, r.y, r.width, r.height);
+        }
+
+        shape.setColor(HB_PORTAL_LINE);
+        for (AbstractPortal p : world.getPortals()) {
+            Rectangle r = p.getBounds();
+            shape.rect(r.x, r.y, r.width, r.height);
+        }
+
+        shape.setColor(HB_HAZARD_LINE);
+        for (AbstractHazard h : world.getHazards()) {
+            if (h instanceof Spike) {
+                Rectangle r = ((Spike) h).getHitbox();
+                shape.rect(r.x, r.y, r.width, r.height);
+            } else {
+                shape.rect(h.getX(), h.getY(), h.getWidth(), h.getHeight());
+            }
+        }
+
+        shape.setColor(HB_PLAYER_LINE);
+        shape.rect(pb.x, pb.y, pb.width, pb.height);
+
+        shape.end();
+
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+    }
+
+    /**
+     * Computes the inner 50% hitbox for a block (25% margin on each axis),
+     * exactly matching the death check in Block.tryTouch().
+     */
+    private static final Rectangle _tmpRect = new Rectangle();
+    private Rectangle blockInnerHitbox(Block b) {
+        float hMargin = b.getWidth()  * BLOCK_HB_MARGIN;
+        float vMargin = b.getHeight() * BLOCK_HB_MARGIN;
+        _tmpRect.set(
+            b.getX() + hMargin,
+            b.getY() + vMargin,
+            b.getWidth()  - hMargin * 2f,
+            b.getHeight() - vMargin * 2f
+        );
+        return _tmpRect;
+    }
+
+    // ── Player rotation ───────────────────────────────────────────────────────
 
     private void updatePlayerRotation(AbstractPlayer player, float delta, boolean paused) {
         float vy = player.getVelocityY();
 
         if (player instanceof Cube) {
             if (player.isGrounded()) {
-                // snap to nearest 90° when landing
                 float nearest90 = Math.round(playerVisualRotation / 90f) * 90f;
                 playerVisualRotation = lerp(playerVisualRotation, nearest90, delta * 15f);
             } else {
                 if (!world.isPlayerDead() && !paused) {
-                    // spin forward (clockwise) at speed proportional to |velocityY|
                     playerVisualRotation -= ((Math.abs(vy) * CUBE_SPIN_FACTOR * delta) + 5);
                 }
             }
-
         } else if (player instanceof Ship) {
             float targetAngle = vy * SHIP_TILT_FACTOR;
             targetAngle = Math.max(-SHIP_MAX_TILT, Math.min(SHIP_MAX_TILT, targetAngle));
             playerVisualRotation = lerp(playerVisualRotation, targetAngle, SHIP_TILT_LERP * delta);
-
         } else {
             playerVisualRotation = 0f;
         }

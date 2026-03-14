@@ -51,6 +51,13 @@ public class GameScreen extends AbstractScreen {
     private float   musicFadeTimer = 0f;
     private boolean paused         = false;
 
+    /**
+     * Tracks whether hitboxes should currently be shown.
+     * Set to true permanently if showHitboxes is on, or temporarily
+     * after death if showHitboxesOnDeath is on (cleared on next respawn).
+     */
+    private boolean hitboxesActive = false;
+
     // ── Progress ──────────────────────────────────────────────────────────────
     private int    sessionAttempts = 0;
     private String levelKey        = null;
@@ -60,14 +67,13 @@ public class GameScreen extends AbstractScreen {
     private Texture        panelTexture;
     private int            lastPanelW = -1, lastPanelH = -1;
 
-    // pause panel size (constant, positioned in world-space each frame)
-    private static final float PANEL_W    = 520f;
-    private static final float PANEL_H    = 300f;
-    private static final float BTN_SIZE   = 72f;   // square hit area for both buttons
-    private static final float PAUSE_BTN  = 44f;   // pause circle radius * 2
+    private static final float PANEL_W   = 520f;
+    private static final float PANEL_H   = 300f;
+    private static final float BTN_SIZE  = 72f;
+    private static final float PAUSE_BTN = 44f;
 
-    private TextureRegion resumeRegion; // start_button from menu atlas
-    private TextureRegion backRegion;   // back from level select atlas
+    private TextureRegion resumeRegion;
+    private TextureRegion backRegion;
 
     private static final Color COL_OVERLAY = new Color(0f,    0f,    0f,    0.65f);
     private static final Color COL_PANEL   = new Color(0.11f, 0.11f, 0.17f, 1f);
@@ -102,33 +108,28 @@ public class GameScreen extends AbstractScreen {
             levelKey = levelData.fileName != null ? levelData.fileName : levelData.name + ".json";
             recordAttempt();
         }
+
+        // Initialise hitbox state from settings
+        hitboxesActive = game.getSettingsManager().showHitboxes;
     }
 
-    // ── World-space helpers — computed fresh each frame from camera ───────────
+    // ── World-space helpers ───────────────────────────────────────────────────
 
-    /** World-space center of the screen. */
-    private float camCX() { return gameCamera.position.x; }
-    private float camCY() { return gameCamera.position.y; }
+    private float camCX()    { return gameCamera.position.x; }
+    private float camCY()    { return gameCamera.position.y; }
     private float camLeft()  { return gameCamera.position.x - gameViewport.getWorldWidth()  / 2f; }
     private float camBot()   { return gameCamera.position.y - gameViewport.getWorldHeight() / 2f; }
     private float camRight() { return gameCamera.position.x + gameViewport.getWorldWidth()  / 2f; }
     private float camTop()   { return gameCamera.position.y + gameViewport.getWorldHeight() / 2f; }
 
-    /** Panel bottom-left in world-space. */
-    private float panelX() { return camCX() - PANEL_W / 2f; }
-    private float panelY() { return camCY() - PANEL_H / 2f; }
-
-    /** Resume button world-space rect (right of center inside panel). */
-    private float resumeX() { return camCX() + 16f; }
-    private float resumeY() { return panelY() + 20f; }
-
-    /** Back button world-space rect (left of center inside panel). */
-    private float backX()   { return camCX() - BTN_SIZE - 16f; }
-    private float backY()   { return panelY() + 20f; }
-
-    /** Pause circle center in world-space (top-right corner). */
-    private float pauseCircleCX() { return camRight() - PAUSE_BTN / 2f - 14f; }
-    private float pauseCircleCY() { return camTop()   - PAUSE_BTN / 2f - 14f; }
+    private float panelX()       { return camCX() - PANEL_W / 2f; }
+    private float panelY()       { return camCY() - PANEL_H / 2f; }
+    private float resumeX()      { return camCX() + 16f; }
+    private float resumeY()      { return panelY() + 20f; }
+    private float backX()        { return camCX() - BTN_SIZE - 16f; }
+    private float backY()        { return panelY() + 20f; }
+    private float pauseCircleCX(){ return camRight() - PAUSE_BTN / 2f - 14f; }
+    private float pauseCircleCY(){ return camTop()   - PAUSE_BTN / 2f - 14f; }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -143,7 +144,7 @@ public class GameScreen extends AbstractScreen {
     @Override
     public void resize(int width, int height) {
         gameViewport.update(width, height, true);
-        lastPanelW = -1; // invalidate panel texture on resize
+        lastPanelW = -1;
     }
 
     @Override
@@ -168,7 +169,7 @@ public class GameScreen extends AbstractScreen {
     @Override
     protected void update(float delta) {
 
-        // ── Pause input (always checked, even during death pause) ──────────────
+        // ── Pause input ────────────────────────────────────────────────────────
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             if (paused) exitToLevelSelect();
             else        setPaused(true);
@@ -198,6 +199,8 @@ public class GameScreen extends AbstractScreen {
                 world.reset();
                 startMusic();
                 recordAttempt();
+                // Clear the on-death hitbox flag now that we've respawned
+                hitboxesActive = game.getSettingsManager().showHitboxes;
             }
             return;
         }
@@ -237,6 +240,9 @@ public class GameScreen extends AbstractScreen {
             deathPaused = true;
             deathTimer  = 0f;
             lastDelta   = 0f;
+            // Activate hitboxes on death if the setting is enabled
+            if (game.getSettingsManager().showHitboxesOnDeath)
+                hitboxesActive = true;
         }
 
         if (world.isLevelComplete()) {
@@ -256,7 +262,9 @@ public class GameScreen extends AbstractScreen {
         Gdx.gl.glClearColor(bg.r, bg.g, bg.b, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        renderer.render(lastDelta, paused);
+        // Pass both paused and hitbox flags to the renderer
+        renderer.render(lastDelta, paused, hitboxesActive);
+
         drawProgressBar();
         drawSessionAttempts();
         drawPauseButton();
@@ -264,7 +272,7 @@ public class GameScreen extends AbstractScreen {
         if (paused) drawPauseOverlay();
     }
 
-    // ── Pause button (top-right, drawn with ShapeRenderer) ────────────────────
+    // ── Pause button ──────────────────────────────────────────────────────────
 
     private void drawPauseButton() {
         float cx = pauseCircleCX(), cy = pauseCircleCY(), r = PAUSE_BTN / 2f;
@@ -272,10 +280,8 @@ public class GameScreen extends AbstractScreen {
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapes.setProjectionMatrix(gameCamera.combined);
         shapes.begin(ShapeRenderer.ShapeType.Filled);
-        // circle background
         shapes.setColor(0.2f, 0.2f, 0.2f, 0.75f);
         shapes.circle(cx, cy, r, 32);
-        // two pause bars (hollow-out effect)
         float barW = r * 0.22f, barH = r * 0.75f;
         float gap   = r * 0.18f;
         shapes.setColor(1f, 1f, 1f, 0.9f);
@@ -290,7 +296,6 @@ public class GameScreen extends AbstractScreen {
     private void drawPauseOverlay() {
         float px = panelX(), py = panelY();
 
-        // dark overlay
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapes.setProjectionMatrix(gameCamera.combined);
@@ -300,7 +305,6 @@ public class GameScreen extends AbstractScreen {
         shapes.end();
         Gdx.gl.glDisable(GL20.GL_BLEND);
 
-        // panel background
         int texW = (int) PANEL_W, texH = (int) PANEL_H;
         if (panelTexture == null || texW != lastPanelW || texH != lastPanelH) {
             if (panelTexture != null) panelTexture.dispose();
@@ -312,7 +316,6 @@ public class GameScreen extends AbstractScreen {
         game.getBatch().begin();
         game.getBatch().draw(panelTexture, px, py);
 
-        // level name
         String levelName = (levelData != null && levelData.name != null) ? levelData.name : "Level";
         pauseFont.getData().setScale(1f);
         pauseFont.setColor(COL_HEADING);
@@ -321,7 +324,6 @@ public class GameScreen extends AbstractScreen {
             px + PANEL_W / 2f - glyphLayout.width / 2f,
             py + PANEL_H - 18f);
 
-        // stats
         float sy = py + PANEL_H - 18f - glyphLayout.height - 22f;
         if (levelKey != null) {
             LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
@@ -337,24 +339,19 @@ public class GameScreen extends AbstractScreen {
             pauseFont.draw(game.getBatch(), att, px + PANEL_W / 2f - glyphLayout.width / 2f, sy);
         }
 
-        // back button (square)
         if (backRegion != null)
             game.getBatch().draw(backRegion, backX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE * 0.9f);
-
-        // resume button (same square size as back)
         if (resumeRegion != null)
-            game.getBatch().draw(resumeRegion,
-                resumeX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE * 0.9f);
+            game.getBatch().draw(resumeRegion, resumeX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE * 0.9f);
 
-        // labels under buttons
         pauseFont.getData().setScale(0.45f);
         pauseFont.setColor(COL_DIM);
         glyphLayout.setText(pauseFont, "Back");
         pauseFont.draw(game.getBatch(), "Back",
-            backX()    + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f, backY() - 4f);
+            backX()   + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f, backY() - 4f);
         glyphLayout.setText(pauseFont, "Resume");
         pauseFont.draw(game.getBatch(), "Resume",
-            resumeX()  + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f, backY() - 4f);
+            resumeX() + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f, backY() - 4f);
 
         pauseFont.getData().setScale(1f);
         game.getBatch().end();
@@ -372,12 +369,8 @@ public class GameScreen extends AbstractScreen {
     private void handlePauseTouched() {
         if (!Gdx.input.justTouched()) return;
         Vector2 t = unprojectWorld();
-
-        // back button
-        if (hits(t, backX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE)) { exitToLevelSelect(); return; }
-
-        // resume button (same square size)
-        if (hits(t, resumeX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE)) { setPaused(false); return; }
+        if (hits(t, backX(),   backY(), BTN_SIZE * 0.9f, BTN_SIZE)) { exitToLevelSelect(); return; }
+        if (hits(t, resumeX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE)) { setPaused(false);    return; }
     }
 
     private void exitToLevelSelect() {
@@ -386,13 +379,16 @@ public class GameScreen extends AbstractScreen {
     }
 
     private void triggerRespawn() {
-        recordDeath(); // save best% at current position
+        recordDeath();
         stopAndDisposeMusic();
         deathPaused    = true;
         deathTimer     = 0f;
         musicFading    = false;
         musicFadeTimer = 0f;
         lastDelta      = 0f;
+        // If showHitboxesOnDeath is on, show them during the death pause too
+        if (game.getSettingsManager().showHitboxesOnDeath)
+            hitboxesActive = true;
     }
 
     // ── Progress tracking ─────────────────────────────────────────────────────
@@ -490,7 +486,6 @@ public class GameScreen extends AbstractScreen {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    /** Unprojects screen touch into world-space using the game camera. */
     private Vector2 unprojectWorld() {
         com.badlogic.gdx.math.Vector3 v = new com.badlogic.gdx.math.Vector3(
             Gdx.input.getX(), Gdx.input.getY(), 0);
