@@ -240,20 +240,9 @@ public class GameRenderer {
         Gdx.gl.glDisable(GL20.GL_BLEND);
     }
 
-    /**
-     * Computes the inner 50% hitbox for a block (25% margin on each axis),
-     * exactly matching the death check in Block.tryTouch().
-     */
     private static final Rectangle _tmpRect = new Rectangle();
     private Rectangle blockInnerHitbox(Block b) {
-        float hMargin = b.getWidth()  * BLOCK_HB_MARGIN;
-        float vMargin = b.getHeight() * BLOCK_HB_MARGIN;
-        _tmpRect.set(
-            b.getX() + hMargin,
-            b.getY() + vMargin,
-            b.getWidth()  - hMargin * 2f,
-            b.getHeight() - vMargin * 2f
-        );
+        _tmpRect.set(b.getX(), b.getY(), b.getWidth(), b.getHeight());
         return _tmpRect;
     }
 
