@@ -26,6 +26,8 @@ public class RhythmicRushGame extends Game {
         // apply saved volume before playing anything
         soundManager.setMusicVolume(settingsManager.musicVolume);
         if (settingsManager.menuMusicEnabled) soundManager.playMenuMusic();
+        settingsManager.applyFpsCap();
+        settingsManager.applyVsync();
         setScreen(new MainMenuScreen(this));
     }
 

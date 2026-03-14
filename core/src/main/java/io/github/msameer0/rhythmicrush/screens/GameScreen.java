@@ -442,13 +442,23 @@ public class GameScreen extends AbstractScreen {
         float top  = gameCamera.position.y + gameViewport.getWorldHeight() / 2f - 12f;
         game.getBatch().setProjectionMatrix(gameCamera.combined);
         game.getBatch().begin();
+
         font.setColor(new Color(1f, 1f, 1f, 0.85f));
         font.draw(game.getBatch(), "Attempt  " + sessionAttempts, left, top);
+
+        float nextY = top - 26f;
         if (levelKey != null) {
             LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
             font.setColor(new Color(1f, 1f, 1f, 0.55f));
-            font.draw(game.getBatch(), "Best  " + p.bestPercent + "%", left, top - 26f);
+            font.draw(game.getBatch(), "Best  " + p.bestPercent + "%", left, nextY);
+            nextY -= 26f;
         }
+
+        if (game.getSettingsManager().showFps) {
+            font.setColor(new Color(1f, 1f, 1f, 0.45f));
+            font.draw(game.getBatch(), "FPS  " + Gdx.graphics.getFramesPerSecond(), left, nextY);
+        }
+
         game.getBatch().end();
     }
 
