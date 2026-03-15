@@ -156,9 +156,11 @@ public class MainMenuScreen extends AbstractScreen {
                 rows.add(new SettingRow(RowType.TOGGLE, "Lock Cursor in Game",   "lockCursor"));
         } else { // CAT_GRAPHICS
             rows.add(new SettingRow(RowType.TOGGLE,    "Show FPS",               "showFps"));
-            rows.add(new SettingRow(RowType.TOGGLE,    "Cap FPS",                "capFps"));
-            if (s.capFps)
-                rows.add(new SettingRow(RowType.INT_FIELD, "FPS Limit",          "fpsValue"));
+            if (desktop) {
+                rows.add(new SettingRow(RowType.TOGGLE, "Cap FPS",               "capFps"));
+                if (s.capFps)
+                    rows.add(new SettingRow(RowType.INT_FIELD, "FPS Limit",      "fpsValue"));
+            }
             if (desktop)
                 rows.add(new SettingRow(RowType.TOGGLE, "VSync",                 "vsync"));
         }
@@ -186,19 +188,28 @@ public class MainMenuScreen extends AbstractScreen {
         float vw = viewport.getWorldWidth();
         float vh = viewport.getWorldHeight();
 
-        float maxTitleWidth = vw * 0.9f;
+        // Title — scale by width but also hard-cap height to 30% of screen height
+        float maxTitleWidth = vw * 0.75f;
         float titleScale    = (maxTitleWidth / title.getRegionWidth()) * 0.675f;
+        // If the resulting height exceeds 30% of vh, scale down further
+        float maxTitleHeight = vh * 0.30f;
+        if (title.getRegionHeight() * titleScale > maxTitleHeight)
+            titleScale = maxTitleHeight / title.getRegionHeight();
         titleW = title.getRegionWidth()  * titleScale;
         titleH = title.getRegionHeight() * titleScale;
         titleX = vw / 2f - titleW / 2f;
-        titleY = vh - titleH - 20 + 30;
+        titleY = vh - titleH - vh * 0.03f;
 
+        // Play button — guaranteed gap below title, never overlaps
         float maxStartW  = vw * 0.25f * 0.75f;
         float startScale = maxStartW / startButton.getRegionWidth();
         startW = startButton.getRegionWidth()  * startScale;
         startH = startButton.getRegionHeight() * startScale;
         startX = vw / 2f - startW / 2f;
-        startY = vh / 2f - startH / 2f;
+        // At least 6% of vh gap below the title bottom
+        float minY   = titleY - startH - vh * 0.06f;
+        float midY   = vh / 2f - startH / 2f;
+        startY = Math.min(midY, minY);
 
         float maxSettingsW  = vw * 0.1f * 0.85f;
         float settingsScale = maxSettingsW / settingsButton.getRegionWidth();
@@ -632,9 +643,28 @@ public class MainMenuScreen extends AbstractScreen {
                     break;
                 case INT_FIELD:
                     if (hitIntBox(t, ry) && !fpsInputActive) {
-                        fpsInputActive = true;
-                        fpsInputBuffer.setLength(0);
-                        fpsInputBuffer.append(s.fpsCapValue);
+                        if (Gdx.app.getType() == com.badlogic.gdx.Application.ApplicationType.Desktop) {
+                            // Desktop: use key-polling approach
+                            fpsInputActive = true;
+                            fpsInputBuffer.setLength(0);
+                            fpsInputBuffer.append(s.fpsCapValue);
+                        } else {
+                            // Mobile: open the native on-screen keyboard
+                            Gdx.input.getTextInput(new com.badlogic.gdx.Input.TextInputListener() {
+                                @Override
+                                public void input(String text) {
+                                    try {
+                                        int val = Integer.parseInt(text.trim());
+                                        if (val > 0) {
+                                            s.fpsCapValue = val;
+                                            s.applyFpsCap();
+                                            s.save();
+                                        }
+                                    } catch (NumberFormatException ignored) {}
+                                }
+                                @Override public void canceled() {}
+                            }, "FPS Limit", String.valueOf(s.fpsCapValue), "Enter FPS cap");
+                        }
                     }
                     break;
             }
