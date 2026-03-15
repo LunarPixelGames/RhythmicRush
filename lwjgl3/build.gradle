@@ -126,6 +126,22 @@ construo {
     // human-readable name, used for example in the `.app` name for macOS
     humanName.set(appName)
 
+    jlink {
+      // jdeps auto-guessing picks up removed internal APIs (sun.reflect) from
+      // old dependencies and causes jlink to fail — disable it and list manually
+      guessModulesFromJar.set(false)
+      modules.addAll(
+        "java.base",
+        "java.desktop",
+        "java.logging",
+        "java.management",
+        "java.naming",
+        "java.net.http",
+        "jdk.unsupported",
+        "jdk.zipfs"
+      )
+    }
+
     targets.configure {
       register("linuxX64", Target.Linux) {
         architecture.set(Target.Architecture.X86_64)
