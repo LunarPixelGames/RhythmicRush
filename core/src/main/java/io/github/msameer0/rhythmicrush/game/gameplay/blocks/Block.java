@@ -11,6 +11,11 @@ public class Block {
     protected Rectangle bounds;
     protected BlockType type;
 
+    public Block() {
+        // No-arg constructor for pooling — call init() before use
+        bounds = new Rectangle();
+    }
+
     public Block(float x, float y, float size) {
         this(x, y, size, BlockType.DEFAULT);
     }
@@ -18,10 +23,21 @@ public class Block {
     public Block(float x, float y, float size, BlockType type) {
         this.x = x;
         this.y = y;
-        this.width = size;
+        this.width  = size;
         this.height = size;
-        this.type = type;
+        this.type   = type;
         bounds = new Rectangle(x, y, width, height);
+    }
+
+    /** Reinitialise this block for reuse from the pool. */
+    public Block init(float x, float y, float size, BlockType type) {
+        this.x = x;
+        this.y = y;
+        this.width  = size;
+        this.height = size;
+        this.type   = type;
+        bounds.set(x, y, width, height);
+        return this;
     }
 
     public void updatePosition(float scrollSpeed, float delta) {
@@ -35,8 +51,6 @@ public class Block {
         bounds.setPosition(x, y);
     }
 
-    //player collision logic
-    //safe to land on top, kills otherwise
     public void tryTouch(AbstractPlayer player) {
         Rectangle playerRect = player.getBounds();
         if (!playerRect.overlaps(bounds)) return;
@@ -56,11 +70,9 @@ public class Block {
         float overlapFromLeft   = playerRight  - blockLeft;
         float overlapFromRight  = blockRight   - playerLeft;
 
-        //collision side check
         float minOverlap = Math.min(Math.min(overlapFromTop, overlapFromBottom),
             Math.min(overlapFromLeft, overlapFromRight));
 
-        //safe landing on top
         if (minOverlap == overlapFromBottom && player.velocityY <= 0) {
             player.setY(blockTop);
             player.setVelocityY(0);
@@ -68,15 +80,12 @@ public class Block {
             return;
         }
 
-        //safe safe underside check
         if (minOverlap == overlapFromTop && player.velocityY >= 0 && player.isSafeFromBelow()) {
             player.setY(blockBottom - player.height);
             player.setVelocityY(0);
             return;
         }
 
-        //death check for under and sides
-        //50% hitbox, 25% margin on each axis
         float hMargin = playerRect.width  * 0.25f;
         float vMargin = playerRect.height * 0.25f;
 
@@ -85,20 +94,18 @@ public class Block {
         float innerBottom = playerBottom + vMargin;
         float innerTop    = playerTop    - vMargin;
 
-        boolean innerOverlapsH = innerRight  > blockLeft && innerLeft   < blockRight;
-        boolean innerOverlapsV = innerTop    > blockBottom && innerBottom < blockTop;
+        boolean innerOverlapsH = innerRight > blockLeft  && innerLeft   < blockRight;
+        boolean innerOverlapsV = innerTop   > blockBottom && innerBottom < blockTop;
 
         if (innerOverlapsH && innerOverlapsV) {
             GameWorld world = player.getWorld();
-            if (world != null) {
-                world.playerDied();
-            }
+            if (world != null) world.playerDied();
         }
     }
 
-    public float getX() { return x; }
-    public float getY() { return y; }
-    public float getWidth() { return width; }
+    public float getX()      { return x; }
+    public float getY()      { return y; }
+    public float getWidth()  { return width; }
     public float getHeight() { return height; }
     public BlockType getType() { return type; }
 }

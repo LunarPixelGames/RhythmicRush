@@ -11,8 +11,15 @@ public class Spike extends AbstractHazard {
     private static final float HITBOX_H        = PLAYER_SIZE * 0.5f;   // 25
     private static final float HITBOX_CENTER_X = (TEXTURE_SIZE - HITBOX_W) / 2f; // 18.75
 
-    private final float rotation; // 0=up, 90=right, 180=down, 270=left
+    // Not final so it can be reset when the instance is reused from the pool
+    private float rotation;
     private Rectangle spikeHitbox;
+
+    /** No-arg constructor for pooling — call init() before use. */
+    public Spike() {
+        super(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
+        spikeHitbox = new Rectangle();
+    }
 
     public Spike(float x, float y) {
         this(x, y, 0f);
@@ -25,20 +32,28 @@ public class Spike extends AbstractHazard {
         updateHitbox();
     }
 
+    /** Reinitialise this spike for reuse from the pool. */
+    public Spike init(float x, float y, float rotation) {
+        this.x        = x;
+        this.y        = y;
+        this.rotation = rotation;
+        bounds.setPosition(x, y);
+        updateHitbox();
+        return this;
+    }
+
     private void updateHitbox() {
-        // hitbox shifts depending on which way the spike points
-        // so the narrow part always aligns with the tip
         switch (Math.round(rotation) % 360) {
-            case 90:  // pointing right — hitbox on right side, tall and narrow
+            case 90:
                 spikeHitbox.set(x + TEXTURE_SIZE - HITBOX_H, y + HITBOX_CENTER_X, HITBOX_H, HITBOX_W);
                 break;
-            case 180: // pointing down (ceiling spike) — hitbox at top
+            case 180:
                 spikeHitbox.set(x + HITBOX_CENTER_X, y + TEXTURE_SIZE - HITBOX_H, HITBOX_W, HITBOX_H);
                 break;
-            case 270: // pointing left — hitbox on left side
+            case 270:
                 spikeHitbox.set(x, y + HITBOX_CENTER_X, HITBOX_H, HITBOX_W);
                 break;
-            default:  // 0 — pointing up (ground spike)
+            default:
                 spikeHitbox.set(x + HITBOX_CENTER_X, y, HITBOX_W, HITBOX_H);
                 break;
         }
@@ -57,6 +72,6 @@ public class Spike extends AbstractHazard {
         }
     }
 
-    public float getRotation() { return rotation; }
-    public Rectangle getHitbox() { return spikeHitbox; }
+    public float getRotation()    { return rotation; }
+    public Rectangle getHitbox()  { return spikeHitbox; }
 }
