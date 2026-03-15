@@ -9,12 +9,12 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.files.FileHandle;
 
 import java.util.ArrayList;
 
+import io.github.msameer0.rhythmicrush.FontManager;
 import io.github.msameer0.rhythmicrush.RhythmicRushGame;
 import io.github.msameer0.rhythmicrush.game.level.LevelData;
 import io.github.msameer0.rhythmicrush.game.level.LevelProgress;
@@ -33,8 +33,10 @@ public class LevelSelectScreen extends AbstractScreen {
     private ArrayList<LevelEntry> levels = new ArrayList<>();
     private int selectedLevel = 0;
 
+    // Font from shared FontManager — NOT disposed here
     private BitmapFont  font;
-    private GlyphLayout layout;
+    // Single reusable GlyphLayout — set text each frame, no allocations
+    private final GlyphLayout layout = new GlyphLayout();
 
     private TextureRegion   backButton, leftArrow, rightArrow;
     private TextureRegion[] difficultyTextures;
@@ -55,9 +57,9 @@ public class LevelSelectScreen extends AbstractScreen {
     public void show() {
         super.show();
 
-        layout = new GlyphLayout();
+        // Use shared font — zero allocation, instant
+        font = game.getFontManager().get(FontManager.SIZE_XLARGE);
 
-        // pull regions from shared atlas — no load/dispose here
         TextureAtlas atlas = game.getAtlasManager().getLevelSelectAtlas();
         backButton  = atlas.findRegion("back");
         leftArrow   = atlas.findRegion("left_arrow");
@@ -68,22 +70,8 @@ public class LevelSelectScreen extends AbstractScreen {
             atlas.findRegion("2_diff"),
             atlas.findRegion("3_diff"),
             atlas.findRegion("4_diff"),
-            atlas.findRegion("5_diff"), // may be null — handled gracefully
+            atlas.findRegion("5_diff"),
         };
-
-        try {
-            FreeTypeFontGenerator gen = new FreeTypeFontGenerator(
-                Gdx.files.internal("fonts/zendots-regular.ttf"));
-            FreeTypeFontGenerator.FreeTypeFontParameter p =
-                new FreeTypeFontGenerator.FreeTypeFontParameter();
-            p.size      = 48;
-            p.magFilter = Texture.TextureFilter.Linear;
-            p.minFilter = Texture.TextureFilter.Linear;
-            font = gen.generateFont(p);
-            gen.dispose();
-        } catch (Exception e) {
-            font = new BitmapFont();
-        }
 
         loadLevels();
         updateScaledSizes();
@@ -177,52 +165,52 @@ public class LevelSelectScreen extends AbstractScreen {
         float spacing  = panelW * 0.05f;
 
         font.getData().setScale(0.85f);
-        GlyphLayout nameLayout = new GlyphLayout(font, current.name);
-        float totalWidth = iconSize + spacing + nameLayout.width;
+        layout.setText(font, current.name);
+        float nameW = layout.width, nameH = layout.height;
+        float totalWidth = iconSize + spacing + nameW;
         float startX     = panelX + (panelW - totalWidth) / 2f;
         float iconX      = startX;
         float iconY      = panelY + panelH / 2f - iconSize / 2f + 10f;
         float textX      = iconX + iconSize + spacing;
-        float textY      = panelY + panelH / 2f + nameLayout.height / 2f + 10f;
+        float textY      = panelY + panelH / 2f + nameH / 2f + 10f;
 
         game.getBatch().draw(diffRegion, iconX, iconY, iconSize, iconSize);
         font.draw(game.getBatch(), current.name, textX, textY);
 
-        // difficulty label — smaller, sits just below the level name
+        // Difficulty label
         font.getData().setScale(0.38f);
         String diffLabel = current.difficulty != null
             ? current.difficulty.substring(0,1).toUpperCase() + current.difficulty.substring(1)
             : "Normal";
-        GlyphLayout diffLayout = new GlyphLayout(font, diffLabel);
+        layout.setText(font, diffLabel);
         font.setColor(new Color(1f, 1f, 1f, 0.55f));
-        font.draw(game.getBatch(), diffLabel,
-            textX, textY - nameLayout.height - 4f);
+        font.draw(game.getBatch(), diffLabel, textX, textY - nameH - 4f);
         font.setColor(Color.WHITE);
 
-        // ── Stats below panel ─────────────────────────────────────────────────
+        // Stats below panel
         String levelKey = levels.get(selectedLevel).index + ".json";
         LevelProgress progress = game.getProgressManager().getOrCreate(levelKey);
 
         font.getData().setScale(0.42f);
         String bestText     = "Best: " + progress.bestPercent + "%";
         String attemptsText = "Total Attempts: " + progress.totalAttempts;
-        GlyphLayout bestLayout     = new GlyphLayout(font, bestText);
-        GlyphLayout attemptsLayout = new GlyphLayout(font, attemptsText);
         float statsX = panelX + panelW / 2f;
-        font.setColor(new Color(1f, 1f, 1f, 0.8f));
-        font.draw(game.getBatch(), bestText,
-            statsX - bestLayout.width / 2f, panelY - 18f);
-        font.setColor(new Color(1f, 1f, 1f, 0.55f));
-        font.draw(game.getBatch(), attemptsText,
-            statsX - attemptsLayout.width / 2f, panelY - 44f);
 
-        // ── Level counter — small, very bottom center ─────────────────────────
+        layout.setText(font, bestText);
+        font.setColor(new Color(1f, 1f, 1f, 0.8f));
+        font.draw(game.getBatch(), bestText, statsX - layout.width / 2f, panelY - 18f);
+
+        layout.setText(font, attemptsText);
+        font.setColor(new Color(1f, 1f, 1f, 0.55f));
+        font.draw(game.getBatch(), attemptsText, statsX - layout.width / 2f, panelY - 44f);
+
+        // Level counter
         font.getData().setScale(0.35f);
         font.setColor(new Color(1f, 1f, 1f, 0.4f));
         String counter = (selectedLevel + 1) + " / " + levels.size();
-        GlyphLayout counterLayout = new GlyphLayout(font, counter);
+        layout.setText(font, counter);
         font.draw(game.getBatch(), counter,
-            viewport.getWorldWidth() / 2f - counterLayout.width / 2f, 22f);
+            viewport.getWorldWidth() / 2f - layout.width / 2f, 22f);
 
         font.getData().setScale(1f);
         font.setColor(Color.WHITE);
@@ -278,8 +266,8 @@ public class LevelSelectScreen extends AbstractScreen {
 
     @Override
     public void dispose() {
-        font.dispose();
         if (panelTexture != null) panelTexture.dispose();
+        // font NOT disposed — owned by FontManager
         // atlas NOT disposed — owned by AtlasManager
     }
 }

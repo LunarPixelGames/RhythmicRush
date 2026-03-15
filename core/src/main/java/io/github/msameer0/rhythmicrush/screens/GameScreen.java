@@ -77,11 +77,15 @@ public class GameScreen extends AbstractScreen {
     private TextureRegion resumeRegion;
     private TextureRegion backRegion;
 
-    private static final Color COL_OVERLAY = new Color(0f,    0f,    0f,    0.65f);
-    private static final Color COL_PANEL   = new Color(0.11f, 0.11f, 0.17f, 1f);
-    private static final Color COL_HEADING = new Color(1f,    0.85f, 0.35f, 1f);
-    private static final Color COL_LABEL   = new Color(1f,    1f,    1f,    0.85f);
-    private static final Color COL_DIM     = new Color(1f,    1f,    1f,    0.50f);
+    private static final Color COL_OVERLAY    = new Color(0f,    0f,    0f,    0.65f);
+    private static final Color COL_PANEL      = new Color(0.11f, 0.11f, 0.17f, 1f);
+    private static final Color COL_HEADING    = new Color(1f,    0.85f, 0.35f, 1f);
+    private static final Color COL_LABEL      = new Color(1f,    1f,    1f,    0.85f);
+    private static final Color COL_DIM        = new Color(1f,    1f,    1f,    0.50f);
+    // HUD text colors — static to avoid per-frame allocation
+    private static final Color HUD_ATTEMPT    = new Color(1f,    1f,    1f,    0.85f);
+    private static final Color HUD_BEST       = new Color(1f,    1f,    1f,    0.55f);
+    private static final Color HUD_FPS        = new Color(1f,    1f,    1f,    0.45f);
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -443,19 +447,19 @@ public class GameScreen extends AbstractScreen {
         game.getBatch().setProjectionMatrix(gameCamera.combined);
         game.getBatch().begin();
 
-        font.setColor(new Color(1f, 1f, 1f, 0.85f));
+        font.setColor(HUD_ATTEMPT);
         font.draw(game.getBatch(), "Attempt  " + sessionAttempts, left, top);
 
         float nextY = top - 26f;
         if (levelKey != null) {
             LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
-            font.setColor(new Color(1f, 1f, 1f, 0.55f));
+            font.setColor(HUD_BEST);
             font.draw(game.getBatch(), "Best  " + p.bestPercent + "%", left, nextY);
             nextY -= 26f;
         }
 
         if (game.getSettingsManager().showFps) {
-            font.setColor(new Color(1f, 1f, 1f, 0.45f));
+            font.setColor(HUD_FPS);
             font.draw(game.getBatch(), "FPS  " + Gdx.graphics.getFramesPerSecond(), left, nextY);
         }
 
@@ -502,11 +506,13 @@ public class GameScreen extends AbstractScreen {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
+    // Reusable vectors — avoids allocation every frame
+    private final com.badlogic.gdx.math.Vector3 _unprojectTmp = new com.badlogic.gdx.math.Vector3();
+
     private Vector2 unprojectWorld() {
-        com.badlogic.gdx.math.Vector3 v = new com.badlogic.gdx.math.Vector3(
-            Gdx.input.getX(), Gdx.input.getY(), 0);
-        gameCamera.unproject(v);
-        return new Vector2(v.x, v.y);
+        _unprojectTmp.set(Gdx.input.getX(), Gdx.input.getY(), 0);
+        gameCamera.unproject(_unprojectTmp);
+        return new Vector2(_unprojectTmp.x, _unprojectTmp.y);
     }
 
     private static boolean hits(Vector2 t, float x, float y, float w, float h) {

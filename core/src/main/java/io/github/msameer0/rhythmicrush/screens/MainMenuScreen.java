@@ -9,7 +9,6 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 
@@ -17,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import io.github.msameer0.rhythmicrush.FontManager;
 import io.github.msameer0.rhythmicrush.RhythmicRushGame;
 import io.github.msameer0.rhythmicrush.SettingsManager;
 
@@ -128,7 +128,7 @@ public class MainMenuScreen extends AbstractScreen {
             0.2f + 0.6f * rand.nextFloat(), 1f);
 
         shapes = new ShapeRenderer();
-        font   = loadFont(32);
+        font   = game.getFontManager().get(FontManager.SIZE_LARGE);
         layout = new GlyphLayout();
 
         if (game.getSettingsManager().menuMusicEnabled)
@@ -776,19 +776,6 @@ public class MainMenuScreen extends AbstractScreen {
         return v;
     }
 
-    private BitmapFont loadFont(int size) {
-        try {
-            FreeTypeFontGenerator gen = new FreeTypeFontGenerator(
-                Gdx.files.internal("fonts/zendots-regular.ttf"));
-            FreeTypeFontGenerator.FreeTypeFontParameter p =
-                new FreeTypeFontGenerator.FreeTypeFontParameter();
-            p.size = size;
-            p.magFilter = Texture.TextureFilter.Linear;
-            p.minFilter = Texture.TextureFilter.Linear;
-            BitmapFont f = gen.generateFont(p); gen.dispose(); return f;
-        } catch (Exception e) { return new BitmapFont(); }
-    }
-
     private Texture createRoundedRect(int w, int h, int r, Color color) {
         Pixmap pm = new Pixmap(w, h, Pixmap.Format.RGBA8888);
         pm.setColor(0, 0, 0, 0); pm.fill();
@@ -810,7 +797,7 @@ public class MainMenuScreen extends AbstractScreen {
     @Override
     public void dispose() {
         if (shapes       != null) shapes.dispose();
-        if (font         != null) font.dispose();
+        // font NOT disposed — owned by FontManager
         if (panelTexture != null) panelTexture.dispose();
     }
 }

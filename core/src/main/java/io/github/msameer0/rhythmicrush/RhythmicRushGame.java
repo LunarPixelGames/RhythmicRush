@@ -12,6 +12,7 @@ public class RhythmicRushGame extends Game {
     private SpriteBatch      batch;
     private SoundManager     soundManager;
     private AtlasManager     atlasManager;
+    private FontManager      fontManager;
     private WindowController windowController;
     private ProgressManager  progressManager;
     private SettingsManager  settingsManager;
@@ -21,32 +22,28 @@ public class RhythmicRushGame extends Game {
         batch           = new SpriteBatch();
         atlasManager    = new AtlasManager();
         settingsManager = new SettingsManager();
+        // Generate all fonts once here — never blocks a screen transition
+        fontManager     = new FontManager();
         soundManager    = new SoundManager();
         progressManager = new ProgressManager();
-        // apply saved volume before playing anything
+
         soundManager.setMusicVolume(settingsManager.musicVolume);
-        if (settingsManager.menuMusicEnabled) soundManager.playMenuMusic();
         settingsManager.applyFpsCap();
         settingsManager.applyVsync();
+
+        if (settingsManager.menuMusicEnabled) soundManager.playMenuMusic();
         setScreen(new MainMenuScreen(this));
     }
 
     public SpriteBatch      getBatch()            { return batch; }
     public SoundManager     getSoundManager()     { return soundManager; }
     public AtlasManager     getAtlasManager()     { return atlasManager; }
+    public FontManager      getFontManager()      { return fontManager; }
     public WindowController getWindowController() { return windowController; }
     public ProgressManager  getProgressManager()  { return progressManager; }
     public SettingsManager  getSettingsManager()  { return settingsManager; }
 
-    /**
-     * Called by Lwjgl3Launcher after constructing the game but the LibGDX
-     * Lwjgl3Application constructor itself calls create() synchronously, so we
-     * need the controller set BEFORE new Lwjgl3Application(...) is called.
-     * See Lwjgl3Launcher for the correct order.
-     */
-    public void setWindowController(WindowController wc) {
-        this.windowController = wc;
-    }
+    public void setWindowController(WindowController wc) { this.windowController = wc; }
 
     @Override
     public void dispose() {
@@ -54,5 +51,6 @@ public class RhythmicRushGame extends Game {
         batch.dispose();
         soundManager.dispose();
         atlasManager.dispose();
+        fontManager.dispose();
     }
 }
