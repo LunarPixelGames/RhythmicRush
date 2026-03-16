@@ -64,6 +64,9 @@ public class GameScreen extends AbstractScreen {
     private int    sessionAttempts = 0;
     private String levelKey        = null;
 
+    // Reusable StringBuilder — avoids a new String allocation every frame for HUD text
+    private final StringBuilder _hudSb = new StringBuilder(32);
+
     // ── Pause overlay rendering ───────────────────────────────────────────────
     private ShapeRenderer shapes;
     private Texture       panelTexture;
@@ -448,19 +451,22 @@ public class GameScreen extends AbstractScreen {
         game.getBatch().begin();
 
         font.setColor(HUD_ATTEMPT);
-        font.draw(game.getBatch(), "Attempt  " + sessionAttempts, left, top);
+        _hudSb.setLength(0); _hudSb.append("Attempt  ").append(sessionAttempts);
+        font.draw(game.getBatch(), _hudSb, left, top);
 
         float nextY = top - 26f;
         if (levelKey != null) {
             LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
             font.setColor(HUD_BEST);
-            font.draw(game.getBatch(), "Best  " + p.bestPercent + "%", left, nextY);
+            _hudSb.setLength(0); _hudSb.append("Best  ").append(p.bestPercent).append('%');
+            font.draw(game.getBatch(), _hudSb, left, nextY);
             nextY -= 26f;
         }
 
         if (game.getSettingsManager().showFps) {
             font.setColor(HUD_FPS);
-            font.draw(game.getBatch(), "FPS  " + Gdx.graphics.getFramesPerSecond(), left, nextY);
+            _hudSb.setLength(0); _hudSb.append("FPS  ").append(Gdx.graphics.getFramesPerSecond());
+            font.draw(game.getBatch(), _hudSb, left, nextY);
         }
 
         game.getBatch().end();

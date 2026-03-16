@@ -26,6 +26,19 @@ public class GameWorld implements Tickable {
     private boolean playerDead  = false;
     private float   cullX       = 0f;
 
+    // ── Spatial partition indices ─────────────────────────────────────────────
+    // Objects are loaded in ascending X order and only move left.
+    // These indices track the first object that could possibly overlap the player,
+    // skipping everything that has already scrolled past. This turns O(N) collision
+    // and update loops into O(~visible objects) per tick.
+    private int blockStart   = 0;
+    private int hazardStart  = 0;
+    private int portalStart  = 0;
+
+    // How far ahead of the player (in world units) we need to check.
+    // Slightly wider than the screen so fast-moving objects don't pop in.
+    private static final float COLLISION_LOOKAHEAD = 1400f;
+
     // ── Object lists ──────────────────────────────────────────────────────────
     private final ArrayList<AbstractPortal> portals = new ArrayList<>();
     private final ArrayList<AbstractHazard> hazards = new ArrayList<>();
@@ -193,6 +206,15 @@ public class GameWorld implements Tickable {
         }
 
         levelEndX = data.getLevelEndX();
+        blockStart  = 0;
+        hazardStart = 0;
+        portalStart = 0;
+
+        // Sort all lists by ascending X so the spatial partition start-index
+        // and early-break optimisations are valid.
+        blocks.sort((a, b2) -> Float.compare(a.getX(), b2.getX()));
+        hazards.sort((a, b2) -> Float.compare(a.getX(), b2.getX()));
+        portals.sort((a, b2) -> Float.compare(a.getX(), b2.getX()));
 
         // Free previous player and get a fresh one from the pool
         freePlayer();
@@ -256,26 +278,51 @@ public class GameWorld implements Tickable {
 
         player.update(delta, groundY);
 
-        // Portal touch — may swap player type, previous player freed to pool
-        for (AbstractPortal portal : portals) {
+        // ── Position update — ALL objects from index 0, every tick ───────────
+        // Must start from 0, not from blockStart — objects behind blockStart
+        // are still in the list and still need to scroll or they freeze.
+        for (int i = 0; i < portals.size(); i++) portals.get(i).updatePosition(scrollSpeed, delta);
+        for (int i = 0; i < hazards.size(); i++) hazards.get(i).updatePosition(scrollSpeed, delta);
+        for (int i = 0; i < blocks.size();  i++) blocks.get(i).updatePosition(scrollSpeed, delta);
+
+        // ── Advance start indices past objects fully behind the player ────────
+        // player.x is always ~100 (camera offset keeps it fixed on screen).
+        // Objects scroll left relative to player, so use player.x for range.
+        final float px       = player.x;
+        final float rangeMin = px - 300f;
+        final float rangeMax = px + COLLISION_LOOKAHEAD;
+
+        while (blockStart  < blocks.size()  && blocks.get(blockStart).getX()   + blocks.get(blockStart).getWidth()   < rangeMin) blockStart++;
+        while (hazardStart < hazards.size() && hazards.get(hazardStart).getX() + hazards.get(hazardStart).getWidth() < rangeMin) hazardStart++;
+        while (portalStart < portals.size() && portals.get(portalStart).getX() + portals.get(portalStart).getWidth() < rangeMin) portalStart++;
+
+        // ── Portal touch (only nearby portals) ───────────────────────────────
+        for (int i = portalStart; i < portals.size(); i++) {
+            AbstractPortal portal = portals.get(i);
+            if (portal.getX() > rangeMax) break;
             AbstractPlayer next = portal.tryTouch(player);
-            if (next != player) {
-                freePlayer();
-                player = next;
-            }
+            if (next != player) { freePlayer(); player = next; }
         }
 
-        for (AbstractHazard hazard : hazards) hazard.tryTouch(player);
-        for (Block block : blocks)           block.tryTouch(player);
-        player.tryJump();
+        // ── Hazard collision (only nearby hazards) ────────────────────────────
+        for (int i = hazardStart; i < hazards.size(); i++) {
+            AbstractHazard h = hazards.get(i);
+            if (h.getX() > rangeMax) break;
+            h.tryTouch(player);
+        }
 
-        for (AbstractPortal portal : portals) portal.updatePosition(scrollSpeed, delta);
-        for (AbstractHazard hazard : hazards) hazard.updatePosition(scrollSpeed, delta);
-        for (Block block : blocks)            block.updatePosition(scrollSpeed, delta);
+        // ── Block collision (only nearby blocks) ──────────────────────────────
+        for (int i = blockStart; i < blocks.size(); i++) {
+            Block b = blocks.get(i);
+            if (b.getX() > rangeMax) break;
+            b.tryTouch(player);
+        }
+
+        player.tryJump();
 
         worldScrolled += scrollSpeed * delta;
 
-        // Color triggers
+        // ── Color triggers ────────────────────────────────────────────────────
         float playerWorldX = 100f + worldScrolled;
         for (ColorTrigger ct : colorTriggers) {
             if (!ct.fired && playerWorldX >= ct.worldX) {
@@ -300,43 +347,31 @@ public class GameWorld implements Tickable {
             if (t >= 1f) groundFade = null;
         }
 
-        // Cull objects that have scrolled off the left edge
-        // Return them to pools instead of letting GC collect them
-        if (!blocks.isEmpty()) {
-            for (int i = blocks.size() - 1; i >= 0; i--) {
-                Block b = blocks.get(i);
-                if (b.getX() + b.getWidth() < cullX - 200) {
-                    blockPool.free(b);
-                    blocks.remove(i);
-                }
-            }
+        // ── Left-edge culling — return to pools ───────────────────────────────
+        // Always check index 0 — objects are sorted by X so the leftmost (oldest)
+        // is always at the front. When we remove it, the next oldest becomes index 0.
+        // After removal, start indices must be decremented to stay valid.
+        while (!blocks.isEmpty()) {
+            Block b = blocks.get(0);
+            if (b.getX() + b.getWidth() >= cullX - 200) break;
+            blockPool.free(b);
+            blocks.remove(0);
+            if (blockStart > 0) blockStart--;
         }
-        if (!hazards.isEmpty()) {
-            for (int i = hazards.size() - 1; i >= 0; i--) {
-                AbstractHazard h = hazards.get(i);
-                if (h.getX() + h.getWidth() < cullX) {
-                    if (h instanceof Spike) {
-                        spikePool.free((Spike) h);
-                        activeSpikes.remove(h);
-                    }
-                    hazards.remove(i);
-                }
-            }
+        while (!hazards.isEmpty()) {
+            AbstractHazard h = hazards.get(0);
+            if (h.getX() + h.getWidth() >= cullX) break;
+            if (h instanceof Spike) { spikePool.free((Spike) h); activeSpikes.remove(h); }
+            hazards.remove(0);
+            if (hazardStart > 0) hazardStart--;
         }
-        if (!portals.isEmpty()) {
-            for (int i = portals.size() - 1; i >= 0; i--) {
-                AbstractPortal p = portals.get(i);
-                if (p.getX() + p.getWidth() < cullX) {
-                    if (p instanceof CubePortal) {
-                        cubePortalPool.free((CubePortal) p);
-                        activeCubePortals.remove(p);
-                    } else if (p instanceof ShipPortal) {
-                        shipPortalPool.free((ShipPortal) p);
-                        activeShipPortals.remove(p);
-                    }
-                    portals.remove(i);
-                }
-            }
+        while (!portals.isEmpty()) {
+            AbstractPortal p = portals.get(0);
+            if (p.getX() + p.getWidth() >= cullX) break;
+            if (p instanceof CubePortal) { cubePortalPool.free((CubePortal) p); activeCubePortals.remove(p); }
+            else if (p instanceof ShipPortal) { shipPortalPool.free((ShipPortal) p); activeShipPortals.remove(p); }
+            portals.remove(0);
+            if (portalStart > 0) portalStart--;
         }
 
         if (levelEndX > 0 && worldScrolled >= levelEndX) {
