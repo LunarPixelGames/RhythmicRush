@@ -44,6 +44,7 @@ public class GameScreen extends AbstractScreen {
     private OrthographicCamera gameCamera;
     private Viewport           gameViewport;
     private LevelData          levelData;
+    private int                levelIndex = 0;
 
     // ── State ─────────────────────────────────────────────────────────────────
     private boolean deathPaused    = false;
@@ -92,9 +93,10 @@ public class GameScreen extends AbstractScreen {
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
-    public GameScreen(RhythmicRushGame game, LevelData levelData) {
+    public GameScreen(RhythmicRushGame game, LevelData levelData, int levelIndex) {
         super(game);
-        this.levelData = levelData;
+        this.levelData  = levelData;
+        this.levelIndex = levelIndex;
 
         gameCamera   = new OrthographicCamera();
         gameViewport = new ExtendViewport(1280, 720, gameCamera);
@@ -387,7 +389,7 @@ public class GameScreen extends AbstractScreen {
 
     private void exitToLevelSelect() {
         stopAndDisposeMusic();
-        game.setScreen(new LevelSelectScreen(game));
+        game.setScreen(new LevelSelectScreen(game, levelIndex));
     }
 
     private void triggerRespawn() {

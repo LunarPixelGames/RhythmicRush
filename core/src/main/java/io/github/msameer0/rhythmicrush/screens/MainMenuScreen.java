@@ -19,6 +19,7 @@ import java.util.Random;
 import io.github.msameer0.rhythmicrush.FontManager;
 import io.github.msameer0.rhythmicrush.RhythmicRushGame;
 import io.github.msameer0.rhythmicrush.SettingsManager;
+import io.github.msameer0.rhythmicrush.ui.AnimatedButton;
 
 public class MainMenuScreen extends AbstractScreen {
 
@@ -27,8 +28,10 @@ public class MainMenuScreen extends AbstractScreen {
     private Color bgColor;
 
     private float titleX, titleY, titleW, titleH;
-    private float startX, startY, startW, startH;
-    private float settingsX, settingsY, settingsW, settingsH;
+
+    // Animated buttons — handle press/release/bounce themselves
+    private AnimatedButton btnPlay;
+    private AnimatedButton btnSettings;
 
     // ── Settings overlay ──────────────────────────────────────────────────────
     private boolean       settingsOpen = false;
@@ -131,6 +134,10 @@ public class MainMenuScreen extends AbstractScreen {
         font   = game.getFontManager().get(FontManager.SIZE_LARGE);
         layout = new GlyphLayout();
 
+        // Buttons created here with placeholder bounds — updateScaledSizes() sets real bounds
+        btnPlay     = new AnimatedButton(startButton,    0, 0, 0, 0, () -> game.setScreen(new LevelSelectScreen(game)));
+        btnSettings = new AnimatedButton(settingsButton, 0, 0, 0, 0, () -> settingsOpen = true);
+
         if (game.getSettingsManager().menuMusicEnabled)
             game.getSoundManager().playMenuMusic();
         else
@@ -188,11 +195,10 @@ public class MainMenuScreen extends AbstractScreen {
         float vw = viewport.getWorldWidth();
         float vh = viewport.getWorldHeight();
 
-        // Title — scale by width but also hard-cap height to 30% of screen height
-        float maxTitleWidth = vw * 0.75f;
+        // Title — bumped from 0.75 → 0.85 width, height cap from 30% → 36%
+        float maxTitleWidth = vw * 0.85f;
         float titleScale    = (maxTitleWidth / title.getRegionWidth()) * 0.675f;
-        // If the resulting height exceeds 30% of vh, scale down further
-        float maxTitleHeight = vh * 0.30f;
+        float maxTitleHeight = vh * 0.36f;
         if (title.getRegionHeight() * titleScale > maxTitleHeight)
             titleScale = maxTitleHeight / title.getRegionHeight();
         titleW = title.getRegionWidth()  * titleScale;
@@ -200,23 +206,24 @@ public class MainMenuScreen extends AbstractScreen {
         titleX = vw / 2f - titleW / 2f;
         titleY = vh - titleH - vh * 0.03f;
 
-        // Play button — guaranteed gap below title, never overlaps
-        float maxStartW  = vw * 0.25f * 0.75f;
+        // Play button — reduced from 0.25*0.75 → 0.25*0.55
+        float maxStartW  = vw * 0.25f * 0.55f;
         float startScale = maxStartW / startButton.getRegionWidth();
-        startW = startButton.getRegionWidth()  * startScale;
-        startH = startButton.getRegionHeight() * startScale;
-        startX = vw / 2f - startW / 2f;
-        // At least 6% of vh gap below the title bottom
+        float startW = startButton.getRegionWidth()  * startScale;
+        float startH = startButton.getRegionHeight() * startScale;
+        float startX = vw / 2f - startW / 2f;
         float minY   = titleY - startH - vh * 0.06f;
         float midY   = vh / 2f - startH / 2f;
-        startY = Math.min(midY, minY);
+        float startY = Math.min(midY, minY);
+        if (btnPlay != null) btnPlay.setBounds(startX, startY, startW, startH);
 
         float maxSettingsW  = vw * 0.1f * 0.85f;
         float settingsScale = maxSettingsW / settingsButton.getRegionWidth();
-        settingsW = settingsButton.getRegionWidth()  * settingsScale;
-        settingsH = settingsButton.getRegionHeight() * settingsScale;
-        settingsX = 20;
-        settingsY = 20 - 10;
+        float settingsW = settingsButton.getRegionWidth()  * settingsScale;
+        float settingsH = settingsButton.getRegionHeight() * settingsScale;
+        float settingsX = 20;
+        float settingsY = 20 - 10f;
+        if (btnSettings != null) btnSettings.setBounds(settingsX, settingsY, settingsW, settingsH);
 
         panelW = Math.min(vw * 0.72f, 740f);
 
@@ -270,6 +277,10 @@ public class MainMenuScreen extends AbstractScreen {
 
     @Override
     protected void update(float delta) {
+        if (!settingsOpen) {
+            btnPlay.update(delta);
+            btnSettings.update(delta);
+        }
         if (settingsOpen) handleSettingsInput();
         else              handleMenuInput();
     }
@@ -283,9 +294,9 @@ public class MainMenuScreen extends AbstractScreen {
 
         game.getBatch().setProjectionMatrix(camera.combined);
         game.getBatch().begin();
-        game.getBatch().draw(title,          titleX,    titleY,    titleW,    titleH);
-        game.getBatch().draw(startButton,    startX,    startY,    startW,    startH);
-        game.getBatch().draw(settingsButton, settingsX, settingsY, settingsW, settingsH);
+        game.getBatch().draw(title, titleX, titleY, titleW, titleH);
+        btnPlay.draw(game.getBatch());
+        btnSettings.draw(game.getBatch());
         game.getBatch().end();
 
         if (!settingsOpen) return;
@@ -551,10 +562,17 @@ public class MainMenuScreen extends AbstractScreen {
     private void handleMenuInput() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE))  game.setScreen(new LevelSelectScreen(game));
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) Gdx.app.exit();
-        if (!Gdx.input.justTouched()) return;
+
         Vector2 t = unproject();
-        if (hits(t, startX,    startY,    startW,    startH))    game.setScreen(new LevelSelectScreen(game));
-        if (hits(t, settingsX, settingsY, settingsW, settingsH)) settingsOpen = true;
+
+        if (Gdx.input.justTouched()) {
+            btnPlay.onTouchDown(t.x, t.y);
+            btnSettings.onTouchDown(t.x, t.y);
+        }
+        if (!Gdx.input.isTouched()) {
+            btnPlay.onTouchUp(t.x, t.y);
+            btnSettings.onTouchUp(t.x, t.y);
+        }
     }
 
     private void handleSettingsInput() {

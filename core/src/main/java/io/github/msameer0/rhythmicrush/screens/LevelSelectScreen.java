@@ -19,6 +19,7 @@ import io.github.msameer0.rhythmicrush.RhythmicRushGame;
 import io.github.msameer0.rhythmicrush.game.level.LevelData;
 import io.github.msameer0.rhythmicrush.game.level.LevelProgress;
 import io.github.msameer0.rhythmicrush.game.level.LevelSerializer;
+import io.github.msameer0.rhythmicrush.ui.AnimatedButton;
 
 public class LevelSelectScreen extends AbstractScreen {
 
@@ -41,16 +42,20 @@ public class LevelSelectScreen extends AbstractScreen {
     private TextureRegion   backButton, leftArrow, rightArrow;
     private TextureRegion[] difficultyTextures;
 
+    private AnimatedButton btnBack, btnLeft, btnRight, btnPanel;
+
     private Texture panelTexture;
     private int lastPanelW = -1, lastPanelH = -1;
 
-    private float backX, backY, backW, backH;
-    private float leftX, leftY, leftW, leftH;
-    private float rightX, rightY, rightW, rightH;
     private float panelX, panelY, panelW, panelH;
 
     public LevelSelectScreen(RhythmicRushGame game) {
+        this(game, 0);
+    }
+
+    public LevelSelectScreen(RhythmicRushGame game, int initialIndex) {
         super(game);
+        this.selectedLevel = initialIndex;
     }
 
     @Override
@@ -74,6 +79,10 @@ public class LevelSelectScreen extends AbstractScreen {
         };
 
         loadLevels();
+        btnBack  = new AnimatedButton(backButton,  0, 0, 0, 0, () -> game.setScreen(new MainMenuScreen(game)));
+        btnLeft  = new AnimatedButton(leftArrow,   0, 0, 0, 0, () -> navigate(-1));
+        btnRight = new AnimatedButton(rightArrow,  0, 0, 0, 0, () -> navigate(1));
+        btnPanel = new AnimatedButton(null,        0, 0, 0, 0, this::playSelected);
         updateScaledSizes();
     }
 
@@ -98,7 +107,8 @@ public class LevelSelectScreen extends AbstractScreen {
             placeholder.difficulty = "normal";
             levels.add(new LevelEntry(placeholder, -1));
         }
-        selectedLevel = 0;
+        // Clamp to valid range — preserves the initial index passed from GameScreen
+        selectedLevel = Math.max(0, Math.min(selectedLevel, levels.size() - 1));
     }
 
     private int difficultyIndex(String difficulty) {
@@ -123,17 +133,28 @@ public class LevelSelectScreen extends AbstractScreen {
         float vw = viewport.getWorldWidth();
         float vh = viewport.getWorldHeight();
 
-        backW = vw * 0.08f; backH = backW; backX = 10; backY = vh - backH - 10;
-        leftW = vw * 0.08f; leftH = leftW; leftX = 10; leftY = vh / 2f - leftH / 2f;
-        rightW = vw * 0.08f; rightH = rightW;
-        rightX = vw - rightW - 10; rightY = vh / 2f - rightH / 2f;
+        float backW = vw * 0.08f, backH = backW;
+        float leftW = vw * 0.08f, leftH = leftW;
+        float rightW = vw * 0.08f, rightH = rightW;
+
+        if (btnBack  != null) btnBack.setBounds(10, vh - backH - 10, backW, backH);
+        if (btnLeft  != null) btnLeft.setBounds(10, vh / 2f - leftH / 2f, leftW, leftH);
+        if (btnRight != null) btnRight.setBounds(vw - rightW - 10, vh / 2f - rightH / 2f, rightW, rightH);
+
         panelW = vw * 0.6f; panelH = vh * 0.28f;
         panelX = vw / 2f - panelW / 2f;
         panelY = vh / 2f - panelH / 2f + 40;
+        if (btnPanel != null) btnPanel.setBounds(panelX, panelY, panelW, panelH);
     }
 
     @Override
-    protected void update(float delta) { handleInput(); }
+    protected void update(float delta) {
+        btnBack.update(delta);
+        btnLeft.update(delta);
+        btnRight.update(delta);
+        btnPanel.update(delta);
+        handleInput();
+    }
 
     @Override
     protected void draw() {
@@ -155,10 +176,10 @@ public class LevelSelectScreen extends AbstractScreen {
             lastPanelW = texW; lastPanelH = texH;
         }
 
-        game.getBatch().draw(backButton,   backX,  backY,  backW,  backH);
-        game.getBatch().draw(leftArrow,    leftX,  leftY,  leftW,  leftH);
-        game.getBatch().draw(rightArrow,   rightX, rightY, rightW, rightH);
         game.getBatch().draw(panelTexture, panelX, panelY);
+        btnBack.draw(game.getBatch());
+        btnLeft.draw(game.getBatch());
+        btnRight.draw(game.getBatch());
 
         TextureRegion diffRegion = difficultyTexture(current.difficulty);
         float iconSize = panelH * 0.55f;
@@ -218,16 +239,21 @@ public class LevelSelectScreen extends AbstractScreen {
     }
 
     private void handleInput() {
+        Vector2 t = viewport.unproject(new Vector2(Gdx.input.getX(), Gdx.input.getY()));
+
         if (Gdx.input.justTouched()) {
-            Vector2 touch = viewport.unproject(new Vector2(Gdx.input.getX(), Gdx.input.getY()));
-            float x = touch.x, y = touch.y;
-            if (x >= leftX  && x <= leftX  + leftW  && y >= leftY  && y <= leftY  + leftH)  navigate(-1);
-            if (x >= rightX && x <= rightX + rightW && y >= rightY && y <= rightY + rightH) navigate(1);
-            if (x >= backX  && x <= backX  + backW  && y >= backY  && y <= backY  + backH)
-                game.setScreen(new MainMenuScreen(game));
-            if (x >= panelX && x <= panelX + panelW && y >= panelY && y <= panelY + panelH)
-                playSelected();
+            btnBack.onTouchDown(t.x, t.y);
+            btnLeft.onTouchDown(t.x, t.y);
+            btnRight.onTouchDown(t.x, t.y);
+            btnPanel.onTouchDown(t.x, t.y);
         }
+        if (!Gdx.input.isTouched()) {
+            btnBack.onTouchUp(t.x, t.y);
+            btnLeft.onTouchUp(t.x, t.y);
+            btnRight.onTouchUp(t.x, t.y);
+            btnPanel.onTouchUp(t.x, t.y);
+        }
+
         if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT))   navigate(-1);
         if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT))  navigate(1);
         if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER))  playSelected();
@@ -242,7 +268,7 @@ public class LevelSelectScreen extends AbstractScreen {
     private void playSelected() {
         LevelEntry entry = levels.get(selectedLevel);
         if (entry.index < 0) return;
-        game.setScreen(new GameScreen(game, entry.data));
+        game.setScreen(new GameScreen(game, entry.data, selectedLevel));
     }
 
     private Texture createRoundedRect(int w, int h, int r, Color color) {
