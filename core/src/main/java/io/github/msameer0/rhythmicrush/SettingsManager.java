@@ -22,6 +22,8 @@ public class SettingsManager {
     public boolean capFps              = false;
     public int     fpsCapValue         = 60;
     public boolean enableVsync         = false;
+    public boolean showPercentage      = true;
+    public boolean showProgressBar     = true;
 
     // ── Plain data class used only for deserialization ────────────────────────
     public static class Data {
@@ -34,6 +36,8 @@ public class SettingsManager {
         public boolean capFps              = false;
         public int     fpsCapValue         = 60;
         public boolean enableVsync         = false;
+        public boolean showPercentage      = true;
+        public boolean showProgressBar     = true;
     }
 
     // ── Internal ──────────────────────────────────────────────────────────────
@@ -58,6 +62,8 @@ public class SettingsManager {
             snapshot.capFps              = capFps;
             snapshot.fpsCapValue         = fpsCapValue;
             snapshot.enableVsync         = enableVsync;
+            snapshot.showPercentage      = showPercentage;
+            snapshot.showProgressBar     = showProgressBar;
             FileHandle file = Gdx.files.local(SAVE_PATH);
             file.parent().mkdirs();
             file.writeString(json.prettyPrint(snapshot), false);
@@ -81,6 +87,8 @@ public class SettingsManager {
             capFps              = d.capFps;
             fpsCapValue         = d.fpsCapValue;
             enableVsync         = d.enableVsync;
+            showPercentage      = d.showPercentage;
+            showProgressBar     = d.showProgressBar;
         } catch (Exception e) {
             Gdx.app.error("SettingsManager", "Failed to load: " + e.getMessage());
         }

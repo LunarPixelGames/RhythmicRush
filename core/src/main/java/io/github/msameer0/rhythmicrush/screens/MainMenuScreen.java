@@ -159,6 +159,8 @@ public class MainMenuScreen extends AbstractScreen {
             rows.add(new SettingRow(RowType.SLIDER,    "Music Volume",           "volume"));
             rows.add(new SettingRow(RowType.TOGGLE,    "Show Hitboxes",          "hitboxes"));
             rows.add(new SettingRow(RowType.TOGGLE,    "Show Hitboxes on Death", "hitboxesDeath"));
+            rows.add(new SettingRow(RowType.TOGGLE,    "Show Percentage",        "showPercentage"));
+            rows.add(new SettingRow(RowType.TOGGLE,    "Show Progress Bar",      "showProgressBar"));
             if (desktop)
                 rows.add(new SettingRow(RowType.TOGGLE, "Lock Cursor in Game",   "lockCursor"));
         } else { // CAT_GRAPHICS
@@ -434,6 +436,8 @@ public class MainMenuScreen extends AbstractScreen {
             case "showFps":       return s.showFps;
             case "capFps":        return s.capFps;
             case "vsync":         return s.enableVsync;
+            case "showPercentage":  return s.showPercentage;
+            case "showProgressBar": return s.showProgressBar;
             default:              return false;
         }
     }
@@ -700,6 +704,8 @@ public class MainMenuScreen extends AbstractScreen {
             case "hitboxesDeath": s.showHitboxesOnDeath = !s.showHitboxesOnDeath; s.save(); break;
             case "lockCursor":    s.lockCursorInGame    = !s.lockCursorInGame;    s.save(); break;
             case "showFps":       s.showFps   = !s.showFps;   s.save(); break;
+            case "showPercentage":  s.showPercentage  = !s.showPercentage;  s.save(); break;
+            case "showProgressBar": s.showProgressBar = !s.showProgressBar; s.save(); break;
             case "capFps":
                 s.capFps = !s.capFps;
                 s.applyFpsCap(); s.save();

@@ -20,6 +20,7 @@ import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
 import io.github.msameer0.rhythmicrush.RhythmicRushGame;
+import io.github.msameer0.rhythmicrush.SettingsManager;
 import io.github.msameer0.rhythmicrush.game.GameWorld;
 import io.github.msameer0.rhythmicrush.game.engine.FixedTickEngine;
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
@@ -509,15 +510,72 @@ public class GameScreen extends AbstractScreen {
     private void drawProgressBar() {
         float progress = world.getProgress();
         if (progress <= 0f) return;
-        String text = Math.round(progress * 100f) + "%";
-        game.getBatch().setProjectionMatrix(gameCamera.combined);
-        game.getBatch().begin();
-        font.setColor(Color.WHITE);
-        glyphLayout.setText(font, text, Color.WHITE, 0, Align.center, false);
-        float x = gameCamera.position.x - glyphLayout.width / 2f;
-        float y = gameCamera.position.y + gameViewport.getWorldHeight() / 2f - 12f;
-        font.draw(game.getBatch(), text, x, y);
-        game.getBatch().end();
+
+        SettingsManager s = game.getSettingsManager();
+
+        float screenTop  = camTop();
+        float screenCX   = gameCamera.position.x;
+        float barW       = gameViewport.getWorldWidth() * 0.625f;
+        float barH       = 8f;
+        float barX       = screenCX - barW / 2f;
+
+        // ── Percentage text (top center) ──────────────────────────────────────
+        float barY;
+        if (s.showPercentage) {
+            _hudSb.setLength(0); _hudSb.append(Math.round(progress * 100f)).append('%');
+            game.getBatch().setProjectionMatrix(gameCamera.combined);
+            game.getBatch().begin();
+            font.setColor(Color.WHITE);
+            glyphLayout.setText(font, _hudSb, Color.WHITE, 0, Align.center, false);
+            float textX = screenCX - glyphLayout.width / 2f;
+            float textY = screenTop - 12f;
+            font.draw(game.getBatch(), _hudSb, textX, textY);
+            game.getBatch().end();
+            // Bar sits just below the percentage text
+            barY = textY - glyphLayout.height - 8f - barH;
+        } else {
+            // No percentage — bar takes its place at the very top
+            barY = screenTop - 12f - barH;
+        }
+
+        // ── Progress bar (62.5% wide, rounded, centered) ─────────────────────
+        if (s.showProgressBar) {
+            float r     = barH / 2f;   // corner radius = half bar height → pill ends
+            float fillW = barW * progress;
+
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+            shapes.setProjectionMatrix(gameCamera.combined);
+            shapes.begin(ShapeRenderer.ShapeType.Filled);
+
+            // Track (rounded)
+            shapes.setColor(0.2f, 0.2f, 0.2f, 0.55f);
+            drawRoundedRect(barX, barY, barW, barH, r);
+
+            // Fill (rounded) — only draw if wide enough to show rounded ends
+            if (fillW >= barH) {
+                shapes.setColor(COL_FILL);
+                drawRoundedRect(barX, barY, fillW, barH, r);
+            } else if (fillW > 0) {
+                // Too narrow for full rounding — just draw a rect
+                shapes.setColor(COL_FILL);
+                shapes.rect(barX, barY, fillW, barH);
+            }
+
+            shapes.end();
+            Gdx.gl.glDisable(GL20.GL_BLEND);
+        }
+    }
+
+    /** Draws a filled rounded rectangle using the current shapes color. */
+    private void drawRoundedRect(float x, float y, float w, float h, float r) {
+        shapes.rect(x + r, y, w - 2 * r, h);          // center
+        shapes.rect(x, y + r, r, h - 2 * r);           // left edge
+        shapes.rect(x + w - r, y + r, r, h - 2 * r);  // right edge
+        shapes.circle(x + r,         y + r,         r, 16);  // bottom-left
+        shapes.circle(x + w - r,     y + r,         r, 16);  // bottom-right
+        shapes.circle(x + r,         y + h - r,     r, 16);  // top-left
+        shapes.circle(x + w - r,     y + h - r,     r, 16);  // top-right
     }
 
     private void drawSessionAttempts() {
