@@ -1,9 +1,11 @@
-package io.github.msameer0.rhythmicrush;
+package io.github.msameer0.rhythmicrush.font;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+
+import io.github.msameer0.rhythmicrush.RhythmicRushGame;
 
 /**
  * Generates and owns all BitmapFonts used across the game.

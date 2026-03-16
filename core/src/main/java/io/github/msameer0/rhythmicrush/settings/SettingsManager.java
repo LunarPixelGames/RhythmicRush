@@ -1,4 +1,4 @@
-package io.github.msameer0.rhythmicrush;
+package io.github.msameer0.rhythmicrush.settings;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;

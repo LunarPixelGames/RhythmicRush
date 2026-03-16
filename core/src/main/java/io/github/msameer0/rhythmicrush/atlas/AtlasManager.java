@@ -1,4 +1,4 @@
-package io.github.msameer0.rhythmicrush;
+package io.github.msameer0.rhythmicrush.atlas;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;

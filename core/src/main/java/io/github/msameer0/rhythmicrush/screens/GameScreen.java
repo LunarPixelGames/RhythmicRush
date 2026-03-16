@@ -18,12 +18,11 @@ import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
-import io.github.msameer0.rhythmicrush.FontManager;
+import io.github.msameer0.rhythmicrush.font.FontManager;
 import io.github.msameer0.rhythmicrush.RhythmicRushGame;
-import io.github.msameer0.rhythmicrush.SettingsManager;
+import io.github.msameer0.rhythmicrush.settings.SettingsManager;
 import io.github.msameer0.rhythmicrush.game.GameWorld;
 import io.github.msameer0.rhythmicrush.game.engine.FixedTickEngine;
-import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
 import io.github.msameer0.rhythmicrush.game.level.LevelData;
 import io.github.msameer0.rhythmicrush.game.level.LevelProgress;
 import io.github.msameer0.rhythmicrush.game.renderer.GameRenderer;

@@ -1,4 +1,4 @@
-package io.github.msameer0.rhythmicrush;
+package io.github.msameer0.rhythmicrush.window;
 
 /**
  * Platform-agnostic window control.

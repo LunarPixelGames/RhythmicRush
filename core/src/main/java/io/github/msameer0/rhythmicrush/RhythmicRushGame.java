@@ -3,19 +3,23 @@ package io.github.msameer0.rhythmicrush;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
+import io.github.msameer0.rhythmicrush.atlas.AtlasManager;
 import io.github.msameer0.rhythmicrush.audio.SoundManager;
+import io.github.msameer0.rhythmicrush.font.FontManager;
 import io.github.msameer0.rhythmicrush.game.level.ProgressManager;
 import io.github.msameer0.rhythmicrush.screens.MainMenuScreen;
+import io.github.msameer0.rhythmicrush.settings.SettingsManager;
+import io.github.msameer0.rhythmicrush.window.WindowController;
 
 public class RhythmicRushGame extends Game {
 
     private SpriteBatch      batch;
     private SoundManager     soundManager;
-    private AtlasManager     atlasManager;
-    private FontManager      fontManager;
+    private AtlasManager atlasManager;
+    private FontManager fontManager;
     private WindowController windowController;
     private ProgressManager  progressManager;
-    private SettingsManager  settingsManager;
+    private SettingsManager settingsManager;
 
     @Override
     public void create() {

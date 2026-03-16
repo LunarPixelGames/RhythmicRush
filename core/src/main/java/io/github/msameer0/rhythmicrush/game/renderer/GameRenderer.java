@@ -8,7 +8,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
-import io.github.msameer0.rhythmicrush.AtlasManager;
+import io.github.msameer0.rhythmicrush.atlas.AtlasManager;
 import io.github.msameer0.rhythmicrush.game.GameWorld;
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Block;
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.BlockType;
@@ -16,14 +16,9 @@ import io.github.msameer0.rhythmicrush.game.gameplay.hazards.AbstractHazard;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.AbstractPortal;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.CubePortal;
-import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.ShipPortal;
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
 import io.github.msameer0.rhythmicrush.game.gameplay.players.Cube;
 import io.github.msameer0.rhythmicrush.game.gameplay.players.Ship;
-
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.Map;
 
 public class GameRenderer {
 

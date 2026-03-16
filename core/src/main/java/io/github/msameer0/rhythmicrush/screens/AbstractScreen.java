@@ -8,7 +8,7 @@ import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
 import io.github.msameer0.rhythmicrush.RhythmicRushGame;
-import io.github.msameer0.rhythmicrush.WindowController;
+import io.github.msameer0.rhythmicrush.window.WindowController;
 
 public abstract class AbstractScreen implements Screen {
 

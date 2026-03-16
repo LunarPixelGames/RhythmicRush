@@ -16,9 +16,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import io.github.msameer0.rhythmicrush.FontManager;
+import io.github.msameer0.rhythmicrush.font.FontManager;
 import io.github.msameer0.rhythmicrush.RhythmicRushGame;
-import io.github.msameer0.rhythmicrush.SettingsManager;
+import io.github.msameer0.rhythmicrush.settings.SettingsManager;
 import io.github.msameer0.rhythmicrush.ui.AnimatedButton;
 
 public class MainMenuScreen extends AbstractScreen {

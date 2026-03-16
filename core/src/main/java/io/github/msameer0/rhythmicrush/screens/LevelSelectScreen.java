@@ -14,7 +14,7 @@ import com.badlogic.gdx.files.FileHandle;
 
 import java.util.ArrayList;
 
-import io.github.msameer0.rhythmicrush.FontManager;
+import io.github.msameer0.rhythmicrush.font.FontManager;
 import io.github.msameer0.rhythmicrush.RhythmicRushGame;
 import io.github.msameer0.rhythmicrush.game.level.LevelData;
 import io.github.msameer0.rhythmicrush.game.level.LevelProgress;
