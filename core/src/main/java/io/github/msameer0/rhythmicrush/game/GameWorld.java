@@ -89,20 +89,25 @@ public class GameWorld implements Tickable {
     }
 
     private static class ColorFade {
-        Color from, to;
+        final Color from    = new Color();
+        final Color to      = new Color();
         float duration, elapsed;
+        boolean active = false;
 
-        ColorFade(Color from, Color to, float duration) {
-            this.from     = new Color(from);
-            this.to       = new Color(to);
+        void init(Color from, Color to, float duration) {
+            this.from.set(from);
+            this.to.set(to);
             this.duration = duration;
             this.elapsed  = 0f;
+            this.active   = true;
         }
     }
 
+    // Pre-allocated — never constructed mid-game, only init() called on trigger fire
+    private final ColorFade bgFade     = new ColorFade();
+    private final ColorFade groundFade = new ColorFade();
+
     private final ArrayList<ColorTrigger> colorTriggers = new ArrayList<>();
-    private ColorFade bgFade     = null;
-    private ColorFade groundFade = null;
 
     // ── Level / progress ──────────────────────────────────────────────────────
     private LevelData currentLevelData = null;
@@ -150,8 +155,8 @@ public class GameWorld implements Tickable {
         freeAllActiveObjects();
 
         colorTriggers.clear();
-        bgFade        = null;
-        groundFade    = null;
+        bgFade.active     = false;
+        groundFade.active = false;
         playerDead    = false;
         levelComplete = false;
         worldScrolled = 0f;
@@ -229,8 +234,8 @@ public class GameWorld implements Tickable {
         else {
             freeAllActiveObjects();
             colorTriggers.clear();
-            bgFade        = null;
-            groundFade    = null;
+            bgFade.active     = false;
+            groundFade.active = false;
             playerDead    = false;
             levelComplete = false;
             worldScrolled = 0f;
@@ -327,24 +332,24 @@ public class GameWorld implements Tickable {
         for (ColorTrigger ct : colorTriggers) {
             if (!ct.fired && playerWorldX >= ct.worldX) {
                 ct.fired = true;
-                if (ct.targetBg     != null) bgFade     = new ColorFade(backgroundColor, ct.targetBg,     ct.fadeDuration);
-                if (ct.targetGround != null) groundFade = new ColorFade(groundColor,     ct.targetGround, ct.fadeDuration);
+                if (ct.targetBg     != null) bgFade.init(backgroundColor, ct.targetBg,     ct.fadeDuration);
+                if (ct.targetGround != null) groundFade.init(groundColor,  ct.targetGround, ct.fadeDuration);
             }
         }
 
-        if (bgFade != null) {
+        if (bgFade.active) {
             bgFade.elapsed += delta;
             float t = Math.min(bgFade.elapsed / bgFade.duration, 1f);
             backgroundColor.set(lerp(bgFade.from.r, bgFade.to.r, t), lerp(bgFade.from.g, bgFade.to.g, t),
                 lerp(bgFade.from.b, bgFade.to.b, t), 1f);
-            if (t >= 1f) bgFade = null;
+            if (t >= 1f) bgFade.active = false;
         }
-        if (groundFade != null) {
+        if (groundFade.active) {
             groundFade.elapsed += delta;
             float t = Math.min(groundFade.elapsed / groundFade.duration, 1f);
             groundColor.set(lerp(groundFade.from.r, groundFade.to.r, t), lerp(groundFade.from.g, groundFade.to.g, t),
                 lerp(groundFade.from.b, groundFade.to.b, t), 1f);
-            if (t >= 1f) groundFade = null;
+            if (t >= 1f) groundFade.active = false;
         }
 
         // ── Left-edge culling — return to pools ───────────────────────────────
