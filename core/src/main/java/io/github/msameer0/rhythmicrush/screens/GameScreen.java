@@ -74,7 +74,7 @@ public class GameScreen extends AbstractScreen {
     private int           lastPanelW = -1, lastPanelH = -1;
 
     private static final float PANEL_W   = 520f;
-    private static final float PANEL_H   = 300f;
+    private static final float PANEL_H   = 360f;
     private static final float BTN_SIZE  = 72f;
     private static final float PAUSE_BTN = 44f;
 
@@ -86,10 +86,15 @@ public class GameScreen extends AbstractScreen {
     private static final Color COL_HEADING    = new Color(1f,    0.85f, 0.35f, 1f);
     private static final Color COL_LABEL      = new Color(1f,    1f,    1f,    0.85f);
     private static final Color COL_DIM        = new Color(1f,    1f,    1f,    0.50f);
+    private static final Color COL_TRACK      = new Color(0.28f, 0.28f, 0.35f, 1f);
+    private static final Color COL_FILL       = new Color(0.35f, 0.65f, 1.00f, 1f);
+    private static final Color COL_THUMB      = new Color(1f,    1f,    1f,    1f);
     // HUD text colors — static to avoid per-frame allocation
     private static final Color HUD_ATTEMPT    = new Color(1f,    1f,    1f,    0.85f);
     private static final Color HUD_BEST       = new Color(1f,    1f,    1f,    0.55f);
     private static final Color HUD_FPS        = new Color(1f,    1f,    1f,    0.45f);
+
+    private boolean pauseSliderDragging = false;
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -133,6 +138,16 @@ public class GameScreen extends AbstractScreen {
     private float camRight() { return gameCamera.position.x + gameViewport.getWorldWidth()  / 2f; }
     private float camTop()   { return gameCamera.position.y + gameViewport.getWorldHeight() / 2f; }
 
+    private float pauseSliderTrackX() { return panelX() + PANEL_W * 0.18f; }
+    private float pauseSliderTrackW() { return PANEL_W * 0.64f; }
+    private float pauseSliderY()      { return panelY() + BTN_SIZE + 38f; }
+
+    private boolean hitsPauseSlider(Vector2 t) {
+        float tx = pauseSliderTrackX(), tw = pauseSliderTrackW();
+        float ty = pauseSliderY();
+        return t.x >= tx - 16f && t.x <= tx + tw + 16f
+            && t.y >= ty - 16f && t.y <= ty + 16f;
+    }
     private float panelX()        { return camCX() - PANEL_W / 2f; }
     private float panelY()        { return camCY() - PANEL_H / 2f; }
     private float resumeX()       { return camCX() + 16f; }
@@ -358,6 +373,49 @@ public class GameScreen extends AbstractScreen {
         if (resumeRegion != null)
             game.getBatch().draw(resumeRegion, resumeX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE * 0.9f);
 
+        // Volume label
+        float sliderY = pauseSliderY();
+        pauseFont.getData().setScale(0.52f);
+        pauseFont.setColor(COL_LABEL);
+        _hudSb.setLength(0); _hudSb.append("Volume");
+        glyphLayout.setText(pauseFont, _hudSb);
+        pauseFont.draw(game.getBatch(), _hudSb,
+            panelX() + PANEL_W / 2f - glyphLayout.width / 2f,
+            sliderY + glyphLayout.height + 10f);
+
+        // Percent
+        float vol = game.getSettingsManager().musicVolume;
+        pauseFont.getData().setScale(0.44f);
+        pauseFont.setColor(COL_DIM);
+        _hudSb.setLength(0); _hudSb.append(Math.round(vol * 100f)).append('%');
+        glyphLayout.setText(pauseFont, _hudSb);
+        pauseFont.draw(game.getBatch(), _hudSb,
+            pauseSliderTrackX() - glyphLayout.width - 10f,
+            sliderY + glyphLayout.height / 2f);
+
+        pauseFont.getData().setScale(1f);
+        game.getBatch().end();
+
+        // Slider shape
+        float tx = pauseSliderTrackX(), tw = pauseSliderTrackW();
+        float trackH = 5f, thumbR = 10f;
+        float fillW = tw * vol;
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.setProjectionMatrix(gameCamera.combined);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        shapes.setColor(COL_TRACK);
+        shapes.rect(tx, sliderY - trackH / 2f, tw, trackH);
+        shapes.setColor(COL_FILL);
+        if (fillW > 0) shapes.rect(tx, sliderY - trackH / 2f, fillW, trackH);
+        shapes.setColor(COL_THUMB);
+        shapes.circle(tx + fillW, sliderY, thumbR, 24);
+        shapes.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+
+        game.getBatch().setProjectionMatrix(gameCamera.combined);
+        game.getBatch().begin();
+
         pauseFont.getData().setScale(0.45f);
         pauseFont.setColor(COL_DIM);
         glyphLayout.setText(pauseFont, "Back");
@@ -375,14 +433,28 @@ public class GameScreen extends AbstractScreen {
 
     private void setPaused(boolean p) {
         paused = p;
+        if (!p) pauseSliderDragging = false;
         if (levelMusic != null) { if (paused) levelMusic.pause(); else levelMusic.play(); }
         if (game.getSettingsManager().lockCursorInGame)
             Gdx.input.setCursorCatched(!paused);
     }
 
     private void handlePauseTouched() {
-        if (!Gdx.input.justTouched()) return;
         Vector2 t = unprojectWorld();
+
+        // Slider drag
+        if (Gdx.input.isTouched() && pauseSliderDragging) {
+            float tx = pauseSliderTrackX(), tw = pauseSliderTrackW();
+            float vol = Math.max(0f, Math.min(1f, (t.x - tx) / tw));
+            game.getSettingsManager().musicVolume = vol;
+            game.getSoundManager().setMusicVolume(vol);
+            if (levelMusic != null) levelMusic.setVolume(vol);
+            game.getSettingsManager().save();
+        }
+        if (!Gdx.input.isTouched()) pauseSliderDragging = false;
+
+        if (!Gdx.input.justTouched()) return;
+        if (hitsPauseSlider(t)) { pauseSliderDragging = true; return; }
         if (hits(t, backX(),   backY(), BTN_SIZE * 0.9f, BTN_SIZE)) { exitToLevelSelect(); return; }
         if (hits(t, resumeX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE)) { setPaused(false);    return; }
     }
