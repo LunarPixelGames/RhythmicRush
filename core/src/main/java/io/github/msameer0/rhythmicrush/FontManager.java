@@ -30,8 +30,9 @@ public class FontManager {
             gen = new FreeTypeFontGenerator(Gdx.files.internal("fonts/zendots-regular.ttf"));
             FreeTypeFontGenerator.FreeTypeFontParameter p =
                 new FreeTypeFontGenerator.FreeTypeFontParameter();
-            p.magFilter = Texture.TextureFilter.Linear;
-            p.minFilter = Texture.TextureFilter.Linear;
+            p.magFilter  = Texture.TextureFilter.Linear;
+            p.minFilter  = Texture.TextureFilter.MipMapLinearLinear;
+            p.genMipMaps = true;
             for (int i = 0; i < SIZES.length; i++) {
                 p.size   = SIZES[i];
                 fonts[i] = gen.generateFont(p);

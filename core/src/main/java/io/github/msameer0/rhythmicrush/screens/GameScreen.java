@@ -12,13 +12,13 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
+import io.github.msameer0.rhythmicrush.FontManager;
 import io.github.msameer0.rhythmicrush.RhythmicRushGame;
 import io.github.msameer0.rhythmicrush.SettingsManager;
 import io.github.msameer0.rhythmicrush.game.GameWorld;
@@ -69,6 +69,14 @@ public class GameScreen extends AbstractScreen {
     // Reusable StringBuilder — avoids a new String allocation every frame for HUD text
     private final StringBuilder _hudSb = new StringBuilder(32);
 
+    // ── New best popup ────────────────────────────────────────────────────────
+    private static final float POPUP_FADE_IN  = 0.25f;
+    private static final float POPUP_HOLD     = 1.20f;
+    private static final float POPUP_FADE_OUT = 0.45f;
+    private static final float POPUP_TOTAL    = POPUP_FADE_IN + POPUP_HOLD + POPUP_FADE_OUT;
+    private float  popupTimer   = -1f;  // -1 = inactive
+    private int    popupBestPct = 0;
+
     // ── Pause overlay rendering ───────────────────────────────────────────────
     private ShapeRenderer shapes;
     private Texture       panelTexture;
@@ -111,12 +119,10 @@ public class GameScreen extends AbstractScreen {
         world    = new GameWorld();
         engine   = new FixedTickEngine(world);
         renderer = new GameRenderer(world, gameCamera, game.getBatch(), game.getAtlasManager());
-        font     = new BitmapFont();
-        font.getData().setScale(1.5f);
+        font      = game.getFontManager().get(FontManager.SIZE_SMALL);
+        pauseFont = game.getFontManager().get(FontManager.SIZE_SMALL);
         glyphLayout = new GlyphLayout();
         shapes      = new ShapeRenderer();
-
-        pauseFont = loadFont(28);
 
         resumeRegion = game.getAtlasManager().getMenuAtlas().findRegion("start_button");
         backRegion   = game.getAtlasManager().getLevelSelectAtlas().findRegion("back");
@@ -182,8 +188,7 @@ public class GameScreen extends AbstractScreen {
     @Override
     public void dispose() {
         super.dispose();
-        font.dispose();
-        pauseFont.dispose();
+        // font and pauseFont NOT disposed — owned by FontManager
         renderer.dispose();
         shapes.dispose();
         if (panelTexture != null) panelTexture.dispose();
@@ -218,6 +223,10 @@ public class GameScreen extends AbstractScreen {
         // ── Death pause countdown ──────────────────────────────────────────────
         if (deathPaused) {
             deathTimer += delta;
+            if (popupTimer >= 0f) {
+                popupTimer += delta;
+                if (popupTimer >= POPUP_TOTAL) popupTimer = -1f;
+            }
             if (deathTimer >= DEATH_PAUSE_DURATION) {
                 deathPaused    = false;
                 deathTimer     = 0f;
@@ -298,8 +307,62 @@ public class GameScreen extends AbstractScreen {
         drawProgressBar();
         drawSessionAttempts();
         drawPauseButton();
+        drawNewBestPopup();
 
         if (paused) drawPauseOverlay();
+    }
+
+    // ── New best popup ────────────────────────────────────────────────────────
+
+    private void drawNewBestPopup() {
+        if (popupTimer < 0f) return;
+
+        // Compute alpha based on phase
+        float alpha;
+        if (popupTimer < POPUP_FADE_IN) {
+            alpha = popupTimer / POPUP_FADE_IN;
+        } else if (popupTimer < POPUP_FADE_IN + POPUP_HOLD) {
+            alpha = 1f;
+        } else {
+            alpha = 1f - (popupTimer - POPUP_FADE_IN - POPUP_HOLD) / POPUP_FADE_OUT;
+        }
+        alpha = Math.max(0f, Math.min(1f, alpha));
+
+        float cx = gameCamera.position.x;
+        float cy = gameCamera.position.y;
+
+        // Line 1: "NEW BEST"
+        _hudSb.setLength(0); _hudSb.append("NEW BEST");
+        font.getData().setScale(1.4f);
+        font.setColor(COL_HEADING.r, COL_HEADING.g, COL_HEADING.b, alpha);
+        glyphLayout.setText(font, _hudSb);
+        float line1X = cx - glyphLayout.width  / 2f;
+        float line1Y = cy + glyphLayout.height / 2f + 18f;
+
+        // Line 2: "xx%"
+        _hudSb.setLength(0); _hudSb.append(popupBestPct).append('%');
+        font.getData().setScale(0.85f);
+        font.setColor(1f, 1f, 1f, alpha * 0.85f);
+        glyphLayout.setText(font, _hudSb);
+        float line2X = cx - glyphLayout.width  / 2f;
+        float line2Y = line1Y - 38f;
+
+        game.getBatch().setProjectionMatrix(gameCamera.combined);
+        game.getBatch().begin();
+
+        font.getData().setScale(1.4f);
+        font.setColor(COL_HEADING.r, COL_HEADING.g, COL_HEADING.b, alpha);
+        _hudSb.setLength(0); _hudSb.append("NEW BEST");
+        font.draw(game.getBatch(), _hudSb, line1X, line1Y);
+
+        font.getData().setScale(0.85f);
+        font.setColor(1f, 1f, 1f, alpha * 0.85f);
+        _hudSb.setLength(0); _hudSb.append(popupBestPct).append('%');
+        font.draw(game.getBatch(), _hudSb, line2X, line2Y);
+
+        font.getData().setScale(1f);
+        font.setColor(Color.WHITE);
+        game.getBatch().end();
     }
 
     // ── Pause button ──────────────────────────────────────────────────────────
@@ -495,7 +558,13 @@ public class GameScreen extends AbstractScreen {
         if (levelKey == null) return;
         int pct = Math.round(world.getProgress() * 100f);
         LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
-        if (pct > p.bestPercent) { p.bestPercent = pct; game.getProgressManager().save(); }
+        if (pct > p.bestPercent) {
+            p.bestPercent = pct;
+            game.getProgressManager().save();
+            // Trigger the new best popup
+            popupTimer   = 0f;
+            popupBestPct = pct;
+        }
     }
 
     private void recordComplete() {
@@ -512,54 +581,74 @@ public class GameScreen extends AbstractScreen {
         if (progress <= 0f) return;
 
         SettingsManager s = game.getSettingsManager();
+        if (!s.showPercentage && !s.showProgressBar) return;
 
-        float screenTop  = camTop();
-        float screenCX   = gameCamera.position.x;
-        float barW       = gameViewport.getWorldWidth() * 0.625f;
-        float barH       = 8f;
-        float barX       = screenCX - barW / 2f;
+        int   pct      = Math.round(progress * 100f);
+        float screenTop = camTop();
+        float screenCX  = gameCamera.position.x;
 
-        // ── Percentage text (top center) ──────────────────────────────────────
-        float barY;
+        // ── Measure components so we can center the whole line ────────────────
+        final float BAR_W   = gameViewport.getWorldWidth() * 0.625f * 0.55f; // bar takes ~55% of its max width share
+        final float BAR_H   = 10f;
+        final float GAP     = 14f;  // gap between percentage text and bar
+        final float LINE_Y  = screenTop - 18f; // baseline / center Y of the line
+
+        // Measure percentage text width
+        float textW = 0f, textH = 0f;
         if (s.showPercentage) {
-            _hudSb.setLength(0); _hudSb.append(Math.round(progress * 100f)).append('%');
-            game.getBatch().setProjectionMatrix(gameCamera.combined);
-            game.getBatch().begin();
-            font.setColor(Color.WHITE);
-            glyphLayout.setText(font, _hudSb, Color.WHITE, 0, Align.center, false);
-            float textX = screenCX - glyphLayout.width / 2f;
-            float textY = screenTop - 12f;
-            font.draw(game.getBatch(), _hudSb, textX, textY);
-            game.getBatch().end();
-            // Bar sits just below the percentage text
-            barY = textY - glyphLayout.height - 8f - barH;
-        } else {
-            // No percentage — bar takes its place at the very top
-            barY = screenTop - 12f - barH;
+            _hudSb.setLength(0); _hudSb.append(pct).append('%');
+            font.getData().setScale(1.2f);
+            glyphLayout.setText(font, _hudSb, Color.WHITE, 0, Align.left, false);
+            textW = glyphLayout.width;
+            textH = glyphLayout.height;
         }
 
-        // ── Progress bar (62.5% wide, rounded, centered) ─────────────────────
+        // Total line width
+        float totalW = 0f;
+        if (s.showPercentage) totalW += textW;
+        if (s.showPercentage && s.showProgressBar) totalW += GAP;
+        if (s.showProgressBar) totalW += BAR_W;
+
+        float startX = screenCX - totalW / 2f;
+
+        // ── Draw percentage ───────────────────────────────────────────────────
+        if (s.showPercentage) {
+            // Gold if beating personal best, white otherwise
+            boolean isPB = false;
+            if (levelKey != null) {
+                LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
+                isPB = pct > p.bestPercent;
+            }
+            game.getBatch().setProjectionMatrix(gameCamera.combined);
+            game.getBatch().begin();
+            font.setColor(isPB ? COL_HEADING : Color.WHITE);  // COL_HEADING is already gold
+            font.draw(game.getBatch(), _hudSb, startX, LINE_Y + textH / 2f);
+            game.getBatch().end();
+            font.getData().setScale(1f);
+            startX += textW + (s.showProgressBar ? GAP : 0f);
+        }
+
+        // ── Draw bar ──────────────────────────────────────────────────────────
         if (s.showProgressBar) {
-            float r     = barH / 2f;   // corner radius = half bar height → pill ends
-            float fillW = barW * progress;
+            float barX  = startX;
+            float barY  = LINE_Y - BAR_H / 2f;
+            float r     = BAR_H / 2f;
+            float fillW = BAR_W * progress;
 
             Gdx.gl.glEnable(GL20.GL_BLEND);
             Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
             shapes.setProjectionMatrix(gameCamera.combined);
             shapes.begin(ShapeRenderer.ShapeType.Filled);
 
-            // Track (rounded)
             shapes.setColor(0.2f, 0.2f, 0.2f, 0.55f);
-            drawRoundedRect(barX, barY, barW, barH, r);
+            drawRoundedRect(barX, barY, BAR_W, BAR_H, r);
 
-            // Fill (rounded) — only draw if wide enough to show rounded ends
-            if (fillW >= barH) {
+            if (fillW >= BAR_H) {
                 shapes.setColor(COL_FILL);
-                drawRoundedRect(barX, barY, fillW, barH, r);
+                drawRoundedRect(barX, barY, fillW, BAR_H, r);
             } else if (fillW > 0) {
-                // Too narrow for full rounding — just draw a rect
                 shapes.setColor(COL_FILL);
-                shapes.rect(barX, barY, fillW, barH);
+                shapes.rect(barX, barY, fillW, BAR_H);
             }
 
             shapes.end();
@@ -569,13 +658,13 @@ public class GameScreen extends AbstractScreen {
 
     /** Draws a filled rounded rectangle using the current shapes color. */
     private void drawRoundedRect(float x, float y, float w, float h, float r) {
-        shapes.rect(x + r, y, w - 2 * r, h);          // center
-        shapes.rect(x, y + r, r, h - 2 * r);           // left edge
-        shapes.rect(x + w - r, y + r, r, h - 2 * r);  // right edge
-        shapes.circle(x + r,         y + r,         r, 16);  // bottom-left
-        shapes.circle(x + w - r,     y + r,         r, 16);  // bottom-right
-        shapes.circle(x + r,         y + h - r,     r, 16);  // top-left
-        shapes.circle(x + w - r,     y + h - r,     r, 16);  // top-right
+        shapes.rect(x + r, y, w - 2 * r, h);
+        shapes.rect(x, y + r, r, h - 2 * r);
+        shapes.rect(x + w - r, y + r, r, h - 2 * r);
+        shapes.circle(x + r,     y + r,     r, 16);
+        shapes.circle(x + w - r, y + r,     r, 16);
+        shapes.circle(x + r,     y + h - r, r, 16);
+        shapes.circle(x + w - r, y + h - r, r, 16);
     }
 
     private void drawSessionAttempts() {
@@ -669,18 +758,6 @@ public class GameScreen extends AbstractScreen {
 
     private static boolean hits(float tx, float ty, float x, float y, float w, float h) {
         return tx >= x && tx <= x + w && ty >= y && ty <= y + h;
-    }
-
-    private BitmapFont loadFont(int size) {
-        try {
-            FreeTypeFontGenerator gen = new FreeTypeFontGenerator(
-                Gdx.files.internal("fonts/zendots-regular.ttf"));
-            FreeTypeFontGenerator.FreeTypeFontParameter p =
-                new FreeTypeFontGenerator.FreeTypeFontParameter();
-            p.size = size; p.magFilter = Texture.TextureFilter.Linear;
-            p.minFilter = Texture.TextureFilter.Linear;
-            BitmapFont f = gen.generateFont(p); gen.dispose(); return f;
-        } catch (Exception e) { return new BitmapFont(); }
     }
 
     private Texture createRoundedRect(int w, int h, int r, Color color) {
