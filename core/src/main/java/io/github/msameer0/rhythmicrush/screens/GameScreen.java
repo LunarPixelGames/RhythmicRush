@@ -205,6 +205,7 @@ public class GameScreen extends AbstractScreen {
                 deathTimer     = 0f;
                 musicFading    = false;
                 musicFadeTimer = 0f;
+                lastJumpHeld   = false;
                 world.reset();
                 engine.reset();
                 startMusic();
@@ -397,6 +398,7 @@ public class GameScreen extends AbstractScreen {
         musicFading    = false;
         musicFadeTimer = 0f;
         lastDelta      = 0f;
+        lastJumpHeld   = false;
         world.reset();
         engine.reset();
         startMusic();
@@ -474,14 +476,22 @@ public class GameScreen extends AbstractScreen {
 
     // ── Input ─────────────────────────────────────────────────────────────────
 
+    // Tracks previous jump state so we only queue events on state *change*
+    private boolean lastJumpHeld = false;
+
     private void handleInput() {
-        AbstractPlayer player = world.getPlayer();
         boolean jump =
             Gdx.input.isKeyPressed(Input.Keys.SPACE) ||
                 Gdx.input.isKeyPressed(Input.Keys.W)     ||
                 Gdx.input.isKeyPressed(Input.Keys.UP)    ||
                 Gdx.input.isTouched();
-        player.setJumpHeld(jump);
+
+        if (jump != lastJumpHeld) {
+            // Queue the event with the current accumulator offset so it gets
+            // delivered at the physics step closest to when it was detected.
+            engine.queueInput(jump, engine.getAccumulator());
+            lastJumpHeld = jump;
+        }
     }
 
     // ── Music ─────────────────────────────────────────────────────────────────

@@ -273,6 +273,13 @@ public class GameWorld implements Tickable {
 
     // ── Tickable ──────────────────────────────────────────────────────────────
 
+    /** Called at the correct physics step when a jump press/release is delivered. */
+    @Override
+    public void onInput(boolean held) {
+        if (player != null) player.setJumpHeld(held);
+    }
+
+    /** Called by {@link FixedTickEngine} at 240 TPS. */
     @Override
     public void tick(float delta) { update(delta); }
 
