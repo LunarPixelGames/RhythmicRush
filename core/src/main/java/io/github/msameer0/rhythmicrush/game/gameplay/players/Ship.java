@@ -1,28 +1,44 @@
 package io.github.msameer0.rhythmicrush.game.gameplay.players;
 
+/**
+ * Represents a specific player mode where the player controls a flying vehicle.
+ * <p>
+ * The Ship movement is characterized by continuous vertical acceleration when the
+ * jump key is held and gravity-like deceleration when released. It features
+ * terminal velocity constants for both upward and downward movement.
+ * </p>
+ */
 public class Ship extends AbstractPlayer {
 
     private boolean flyHeld = false;
 
-    public float maxUpSpeed   =  400f;
+    public float maxUpSpeed = 400f;
     public float maxDownSpeed = -500f;
-    public float accel        = 1000f;
-    public float decel        =  800f;
+    public float accel = 1000f;
+    public float decel = 800f;
 
     private float groundY = 50f;
 
-    public Ship(float startX, float startY) { super(startX, startY); }
+    public Ship(float startX, float startY) {
+        super(startX, startY);
+    }
 
-    /** No-arg constructor for pooling — call init() before use. */
-    public Ship() { super(0, 0); }
+    /**
+     * No-arg constructor for pooling — call init() before use.
+     */
+    public Ship() {
+        super(0, 0);
+    }
 
-    /** Reinitialise this Ship for reuse from the pool. */
+    /**
+     * Reinitialise this Ship for reuse from the pool.
+     */
     public Ship init(float startX, float startY) {
-        x         = startX;
-        y         = startY;
+        x = startX;
+        y = startY;
         velocityY = 0;
-        flyHeld   = false;
-        world     = null;
+        flyHeld = false;
+        world = null;
         bounds.setPosition(x, y);
         return this;
     }
@@ -38,11 +54,23 @@ public class Ship extends AbstractPlayer {
             if (velocityY < maxDownSpeed) velocityY = maxDownSpeed;
         }
         y += velocityY * delta;
-        if (y < groundY) { y = groundY; velocityY = 0; }
+        if (y < groundY) {
+            y = groundY;
+            velocityY = 0;
+        }
         updateBounds();
     }
 
-    @Override public void jump()                    { /* not used */ }
-    @Override public void setJumpHeld(boolean held) { flyHeld = held; }
-    @Override public boolean isSafeFromBelow()      { return true; }
+    @Override
+    public void jump() {}
+
+    @Override
+    public void setJumpHeld(boolean held) {
+        flyHeld = held;
+    }
+
+    @Override
+    public boolean isSafeFromBelow() {
+        return true;
+    }
 }
