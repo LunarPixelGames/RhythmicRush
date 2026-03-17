@@ -202,12 +202,18 @@ public class GameWorld implements Tickable {
      *
      * @param x the initial horizontal position of the cube
      * @param y the initial vertical position of the cube
+     * @param vy the initial vertical velocity
+     * @param jumpHeld the initial jump input state
      * @return an initialized {@code Cube} instance linked to this world
      */
-    public Cube obtainCube(float x, float y) {
-        Cube c = cubePool.obtain().init(x, y);
+    public Cube obtainCube(float x, float y, float vy, boolean jumpHeld) {
+        Cube c = cubePool.obtain().init(x, y, vy, jumpHeld);
         c.setWorld(this);
         return c;
+    }
+
+    public Cube obtainCube(float x, float y) {
+        return obtainCube(x, y, 0, false);
     }
 
     /**
@@ -219,12 +225,18 @@ public class GameWorld implements Tickable {
      *
      * @param x the initial horizontal position of the ship
      * @param y the initial vertical position of the ship
+     * @param vy the initial vertical velocity
+     * @param jumpHeld the initial jump input state
      * @return an initialized {@code Ship} instance linked to this world
      */
-    public Ship obtainShip(float x, float y) {
-        Ship s = shipPool.obtain().init(x, y);
+    public Ship obtainShip(float x, float y, float vy, boolean jumpHeld) {
+        Ship s = shipPool.obtain().init(x, y, vy, jumpHeld);
         s.setWorld(this);
         return s;
+    }
+
+    public Ship obtainShip(float x, float y) {
+        return obtainShip(x, y, 0, false);
     }
 
 

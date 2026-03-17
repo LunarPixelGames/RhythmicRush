@@ -35,15 +35,22 @@ public class Ship extends AbstractPlayer {
     /**
      * Reinitialise this Ship for reuse from the pool.
      */
-    public Ship init(float startX, float startY) {
+    public Ship init(float startX, float startY, float velocityY, boolean flyHeld) {
         this.type = PlayerType.SHIP;
         x = startX;
         y = startY;
-        velocityY = 0;
-        flyHeld = false;
+        this.velocityY = velocityY;
+        this.flyHeld = flyHeld;
         world = null;
         bounds.setPosition(x, y);
         return this;
+    }
+
+    /**
+     * Legacy init for backward compatibility.
+     */
+    public Ship init(float startX, float startY) {
+        return init(startX, startY, 0, false);
     }
 
     @Override
@@ -70,6 +77,11 @@ public class Ship extends AbstractPlayer {
     @Override
     public void setJumpHeld(boolean held) {
         flyHeld = held;
+    }
+
+    @Override
+    public boolean isJumpHeld() {
+        return flyHeld;
     }
 
     @Override

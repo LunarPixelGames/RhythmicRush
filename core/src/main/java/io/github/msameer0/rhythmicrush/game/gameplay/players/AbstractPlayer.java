@@ -39,6 +39,13 @@ public abstract class AbstractPlayer {
      */
     public abstract void setJumpHeld(boolean held);
 
+    /**
+     * Checks if the jump/fly input is currently being held.
+     *
+     * @return true if held, false otherwise
+     */
+    public abstract boolean isJumpHeld();
+
     public Rectangle getBounds() {
         return bounds;
     }

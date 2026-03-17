@@ -27,16 +27,23 @@ public class Cube extends AbstractPlayer {
     /**
      * Reinitialise this Cube for reuse from the pool.
      */
-    public Cube init(float startX, float startY) {
+    public Cube init(float startX, float startY, float velocityY, boolean jumpHeld) {
         this.type = PlayerType.CUBE;
         x = startX;
         y = startY;
-        velocityY = 0;
+        this.velocityY = velocityY;
         isGrounded = false;
-        jumpHeld = false;
+        this.jumpHeld = jumpHeld;
         world = null;
         bounds.setPosition(x, y);
         return this;
+    }
+
+    /**
+     * Legacy init for backward compatibility.
+     */
+    public Cube init(float startX, float startY) {
+        return init(startX, startY, 0, false);
     }
 
     @Override
@@ -63,6 +70,11 @@ public class Cube extends AbstractPlayer {
     @Override
     public void setJumpHeld(boolean held) {
         this.jumpHeld = held;
+    }
+
+    @Override
+    public boolean isJumpHeld() {
+        return jumpHeld;
     }
 
     @Override

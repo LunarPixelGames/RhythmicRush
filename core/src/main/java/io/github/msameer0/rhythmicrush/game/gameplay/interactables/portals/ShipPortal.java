@@ -44,6 +44,6 @@ public class ShipPortal extends AbstractPortal {
      */
     @Override
     public AbstractPlayer onTouch(AbstractPlayer player) {
-        return player.getWorld().obtainShip(player.getX(), player.getY());
+        return player.getWorld().obtainShip(player.getX(), player.getY(), player.getVelocityY(), player.isJumpHeld());
     }
 }

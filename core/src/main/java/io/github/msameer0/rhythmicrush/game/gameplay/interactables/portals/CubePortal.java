@@ -45,6 +45,6 @@ public class CubePortal extends AbstractPortal {
      */
     @Override
     public AbstractPlayer onTouch(AbstractPlayer player) {
-        return player.getWorld().obtainCube(player.getX(), player.getY());
+        return player.getWorld().obtainCube(player.getX(), player.getY(), player.getVelocityY(), player.isJumpHeld());
     }
 }
