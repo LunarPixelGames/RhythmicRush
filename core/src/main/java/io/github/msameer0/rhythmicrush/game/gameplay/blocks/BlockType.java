@@ -8,9 +8,13 @@ public enum BlockType {
     TOP_DEFAULT(4, "top_default"),
     LEFT_DEFAULT(5, "left_default"),
     RIGHT_DEFAULT(6, "right_default"),
-    DEFAULT_NO_OUTLINE(7, "default_no_outline")
-    ;
+    DEFAULT_NO_OUTLINE(7, "default_no_outline");
 
+    /**
+     * Represents the different types of blocks available in the game.
+     * Each type is associated with a unique identifier and a specific texture name
+     * used for rendering the block's visual appearance.
+     */
     public final int id;
     public final String textureName;
 

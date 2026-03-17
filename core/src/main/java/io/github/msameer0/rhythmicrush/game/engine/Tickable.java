@@ -21,5 +21,6 @@ public interface Tickable {
      *
      * @param held true = jump/fly pressed, false = released
      */
-    default void onInput(boolean held) {}
+    default void onInput(boolean held) {
+    }
 }

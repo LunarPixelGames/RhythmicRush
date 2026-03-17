@@ -4,7 +4,7 @@
   "musicFile": "654553_-Everybody-Bounce-.mp3",
   "bgColor": "1a1a2e",
   "groundColor": "16213e",
-  "difficulty": "hard",
+  "difficulty": "normal",
   "objects": [
     {
       "type": "block",

@@ -4,6 +4,12 @@ import com.badlogic.gdx.math.Rectangle;
 
 import io.github.msameer0.rhythmicrush.game.GameWorld;
 
+/**
+ * Represents the base abstract class for all player entities in the game.
+ * It defines the core properties such as position, dimensions, velocity, and collision bounds,
+ * and provides the necessary structure for movement, jumping logic, and world interaction
+ * that specific player implementations must provide.
+ */
 public abstract class AbstractPlayer {
     public float x, y;
     public float width = 50, height = 50;
@@ -22,7 +28,9 @@ public abstract class AbstractPlayer {
 
     public abstract void jump();
 
-    /** Handle continuous jump input (holding) */
+    /**
+     * Handle continuous jump input (holding)
+     */
     public abstract void setJumpHeld(boolean held);
 
     public Rectangle getBounds() {
@@ -58,8 +66,11 @@ public abstract class AbstractPlayer {
         velocityY = vel;
     }
 
-    public void setGrounded(boolean grounded) {}
-    public void tryJump() {}
+    public void setGrounded(boolean grounded) {
+    }
+
+    public void tryJump() {
+    }
 
     public boolean isGrounded() {
         return false;

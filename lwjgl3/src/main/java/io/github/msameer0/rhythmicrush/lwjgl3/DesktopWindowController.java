@@ -2,7 +2,7 @@ package io.github.msameer0.rhythmicrush.lwjgl3;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Graphics;
-import io.github.msameer0.rhythmicrush.WindowController;
+import io.github.msameer0.rhythmicrush.window.WindowController;
 
 public class DesktopWindowController implements WindowController {
 

@@ -1327,17 +1327,6 @@
       "fadeDuration": 1
     },
     {
-      "type": "block",
-      "x": 2600,
-      "y": 150,
-      "size": 50,
-      "blockType": "default",
-      "rotation": 0,
-      "triggerBgColor": null,
-      "triggerGroundColor": null,
-      "fadeDuration": 1
-    },
-    {
       "type": "spike",
       "x": 4250,
       "y": 100,
@@ -1615,17 +1604,6 @@
     {
       "type": "spike",
       "x": 4700,
-      "y": 50,
-      "size": 50,
-      "blockType": null,
-      "rotation": 0,
-      "triggerBgColor": null,
-      "triggerGroundColor": null,
-      "fadeDuration": 1
-    },
-    {
-      "type": "spike",
-      "x": 4950,
       "y": 50,
       "size": 50,
       "blockType": null,
@@ -2660,28 +2638,6 @@
     {
       "type": "spike",
       "x": 9300,
-      "y": 50,
-      "size": 50,
-      "blockType": null,
-      "rotation": 0,
-      "triggerBgColor": null,
-      "triggerGroundColor": null,
-      "fadeDuration": 1
-    },
-    {
-      "type": "spike",
-      "x": 9350,
-      "y": 50,
-      "size": 50,
-      "blockType": null,
-      "rotation": 0,
-      "triggerBgColor": null,
-      "triggerGroundColor": null,
-      "fadeDuration": 1
-    },
-    {
-      "type": "spike",
-      "x": 9400,
       "y": 50,
       "size": 50,
       "blockType": null,
@@ -8038,17 +7994,6 @@
     },
     {
       "type": "block",
-      "x": 9350,
-      "y": 100,
-      "size": 50,
-      "blockType": "default",
-      "rotation": 0,
-      "triggerBgColor": null,
-      "triggerGroundColor": null,
-      "fadeDuration": 1
-    },
-    {
-      "type": "block",
       "x": 9550,
       "y": 100,
       "size": 50,
@@ -8115,7 +8060,7 @@
     },
     {
       "type": "block",
-      "x": 9350,
+      "x": 9400,
       "y": 250,
       "size": 50,
       "blockType": "default",
@@ -8126,7 +8071,7 @@
     },
     {
       "type": "spike",
-      "x": 9350,
+      "x": 9400,
       "y": 300,
       "size": 50,
       "blockType": null,
@@ -8361,6 +8306,50 @@
       "y": 150,
       "size": 50,
       "blockType": null,
+      "rotation": 0,
+      "triggerBgColor": null,
+      "triggerGroundColor": null,
+      "fadeDuration": 1
+    },
+    {
+      "type": "block",
+      "x": 4850,
+      "y": 200,
+      "size": 50,
+      "blockType": "default",
+      "rotation": 0,
+      "triggerBgColor": null,
+      "triggerGroundColor": null,
+      "fadeDuration": 1
+    },
+    {
+      "type": "spike",
+      "x": 4850,
+      "y": 150,
+      "size": 50,
+      "blockType": null,
+      "rotation": 180,
+      "triggerBgColor": null,
+      "triggerGroundColor": null,
+      "fadeDuration": 1
+    },
+    {
+      "type": "block",
+      "x": 9400,
+      "y": 50,
+      "size": 50,
+      "blockType": "corner_right",
+      "rotation": 0,
+      "triggerBgColor": null,
+      "triggerGroundColor": null,
+      "fadeDuration": 1
+    },
+    {
+      "type": "block",
+      "x": 9350,
+      "y": 50,
+      "size": 50,
+      "blockType": "corner_left",
       "rotation": 0,
       "triggerBgColor": null,
       "triggerGroundColor": null,

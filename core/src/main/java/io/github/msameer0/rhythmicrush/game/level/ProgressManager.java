@@ -7,21 +7,10 @@ import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.JsonWriter;
 import com.badlogic.gdx.utils.ObjectMap;
 
+
 /**
- * Loads and saves per-level progress to {@code saves/progress.json}.
- *
- * Progress is keyed by the level's filename (e.g. {@code "0.json"}, {@code "1.json"}).
- * Adding a new level requires zero changes here — it gets its own entry automatically
- * the first time {@link #getOrCreate(String)} is called for it.
- *
- * Usage:
- * <pre>
- *   ProgressManager pm = game.getProgressManager();
- *   LevelProgress p = pm.getOrCreate("0.json");
- *   p.totalAttempts++;
- *   p.bestPercent = Math.max(p.bestPercent, currentPercent);
- *   pm.save();
- * </pre>
+ * Manages the persistence of player progress for different levels.
+ * Handles the loading and saving of {@link LevelProgress} data to a local JSON file.
  */
 public class ProgressManager {
 
@@ -37,14 +26,7 @@ public class ProgressManager {
         load();
     }
 
-    // ── Public API ────────────────────────────────────────────────────────────
 
-    /**
-     * Returns the {@link LevelProgress} for the given level key,
-     * creating a blank one (0 attempts, 0% best) if it doesn't exist yet.
-     *
-     * @param levelKey  the level filename, e.g. {@code "0.json"}
-     */
     public LevelProgress getOrCreate(String levelKey) {
         if (!map.containsKey(levelKey)) {
             map.put(levelKey, new LevelProgress());
@@ -52,13 +34,20 @@ public class ProgressManager {
         return map.get(levelKey);
     }
 
-    /** Persists the current state of all progress entries to disk. */
+    /**
+     * Persists the current player progress to a local JSON file.
+     * <p>
+     * This method serializes the internal map of {@link LevelProgress} objects into a JSON format
+     * and writes it to the local storage path defined by {@code SAVE_PATH}. If the parent
+     * directories do not exist, they are created automatically. In the event of an IO failure
+     * or serialization error, the exception is caught and logged via {@link Gdx#app}.
+     * </p>
+     */
     public void save() {
         try {
             FileHandle file = Gdx.files.local(SAVE_PATH);
             file.parent().mkdirs();
 
-            // Manually build JSON so we get a readable key → object map
             StringBuilder sb = new StringBuilder("{\n");
             boolean first = true;
             for (ObjectMap.Entry<String, LevelProgress> entry : map) {
@@ -74,8 +63,16 @@ public class ProgressManager {
         }
     }
 
-    // ── Internal ──────────────────────────────────────────────────────────────
 
+    /**
+     * Loads the player progress from the local storage file.
+     * <p>
+     * This method attempts to read the JSON file at {@code SAVE_PATH}. If the file exists,
+     * it parses the content and populates the internal progress map. If the file does not
+     * exist, the method returns silently, leaving the map empty. Any exceptions encountered
+     * during the reading or parsing process are caught and logged.
+     * </p>
+     */
     private void load() {
         try {
             FileHandle file = Gdx.files.local(SAVE_PATH);

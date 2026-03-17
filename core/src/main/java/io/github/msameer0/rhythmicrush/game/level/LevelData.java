@@ -4,52 +4,52 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Plain data container for a level. Serialized to/from JSON.
- * Lives in core — no platform-specific imports.
+ * Represents the data structure for a level in the game.
+ * This class contains metadata, visual settings, and a list of all objects
+ * and triggers that constitute a playable level.
  */
 public class LevelData {
 
-    // ── Metadata ──────────────────────────────────────────────────────────────
-    public String name        = "Unnamed Level";
-    public String fileName    = null;          // set by LevelSerializer on load, e.g. "0.json"
-    public String musicFile   = "";
-    public String bgColor     = "1a1a2e";   // hex, no #
-    public String groundColor = "16213e";   // hex, no #
-    public String difficulty  = "normal";   // easy normal hard insane extreme
+    public String name = "Unnamed Level";
+    public String fileName = null;
+    public String musicFile = "";
+    public String bgColor = "1a1a2e";
+    public String groundColor = "16213e";
+    public String difficulty = "normal";
 
-    // ── Objects ───────────────────────────────────────────────────────────────
     public List<ObjectEntry> objects = new ArrayList<>();
 
-    // ─────────────────────────────────────────────────────────────────────────
 
-    /** Every placeable object — blocks, hazards, portals, triggers — is one of these. */
+    /**
+     * Represents an individual entity or event within a level.
+     * This includes physical obstacles (blocks, spikes) and functional triggers (color changes).
+     */
     public static class ObjectEntry {
-        public String type;       // "block"|"spike"|"cube_portal"|"ship_portal"|"color_trigger"
-        public float  x, y, size;
-        public String blockType;  // textureName for blocks, null otherwise
-        public float  rotation;   // degrees — used by spikes
+        public String type;
+        public float x, y, size;
+        public String blockType;
+        public float rotation;
 
-        // ── Color trigger fields — null means "leave this color unchanged" ────
-        public String triggerBgColor;      // hex, nullable
-        public String triggerGroundColor;  // hex, nullable
-        public float  fadeDuration = 1f;   // seconds to lerp to new colors
+        public String triggerBgColor;
+        public String triggerGroundColor;
+        public float fadeDuration = 1f;
 
-        /** No-arg constructor required by LibGDX Json deserialiser. */
-        public ObjectEntry() {}
+        public ObjectEntry() {
+        }
 
         public ObjectEntry(String type, float x, float y, float size) {
             this.type = type;
-            this.x    = x;
-            this.y    = y;
+            this.x = x;
+            this.y = y;
             this.size = size;
         }
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
     /**
-     * Returns the X of the rightmost non-trigger object — used for progress and level end.
-     * Color triggers are excluded so they don't artificially extend the level length.
+     * Calculates the horizontal end point of the level based on the positions and sizes
+     * of its physical objects. Triggers (such as color changes) are ignored.
+     *
+     * @return The maximum X-coordinate reached by any physical object in the level.
      */
     public float getLevelEndX() {
         float max = 0;
