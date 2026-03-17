@@ -56,10 +56,21 @@ public class AnimatedButton {
      * @param delta the time elapsed since the last update in seconds
      */
     public void update(float delta) {
-        float displacement = scale - target;
-        float acceleration = -SPRING_K * displacement - SPRING_DAMPING * velocity;
-        velocity += acceleration * delta;
-        scale += velocity * delta;
+        // Use sub-stepping to ensure physics stability even at very low frame rates.
+        // Spring systems are sensitive to large time steps and can become unstable.
+        float remaining = Math.min(delta, 0.25f); // Cap maximum delta to avoid huge jumps after pauses
+        float step = 0.01f;
+
+        while (remaining > 0) {
+            float dt = Math.min(remaining, step);
+
+            float displacement = scale - target;
+            float acceleration = -SPRING_K * displacement - SPRING_DAMPING * velocity;
+            velocity += acceleration * dt;
+            scale += velocity * dt;
+
+            remaining -= dt;
+        }
 
         if (pendingFire && !pressed && Math.abs(scale - 1f) < 0.02f && Math.abs(velocity) < 0.5f) {
             pendingFire = false;
