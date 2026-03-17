@@ -18,6 +18,7 @@ public class CubePortal extends AbstractPortal {
      */
     public CubePortal(float x, float y) {
         super(x, y);
+        this.type = PortalType.CUBE;
     }
 
     /**
@@ -25,6 +26,14 @@ public class CubePortal extends AbstractPortal {
      */
     public CubePortal() {
         super();
+        this.type = PortalType.CUBE;
+    }
+
+    @Override
+    public CubePortal init(float x, float y) {
+        super.init(x, y);
+        this.type = PortalType.CUBE;
+        return this;
     }
 
     /**

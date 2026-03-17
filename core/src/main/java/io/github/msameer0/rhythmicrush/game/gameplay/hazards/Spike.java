@@ -29,6 +29,7 @@ public class Spike extends AbstractHazard {
      */
     public Spike() {
         super(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
+        this.type = HazardType.SPIKE;
         spikeHitbox = new Rectangle();
     }
 
@@ -40,6 +41,7 @@ public class Spike extends AbstractHazard {
      */
     public Spike(float x, float y) {
         this(x, y, 0f);
+        this.type = HazardType.SPIKE;
     }
 
     /**
@@ -51,6 +53,7 @@ public class Spike extends AbstractHazard {
      */
     public Spike(float x, float y, float rotation) {
         super(x, y, TEXTURE_SIZE, TEXTURE_SIZE);
+        this.type = HazardType.SPIKE;
         this.rotation = rotation;
         spikeHitbox = new Rectangle();
         updateHitbox();
@@ -69,6 +72,7 @@ public class Spike extends AbstractHazard {
         this.x = x;
         this.y = y;
         this.rotation = rotation;
+        this.type = HazardType.SPIKE;
         bounds.setPosition(x, y);
         updateHitbox();
         return this;

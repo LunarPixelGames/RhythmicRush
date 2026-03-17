@@ -13,6 +13,7 @@ public class Cube extends AbstractPlayer {
 
     public Cube(float startX, float groundY) {
         super(startX, groundY);
+        this.type = PlayerType.CUBE;
     }
 
     /**
@@ -20,12 +21,14 @@ public class Cube extends AbstractPlayer {
      */
     public Cube() {
         super(0, 0);
+        this.type = PlayerType.CUBE;
     }
 
     /**
      * Reinitialise this Cube for reuse from the pool.
      */
     public Cube init(float startX, float startY) {
+        this.type = PlayerType.CUBE;
         x = startX;
         y = startY;
         velocityY = 0;

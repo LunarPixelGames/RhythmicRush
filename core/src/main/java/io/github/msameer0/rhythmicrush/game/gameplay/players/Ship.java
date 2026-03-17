@@ -21,6 +21,7 @@ public class Ship extends AbstractPlayer {
 
     public Ship(float startX, float startY) {
         super(startX, startY);
+        this.type = PlayerType.SHIP;
     }
 
     /**
@@ -28,12 +29,14 @@ public class Ship extends AbstractPlayer {
      */
     public Ship() {
         super(0, 0);
+        this.type = PlayerType.SHIP;
     }
 
     /**
      * Reinitialise this Ship for reuse from the pool.
      */
     public Ship init(float startX, float startY) {
+        this.type = PlayerType.SHIP;
         x = startX;
         y = startY;
         velocityY = 0;

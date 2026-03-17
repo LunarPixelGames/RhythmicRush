@@ -527,26 +527,167 @@ public class GameScreen extends AbstractScreen {
 
         renderer.render(lastDelta, paused, hitboxesActive);
 
-        drawProgressBar();
-        drawSessionAttempts();
-        drawPauseButton();
-        drawNewBestPopup();
+        game.getBatch().setProjectionMatrix(gameCamera.combined);
+        shapes.setProjectionMatrix(gameCamera.combined);
 
-        if (paused) drawPauseOverlay();
+        // 1. Draw UI Shapes
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        
+        drawProgressBarShapes();
+        drawPauseButtonShapes();
+        
+        if (paused) {
+            shapes.setColor(COL_OVERLAY);
+            shapes.rect(camLeft(), camBot(), gameViewport.getWorldWidth(), gameViewport.getWorldHeight());
+        }
+        
+        shapes.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+
+        // 2. Draw UI Text and Sprites
+        game.getBatch().begin();
+        
+        drawProgressBarText();
+        drawSessionAttemptsText();
+        drawNewBestPopupText();
+        
+        if (paused) {
+            drawPauseOverlayUI();
+        }
+        
+        game.getBatch().end();
+        
+        // 3. Pause Slider (needs shapes again, but we keep it separate to avoid complexity for now)
+        if (paused) {
+            drawPauseSliderShapes();
+        }
     }
 
+    /**
+     * Renders the fill and background shapes for the level progress bar.
+     */
+    private void drawProgressBarShapes() {
+        float progress = world.getProgress();
+        if (progress <= 0f) return;
+        SettingsManager s = game.getSettingsManager();
+        if (!s.showProgressBar) return;
+
+        final float BAR_W = gameViewport.getWorldWidth() * 0.625f * 0.55f;
+        final float BAR_H = 10f;
+        final float GAP = 14f;
+        final float LINE_Y = camTop() - 18f;
+
+        float textW = 0f;
+        if (s.showPercentage) {
+            _hudSb.setLength(0);
+            _hudSb.append(Math.round(progress * 100f)).append('%');
+            font.getData().setScale(1.2f);
+            glyphLayout.setText(font, _hudSb, Color.WHITE, 0, Align.left, false);
+            textW = glyphLayout.width;
+        }
+
+        float totalW = (s.showPercentage ? textW + GAP : 0f) + BAR_W;
+        float startX = gameCamera.position.x - totalW / 2f + (s.showPercentage ? textW + GAP : 0f);
+
+        float r = BAR_H / 2f;
+        float fillW = BAR_W * progress;
+
+        shapes.setColor(0.2f, 0.2f, 0.2f, 0.55f);
+        drawRoundedRect(startX, LINE_Y - BAR_H / 2f, BAR_W, BAR_H, r);
+
+        if (fillW >= BAR_H) {
+            shapes.setColor(COL_FILL);
+            drawRoundedRect(startX, LINE_Y - BAR_H / 2f, fillW, BAR_H, r);
+        } else if (fillW > 0) {
+            shapes.setColor(COL_FILL);
+            shapes.rect(startX, LINE_Y - BAR_H / 2f, fillW, BAR_H);
+        }
+    }
 
     /**
-     * Renders a "NEW BEST" notification overlay on the screen.
-     * <p>
-     * This method manages the animation lifecycle of the high-score popup, including
-     * fading in, holding at full opacity, and fading out based on the {@code popupTimer}.
-     * It dynamically calculates the transparency (alpha) and centers the multi-line
-     * text (the "NEW BEST" heading and the specific percentage achieved) relative to
-     * the current camera position.
-     * </p>
+     * Renders the percentage text for the level progress bar.
      */
-    private void drawNewBestPopup() {
+    private void drawProgressBarText() {
+        float progress = world.getProgress();
+        if (progress <= 0f) return;
+        SettingsManager s = game.getSettingsManager();
+        if (!s.showPercentage) return;
+
+        int pct = Math.round(progress * 100f);
+        final float BAR_W = gameViewport.getWorldWidth() * 0.625f * 0.55f;
+        final float GAP = 14f;
+        final float LINE_Y = camTop() - 18f;
+
+        _hudSb.setLength(0);
+        _hudSb.append(pct).append('%');
+        font.getData().setScale(1.2f);
+        glyphLayout.setText(font, _hudSb, Color.WHITE, 0, Align.left, false);
+        float textW = glyphLayout.width;
+        float textH = glyphLayout.height;
+
+        float totalW = textW + (s.showProgressBar ? GAP + BAR_W : 0f);
+        float startX = gameCamera.position.x - totalW / 2f;
+
+        boolean isPB = false;
+        if (levelKey != null) {
+            LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
+            isPB = pct > p.bestPercent;
+        }
+        font.setColor(isPB ? COL_HEADING : Color.WHITE);
+        font.draw(game.getBatch(), _hudSb, startX, LINE_Y + textH / 2f);
+        font.getData().setScale(1f);
+    }
+
+    /**
+     * Renders the background and icon shapes for the pause button.
+     */
+    private void drawPauseButtonShapes() {
+        float cx = pauseCircleCX(), cy = pauseCircleCY(), r = PAUSE_BTN / 2f;
+        shapes.setColor(0.2f, 0.2f, 0.2f, 0.75f);
+        shapes.circle(cx, cy, r, 32);
+        float barW = r * 0.22f, barH = r * 0.75f;
+        float gap = r * 0.18f;
+        shapes.setColor(1f, 1f, 1f, 0.9f);
+        shapes.rect(cx - gap - barW, cy - barH / 2f, barW, barH);
+        shapes.rect(cx + gap, cy - barH / 2f, barW, barH);
+    }
+
+    /**
+     * Renders the attempt counters and FPS text.
+     */
+    private void drawSessionAttemptsText() {
+        float left = camLeft() + 12f;
+        float top = camTop() - 12f;
+
+        font.setColor(HUD_ATTEMPT);
+        _hudSb.setLength(0);
+        _hudSb.append("Attempt  ").append(sessionAttempts);
+        font.draw(game.getBatch(), _hudSb, left, top);
+
+        float nextY = top - 26f;
+        if (levelKey != null) {
+            LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
+            font.setColor(HUD_BEST);
+            _hudSb.setLength(0);
+            _hudSb.append("Best  ").append(p.bestPercent).append('%');
+            font.draw(game.getBatch(), _hudSb, left, nextY);
+            nextY -= 26f;
+        }
+
+        if (game.getSettingsManager().showFps) {
+            font.setColor(HUD_FPS);
+            _hudSb.setLength(0);
+            _hudSb.append("FPS  ").append(Gdx.graphics.getFramesPerSecond());
+            font.draw(game.getBatch(), _hudSb, left, nextY);
+        }
+    }
+
+    /**
+     * Renders the text for the high-score "New Best" notification.
+     */
+    private void drawNewBestPopupText() {
         if (popupTimer < 0f) return;
 
         float alpha;
@@ -562,96 +703,29 @@ public class GameScreen extends AbstractScreen {
         float cx = gameCamera.position.x;
         float cy = gameCamera.position.y;
 
-        _hudSb.setLength(0);
-        _hudSb.append("NEW BEST");
-        font.getData().setScale(1.4f);
-        font.setColor(COL_HEADING.r, COL_HEADING.g, COL_HEADING.b, alpha);
-        glyphLayout.setText(font, _hudSb);
-        float line1X = cx - glyphLayout.width / 2f;
-        float line1Y = cy + glyphLayout.height / 2f + 18f;
-
-        _hudSb.setLength(0);
-        _hudSb.append(popupBestPct).append('%');
-        font.getData().setScale(0.85f);
-        font.setColor(1f, 1f, 1f, alpha * 0.85f);
-        glyphLayout.setText(font, _hudSb);
-        float line2X = cx - glyphLayout.width / 2f;
-        float line2Y = line1Y - 38f;
-
-        game.getBatch().setProjectionMatrix(gameCamera.combined);
-        game.getBatch().begin();
-
         font.getData().setScale(1.4f);
         font.setColor(COL_HEADING.r, COL_HEADING.g, COL_HEADING.b, alpha);
         _hudSb.setLength(0);
         _hudSb.append("NEW BEST");
-        font.draw(game.getBatch(), _hudSb, line1X, line1Y);
+        glyphLayout.setText(font, _hudSb);
+        font.draw(game.getBatch(), _hudSb, cx - glyphLayout.width / 2f, cy + glyphLayout.height / 2f + 18f);
 
         font.getData().setScale(0.85f);
         font.setColor(1f, 1f, 1f, alpha * 0.85f);
         _hudSb.setLength(0);
         _hudSb.append(popupBestPct).append('%');
-        font.draw(game.getBatch(), _hudSb, line2X, line2Y);
+        glyphLayout.setText(font, _hudSb);
+        font.draw(game.getBatch(), _hudSb, cx - glyphLayout.width / 2f, cy + glyphLayout.height / 2f + 18f - 38f);
 
         font.getData().setScale(1f);
         font.setColor(Color.WHITE);
-        game.getBatch().end();
     }
 
-
     /**
-     * Renders the interactive pause button in the top-right corner of the screen.
-     * <p>
-     * This method draws a semi-transparent circular background containing two vertical
-     * rectangles representing the universal "pause" symbol. It utilizes the
-     * {@link ShapeRenderer} with alpha blending enabled to ensure the button remains
-     * visible but unobtrusive against the moving game background.
-     * </p>
+     * Renders the main panel and content of the pause menu overlay.
      */
-    private void drawPauseButton() {
-        float cx = pauseCircleCX(), cy = pauseCircleCY(), r = PAUSE_BTN / 2f;
-        Gdx.gl.glEnable(GL20.GL_BLEND);
-        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-        shapes.setProjectionMatrix(gameCamera.combined);
-        shapes.begin(ShapeRenderer.ShapeType.Filled);
-        shapes.setColor(0.2f, 0.2f, 0.2f, 0.75f);
-        shapes.circle(cx, cy, r, 32);
-        float barW = r * 0.22f, barH = r * 0.75f;
-        float gap = r * 0.18f;
-        shapes.setColor(1f, 1f, 1f, 0.9f);
-        shapes.rect(cx - gap - barW, cy - barH / 2f, barW, barH);
-        shapes.rect(cx + gap, cy - barH / 2f, barW, barH);
-        shapes.end();
-        Gdx.gl.glDisable(GL20.GL_BLEND);
-    }
-
-
-    /**
-     * Renders the full-screen pause menu overlay, including level statistics and interactive controls.
-     * <p>
-     * This method performs several rendering steps:
-     * <ul>
-     *     <li>Draws a semi-transparent black backdrop over the entire game world.</li>
-     *     <li>Generates or retrieves a cached rounded rectangle texture for the menu panel.</li>
-     *     <li>Displays level metadata, including the level name, personal best percentage,
-     *         and attempt counters (both total and current session).</li>
-     *     <li>Renders the "Back" and "Resume" buttons using texture regions from the asset atlas.</li>
-     *     <li>Draws a functional volume slider that reflects and modifies the current music volume
-     *         settings in real-time.</li>
-     * </ul>
-     * </p>
-     */
-    private void drawPauseOverlay() {
+    private void drawPauseOverlayUI() {
         float px = panelX(), py = panelY();
-
-        Gdx.gl.glEnable(GL20.GL_BLEND);
-        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-        shapes.setProjectionMatrix(gameCamera.combined);
-        shapes.begin(ShapeRenderer.ShapeType.Filled);
-        shapes.setColor(COL_OVERLAY);
-        shapes.rect(camLeft(), camBot(), gameViewport.getWorldWidth(), gameViewport.getWorldHeight());
-        shapes.end();
-        Gdx.gl.glDisable(GL20.GL_BLEND);
 
         int texW = (int) PANEL_W, texH = (int) PANEL_H;
         if (panelTexture == null || texW != lastPanelW || texH != lastPanelH) {
@@ -661,17 +735,13 @@ public class GameScreen extends AbstractScreen {
             lastPanelH = texH;
         }
 
-        game.getBatch().setProjectionMatrix(gameCamera.combined);
-        game.getBatch().begin();
         game.getBatch().draw(panelTexture, px, py);
 
         String levelName = (levelData != null && levelData.name != null) ? levelData.name : "Level";
         pauseFont.getData().setScale(1f);
         pauseFont.setColor(COL_HEADING);
         glyphLayout.setText(pauseFont, levelName);
-        pauseFont.draw(game.getBatch(), levelName,
-            px + PANEL_W / 2f - glyphLayout.width / 2f,
-            py + PANEL_H - 18f);
+        pauseFont.draw(game.getBatch(), levelName, px + PANEL_W / 2f - glyphLayout.width / 2f, py + PANEL_H - 18f);
 
         float sy = py + PANEL_H - 18f - glyphLayout.height - 22f;
         if (levelKey != null) {
@@ -699,9 +769,7 @@ public class GameScreen extends AbstractScreen {
         _hudSb.setLength(0);
         _hudSb.append("Volume");
         glyphLayout.setText(pauseFont, _hudSb);
-        pauseFont.draw(game.getBatch(), _hudSb,
-            panelX() + PANEL_W / 2f - glyphLayout.width / 2f,
-            sliderY + glyphLayout.height + 10f);
+        pauseFont.draw(game.getBatch(), _hudSb, panelX() + PANEL_W / 2f - glyphLayout.width / 2f, sliderY + glyphLayout.height + 10f);
 
         float vol = game.getSettingsManager().musicVolume;
         pauseFont.getData().setScale(0.44f);
@@ -709,19 +777,30 @@ public class GameScreen extends AbstractScreen {
         _hudSb.setLength(0);
         _hudSb.append(Math.round(vol * 100f)).append('%');
         glyphLayout.setText(pauseFont, _hudSb);
-        pauseFont.draw(game.getBatch(), _hudSb,
-            pauseSliderTrackX() - glyphLayout.width - 10f,
-            sliderY + glyphLayout.height / 2f);
+        pauseFont.draw(game.getBatch(), _hudSb, pauseSliderTrackX() - glyphLayout.width - 10f, sliderY + glyphLayout.height / 2f);
+
+        pauseFont.getData().setScale(0.45f);
+        pauseFont.setColor(COL_DIM);
+        glyphLayout.setText(pauseFont, "Back");
+        pauseFont.draw(game.getBatch(), "Back", backX() + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f, backY() - 4f);
+        glyphLayout.setText(pauseFont, "Resume");
+        pauseFont.draw(game.getBatch(), "Resume", resumeX() + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f, backY() - 4f);
 
         pauseFont.getData().setScale(1f);
-        game.getBatch().end();
+    }
 
+    /**
+     * Renders the interactive shapes for the pause menu volume slider.
+     */
+    private void drawPauseSliderShapes() {
+        float sliderY = pauseSliderY();
+        float vol = game.getSettingsManager().musicVolume;
         float tx = pauseSliderTrackX(), tw = pauseSliderTrackW();
         float trackH = 5f, thumbR = 10f;
         float fillW = tw * vol;
+
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-        shapes.setProjectionMatrix(gameCamera.combined);
         shapes.begin(ShapeRenderer.ShapeType.Filled);
         shapes.setColor(COL_TRACK);
         shapes.rect(tx, sliderY - trackH / 2f, tw, trackH);
@@ -731,21 +810,6 @@ public class GameScreen extends AbstractScreen {
         shapes.circle(tx + fillW, sliderY, thumbR, 24);
         shapes.end();
         Gdx.gl.glDisable(GL20.GL_BLEND);
-
-        game.getBatch().setProjectionMatrix(gameCamera.combined);
-        game.getBatch().begin();
-
-        pauseFont.getData().setScale(0.45f);
-        pauseFont.setColor(COL_DIM);
-        glyphLayout.setText(pauseFont, "Back");
-        pauseFont.draw(game.getBatch(), "Back",
-            backX() + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f, backY() - 4f);
-        glyphLayout.setText(pauseFont, "Resume");
-        pauseFont.draw(game.getBatch(), "Resume",
-            resumeX() + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f, backY() - 4f);
-
-        pauseFont.getData().setScale(1f);
-        game.getBatch().end();
     }
 
 
@@ -1137,6 +1201,7 @@ public class GameScreen extends AbstractScreen {
     }
 
 
+    private final Vector2 _unprojectTmp2 = new Vector2();
     private final com.badlogic.gdx.math.Vector3 _unprojectTmp = new com.badlogic.gdx.math.Vector3();
 
     /**
@@ -1152,7 +1217,8 @@ public class GameScreen extends AbstractScreen {
     private Vector2 unprojectWorld() {
         _unprojectTmp.set(Gdx.input.getX(), Gdx.input.getY(), 0);
         gameCamera.unproject(_unprojectTmp);
-        return new Vector2(_unprojectTmp.x, _unprojectTmp.y);
+        _unprojectTmp2.set(_unprojectTmp.x, _unprojectTmp.y);
+        return _unprojectTmp2;
     }
 
     /**

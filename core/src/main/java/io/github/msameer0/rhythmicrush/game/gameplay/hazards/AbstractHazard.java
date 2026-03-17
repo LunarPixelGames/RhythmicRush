@@ -8,6 +8,12 @@ import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
  * Represents a base class for all hazards within the game.
  */
 public abstract class AbstractHazard {
+    public enum HazardType {
+        SPIKE,
+        OTHER
+    }
+
+    protected HazardType type;
     protected float x, y;
     protected float width, height;
     protected Rectangle bounds;
@@ -90,6 +96,10 @@ public abstract class AbstractHazard {
      */
     public float getHeight() {
         return height;
+    }
+
+    public HazardType getType() {
+        return type;
     }
 
     /**

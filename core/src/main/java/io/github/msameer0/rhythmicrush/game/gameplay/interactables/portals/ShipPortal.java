@@ -17,6 +17,7 @@ public class ShipPortal extends AbstractPortal {
      */
     public ShipPortal(float x, float y) {
         super(x, y);
+        this.type = PortalType.SHIP;
     }
 
     /**
@@ -24,6 +25,14 @@ public class ShipPortal extends AbstractPortal {
      */
     public ShipPortal() {
         super();
+        this.type = PortalType.SHIP;
+    }
+
+    @Override
+    public ShipPortal init(float x, float y) {
+        super.init(x, y);
+        this.type = PortalType.SHIP;
+        return this;
     }
 
     /**

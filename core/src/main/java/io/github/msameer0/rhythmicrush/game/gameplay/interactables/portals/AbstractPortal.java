@@ -14,6 +14,13 @@ import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
  * <p>
  */
 public abstract class AbstractPortal {
+    public enum PortalType {
+        CUBE,
+        SHIP,
+        OTHER
+    }
+
+    protected PortalType type;
     protected float x, y;
     protected float width = 50, height = 100;
     protected Rectangle bounds;
@@ -148,6 +155,10 @@ public abstract class AbstractPortal {
      */
     public float getHeight() {
         return height;
+    }
+
+    public PortalType getType() {
+        return type;
     }
 
     /**

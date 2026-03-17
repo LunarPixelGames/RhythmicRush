@@ -11,6 +11,12 @@ import io.github.msameer0.rhythmicrush.game.GameWorld;
  * that specific player implementations must provide.
  */
 public abstract class AbstractPlayer {
+    public enum PlayerType {
+        CUBE,
+        SHIP
+    }
+
+    protected PlayerType type;
     public float x, y;
     public float width = 50, height = 50;
     public float velocityY = 0;
@@ -78,6 +84,10 @@ public abstract class AbstractPlayer {
 
     public float getVelocityY() {
         return velocityY;
+    }
+
+    public PlayerType getType() {
+        return type;
     }
 
     public boolean isSafeFromBelow() {

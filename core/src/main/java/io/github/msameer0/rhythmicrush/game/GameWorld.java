@@ -44,6 +44,10 @@ public class GameWorld implements Tickable {
     private int hazardStart = 0;
     private int portalStart = 0;
 
+    private int blockCull = 0;
+    private int hazardCull = 0;
+    private int portalCull = 0;
+
     private static final float COLLISION_LOOKAHEAD = 1400f;
 
     private final ArrayList<AbstractPortal> portals = new ArrayList<>();
@@ -306,6 +310,9 @@ public class GameWorld implements Tickable {
         blockStart = 0;
         hazardStart = 0;
         portalStart = 0;
+        blockCull = 0;
+        hazardCull = 0;
+        portalCull = 0;
 
         blocks.sort((a, b2) -> Float.compare(a.getX(), b2.getX()));
         hazards.sort((a, b2) -> Float.compare(a.getX(), b2.getX()));
@@ -420,7 +427,7 @@ public class GameWorld implements Tickable {
      *       hazard collisions, and block physics.</li>
      *   <li>Processes {@link ColorTrigger} logic to initiate background and ground color fades.</li>
      *   <li>Interpolates active color fades using linear interpolation (lerp).</li>
-     *   <li>Performs object culling by removing off-screen objects and returning them to their pools.</li>
+     *   <li>Performs object culling by tracking indices of off-screen objects and returning them to their pools.</li>
      *   <li>Tracks level progress and manages the post-end delay before marking the level as complete.</li>
      * </ul>
      *
@@ -431,13 +438,17 @@ public class GameWorld implements Tickable {
 
         player.update(delta, groundY);
 
-        for (int i = 0; i < portals.size(); i++) portals.get(i).updatePosition(scrollSpeed, delta);
-        for (int i = 0; i < hazards.size(); i++) hazards.get(i).updatePosition(scrollSpeed, delta);
-        for (int i = 0; i < blocks.size(); i++) blocks.get(i).updatePosition(scrollSpeed, delta);
+        for (int i = portalCull; i < portals.size(); i++) portals.get(i).updatePosition(scrollSpeed, delta);
+        for (int i = hazardCull; i < hazards.size(); i++) hazards.get(i).updatePosition(scrollSpeed, delta);
+        for (int i = blockCull; i < blocks.size(); i++) blocks.get(i).updatePosition(scrollSpeed, delta);
 
         final float px = player.x;
         final float rangeMin = px - 300f;
         final float rangeMax = px + COLLISION_LOOKAHEAD;
+
+        if (blockStart < blockCull) blockStart = blockCull;
+        if (hazardStart < hazardCull) hazardStart = hazardCull;
+        if (portalStart < portalCull) portalStart = portalCull;
 
         while (blockStart < blocks.size() && blocks.get(blockStart).getX() + blocks.get(blockStart).getWidth() < rangeMin)
             blockStart++;
@@ -497,25 +508,23 @@ public class GameWorld implements Tickable {
             if (t >= 1f) groundFade.active = false;
         }
 
-        while (!blocks.isEmpty()) {
-            Block b = blocks.get(0);
+        while (blockCull < blocks.size()) {
+            Block b = blocks.get(blockCull);
             if (b.getX() + b.getWidth() >= cullX - 200) break;
             blockPool.free(b);
-            blocks.remove(0);
-            if (blockStart > 0) blockStart--;
+            blockCull++;
         }
-        while (!hazards.isEmpty()) {
-            AbstractHazard h = hazards.get(0);
+        while (hazardCull < hazards.size()) {
+            AbstractHazard h = hazards.get(hazardCull);
             if (h.getX() + h.getWidth() >= cullX) break;
             if (h instanceof Spike) {
                 spikePool.free((Spike) h);
                 activeSpikes.remove(h);
             }
-            hazards.remove(0);
-            if (hazardStart > 0) hazardStart--;
+            hazardCull++;
         }
-        while (!portals.isEmpty()) {
-            AbstractPortal p = portals.get(0);
+        while (portalCull < portals.size()) {
+            AbstractPortal p = portals.get(portalCull);
             if (p.getX() + p.getWidth() >= cullX) break;
             if (p instanceof CubePortal) {
                 cubePortalPool.free((CubePortal) p);
@@ -524,8 +533,7 @@ public class GameWorld implements Tickable {
                 shipPortalPool.free((ShipPortal) p);
                 activeShipPortals.remove(p);
             }
-            portals.remove(0);
-            if (portalStart > 0) portalStart--;
+            portalCull++;
         }
 
         if (levelEndX > 0 && worldScrolled >= levelEndX) {
