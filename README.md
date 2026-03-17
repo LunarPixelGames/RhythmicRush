@@ -1,35 +1,35 @@
 # RhythmicRush
 
-A [libGDX](https://libgdx.com/) project generated with [gdx-liftoff](https://github.com/libgdx/gdx-liftoff).
+RhythmicRush is a rhythm-based platformer where timing is everything. It’s a game about finding your flow, learning patterns, and navigating through levels that react to the music you're hearing.
 
-This project was generated with a template including simple application launchers and an `ApplicationAdapter` extension that draws libGDX logo.
+### The Challenge
+The goal is simple: get to the end of the track without hitting anything. However, the levels are designed to test your reflexes. You'll start out as a **Cube**, where precise jumps are the only way to survive. As you progress, you'll encounter portals that transform you into a **Ship**, changing the physics and requiring you to fly through tight spaces instead of jumping over them.
 
-## Platforms
+The world itself changes with you—background colors and environments shift as the intensity picks up, helping you feel the progression of the level.
 
-- `core`: Main module with the application logic shared by all platforms.
-- `lwjgl3`: Primary desktop platform using LWJGL3; was called 'desktop' in older docs.
-- `android`: Android mobile platform. Needs Android SDK.
+### How to Play
+The controls are straightforward so you can focus on the movement. You can use whatever feels most comfortable:
 
-## Gradle
+*   **Jump or Fly:** Press `Space`, `W`, or the `Up Arrow`. If you prefer using the mouse, a simple `Left Click` works too.
+*   **Quick Restart:** You're going to crash—it's part of the process. When you do, just hit `R` to respawn instantly and keep your momentum going.
+*   **Pause:** If you need a break, hit `Esc` to open the menu.
 
-This project uses [Gradle](https://gradle.org/) to manage dependencies.
-The Gradle wrapper was included, so you can run Gradle tasks using `gradlew.bat` or `./gradlew` commands.
-Useful Gradle tasks and flags:
+Your progress is tracked automatically. You’ll see your "Personal Best" percentage grow as you learn the levels, and the attempt counter will keep track of your journey to 100%.
 
-- `--continue`: when using this flag, errors will not stop the tasks from running.
-- `--daemon`: thanks to this flag, Gradle daemon will be used to run chosen tasks.
-- `--offline`: when using this flag, cached dependency archives will be used.
-- `--refresh-dependencies`: this flag forces validation of all dependencies. Useful for snapshot versions.
-- `android:lint`: performs Android project validation.
-- `build`: builds sources and archives of every project.
-- `cleanEclipse`: removes Eclipse project data.
-- `cleanIdea`: removes IntelliJ project data.
-- `clean`: removes `build` folders, which store compiled classes and built archives.
-- `eclipse`: generates Eclipse project data.
-- `idea`: generates IntelliJ project data.
-- `lwjgl3:jar`: builds application's runnable jar, which can be found at `lwjgl3/build/libs`.
-- `lwjgl3:run`: starts the application.
-- `test`: runs unit tests (if any).
+---
 
-Note that most tasks that are not specific to a single project can be run with `name:` prefix, where the `name` should be replaced with the ID of a specific project.
-For example, `core:clean` removes `build` folder only from the `core` project.
+### Getting Started
+
+**For Desktop:**
+1.  Download the latest release for your operating system.
+2.  Run the executable file. 
+    *   *Note for developers:* You can also run the game directly from the source using `./gradlew lwjgl3:run`.
+3.  Pick a level from the menu and you're ready to go.
+
+**For Android:**
+1.  Download and install the APK on your device.
+2.  Open the app and tap anywhere on the screen to jump and fly.
+
+---
+
+*Developed by the RhythmicRush Team. We hope you enjoy the challenge!*
