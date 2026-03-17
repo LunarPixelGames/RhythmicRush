@@ -12,7 +12,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.files.FileHandle;
 
-import java.util.ArrayList;
+import com.badlogic.gdx.utils.Array;
 
 import io.github.msameer0.rhythmicrush.font.FontManager;
 import io.github.msameer0.rhythmicrush.RhythmicRushGame;
@@ -52,7 +52,7 @@ public class LevelSelectScreen extends AbstractScreen {
         }
     }
 
-    private ArrayList<LevelEntry> levels = new ArrayList<>();
+    private Array<LevelEntry> levels = new Array<>();
     private int selectedLevel = 0;
 
     private BitmapFont font;
@@ -152,13 +152,13 @@ public class LevelSelectScreen extends AbstractScreen {
                 break;
             }
         }
-        if (levels.isEmpty()) {
+        if (levels.size == 0) {
             LevelData placeholder = new LevelData();
             placeholder.name = "No Levels Found";
             placeholder.difficulty = "normal";
             levels.add(new LevelEntry(placeholder, -1));
         }
-        selectedLevel = Math.max(0, Math.min(selectedLevel, levels.size() - 1));
+        selectedLevel = Math.max(0, Math.min(selectedLevel, levels.size - 1));
     }
 
     /**
@@ -348,7 +348,7 @@ public class LevelSelectScreen extends AbstractScreen {
 
         font.getData().setScale(0.35f);
         font.setColor(new Color(1f, 1f, 1f, 0.4f));
-        String counter = (selectedLevel + 1) + " / " + levels.size();
+        String counter = (selectedLevel + 1) + " / " + levels.size;
         layout.setText(font, counter);
         font.draw(game.getBatch(), counter,
             viewport.getWorldWidth() / 2f - layout.width / 2f, 22f);
@@ -408,7 +408,7 @@ public class LevelSelectScreen extends AbstractScreen {
      *            level, 1 for the next level).
      */
     private void navigate(int dir) {
-        selectedLevel = (selectedLevel + dir + levels.size()) % levels.size();
+        selectedLevel = (selectedLevel + dir + levels.size) % levels.size;
     }
 
     /**
