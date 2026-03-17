@@ -10,8 +10,8 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.BlockType;
 import io.github.msameer0.rhythmicrush.game.level.LevelData;
 
+import com.badlogic.gdx.utils.Array;
 import java.util.EnumMap;
-import java.util.List;
 import java.util.Map;
 
 public class EditorObjectRenderer {
@@ -63,12 +63,12 @@ public class EditorObjectRenderer {
 
     // ── Draw all placed objects ───────────────────────────────────────────────
 
-    public void draw(List<LevelData.ObjectEntry> placed) {
+    public void draw(Array<LevelData.ObjectEntry> placed) {
         drawTexturedObjects(placed);
         drawFallbackObjects(placed); // colored rects for non-textured types (portals, spikes)
     }
 
-    private void drawTexturedObjects(List<LevelData.ObjectEntry> placed) {
+    private void drawTexturedObjects(Array<LevelData.ObjectEntry> placed) {
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
         for (LevelData.ObjectEntry e : placed) {
@@ -90,7 +90,7 @@ public class EditorObjectRenderer {
         batch.end();
     }
 
-    private void drawFallbackObjects(List<LevelData.ObjectEntry> placed) {
+    private void drawFallbackObjects(Array<LevelData.ObjectEntry> placed) {
         // separate pass for textured non-block objects
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
