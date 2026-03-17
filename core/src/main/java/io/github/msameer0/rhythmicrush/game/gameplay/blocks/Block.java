@@ -114,22 +114,24 @@ public class Block {
         float blockLeft = bounds.x;
         float blockRight = bounds.x + bounds.width;
 
-        float overlapFromTop = playerTop - blockBottom;
-        float overlapFromBottom = blockTop - playerBottom;
-        float overlapFromLeft = playerRight - blockLeft;
-        float overlapFromRight = blockRight - playerLeft;
+        float overlapTop = blockTop - playerBottom;
+        float overlapBottom = playerTop - blockBottom;
+        float overlapLeft = playerRight - blockLeft;
+        float overlapRight = blockRight - playerLeft;
 
-        float minOverlap = Math.min(Math.min(overlapFromTop, overlapFromBottom),
-            Math.min(overlapFromLeft, overlapFromRight));
+        float minOverlap = overlapTop;
+        if (overlapBottom < minOverlap) minOverlap = overlapBottom;
+        if (overlapLeft < minOverlap) minOverlap = overlapLeft;
+        if (overlapRight < minOverlap) minOverlap = overlapRight;
 
-        if (minOverlap == overlapFromBottom && player.velocityY <= 0) {
+        if (minOverlap == overlapTop && player.velocityY <= 0) {
             player.setY(blockTop);
             player.setVelocityY(0);
             player.setGrounded(true);
             return;
         }
 
-        if (minOverlap == overlapFromTop && player.velocityY >= 0 && player.isSafeFromBelow()) {
+        if (minOverlap == overlapBottom && player.velocityY >= 0 && player.isSafeFromBelow()) {
             player.setY(blockBottom - player.height);
             player.setVelocityY(0);
             return;
@@ -138,15 +140,8 @@ public class Block {
         float hMargin = playerRect.width * 0.25f;
         float vMargin = playerRect.height * 0.25f;
 
-        float innerLeft = playerLeft + hMargin;
-        float innerRight = playerRight - hMargin;
-        float innerBottom = playerBottom + vMargin;
-        float innerTop = playerTop - vMargin;
-
-        boolean innerOverlapsH = innerRight > blockLeft && innerLeft < blockRight;
-        boolean innerOverlapsV = innerTop > blockBottom && innerBottom < blockTop;
-
-        if (innerOverlapsH && innerOverlapsV) {
+        if (playerRight - hMargin > blockLeft && playerLeft + hMargin < blockRight &&
+            playerTop - vMargin > blockBottom && playerBottom + vMargin < blockTop) {
             GameWorld world = player.getWorld();
             if (world != null) world.playerDied();
         }

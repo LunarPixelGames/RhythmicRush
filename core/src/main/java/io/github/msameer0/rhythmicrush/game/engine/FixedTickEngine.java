@@ -26,7 +26,6 @@ public class FixedTickEngine {
 
     private final Tickable tickable;
     private float accumulator = 0f;
-    private float frameStart = 0f;
 
     /**
      * Constructs a new FixedTickEngine with the specified logic handler.
@@ -58,18 +57,9 @@ public class FixedTickEngine {
     /**
      * Updates the engine's internal clock and executes the necessary number of logic ticks
      * based on the elapsed time.
-     *
-     * <p>This method implements a fixed-timestep loop using an accumulator. It ensures that
-     * the game logic is updated at a consistent rate ({@link #TICK_RATE}) regardless of the
-     * rendering frame rate. During the update, any queued input events are dispatched to
-     * the {@link Tickable} instance at the precise moment they occurred relative to the
-     * logic ticks.</p>
-     *
      */
     public void update(float frameDelta) {
         accumulator = Math.min(accumulator + frameDelta, MAX_ACCUMULATOR);
-        frameStart = accumulator;
-
         float elapsed = 0f;
 
         while (accumulator >= TICK_DELTA) {
@@ -97,7 +87,6 @@ public class FixedTickEngine {
      */
     public void reset() {
         accumulator = 0f;
-        frameStart = 0f;
         eventHead = 0;
         eventCount = 0;
     }
