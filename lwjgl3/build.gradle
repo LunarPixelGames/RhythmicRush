@@ -19,7 +19,7 @@ apply plugin: 'io.github.fourlastor.construo'
 import io.github.fourlastor.construo.Target
 
 sourceSets.main.resources.srcDirs += [ rootProject.file('assets').path ]
-application.mainClass = 'io.github.msameer0.rhythmicrush.lwjgl3.Lwjgl3Launcher'
+application.mainClass = 'io.github.msameer0.rhythmicrush.lwjgl3.RhythmicRushLauncher'
 application.applicationName = appName
 eclipse.project.name = appName + '-lwjgl3'
 java.sourceCompatibility = 8
