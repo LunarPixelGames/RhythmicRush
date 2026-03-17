@@ -1,7 +1,6 @@
 package io.github.msameer0.rhythmicrush.game.level;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.badlogic.gdx.utils.Array;
 
 /**
  * Represents the data structure for a level in the game.
@@ -17,7 +16,7 @@ public class LevelData {
     public String groundColor = "16213e";
     public String difficulty = "normal";
 
-    public List<ObjectEntry> objects = new ArrayList<>();
+    public Array<ObjectEntry> objects = new Array<>();
 
 
     /**
