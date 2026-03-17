@@ -12,8 +12,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.badlogic.gdx.utils.Array;
 import java.util.Random;
 
 import io.github.msameer0.rhythmicrush.font.FontManager;
@@ -187,10 +186,10 @@ public class MainMenuScreen extends AbstractScreen {
      * @param cat The category index (e.g., {@code CAT_GAMEPLAY} or {@code CAT_GRAPHICS}).
      * @return A list of {@link SettingRow} objects representing all settings in the category.
      */
-    private List<SettingRow> buildAllRows(int cat) {
+    private Array<SettingRow> buildAllRows(int cat) {
         SettingsManager s = game.getSettingsManager();
         boolean desktop = Gdx.app.getType() == com.badlogic.gdx.Application.ApplicationType.Desktop;
-        List<SettingRow> rows = new ArrayList<>();
+        Array<SettingRow> rows = new Array<>();
 
         if (cat == CAT_GAMEPLAY) {
             rows.add(new SettingRow(RowType.TOGGLE, "Menu Music", "menuMusic"));
@@ -227,12 +226,16 @@ public class MainMenuScreen extends AbstractScreen {
      * @return A list of {@link SettingRow} objects for the specified page,
      *         or an empty list if the page index is out of bounds.
      */
-    private List<SettingRow> getPageRows(int cat, int subPage) {
-        List<SettingRow> all = buildAllRows(cat);
+    private Array<SettingRow> getPageRows(int cat, int subPage) {
+        Array<SettingRow> all = buildAllRows(cat);
         int start = subPage * MAX_ROWS_PER_PAGE;
-        int end = Math.min(start + MAX_ROWS_PER_PAGE, all.size());
-        if (start >= all.size()) return new ArrayList<>();
-        return all.subList(start, end);
+        int end = Math.min(start + MAX_ROWS_PER_PAGE, all.size);
+        if (start >= all.size) return new Array<>();
+        Array<SettingRow> pageRows = new Array<>();
+        for (int i = start; i < end; i++) {
+            pageRows.add(all.get(i));
+        }
+        return pageRows;
     }
 
     /**
@@ -247,7 +250,7 @@ public class MainMenuScreen extends AbstractScreen {
      * @return The total number of sub-pages available for the given category.
      */
     private int subPageCount(int cat) {
-        int total = buildAllRows(cat).size();
+        int total = buildAllRows(cat).size;
         return Math.max(1, (int) Math.ceil((double) total / MAX_ROWS_PER_PAGE));
     }
 
@@ -563,9 +566,9 @@ public class MainMenuScreen extends AbstractScreen {
      *
      * @param rows The list of {@link SettingRow} objects to be rendered on the current screen.
      */
-    private void drawSettingsRows(List<SettingRow> rows) {
+    private void drawSettingsRows(Array<SettingRow> rows) {
         SettingsManager s = game.getSettingsManager();
-        for (int i = 0; i < rows.size(); i++) {
+        for (int i = 0; i < rows.size; i++) {
             SettingRow row = rows.get(i);
             float ry = rowY(i);
             switch (row.type) {
@@ -876,11 +879,11 @@ public class MainMenuScreen extends AbstractScreen {
         if (!Gdx.input.justTouched()) return;
         Vector2 t = unproject();
 
-        List<SettingRow> pageRows = getPageRows(currentCat, currentSubPage);
+        Array<SettingRow> pageRows = getPageRows(currentCat, currentSubPage);
 
         if (fpsInputActive) {
             int fpsIdx = -1;
-            for (int i = 0; i < pageRows.size(); i++)
+            for (int i = 0; i < pageRows.size; i++)
                 if ("fpsValue".equals(pageRows.get(i).id)) {
                     fpsIdx = i;
                     break;
@@ -918,7 +921,7 @@ public class MainMenuScreen extends AbstractScreen {
             }
         }
 
-        for (int i = 0; i < pageRows.size(); i++) {
+        for (int i = 0; i < pageRows.size; i++) {
             SettingRow row = pageRows.get(i);
             float ry = rowY(i);
             switch (row.type) {
