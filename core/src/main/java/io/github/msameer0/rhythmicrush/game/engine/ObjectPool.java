@@ -1,18 +1,18 @@
 package io.github.msameer0.rhythmicrush.game.engine;
 
-import java.util.ArrayList;
+import com.badlogic.gdx.utils.Array;
 
 /**
  * Simple generic object pool.
  * Call {@link #obtain()} to get an instance (creates one if the pool is empty),
- * and {@link #free(T)} to return it for reuse.
+ * and {@link #free(Object)} to return it for reuse.
  * <p>
  * The pool never shrinks — freed objects are kept indefinitely so subsequent
  * level resets allocate nothing and produce no GC pressure.
  */
 public abstract class ObjectPool<T> {
 
-    private final ArrayList<T> free = new ArrayList<>();
+    private final Array<T> free = new Array<>();
 
     /**
      * Create a new instance. Called only when the pool is empty.
@@ -28,8 +28,8 @@ public abstract class ObjectPool<T> {
      * Get an instance from the pool, or create one if empty.
      */
     public T obtain() {
-        if (free.isEmpty()) return create();
-        return free.remove(free.size() - 1);
+        if (free.size == 0) return create();
+        return free.pop();
     }
 
     /**
@@ -42,12 +42,12 @@ public abstract class ObjectPool<T> {
     /**
      * Return all objects in a list to the pool and clear the list.
      */
-    public void freeAll(ArrayList<T> list) {
+    public void freeAll(Array<T> list) {
         free.addAll(list);
         list.clear();
     }
 
     public int getFreeCount() {
-        return free.size();
+        return free.size;
     }
 }
