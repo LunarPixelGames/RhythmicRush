@@ -19,9 +19,8 @@ import io.github.msameer0.rhythmicrush.game.gameplay.blocks.BlockType;
 import io.github.msameer0.rhythmicrush.game.level.LevelData;
 import io.github.msameer0.rhythmicrush.game.level.LevelSerializer;
 
-import java.util.ArrayList;
+import com.badlogic.gdx.utils.Array;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -89,12 +88,12 @@ public class LevelEditorScreen implements Screen {
     private int     paletteIndex = 0;
     private boolean snapToGrid   = true;
 
-    private final List<LevelData.ObjectEntry> placed = new ArrayList<>();
+    private final Array<LevelData.ObjectEntry> placed = new Array<>();
     private LevelData levelMeta = new LevelData();
 
     // ── Selection ─────────────────────────────────────────────────────────────
-    private final Set<LevelData.ObjectEntry>  selection = new LinkedHashSet<>();
-    private final List<LevelData.ObjectEntry> clipboard = new ArrayList<>();
+    private final Array<LevelData.ObjectEntry>  selection = new Array<>();
+    private final Array<LevelData.ObjectEntry> clipboard = new Array<>();
 
     // Rubber-band drag
     private boolean rubberBanding = false;
@@ -121,7 +120,7 @@ public class LevelEditorScreen implements Screen {
     private Color editorGroundColor = new Color(0.09f, 0.13f, 0.24f, 1f);
     private EditorColorFade bgFade     = null;
     private EditorColorFade groundFade = null;
-    private final List<LevelData.ObjectEntry> firedTriggers = new ArrayList<>();
+    private final Array<LevelData.ObjectEntry> firedTriggers = new Array<>();
 
     private static class EditorColorFade {
         final Color from; final Color to; final float duration; float elapsed = 0f;
@@ -211,7 +210,7 @@ public class LevelEditorScreen implements Screen {
         float musicX = 100f + music.getPosition() * SCROLL_SPEED;
         for (LevelData.ObjectEntry e : placed) {
             if (!"color_trigger".equals(e.type)) continue;
-            if (firedTriggers.contains(e)) continue;
+            if (firedTriggers.contains(e, true)) continue;
             if (musicX >= e.x + OBJECT_SIZE / 2f) {
                 firedTriggers.add(e);
                 if (e.triggerBgColor != null && !e.triggerBgColor.isEmpty())
@@ -252,7 +251,7 @@ public class LevelEditorScreen implements Screen {
         boolean shift = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)    || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
 
         // Palette / spike rotation — only meaningful when nothing selected
-        if (selection.isEmpty()) {
+        if (selection.size == 0) {
             if (Gdx.input.isKeyJustPressed(Input.Keys.TAB))
                 blockTypeIndex = (blockTypeIndex + 1) % BlockType.values().length;
             if (PALETTE[paletteIndex].type.equals("spike")) {
@@ -290,14 +289,14 @@ public class LevelEditorScreen implements Screen {
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) selection.clear();
 
         // Delete selected
-        if (!selection.isEmpty() &&
+        if (selection.size > 0 &&
             (Gdx.input.isKeyJustPressed(Input.Keys.DEL) || Gdx.input.isKeyJustPressed(Input.Keys.FORWARD_DEL))) {
-            placed.removeAll(selection);
+            placed.removeAll(selection, true);
             selection.clear();
         }
 
         // WASD move selected objects
-        if (!selection.isEmpty()) {
+        if (selection.size > 0) {
             int newDx = 0, newDy = 0;
             if (Gdx.input.isKeyPressed(Input.Keys.D)) newDx =  1;
             if (Gdx.input.isKeyPressed(Input.Keys.A)) newDx = -1;
@@ -344,7 +343,7 @@ public class LevelEditorScreen implements Screen {
     }
 
     private void pasteClipboard() {
-        if (clipboard.isEmpty()) return;
+        if (clipboard.size == 0) return;
         selection.clear();
         for (LevelData.ObjectEntry src : clipboard) {
             LevelData.ObjectEntry copy = deepCopy(src);
@@ -367,7 +366,7 @@ public class LevelEditorScreen implements Screen {
 
     /** Returns the topmost placed object containing world point (wx, wy), or null. */
     private LevelData.ObjectEntry objectAt(float wx, float wy) {
-        for (int i = placed.size() - 1; i >= 0; i--) {
+        for (int i = placed.size - 1; i >= 0; i--) {
             LevelData.ObjectEntry e = placed.get(i);
             if (wx >= e.x && wx <= e.x + e.size && wy >= e.y && wy <= e.y + e.size) return e;
         }
@@ -431,7 +430,7 @@ public class LevelEditorScreen implements Screen {
     }
 
     private void drawSelectionHighlights() {
-        if (selection.isEmpty()) return;
+        if (selection.size == 0) return;
 
         // Translucent fill over selected objects
         shapes.begin(ShapeRenderer.ShapeType.Filled);
@@ -448,8 +447,8 @@ public class LevelEditorScreen implements Screen {
         // Label
         batch.begin();
         font.setColor(SELECTION_COLOR);
-        if (selection.size() == 1) {
-            LevelData.ObjectEntry e = selection.iterator().next();
+        if (selection.size == 1) {
+            LevelData.ObjectEntry e = selection.first();
             String label = e.type + (e.blockType != null ? " [" + e.blockType + "]" : "");
             font.draw(batch, label, e.x, e.y + e.size + 18);
         } else {
@@ -458,7 +457,7 @@ public class LevelEditorScreen implements Screen {
                 if (e.x < minX) minX = e.x;
                 if (e.y + e.size > maxY) maxY = e.y + e.size;
             }
-            font.draw(batch, selection.size() + " selected", minX, maxY + 18);
+            font.draw(batch, selection.size + " selected", minX, maxY + 18);
         }
         batch.end();
     }
@@ -517,7 +516,7 @@ public class LevelEditorScreen implements Screen {
     }
 
     private void drawCursorPreview() {
-        if (!selection.isEmpty()) return; // hide preview when objects are selected
+        if (selection.size > 0) return; // hide preview when objects are selected
         float[] wp = cursorWorldPos();
         objectRenderer.drawCursorPreview(wp[0], wp[1], OBJECT_SIZE,
             PALETTE[paletteIndex].type, BlockType.values()[blockTypeIndex], currentSpikeRotation);
@@ -527,7 +526,7 @@ public class LevelEditorScreen implements Screen {
         float screenH = Gdx.graphics.getHeight();
         batch.begin();
 
-        if (selection.isEmpty()) {
+        if (selection.size == 0) {
             font.setColor(Color.WHITE);
             String paletteLabel = "[ " + PALETTE[paletteIndex].name;
             if (PALETTE[paletteIndex].type.equals("block"))
@@ -537,7 +536,7 @@ public class LevelEditorScreen implements Screen {
         } else {
             font.setColor(SELECTION_COLOR);
             font.draw(batch,
-                selection.size() + " selected  |  WASD move  |  CTRL+C copy  |  CTRL+V paste  |  DEL delete  |  ESC deselect",
+                selection.size + " selected  |  WASD move  |  CTRL+C copy  |  CTRL+V paste  |  DEL delete  |  ESC deselect",
                 cameraX + 10, screenH - 10);
         }
 
@@ -548,10 +547,10 @@ public class LevelEditorScreen implements Screen {
             : (music.isPlaying() ? "♪ Playing: " : "⏸ Paused: ") + levelMeta.musicFile;
         font.draw(batch, musicStatus, cameraX + 10, screenH - 58);
 
-        if (selection.isEmpty() && PALETTE[paletteIndex].type.equals("spike"))
+        if (selection.size == 0 && PALETTE[paletteIndex].type.equals("spike"))
             font.draw(batch, "Rotation: " + (int) currentSpikeRotation + "°  (Q/E)", cameraX + 10, screenH - 82);
 
-        if (selection.isEmpty() && PALETTE[paletteIndex].type.equals("color_trigger")) {
+        if (selection.size == 0 && PALETTE[paletteIndex].type.equals("color_trigger")) {
             font.setColor(TRIGGER_LINE_COLOR);
             font.draw(batch, "Left click = place  |  ALT+Left click on trigger = edit", cameraX + 10, screenH - 82);
         }
@@ -652,7 +651,7 @@ public class LevelEditorScreen implements Screen {
     private void tryOpenEditMenu() {
         Vector3 v = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
         camera.unproject(v);
-        for (int i = placed.size() - 1; i >= 0; i--) {
+        for (int i = placed.size - 1; i >= 0; i--) {
             LevelData.ObjectEntry e = placed.get(i);
             if (!"color_trigger".equals(e.type)) continue;
             if (v.x >= e.x && v.x <= e.x + e.size && v.y >= e.y && v.y <= e.y + e.size) {
@@ -711,7 +710,7 @@ public class LevelEditorScreen implements Screen {
         data.musicFile   = levelMeta.musicFile;
         data.bgColor     = levelMeta.bgColor;
         data.groundColor = levelMeta.groundColor;
-        data.objects     = new ArrayList<>(placed);
+        data.objects     = new Array<>(placed);
         return data;
     }
 
@@ -732,7 +731,7 @@ public class LevelEditorScreen implements Screen {
         levelMeta = data;
         resetEditorColors();
         if (data.musicFile != null && !data.musicFile.isEmpty()) loadMusic(data.musicFile);
-        System.out.println("[Editor] Loaded: " + fh.path() + " (" + placed.size() + " objects)");
+        System.out.println("[Editor] Loaded: " + fh.path() + " (" + placed.size + " objects)");
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -754,13 +753,13 @@ public class LevelEditorScreen implements Screen {
     private static float lerp(float a, float b, float t) { return a + (b - a) * t; }
 
     private void deleteAtCursor() {
-        if (!selection.isEmpty()) { placed.removeAll(selection); selection.clear(); return; }
+        if (selection.size > 0) { placed.removeAll(selection, true); selection.clear(); return; }
         Vector3 v = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
         camera.unproject(v);
-        for (int i = placed.size() - 1; i >= 0; i--) {
+        for (int i = placed.size - 1; i >= 0; i--) {
             LevelData.ObjectEntry e = placed.get(i);
             if (v.x >= e.x && v.x <= e.x + e.size && v.y >= e.y && v.y <= e.y + e.size) {
-                placed.remove(i); return;
+                placed.removeIndex(i); return;
             }
         }
     }
@@ -802,10 +801,10 @@ public class LevelEditorScreen implements Screen {
                 if (hit != null) {
                     // Clicked on an existing object
                     if (shift) {
-                        if (selection.contains(hit)) selection.remove(hit);
+                        if (selection.contains(hit, true)) selection.removeValue(hit, true);
                         else                         selection.add(hit);
                     } else {
-                        if (!selection.contains(hit)) { selection.clear(); selection.add(hit); }
+                        if (!selection.contains(hit, true)) { selection.clear(); selection.add(hit); }
                         // Already in selection: allow WASD to move without deselecting
                     }
                 } else {
@@ -839,7 +838,7 @@ public class LevelEditorScreen implements Screen {
                 finalizeRubberBand();
                 rubberBanding = false;
                 // If band was tiny (just a tap on empty space) and produced no selection → place object
-                if (selection.isEmpty()) placeObjectAtCursor();
+                if (selection.size == 0) placeObjectAtCursor();
                 return true;
             }
             return false;
