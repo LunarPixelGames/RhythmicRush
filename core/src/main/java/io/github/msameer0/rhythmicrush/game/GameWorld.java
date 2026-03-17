@@ -16,7 +16,7 @@ import io.github.msameer0.rhythmicrush.game.gameplay.players.Cube;
 import io.github.msameer0.rhythmicrush.game.gameplay.players.Ship;
 import io.github.msameer0.rhythmicrush.game.level.LevelData;
 
-import java.util.ArrayList;
+import com.badlogic.gdx.utils.Array;
 
 /**
  * Manages the core game logic, entity lifecycle, and state for a level in Rhythmic Rush.
@@ -50,9 +50,9 @@ public class GameWorld implements Tickable {
 
     private static final float COLLISION_LOOKAHEAD = 1400f;
 
-    private final ArrayList<AbstractPortal> portals = new ArrayList<>();
-    private final ArrayList<AbstractHazard> hazards = new ArrayList<>();
-    private final ArrayList<Block> blocks = new ArrayList<>();
+    private final Array<AbstractPortal> portals = new Array<>();
+    private final Array<AbstractHazard> hazards = new Array<>();
+    private final Array<Block> blocks = new Array<>();
 
     private final ObjectPool<Block> blockPool = new ObjectPool<Block>() {
         @Override
@@ -163,7 +163,7 @@ public class GameWorld implements Tickable {
     private final ColorFade bgFade = new ColorFade();
     private final ColorFade groundFade = new ColorFade();
 
-    private final ArrayList<ColorTrigger> colorTriggers = new ArrayList<>();
+    private final Array<ColorTrigger> colorTriggers = new Array<>();
 
     private LevelData currentLevelData = null;
     private float levelEndX = 0f;
@@ -175,9 +175,9 @@ public class GameWorld implements Tickable {
     private Color backgroundColor = new Color(0.1f, 0.1f, 0.18f, 1f);
     private Color groundColor = new Color(0.09f, 0.13f, 0.24f, 1f);
 
-    private final ArrayList<Spike> activeSpikes = new ArrayList<>();
-    private final ArrayList<CubePortal> activeCubePortals = new ArrayList<>();
-    private final ArrayList<ShipPortal> activeShipPortals = new ArrayList<>();
+    private final Array<Spike> activeSpikes = new Array<>();
+    private final Array<CubePortal> activeCubePortals = new Array<>();
+    private final Array<ShipPortal> activeShipPortals = new Array<>();
 
 
     /**
@@ -450,9 +450,9 @@ public class GameWorld implements Tickable {
 
         player.update(delta, groundY);
 
-        for (int i = portalCull; i < portals.size(); i++) portals.get(i).updatePosition(scrollSpeed, delta);
-        for (int i = hazardCull; i < hazards.size(); i++) hazards.get(i).updatePosition(scrollSpeed, delta);
-        for (int i = blockCull; i < blocks.size(); i++) blocks.get(i).updatePosition(scrollSpeed, delta);
+        for (int i = portalCull; i < portals.size; i++) portals.get(i).updatePosition(scrollSpeed, delta);
+        for (int i = hazardCull; i < hazards.size; i++) hazards.get(i).updatePosition(scrollSpeed, delta);
+        for (int i = blockCull; i < blocks.size; i++) blocks.get(i).updatePosition(scrollSpeed, delta);
 
         final float px = player.x;
         final float rangeMin = px - 300f;
@@ -462,14 +462,14 @@ public class GameWorld implements Tickable {
         if (hazardStart < hazardCull) hazardStart = hazardCull;
         if (portalStart < portalCull) portalStart = portalCull;
 
-        while (blockStart < blocks.size() && blocks.get(blockStart).getX() + blocks.get(blockStart).getWidth() < rangeMin)
+        while (blockStart < blocks.size && blocks.get(blockStart).getX() + blocks.get(blockStart).getWidth() < rangeMin)
             blockStart++;
-        while (hazardStart < hazards.size() && hazards.get(hazardStart).getX() + hazards.get(hazardStart).getWidth() < rangeMin)
+        while (hazardStart < hazards.size && hazards.get(hazardStart).getX() + hazards.get(hazardStart).getWidth() < rangeMin)
             hazardStart++;
-        while (portalStart < portals.size() && portals.get(portalStart).getX() + portals.get(portalStart).getWidth() < rangeMin)
+        while (portalStart < portals.size && portals.get(portalStart).getX() + portals.get(portalStart).getWidth() < rangeMin)
             portalStart++;
 
-        for (int i = portalStart; i < portals.size(); i++) {
+        for (int i = portalStart; i < portals.size; i++) {
             AbstractPortal portal = portals.get(i);
             if (portal.getX() > rangeMax) break;
             AbstractPlayer next = portal.tryTouch(player);
@@ -479,13 +479,13 @@ public class GameWorld implements Tickable {
             }
         }
 
-        for (int i = hazardStart; i < hazards.size(); i++) {
+        for (int i = hazardStart; i < hazards.size; i++) {
             AbstractHazard h = hazards.get(i);
             if (h.getX() > rangeMax) break;
             h.tryTouch(player);
         }
 
-        for (int i = blockStart; i < blocks.size(); i++) {
+        for (int i = blockStart; i < blocks.size; i++) {
             Block b = blocks.get(i);
             if (b.getX() > rangeMax) break;
             b.tryTouch(player);
@@ -520,30 +520,30 @@ public class GameWorld implements Tickable {
             if (t >= 1f) groundFade.active = false;
         }
 
-        while (blockCull < blocks.size()) {
+        while (blockCull < blocks.size) {
             Block b = blocks.get(blockCull);
             if (b.getX() + b.getWidth() >= cullX - 200) break;
             blockPool.free(b);
             blockCull++;
         }
-        while (hazardCull < hazards.size()) {
+        while (hazardCull < hazards.size) {
             AbstractHazard h = hazards.get(hazardCull);
             if (h.getX() + h.getWidth() >= cullX) break;
             if (h instanceof Spike) {
                 spikePool.free((Spike) h);
-                activeSpikes.remove(h);
+                activeSpikes.removeValue((Spike)h, true);
             }
             hazardCull++;
         }
-        while (portalCull < portals.size()) {
+        while (portalCull < portals.size) {
             AbstractPortal p = portals.get(portalCull);
             if (p.getX() + p.getWidth() >= cullX) break;
             if (p instanceof CubePortal) {
                 cubePortalPool.free((CubePortal) p);
-                activeCubePortals.remove(p);
+                activeCubePortals.removeValue((CubePortal)p, true);
             } else if (p instanceof ShipPortal) {
                 shipPortalPool.free((ShipPortal) p);
-                activeShipPortals.remove(p);
+                activeShipPortals.removeValue((ShipPortal)p, true);
             }
             portalCull++;
         }
@@ -669,9 +669,9 @@ public class GameWorld implements Tickable {
      * <p>This list includes all {@link AbstractPortal} instances, such as cube and ship
      * portals, that are currently being updated for movement and collision detection.</p>
      *
-     * @return an {@code ArrayList} containing the active portals in the world
+     * @return an {@code Array} containing the active portals in the world
      */
-    public ArrayList<AbstractPortal> getPortals() {
+    public Array<AbstractPortal> getPortals() {
         return portals;
     }
 
@@ -682,9 +682,9 @@ public class GameWorld implements Tickable {
      * that are currently being updated for movement and collision detection
      * against the player.</p>
      *
-     * @return an {@code ArrayList} containing the active hazards in the world
+     * @return an {@code Array} containing the active hazards in the world
      */
-    public ArrayList<AbstractHazard> getHazards() {
+    public Array<AbstractHazard> getHazards() {
         return hazards;
     }
 
@@ -695,9 +695,9 @@ public class GameWorld implements Tickable {
      * updated for movement, collision detection, and physics interactions
      * with the player.</p>
      *
-     * @return an {@code ArrayList} containing the active blocks in the world
+     * @return an {@code Array} containing the active blocks in the world
      */
-    public ArrayList<Block> getBlocks() {
+    public Array<Block> getBlocks() {
         return blocks;
     }
 
