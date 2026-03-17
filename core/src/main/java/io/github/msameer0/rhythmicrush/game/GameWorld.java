@@ -659,6 +659,10 @@ public class GameWorld implements Tickable {
         return levelComplete;
     }
 
+    public void setLevelComplete(boolean levelComplete) {
+        this.levelComplete = levelComplete;
+    }
+
     /**
      * Retrieves the list of all active portals currently managed by the game world.
      *

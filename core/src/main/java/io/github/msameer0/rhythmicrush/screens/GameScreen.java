@@ -69,6 +69,7 @@ public class GameScreen extends AbstractScreen {
     private boolean musicFading = false;
     private float musicFadeTimer = 0f;
     private boolean paused = false;
+    private boolean levelCompletedState = false;
 
     private boolean hitboxesActive = false;
 
@@ -426,6 +427,10 @@ public class GameScreen extends AbstractScreen {
             handlePauseTouched();
             return;
         }
+        if (levelCompletedState) {
+            handleCompleteTouched();
+            return;
+        }
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.R) && !deathPaused && !musicFading) {
             triggerRespawn();
@@ -465,7 +470,7 @@ public class GameScreen extends AbstractScreen {
                 musicFading = false;
                 world.reset();
                 engine.reset();
-                game.setScreen(new MainMenuScreen(game));
+                game.setScreen(new LevelSelectScreen(game, levelIndex));
             }
             return;
         }
@@ -496,10 +501,11 @@ public class GameScreen extends AbstractScreen {
                 hitboxesActive = true;
         }
 
-        if (world.isLevelComplete()) {
+        if (world.isLevelComplete() && !levelCompletedState) {
             recordComplete();
-            musicFading = true;
-            musicFadeTimer = 0f;
+            levelCompletedState = true;
+            stopAndDisposeMusic();
+            Gdx.input.setCursorCatched(false);
         }
     }
 
@@ -534,31 +540,33 @@ public class GameScreen extends AbstractScreen {
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapes.begin(ShapeRenderer.ShapeType.Filled);
-        
+
         drawProgressBarShapes();
         drawPauseButtonShapes();
-        
-        if (paused) {
+
+        if (paused || levelCompletedState) {
             shapes.setColor(COL_OVERLAY);
             shapes.rect(camLeft(), camBot(), gameViewport.getWorldWidth(), gameViewport.getWorldHeight());
         }
-        
+
         shapes.end();
         Gdx.gl.glDisable(GL20.GL_BLEND);
 
         // 2. Draw UI Text and Sprites
         game.getBatch().begin();
-        
+
         drawProgressBarText();
         drawSessionAttemptsText();
         drawNewBestPopupText();
-        
+
         if (paused) {
             drawPauseOverlayUI();
+        } else if (world.isLevelComplete()) {
+            drawCompleteOverlayUI();
         }
-        
+
         game.getBatch().end();
-        
+
         // 3. Pause Slider (needs shapes again, but we keep it separate to avoid complexity for now)
         if (paused) {
             drawPauseSliderShapes();
@@ -812,6 +820,89 @@ public class GameScreen extends AbstractScreen {
         Gdx.gl.glDisable(GL20.GL_BLEND);
     }
 
+
+    /**
+     * Renders the level completion overlay, showing the success message and stats.
+     */
+    private void drawCompleteOverlayUI() {
+        float px = panelX(), py = panelY();
+
+        int texW = (int) PANEL_W, texH = (int) PANEL_H;
+        if (panelTexture == null || texW != lastPanelW || texH != lastPanelH) {
+            if (panelTexture != null) panelTexture.dispose();
+            panelTexture = createRoundedRect(texW, texH, 24, COL_PANEL);
+            lastPanelW = texW;
+            lastPanelH = texH;
+        }
+
+        game.getBatch().draw(panelTexture, px, py);
+
+        pauseFont.getData().setScale(1.1f);
+        pauseFont.setColor(COL_HEADING);
+        glyphLayout.setText(pauseFont, "LEVEL COMPLETE");
+        pauseFont.draw(game.getBatch(), "LEVEL COMPLETE",
+            px + PANEL_W / 2f - glyphLayout.width / 2f,
+            py + PANEL_H - 22f);
+
+        float sy = py + PANEL_H - 22f - glyphLayout.height - 35f;
+        if (levelKey != null) {
+            LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
+            pauseFont.getData().setScale(0.7f);
+            pauseFont.setColor(COL_LABEL);
+            String stats = "Total Attempts: " + p.totalAttempts;
+            glyphLayout.setText(pauseFont, stats);
+            pauseFont.draw(game.getBatch(), stats, px + PANEL_W / 2f - glyphLayout.width / 2f, sy);
+
+            sy -= glyphLayout.height + 18f;
+            pauseFont.setColor(COL_DIM);
+            String session = "Session Attempts: " + sessionAttempts;
+            glyphLayout.setText(pauseFont, session);
+            pauseFont.draw(game.getBatch(), session, px + PANEL_W / 2f - glyphLayout.width / 2f, sy);
+        }
+
+        if (backRegion != null)
+            game.getBatch().draw(backRegion, backX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE * 0.9f);
+        if (resumeRegion != null)
+            game.getBatch().draw(resumeRegion, resumeX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE * 0.9f);
+
+        pauseFont.getData().setScale(0.45f);
+        pauseFont.setColor(COL_DIM);
+        glyphLayout.setText(pauseFont, "Menu");
+        pauseFont.draw(game.getBatch(), "Menu", backX() + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f, backY() - 4f);
+        glyphLayout.setText(pauseFont, "Replay");
+        pauseFont.draw(game.getBatch(), "Replay", resumeX() + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f, backY() - 4f);
+
+        pauseFont.getData().setScale(1f);
+    }
+
+    /**
+     * Processes input for the level completion screen.
+     */
+    private void handleCompleteTouched() {
+        Vector2 t = unprojectWorld();
+        if (!Gdx.input.justTouched()) return;
+
+        if (hits(t, backX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE)) {
+            exitToLevelSelect();
+        } else if (hits(t, resumeX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE)) {
+            triggerRestart();
+        }
+    }
+
+    /**
+     * Restarts the level from the completion screen.
+     */
+    private void triggerRestart() {
+        levelCompletedState = false;
+        lastJumpHeld = false;
+        stopAndDisposeMusic();
+        world.reset();
+        engine.reset();
+        startMusic();
+        recordAttempt();
+        if (game.getSettingsManager().lockCursorInGame)
+            Gdx.input.setCursorCatched(true);
+    }
 
     /**
      * Updates the pause state of the game and synchronizes associated systems.
