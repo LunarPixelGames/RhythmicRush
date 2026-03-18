@@ -3,6 +3,7 @@ package io.github.msameer0.rhythmicrush;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
+import io.github.msameer0.rhythmicrush.ads.AdController;
 import io.github.msameer0.rhythmicrush.atlas.AtlasManager;
 import io.github.msameer0.rhythmicrush.audio.SoundManager;
 import io.github.msameer0.rhythmicrush.font.FontManager;
@@ -32,6 +33,15 @@ public class RhythmicRushGame extends Game {
     private WindowController windowController;
     private ProgressManager progressManager;
     private SettingsManager settingsManager;
+    private AdController adController;
+
+    /**
+     * Constructs the game with platform-specific implementations.
+     * @param adController The platform-specific ad controller (e.g., AdMob for Android, Dummy for PC)
+     */
+    public RhythmicRushGame(AdController adController) {
+        this.adController = adController;
+    }
 
     /**
      * Initializes the game components, managers, and settings.
@@ -72,6 +82,15 @@ public class RhythmicRushGame extends Game {
      */
     public SoundManager getSoundManager() {
         return soundManager;
+    }
+
+    /**
+     * Retrieves the ad controller used to display interstitial ads.
+     *
+     * @return the {@link AdController} instance for the game
+     */
+    public AdController getAdController() {
+        return adController;
     }
 
     /**

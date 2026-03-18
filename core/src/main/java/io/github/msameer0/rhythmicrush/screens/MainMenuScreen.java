@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 
 import com.badlogic.gdx.utils.Array;
@@ -169,6 +170,19 @@ public class MainMenuScreen extends AbstractScreen {
             game.getSoundManager().stopMenuMusic();
 
         updateScaledSizes();
+
+        if (game.getAdController() != null) {
+            boolean shouldShowBanner = MathUtils.randomBoolean(0.5f);
+            game.getAdController().showBannerAd(shouldShowBanner);
+        }
+    }
+
+    @Override
+    public void hide() {
+        if (game.getAdController() != null) {
+            game.getAdController().showBannerAd(false);
+        }
+        super.hide();
     }
 
 

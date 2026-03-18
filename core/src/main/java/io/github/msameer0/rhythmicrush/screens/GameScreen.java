@@ -13,8 +13,10 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Align;
+import com.badlogic.gdx.utils.TimeUtils;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
@@ -117,6 +119,9 @@ public class GameScreen extends AbstractScreen {
     private float levelEndTimer = 0f;
     private static final float END_DELAY_TOTAL = 2.0f;
     private static final float END_MUSIC_FADE_START = 1.0f;
+
+    private static long lastAdTimeMillis = 0;
+    private static final long AD_COOLDOWN_MS = 60000;   // <- this is 6 minutes
 
     /**
      * Constructs a new GameScreen, initializing the core game logic, physics engine,
@@ -503,6 +508,7 @@ public class GameScreen extends AbstractScreen {
             deathPaused = true;
             deathTimer = 0f;
             lastDelta = 0f;
+            checkAndShowAd(false);
             engine.reset();
             if (game.getSettingsManager().showHitboxesOnDeath)
                 hitboxesActive = true;
@@ -511,6 +517,7 @@ public class GameScreen extends AbstractScreen {
         // 1. Trigger the ending sequence the exact moment the level is beaten
         if (world.isLevelComplete() && !levelEndingSequence && !levelCompletedState) {
             recordComplete(); // Record the win immediately so stats are updated
+            checkAndShowAd(true);
             levelEndingSequence = true;
             levelEndTimer = 0f;
         }
@@ -1504,5 +1511,25 @@ public class GameScreen extends AbstractScreen {
         Texture t = new Texture(pm);
         pm.dispose();
         return t;
+    }
+
+    /**
+     * Checks the 1-minute cooldown and RNG chances before showing an ad.
+     * @param isLevelComplete If true, forces a 100% chance to show the ad (still respects cooldown).
+     */
+    private void checkAndShowAd(boolean isLevelComplete) {
+        // 1. Check if 1 minute has passed since the last ad
+        if (TimeUtils.timeSinceMillis(lastAdTimeMillis) < AD_COOLDOWN_MS) {
+            return; // Cooldown is still active, skip the ad!
+        }
+
+        // 2. Determine chance: 100% on win, 25% chance on normal death
+        boolean shouldShowAd = isLevelComplete || MathUtils.randomBoolean(0.25f);
+
+        // 3. Show the ad and reset the timer!
+        if (shouldShowAd && game.getAdController() != null) {
+            game.getAdController().showInterstitialAd();
+            lastAdTimeMillis = TimeUtils.millis();
+        }
     }
 }

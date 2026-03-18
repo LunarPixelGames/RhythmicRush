@@ -3,6 +3,7 @@ package io.github.msameer0.rhythmicrush.lwjgl3;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import io.github.msameer0.rhythmicrush.RhythmicRushGame;
+import io.github.msameer0.rhythmicrush.ads.AdController;
 
 /** Launches the desktop (LWJGL3) application. */
 public class Lwjgl3Launcher {
@@ -13,7 +14,22 @@ public class Lwjgl3Launcher {
     }
 
     private static Lwjgl3Application createApplication() {
-        RhythmicRushGame game = new RhythmicRushGame();
+        RhythmicRushGame game = new RhythmicRushGame(new AdController() {
+            @Override
+            public void showInterstitialAd() {
+                System.out.println("Not showing ad on PC.");
+            }
+
+            @Override
+            public void showBannerAd(boolean show) {
+                System.out.println("Not showing ad on PC.");
+            }
+
+            @Override
+            public boolean isAdLoaded() {
+                return false;
+            }
+        });
 
         // IMPORTANT: set the controller BEFORE new Lwjgl3Application(...)
         // because Lwjgl3Application calls game.create() in its constructor
