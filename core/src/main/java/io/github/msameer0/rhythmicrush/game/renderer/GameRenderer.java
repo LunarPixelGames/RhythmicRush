@@ -194,8 +194,8 @@ public class GameRenderer {
             return;
         }
 
-        float scaleX = (pType == AbstractPlayer.PlayerType.SHIP) ? 1.1f : 1f;
-        float scaleY = (pType == AbstractPlayer.PlayerType.SHIP) ? 1.1f : 1f;
+        float scaleX = (pType == AbstractPlayer.PlayerType.SHIP) ? 1.35f : 1f;
+        float scaleY = (pType == AbstractPlayer.PlayerType.SHIP) ? 1.35f : 1f;
 
         batch.draw(region,
             player.x, player.y,
