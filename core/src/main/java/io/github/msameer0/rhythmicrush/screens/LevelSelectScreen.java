@@ -288,6 +288,7 @@ public class LevelSelectScreen extends AbstractScreen {
         game.getBatch().setProjectionMatrix(camera.combined);
         game.getBatch().begin();
 
+        // --- Panel texture ---
         int texW = (int) panelW, texH = (int) panelH;
         if (panelTexture == null || texW != lastPanelW || texH != lastPanelH) {
             if (panelTexture != null) panelTexture.dispose();
@@ -304,30 +305,47 @@ public class LevelSelectScreen extends AbstractScreen {
         btnLeft.draw(game.getBatch());
         btnRight.draw(game.getBatch());
 
+        // --- Level icon + name ---
         TextureRegion diffRegion = difficultyTexture(current.difficulty);
         float iconSize = panelH * 0.55f;
         float spacing = panelW * 0.05f;
 
         font.getData().setScale(0.85f);
         layout.setText(font, current.name);
-        float nameW = layout.width, nameH = layout.height;
+        float nameW = layout.width;
+        float nameH = layout.height;
+
+        // max 90% of panel width
+        float maxTotalWidth = panelW * 0.9f;
+        float scale = 1f;
         float totalWidth = iconSize + spacing + nameW;
-        float startX = panelX + (panelW - totalWidth) / 2f;
+        if (totalWidth > maxTotalWidth) {
+            scale = (maxTotalWidth - iconSize - spacing) / nameW;
+        }
+
+        // Apply scaling to text
+        font.getData().setScale(0.85f * scale);
+        layout.setText(font, current.name);
+
+        // Center everything in the panel
+        float startX = panelX + (panelW - (iconSize + spacing + layout.width)) / 2f;
         float iconX = startX;
         float iconY = panelY + panelH / 2f - iconSize / 2f + 10f;
         float textX = iconX + iconSize + spacing;
-        float textY = panelY + panelH / 2f + nameH / 2f + 10f;
+        float textY = panelY + panelH / 2f + layout.height / 2f + 10f;
 
         game.getBatch().draw(diffRegion, iconX, iconY, iconSize, iconSize);
         drawTextWithShadow(font, current.name, textX, textY, Color.WHITE);
 
-        font.getData().setScale(0.38f);
+        // --- Difficulty label below name ---
+        font.getData().setScale(0.38f * scale); // scale label similarly
         String diffLabel = current.difficulty != null
             ? current.difficulty.substring(0, 1).toUpperCase() + current.difficulty.substring(1)
             : "Normal";
         layout.setText(font, diffLabel);
         drawTextWithShadow(font, diffLabel, textX, textY - nameH - 4f, new Color(1f, 1f, 1f, 0.55f));
 
+        // --- Stats ---
         String levelKey = levels.get(selectedLevel).index + ".json";
         LevelProgress progress = game.getProgressManager().getOrCreate(levelKey);
 
@@ -342,6 +360,7 @@ public class LevelSelectScreen extends AbstractScreen {
         layout.setText(font, attemptsText);
         drawTextWithShadow(font, attemptsText, statsX - layout.width / 2f, panelY - 44f, new Color(1f, 1f, 1f, 0.55f));
 
+        // --- Level counter ---
         font.getData().setScale(0.35f);
         String counter = (selectedLevel + 1) + " / " + levels.size;
         layout.setText(font, counter);
