@@ -111,6 +111,7 @@ public class GameScreen extends AbstractScreen {
 
     private boolean pauseSliderDragging = false;
 
+    private boolean ignoreInputUntilRelease = false;
 
     /**
      * Constructs a new GameScreen, initializing the core game logic, physics engine,
@@ -650,11 +651,11 @@ public class GameScreen extends AbstractScreen {
             isPB = pct > p.bestPercent;
         }
         Color textColor = isPB ? COL_HEADING : Color.WHITE;
-        
+
         // Shadow
         font.setColor(0, 0, 0, textColor.a * 0.4f);
         font.draw(game.getBatch(), _hudSb, textDrawX + 2f, LINE_Y + textH / 2f - 2f);
-        
+
         // Text
         font.setColor(textColor);
         font.draw(game.getBatch(), _hudSb, textDrawX, LINE_Y + textH / 2f);
@@ -750,7 +751,7 @@ public class GameScreen extends AbstractScreen {
         glyphLayout.setText(font, _hudSb);
         float newBestTextHeight = glyphLayout.height;
         float newBestTextY = cy + newBestTextHeight / 2f;
-        
+
         // Shadow
         font.setColor(0, 0, 0, alpha * 0.4f);
         font.draw(game.getBatch(), _hudSb, cx - glyphLayout.width / 2f + 2f, newBestTextY - 2f);
@@ -765,11 +766,11 @@ public class GameScreen extends AbstractScreen {
         _hudSb.append(popupBestPct).append('%');
         glyphLayout.setText(font, _hudSb);
         float percentageTextY = newBestTextY - newBestTextHeight - 5f;
-        
+
         // Shadow
         font.setColor(0, 0, 0, alpha * 0.85f * 0.4f);
         font.draw(game.getBatch(), _hudSb, cx - glyphLayout.width / 2f + 2f, percentageTextY - 2f);
-        
+
         // Text
         font.setColor(1f, 1f, 1f, alpha * 0.85f);
         font.draw(game.getBatch(), _hudSb, cx - glyphLayout.width / 2f, percentageTextY);
@@ -816,7 +817,7 @@ public class GameScreen extends AbstractScreen {
             pauseFont.draw(game.getBatch(), best, x + shadowOffset, sy - shadowOffset);
             pauseFont.setColor(COL_LABEL);
             pauseFont.draw(game.getBatch(), best, x, sy);
-            
+
             sy -= glyphLayout.height + 12f;
             pauseFont.setColor(COL_DIM);
             String att = "Total: " + p.totalAttempts + "   Session: " + sessionAttempts;
@@ -865,7 +866,7 @@ public class GameScreen extends AbstractScreen {
         pauseFont.draw(game.getBatch(), "Back", x + shadowOffset, y - shadowOffset);
         pauseFont.setColor(COL_DIM);
         pauseFont.draw(game.getBatch(), "Back", x, y);
-        
+
         glyphLayout.setText(pauseFont, "Resume");
         x = resumeX() + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f;
         pauseFont.setColor(0, 0, 0, COL_DIM.a * 0.4f);
@@ -961,7 +962,7 @@ public class GameScreen extends AbstractScreen {
         pauseFont.draw(game.getBatch(), "Menu", x + shadowOffset, y - shadowOffset);
         pauseFont.setColor(COL_DIM);
         pauseFont.draw(game.getBatch(), "Menu", x, y);
-        
+
         glyphLayout.setText(pauseFont, "Replay");
         x = resumeX() + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f;
         pauseFont.setColor(0, 0, 0, COL_DIM.a * 0.4f);
@@ -983,6 +984,7 @@ public class GameScreen extends AbstractScreen {
             exitToLevelSelect();
         } else if (hits(t, resumeX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE)) {
             triggerRestart();
+            ignoreInputUntilRelease = true;
         }
     }
 
@@ -1058,6 +1060,7 @@ public class GameScreen extends AbstractScreen {
         }
         if (hits(t, resumeX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE)) {
             setPaused(false);
+            ignoreInputUntilRelease = true;
             return;
         }
     }
@@ -1334,6 +1337,10 @@ public class GameScreen extends AbstractScreen {
      * </p>
      */
     private void handleInput() {
+        if (ignoreInputUntilRelease) {
+            if (!Gdx.input.isTouched()) ignoreInputUntilRelease = false;
+            return;
+        }
         boolean jump =
             Gdx.input.isKeyPressed(Input.Keys.SPACE) ||
                 Gdx.input.isKeyPressed(Input.Keys.W) ||
