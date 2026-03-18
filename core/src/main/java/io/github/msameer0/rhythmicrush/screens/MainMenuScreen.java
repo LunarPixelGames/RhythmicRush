@@ -454,11 +454,14 @@ public class MainMenuScreen extends AbstractScreen {
         game.getBatch().setProjectionMatrix(camera.combined);
         game.getBatch().begin();
         font.getData().setScale(settingsHeadingScale);
-        font.setColor(COL_HEADING);
         layout.setText(font, "Settings");
-        font.draw(game.getBatch(), "Settings",
-            panelX + panelW / 2f - layout.width / 2f,
-            panelY + panelH - 16f);
+        drawTextWithShadow(
+            font,
+            "Settings",
+            (panelX + panelW / 2f) - (layout.width / 2f),
+            panelY + panelH - 16f,
+            COL_HEADING
+        );
 
         float tabFontScale = settingsFontScale * 0.92f;
         font.getData().setScale(tabFontScale);
@@ -468,9 +471,16 @@ public class MainMenuScreen extends AbstractScreen {
         for (int i = 0; i < CAT_COUNT; i++) {
             float tabW = panelW / CAT_COUNT;
             float tabCX = panelX + tabW * i + tabW / 2f;
-            font.setColor(i == currentCat ? COL_TAB_ACT : COL_TAB_INACT);
+            Color tabColor = (i == currentCat ? COL_TAB_ACT : COL_TAB_INACT);
             layout.setText(font, CAT_NAMES[i]);
-            font.draw(game.getBatch(), CAT_NAMES[i], tabCX - layout.width / 2f, tabY);
+
+            drawTextWithShadow(
+                font,
+                CAT_NAMES[i],
+                tabCX - layout.width / 2f,
+                tabY,
+                tabColor
+            );
         }
         font.getData().setScale(1f);
         game.getBatch().end();
@@ -661,15 +671,26 @@ public class MainMenuScreen extends AbstractScreen {
         game.getBatch().setProjectionMatrix(camera.combined);
         game.getBatch().begin();
         font.getData().setScale(settingsFontScale);
-        font.setColor(COL_LABEL);
         layout.setText(font, label);
-        font.draw(game.getBatch(), label, panelX + 28f, ry + layout.height / 2f);
+        drawTextWithShadow(
+            font,
+            label,
+            panelX + 28f,
+            ry + layout.height / 2f,
+            COL_LABEL
+        );
         font.getData().setScale(settingsFontScale * 0.62f);
-        font.setColor(value ? COL_ON : COL_DIM);
         String hint = value ? "ON" : "OFF";
+        Color hintColor = value ? COL_ON : COL_DIM;
         layout.setText(font, hint);
-        font.draw(game.getBatch(), hint,
-            pillX + pillW / 2f - layout.width / 2f, ry + layout.height / 2f);
+
+        drawTextWithShadow(
+            font,
+            hint,
+            pillX + pillW / 2f - layout.width / 2f,
+            ry + layout.height / 2f,
+            hintColor
+        );
         font.getData().setScale(1f);
         game.getBatch().end();
     }
@@ -721,12 +742,18 @@ public class MainMenuScreen extends AbstractScreen {
         font.getData().setScale(settingsFontScale);
         font.setColor(COL_LABEL);
         layout.setText(font, label);
-        font.draw(game.getBatch(), label, panelX + 28f, ry + layout.height / 2f);
+        drawTextWithShadow(font, label, panelX + 28f, ry + layout.height / 2f, COL_LABEL);
         font.getData().setScale(settingsFontScale * 0.77f);
         font.setColor(COL_DIM);
         String pct = Math.round(value * 100f) + "%";
         layout.setText(font, pct);
-        font.draw(game.getBatch(), pct, trackX - layout.width - 12f, ry + layout.height / 2f);
+        drawTextWithShadow(
+            font,
+            pct,
+            trackX - layout.width - 12f,
+            ry + layout.height / 2f,
+            COL_DIM
+        );
         font.getData().setScale(1f);
         game.getBatch().end();
     }
@@ -777,12 +804,19 @@ public class MainMenuScreen extends AbstractScreen {
         font.getData().setScale(settingsFontScale);
         font.setColor(COL_LABEL);
         layout.setText(font, label);
-        font.draw(game.getBatch(), label, panelX + 28f, ry + layout.height / 2f);
+        drawTextWithShadow(font, label, panelX + 28f, ry + layout.height / 2f, COL_LABEL);
         font.getData().setScale(settingsFontScale * 0.95f);
         font.setColor(fpsInputActive ? Color.WHITE : COL_DIM);
+        Color valueColor = fpsInputActive ? Color.WHITE : COL_DIM;
         layout.setText(font, display);
-        font.draw(game.getBatch(), display,
-            boxX + boxW / 2f - layout.width / 2f, ry + layout.height / 2f);
+
+        drawTextWithShadow(
+            font,
+            display,
+            boxX + boxW / 2f - layout.width / 2f,
+            ry + layout.height / 2f,
+            valueColor
+        );
         font.getData().setScale(1f);
         game.getBatch().end();
     }

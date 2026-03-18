@@ -319,16 +319,14 @@ public class LevelSelectScreen extends AbstractScreen {
         float textY = panelY + panelH / 2f + nameH / 2f + 10f;
 
         game.getBatch().draw(diffRegion, iconX, iconY, iconSize, iconSize);
-        font.draw(game.getBatch(), current.name, textX, textY);
+        drawTextWithShadow(font, current.name, textX, textY, Color.WHITE);
 
         font.getData().setScale(0.38f);
         String diffLabel = current.difficulty != null
             ? current.difficulty.substring(0, 1).toUpperCase() + current.difficulty.substring(1)
             : "Normal";
         layout.setText(font, diffLabel);
-        font.setColor(new Color(1f, 1f, 1f, 0.55f));
-        font.draw(game.getBatch(), diffLabel, textX, textY - nameH - 4f);
-        font.setColor(Color.WHITE);
+        drawTextWithShadow(font, diffLabel, textX, textY - nameH - 4f, new Color(1f, 1f, 1f, 0.55f));
 
         String levelKey = levels.get(selectedLevel).index + ".json";
         LevelProgress progress = game.getProgressManager().getOrCreate(levelKey);
@@ -339,19 +337,17 @@ public class LevelSelectScreen extends AbstractScreen {
         float statsX = panelX + panelW / 2f;
 
         layout.setText(font, bestText);
-        font.setColor(new Color(1f, 1f, 1f, 0.8f));
-        font.draw(game.getBatch(), bestText, statsX - layout.width / 2f, panelY - 18f);
+        drawTextWithShadow(font, bestText, statsX - layout.width / 2f, panelY - 18f, new Color(1f, 1f, 1f, 0.8f));
 
         layout.setText(font, attemptsText);
-        font.setColor(new Color(1f, 1f, 1f, 0.55f));
-        font.draw(game.getBatch(), attemptsText, statsX - layout.width / 2f, panelY - 44f);
+        drawTextWithShadow(font, attemptsText, statsX - layout.width / 2f, panelY - 44f, new Color(1f, 1f, 1f, 0.55f));
 
         font.getData().setScale(0.35f);
-        font.setColor(new Color(1f, 1f, 1f, 0.4f));
         String counter = (selectedLevel + 1) + " / " + levels.size;
         layout.setText(font, counter);
-        font.draw(game.getBatch(), counter,
-            viewport.getWorldWidth() / 2f - layout.width / 2f, 22f);
+        drawTextWithShadow(font, counter,
+            viewport.getWorldWidth() / 2f - layout.width / 2f, 22f,
+            new Color(1f, 1f, 1f, 0.4f));
 
         font.getData().setScale(1f);
         font.setColor(Color.WHITE);

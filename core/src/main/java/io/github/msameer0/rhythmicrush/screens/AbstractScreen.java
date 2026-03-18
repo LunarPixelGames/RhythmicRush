@@ -3,7 +3,9 @@ package io.github.msameer0.rhythmicrush.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
@@ -124,5 +126,13 @@ public abstract class AbstractScreen implements Screen {
 
     @Override
     public void dispose() {
+    }
+
+    protected void drawTextWithShadow(BitmapFont font, CharSequence text, float x, float y, Color mainColor) {
+        final float shadowOffset = 2f;
+        font.setColor(0, 0, 0, mainColor.a * 0.4f);
+        font.draw(game.getBatch(), text, x + shadowOffset, y - shadowOffset);
+        font.setColor(mainColor);
+        font.draw(game.getBatch(), text, x, y);
     }
 }
