@@ -449,6 +449,7 @@ public class GameScreen extends AbstractScreen {
                 musicFading = false;
                 musicFadeTimer = 0f;
                 lastJumpHeld = false;
+                popupTimer = -1f;
                 world.reset();
                 engine.reset();
                 startMusic();
@@ -699,31 +700,45 @@ public class GameScreen extends AbstractScreen {
         if (popupTimer < 0f) return;
 
         float alpha;
+        float scale;
+
         if (popupTimer < POPUP_FADE_IN) {
-            alpha = popupTimer / POPUP_FADE_IN;
+            float progress = popupTimer / POPUP_FADE_IN;
+            alpha = progress;
+            scale = 1.0f + 0.8f * progress; // Zoom in from 1.0 to 1.8
         } else if (popupTimer < POPUP_FADE_IN + POPUP_HOLD) {
+            float holdProgress = (popupTimer - POPUP_FADE_IN) / POPUP_HOLD;
             alpha = 1f;
+            scale = 1.8f - 0.4f * holdProgress; // Scale down from 1.8 to 1.4 during hold
         } else {
-            alpha = 1f - (popupTimer - POPUP_FADE_IN - POPUP_HOLD) / POPUP_FADE_OUT;
+            float progress = (popupTimer - POPUP_FADE_IN - POPUP_HOLD) / POPUP_FADE_OUT;
+            alpha = 1f - progress;
+            scale = 1.4f * (1f - progress); // Fade out and shrink to 0
         }
         alpha = Math.max(0f, Math.min(1f, alpha));
+        scale = Math.max(0f, scale);
 
         float cx = gameCamera.position.x;
         float cy = gameCamera.position.y;
 
-        font.getData().setScale(1.4f);
+        // Draw "NEW BEST"
+        font.getData().setScale(scale);
         font.setColor(COL_HEADING.r, COL_HEADING.g, COL_HEADING.b, alpha);
         _hudSb.setLength(0);
         _hudSb.append("NEW BEST");
         glyphLayout.setText(font, _hudSb);
-        font.draw(game.getBatch(), _hudSb, cx - glyphLayout.width / 2f, cy + glyphLayout.height / 2f + 18f);
+        float newBestTextHeight = glyphLayout.height;
+        float newBestTextY = cy + newBestTextHeight / 2f;
+        font.draw(game.getBatch(), _hudSb, cx - glyphLayout.width / 2f, newBestTextY);
 
-        font.getData().setScale(0.85f);
+        // Draw percentage
+        font.getData().setScale(scale * 0.6f);
         font.setColor(1f, 1f, 1f, alpha * 0.85f);
         _hudSb.setLength(0);
         _hudSb.append(popupBestPct).append('%');
         glyphLayout.setText(font, _hudSb);
-        font.draw(game.getBatch(), _hudSb, cx - glyphLayout.width / 2f, cy + glyphLayout.height / 2f + 18f - 38f);
+        float percentageTextY = newBestTextY - newBestTextHeight - 5f;
+        font.draw(game.getBatch(), _hudSb, cx - glyphLayout.width / 2f, percentageTextY);
 
         font.getData().setScale(1f);
         font.setColor(Color.WHITE);
@@ -895,6 +910,7 @@ public class GameScreen extends AbstractScreen {
     private void triggerRestart() {
         levelCompletedState = false;
         lastJumpHeld = false;
+        popupTimer = -1f;
         stopAndDisposeMusic();
         world.reset();
         engine.reset();
@@ -996,6 +1012,7 @@ public class GameScreen extends AbstractScreen {
         musicFadeTimer = 0f;
         lastDelta = 0f;
         lastJumpHeld = false;
+        popupTimer = -1f;
         world.reset();
         engine.reset();
         startMusic();
