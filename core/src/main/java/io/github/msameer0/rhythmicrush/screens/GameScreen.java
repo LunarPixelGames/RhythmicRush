@@ -598,7 +598,7 @@ public class GameScreen extends AbstractScreen {
         }
 
         float totalW = (s.showPercentage ? textW + GAP : 0f) + BAR_W;
-        float startX = gameCamera.position.x - totalW / 2f + (s.showPercentage ? textW + GAP : 0f);
+        float startX = gameCamera.position.x - totalW / 2f;
 
         float r = BAR_H / 2f;
         float fillW = BAR_W * progress;
@@ -639,13 +639,25 @@ public class GameScreen extends AbstractScreen {
         float totalW = textW + (s.showProgressBar ? GAP + BAR_W : 0f);
         float startX = gameCamera.position.x - totalW / 2f;
 
+        float textDrawX = startX;
+        if (s.showProgressBar) {
+            textDrawX = startX + BAR_W + GAP;
+        }
+
         boolean isPB = false;
         if (levelKey != null) {
             LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
             isPB = pct > p.bestPercent;
         }
-        font.setColor(isPB ? COL_HEADING : Color.WHITE);
-        font.draw(game.getBatch(), _hudSb, startX, LINE_Y + textH / 2f);
+        Color textColor = isPB ? COL_HEADING : Color.WHITE;
+        
+        // Shadow
+        font.setColor(0, 0, 0, textColor.a * 0.4f);
+        font.draw(game.getBatch(), _hudSb, textDrawX + 2f, LINE_Y + textH / 2f - 2f);
+        
+        // Text
+        font.setColor(textColor);
+        font.draw(game.getBatch(), _hudSb, textDrawX, LINE_Y + textH / 2f);
         font.getData().setScale(1f);
     }
 
@@ -669,26 +681,36 @@ public class GameScreen extends AbstractScreen {
     private void drawSessionAttemptsText() {
         float left = camLeft() + 12f;
         float top = camTop() - 12f;
+        float shadowOffset = 2f;
 
-        font.setColor(HUD_ATTEMPT);
+        // Attempt
         _hudSb.setLength(0);
         _hudSb.append("Attempt  ").append(sessionAttempts);
+        font.setColor(0, 0, 0, HUD_ATTEMPT.a * 0.4f);
+        font.draw(game.getBatch(), _hudSb, left + shadowOffset, top - shadowOffset);
+        font.setColor(HUD_ATTEMPT);
         font.draw(game.getBatch(), _hudSb, left, top);
 
         float nextY = top - 26f;
         if (levelKey != null) {
             LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
-            font.setColor(HUD_BEST);
+            // Best
             _hudSb.setLength(0);
             _hudSb.append("Best  ").append(p.bestPercent).append('%');
+            font.setColor(0, 0, 0, HUD_BEST.a * 0.4f);
+            font.draw(game.getBatch(), _hudSb, left + shadowOffset, nextY - shadowOffset);
+            font.setColor(HUD_BEST);
             font.draw(game.getBatch(), _hudSb, left, nextY);
             nextY -= 26f;
         }
 
         if (game.getSettingsManager().showFps) {
-            font.setColor(HUD_FPS);
+            // FPS
             _hudSb.setLength(0);
             _hudSb.append("FPS  ").append(Gdx.graphics.getFramesPerSecond());
+            font.setColor(0, 0, 0, HUD_FPS.a * 0.4f);
+            font.draw(game.getBatch(), _hudSb, left + shadowOffset, nextY - shadowOffset);
+            font.setColor(HUD_FPS);
             font.draw(game.getBatch(), _hudSb, left, nextY);
         }
     }
@@ -723,21 +745,33 @@ public class GameScreen extends AbstractScreen {
 
         // Draw "NEW BEST"
         font.getData().setScale(scale);
-        font.setColor(COL_HEADING.r, COL_HEADING.g, COL_HEADING.b, alpha);
         _hudSb.setLength(0);
         _hudSb.append("NEW BEST");
         glyphLayout.setText(font, _hudSb);
         float newBestTextHeight = glyphLayout.height;
         float newBestTextY = cy + newBestTextHeight / 2f;
+        
+        // Shadow
+        font.setColor(0, 0, 0, alpha * 0.4f);
+        font.draw(game.getBatch(), _hudSb, cx - glyphLayout.width / 2f + 2f, newBestTextY - 2f);
+
+        // Text
+        font.setColor(COL_HEADING.r, COL_HEADING.g, COL_HEADING.b, alpha);
         font.draw(game.getBatch(), _hudSb, cx - glyphLayout.width / 2f, newBestTextY);
 
         // Draw percentage
         font.getData().setScale(scale * 0.6f);
-        font.setColor(1f, 1f, 1f, alpha * 0.85f);
         _hudSb.setLength(0);
         _hudSb.append(popupBestPct).append('%');
         glyphLayout.setText(font, _hudSb);
         float percentageTextY = newBestTextY - newBestTextHeight - 5f;
+        
+        // Shadow
+        font.setColor(0, 0, 0, alpha * 0.85f * 0.4f);
+        font.draw(game.getBatch(), _hudSb, cx - glyphLayout.width / 2f + 2f, percentageTextY - 2f);
+        
+        // Text
+        font.setColor(1f, 1f, 1f, alpha * 0.85f);
         font.draw(game.getBatch(), _hudSb, cx - glyphLayout.width / 2f, percentageTextY);
 
         font.getData().setScale(1f);
@@ -749,6 +783,7 @@ public class GameScreen extends AbstractScreen {
      */
     private void drawPauseOverlayUI() {
         float px = panelX(), py = panelY();
+        float shadowOffset = 2f;
 
         int texW = (int) PANEL_W, texH = (int) PANEL_H;
         if (panelTexture == null || texW != lastPanelW || texH != lastPanelH) {
@@ -762,23 +797,35 @@ public class GameScreen extends AbstractScreen {
 
         String levelName = (levelData != null && levelData.name != null) ? levelData.name : "Level";
         pauseFont.getData().setScale(1f);
-        pauseFont.setColor(COL_HEADING);
         glyphLayout.setText(pauseFont, levelName);
-        pauseFont.draw(game.getBatch(), levelName, px + PANEL_W / 2f - glyphLayout.width / 2f, py + PANEL_H - 18f);
+        float x = px + PANEL_W / 2f - glyphLayout.width / 2f;
+        float y = py + PANEL_H - 18f;
+        pauseFont.setColor(0, 0, 0, COL_HEADING.a * 0.4f);
+        pauseFont.draw(game.getBatch(), levelName, x + shadowOffset, y - shadowOffset);
+        pauseFont.setColor(COL_HEADING);
+        pauseFont.draw(game.getBatch(), levelName, x, y);
 
         float sy = py + PANEL_H - 18f - glyphLayout.height - 22f;
         if (levelKey != null) {
             LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
             pauseFont.getData().setScale(0.62f);
-            pauseFont.setColor(COL_LABEL);
             String best = "Personal Best: " + p.bestPercent + "%";
             glyphLayout.setText(pauseFont, best);
-            pauseFont.draw(game.getBatch(), best, px + PANEL_W / 2f - glyphLayout.width / 2f, sy);
+            x = px + PANEL_W / 2f - glyphLayout.width / 2f;
+            pauseFont.setColor(0, 0, 0, COL_LABEL.a * 0.4f);
+            pauseFont.draw(game.getBatch(), best, x + shadowOffset, sy - shadowOffset);
+            pauseFont.setColor(COL_LABEL);
+            pauseFont.draw(game.getBatch(), best, x, sy);
+            
             sy -= glyphLayout.height + 12f;
             pauseFont.setColor(COL_DIM);
             String att = "Total: " + p.totalAttempts + "   Session: " + sessionAttempts;
             glyphLayout.setText(pauseFont, att);
-            pauseFont.draw(game.getBatch(), att, px + PANEL_W / 2f - glyphLayout.width / 2f, sy);
+            x = px + PANEL_W / 2f - glyphLayout.width / 2f;
+            pauseFont.setColor(0, 0, 0, COL_DIM.a * 0.4f);
+            pauseFont.draw(game.getBatch(), att, x + shadowOffset, sy - shadowOffset);
+            pauseFont.setColor(COL_DIM);
+            pauseFont.draw(game.getBatch(), att, x, sy);
         }
 
         if (backRegion != null)
@@ -788,26 +835,43 @@ public class GameScreen extends AbstractScreen {
 
         float sliderY = pauseSliderY();
         pauseFont.getData().setScale(0.52f);
-        pauseFont.setColor(COL_LABEL);
         _hudSb.setLength(0);
         _hudSb.append("Volume");
         glyphLayout.setText(pauseFont, _hudSb);
-        pauseFont.draw(game.getBatch(), _hudSb, panelX() + PANEL_W / 2f - glyphLayout.width / 2f, sliderY + glyphLayout.height + 10f);
+        x = panelX() + PANEL_W / 2f - glyphLayout.width / 2f;
+        y = sliderY + glyphLayout.height + 10f;
+        pauseFont.setColor(0, 0, 0, COL_LABEL.a * 0.4f);
+        pauseFont.draw(game.getBatch(), _hudSb, x + shadowOffset, y - shadowOffset);
+        pauseFont.setColor(COL_LABEL);
+        pauseFont.draw(game.getBatch(), _hudSb, x, y);
 
         float vol = game.getSettingsManager().musicVolume;
         pauseFont.getData().setScale(0.44f);
-        pauseFont.setColor(COL_DIM);
         _hudSb.setLength(0);
         _hudSb.append(Math.round(vol * 100f)).append('%');
         glyphLayout.setText(pauseFont, _hudSb);
-        pauseFont.draw(game.getBatch(), _hudSb, pauseSliderTrackX() - glyphLayout.width - 10f, sliderY + glyphLayout.height / 2f);
+        x = pauseSliderTrackX() - glyphLayout.width - 10f;
+        y = sliderY + glyphLayout.height / 2f;
+        pauseFont.setColor(0, 0, 0, COL_DIM.a * 0.4f);
+        pauseFont.draw(game.getBatch(), _hudSb, x + shadowOffset, y - shadowOffset);
+        pauseFont.setColor(COL_DIM);
+        pauseFont.draw(game.getBatch(), _hudSb, x, y);
 
         pauseFont.getData().setScale(0.45f);
-        pauseFont.setColor(COL_DIM);
         glyphLayout.setText(pauseFont, "Back");
-        pauseFont.draw(game.getBatch(), "Back", backX() + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f, backY() - 4f);
+        x = backX() + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f;
+        y = backY() - 4f;
+        pauseFont.setColor(0, 0, 0, COL_DIM.a * 0.4f);
+        pauseFont.draw(game.getBatch(), "Back", x + shadowOffset, y - shadowOffset);
+        pauseFont.setColor(COL_DIM);
+        pauseFont.draw(game.getBatch(), "Back", x, y);
+        
         glyphLayout.setText(pauseFont, "Resume");
-        pauseFont.draw(game.getBatch(), "Resume", resumeX() + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f, backY() - 4f);
+        x = resumeX() + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f;
+        pauseFont.setColor(0, 0, 0, COL_DIM.a * 0.4f);
+        pauseFont.draw(game.getBatch(), "Resume", x + shadowOffset, y - shadowOffset);
+        pauseFont.setColor(COL_DIM);
+        pauseFont.draw(game.getBatch(), "Resume", x, y);
 
         pauseFont.getData().setScale(1f);
     }
@@ -841,6 +905,7 @@ public class GameScreen extends AbstractScreen {
      */
     private void drawCompleteOverlayUI() {
         float px = panelX(), py = panelY();
+        float shadowOffset = 2f;
 
         int texW = (int) PANEL_W, texH = (int) PANEL_H;
         if (panelTexture == null || texW != lastPanelW || texH != lastPanelH) {
@@ -853,26 +918,34 @@ public class GameScreen extends AbstractScreen {
         game.getBatch().draw(panelTexture, px, py);
 
         pauseFont.getData().setScale(1.1f);
-        pauseFont.setColor(COL_HEADING);
         glyphLayout.setText(pauseFont, "LEVEL COMPLETE");
-        pauseFont.draw(game.getBatch(), "LEVEL COMPLETE",
-            px + PANEL_W / 2f - glyphLayout.width / 2f,
-            py + PANEL_H - 22f);
+        float x = px + PANEL_W / 2f - glyphLayout.width / 2f;
+        float y = py + PANEL_H - 22f;
+        pauseFont.setColor(0, 0, 0, COL_HEADING.a * 0.4f);
+        pauseFont.draw(game.getBatch(), "LEVEL COMPLETE", x + shadowOffset, y - shadowOffset);
+        pauseFont.setColor(COL_HEADING);
+        pauseFont.draw(game.getBatch(), "LEVEL COMPLETE", x, y);
 
         float sy = py + PANEL_H - 22f - glyphLayout.height - 35f;
         if (levelKey != null) {
             LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
             pauseFont.getData().setScale(0.7f);
-            pauseFont.setColor(COL_LABEL);
             String stats = "Total Attempts: " + p.totalAttempts;
             glyphLayout.setText(pauseFont, stats);
-            pauseFont.draw(game.getBatch(), stats, px + PANEL_W / 2f - glyphLayout.width / 2f, sy);
+            x = px + PANEL_W / 2f - glyphLayout.width / 2f;
+            pauseFont.setColor(0, 0, 0, COL_LABEL.a * 0.4f);
+            pauseFont.draw(game.getBatch(), stats, x + shadowOffset, sy - shadowOffset);
+            pauseFont.setColor(COL_LABEL);
+            pauseFont.draw(game.getBatch(), stats, x, sy);
 
             sy -= glyphLayout.height + 18f;
-            pauseFont.setColor(COL_DIM);
             String session = "Session Attempts: " + sessionAttempts;
             glyphLayout.setText(pauseFont, session);
-            pauseFont.draw(game.getBatch(), session, px + PANEL_W / 2f - glyphLayout.width / 2f, sy);
+            x = px + PANEL_W / 2f - glyphLayout.width / 2f;
+            pauseFont.setColor(0, 0, 0, COL_DIM.a * 0.4f);
+            pauseFont.draw(game.getBatch(), session, x + shadowOffset, sy - shadowOffset);
+            pauseFont.setColor(COL_DIM);
+            pauseFont.draw(game.getBatch(), session, x, sy);
         }
 
         if (backRegion != null)
@@ -881,11 +954,20 @@ public class GameScreen extends AbstractScreen {
             game.getBatch().draw(resumeRegion, resumeX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE * 0.9f);
 
         pauseFont.getData().setScale(0.45f);
-        pauseFont.setColor(COL_DIM);
         glyphLayout.setText(pauseFont, "Menu");
-        pauseFont.draw(game.getBatch(), "Menu", backX() + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f, backY() - 4f);
+        x = backX() + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f;
+        y = backY() - 4f;
+        pauseFont.setColor(0, 0, 0, COL_DIM.a * 0.4f);
+        pauseFont.draw(game.getBatch(), "Menu", x + shadowOffset, y - shadowOffset);
+        pauseFont.setColor(COL_DIM);
+        pauseFont.draw(game.getBatch(), "Menu", x, y);
+        
         glyphLayout.setText(pauseFont, "Replay");
-        pauseFont.draw(game.getBatch(), "Replay", resumeX() + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f, backY() - 4f);
+        x = resumeX() + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f;
+        pauseFont.setColor(0, 0, 0, COL_DIM.a * 0.4f);
+        pauseFont.draw(game.getBatch(), "Replay", x + shadowOffset, y - shadowOffset);
+        pauseFont.setColor(COL_DIM);
+        pauseFont.draw(game.getBatch(), "Replay", x, y);
 
         pauseFont.getData().setScale(1f);
     }
