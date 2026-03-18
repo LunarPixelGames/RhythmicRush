@@ -31,7 +31,7 @@ public class Lwjgl3Launcher {
         configuration.setForegroundFPS(0);
         configuration.setWindowedMode(1280, 720);
         configuration.setResizable(false);
-        configuration.setWindowIcon("libgdx128.png", "libgdx64.png", "libgdx32.png", "libgdx16.png");
+        configuration.setWindowIcon("icon_128.png", "icon_32.png", "icon_16.png");
         return configuration;
     }
 }
