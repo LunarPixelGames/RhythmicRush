@@ -113,6 +113,11 @@ public class GameScreen extends AbstractScreen {
 
     private boolean ignoreInputUntilRelease = false;
 
+    private boolean levelEndingSequence = false;
+    private float levelEndTimer = 0f;
+    private static final float END_DELAY_TOTAL = 2.0f;
+    private static final float END_MUSIC_FADE_START = 1.0f;
+
     /**
      * Constructs a new GameScreen, initializing the core game logic, physics engine,
      * and rendering systems for a specific level.
@@ -503,11 +508,31 @@ public class GameScreen extends AbstractScreen {
                 hitboxesActive = true;
         }
 
-        if (world.isLevelComplete() && !levelCompletedState) {
-            recordComplete();
-            levelCompletedState = true;
-            stopAndDisposeMusic();
-            Gdx.input.setCursorCatched(false);
+        // 1. Trigger the ending sequence the exact moment the level is beaten
+        if (world.isLevelComplete() && !levelEndingSequence && !levelCompletedState) {
+            recordComplete(); // Record the win immediately so stats are updated
+            levelEndingSequence = true;
+            levelEndTimer = 0f;
+        }
+
+        if (levelEndingSequence && !levelCompletedState) {
+            levelEndTimer += delta;
+
+            if (levelEndTimer >= END_MUSIC_FADE_START && levelMusic != null) {
+                float fadeDuration = END_DELAY_TOTAL - END_MUSIC_FADE_START;
+                float timeSpentFading = levelEndTimer - END_MUSIC_FADE_START;
+
+                float fadeProgress = Math.min(timeSpentFading / fadeDuration, 1f);
+
+                float baseVol = game.getSettingsManager().musicVolume;
+                levelMusic.setVolume(baseVol * (1f - fadeProgress));
+            }
+
+            if (levelEndTimer >= END_DELAY_TOTAL) {
+                levelCompletedState = true;
+                stopAndDisposeMusic();
+                Gdx.input.setCursorCatched(false);
+            }
         }
     }
 
