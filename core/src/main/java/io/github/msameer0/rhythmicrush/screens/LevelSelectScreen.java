@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.files.FileHandle;
 
@@ -67,6 +68,14 @@ public class LevelSelectScreen extends AbstractScreen {
     private int lastPanelW = -1, lastPanelH = -1;
 
     private float panelX, panelY, panelW, panelH;
+
+    private boolean isTransitioning = false;
+    private int transitionDir = 0;
+    private float transitionTime = 0f;
+    private final float TRANSITION_DURATION = 0.45f;
+
+    private int nextLevelIndex = 0;
+    private float panelXStart, panelXTarget;
 
     /**
      * Constructs a new LevelSelectScreen starting at the first available level.
@@ -256,6 +265,22 @@ public class LevelSelectScreen extends AbstractScreen {
         btnRight.update(delta);
         btnPanel.update(delta);
         handleInput();
+
+        if (isTransitioning) {
+            transitionTime += delta;
+            float alpha = Math.min(transitionTime / TRANSITION_DURATION, 1f);
+            float interp = Interpolation.swing.apply(alpha);
+
+            // slide panel
+            panelX = panelXStart + (panelXTarget - panelXStart) * interp;
+
+            if (transitionTime >= TRANSITION_DURATION) {
+                // finish transition
+                selectedLevel = nextLevelIndex;
+                panelX = panelXStart = panelXTarget = viewport.getWorldWidth()/2f - panelW/2f; // reset to center
+                isTransitioning = false;
+            }
+        }
     }
 
     /**
@@ -283,10 +308,25 @@ public class LevelSelectScreen extends AbstractScreen {
         Gdx.gl.glClearColor(0.15f, 0.15f, 0.2f, 1f);
         Gdx.gl.glClear(Gdx.gl.GL_COLOR_BUFFER_BIT);
 
-        LevelData current = levels.get(selectedLevel).data;
-
-        game.getBatch().setProjectionMatrix(camera.combined);
         game.getBatch().begin();
+
+        if (isTransitioning) {
+            LevelData oldLevel = levels.get(selectedLevel).data;
+            LevelData newLevel = levels.get(nextLevelIndex).data;
+
+            float offset = transitionDir * viewport.getWorldWidth();
+
+            drawLevelPanel(oldLevel, panelX, panelY);
+            drawLevelPanel(newLevel, panelX + offset, panelY);
+        } else {
+            drawLevelPanel(levels.get(selectedLevel).data, panelX, panelY);
+        }
+
+        game.getBatch().end();
+    }
+
+    private void drawLevelPanel(LevelData current,  float panelX,  float panelY) {
+        game.getBatch().setProjectionMatrix(camera.combined);
 
         // --- Panel texture ---
         int texW = (int) panelW, texH = (int) panelH;
@@ -370,7 +410,6 @@ public class LevelSelectScreen extends AbstractScreen {
 
         font.getData().setScale(1f);
         font.setColor(Color.WHITE);
-        game.getBatch().end();
     }
 
     /**
@@ -423,7 +462,17 @@ public class LevelSelectScreen extends AbstractScreen {
      *            level, 1 for the next level).
      */
     private void navigate(int dir) {
-        selectedLevel = (selectedLevel + dir + levels.size) % levels.size;
+        if (isTransitioning) return; // ignore input during animation
+
+        nextLevelIndex = (selectedLevel + dir + levels.size) % levels.size;
+        transitionDir = dir;
+
+        // starting and target X positions
+        panelXStart = panelX;
+        panelXTarget = panelX - dir * viewport.getWorldWidth(); // slide full screen width
+
+        transitionTime = 0f;
+        isTransitioning = true;
     }
 
     /**
