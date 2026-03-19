@@ -55,10 +55,7 @@ public class AndroidLauncher extends AndroidApplication implements AdController 
         adView.setVisibility(View.GONE); // Hide it by default
 
         // 4. Position the Banner Ad at the BOTTOM of the screen
-        RelativeLayout.LayoutParams adParams = new RelativeLayout.LayoutParams(
-            RelativeLayout.LayoutParams.WRAP_CONTENT,
-            RelativeLayout.LayoutParams.WRAP_CONTENT
-        );
+        RelativeLayout.LayoutParams adParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
         adParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
         adParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
         layout.addView(adView, adParams);
@@ -69,25 +66,26 @@ public class AndroidLauncher extends AndroidApplication implements AdController 
         // Load Ads (if not a bot)
         if (!ActivityManager.isRunningInUserTestHarness()) {
             loadInterstitialAd();
-            AdRequest bannerRequest = new AdRequest.Builder().build();
-            adView.loadAd(bannerRequest);
+            runOnUiThread(() -> {
+                AdRequest bannerRequest = new AdRequest.Builder().build();
+                adView.loadAd(bannerRequest);
+            });
         }
     }
 
     private void loadInterstitialAd() {
         AdRequest adRequest = new AdRequest.Builder().build();
-        InterstitialAd.load(this, INTERSTITIAL_TEST_ID, adRequest,
-            new InterstitialAdLoadCallback() {
-                @Override
-                public void onAdLoaded(@NonNull InterstitialAd interstitialAd) {
-                    mInterstitialAd = interstitialAd;
-                }
+        InterstitialAd.load(this, INTERSTITIAL_TEST_ID, adRequest, new InterstitialAdLoadCallback() {
+            @Override
+            public void onAdLoaded(@NonNull InterstitialAd interstitialAd) {
+                mInterstitialAd = interstitialAd;
+            }
 
-                @Override
-                public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
-                    mInterstitialAd = null;
-                }
-            });
+            @Override
+            public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                mInterstitialAd = null;
+            }
+        });
     }
 
     @Override
@@ -123,5 +121,29 @@ public class AndroidLauncher extends AndroidApplication implements AdController 
                 }
             }
         });
+    }
+
+    @Override
+    protected void onPause() {
+        if (adView != null) {
+            adView.pause();
+        }
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (adView != null) {
+            adView.resume();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (adView != null) {
+            adView.destroy();
+        }
+        super.onDestroy();
     }
 }
