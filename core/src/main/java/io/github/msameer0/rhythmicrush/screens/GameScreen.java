@@ -1084,6 +1084,9 @@ public class GameScreen extends AbstractScreen {
             game.getSettingsManager().musicVolume = vol;
             game.getSoundManager().setMusicVolume(vol);
             if (levelMusic != null) levelMusic.setVolume(vol);
+        }
+        if (!Gdx.input.isTouched() && pauseSliderDragging) {
+            pauseSliderDragging = false;
             game.getSettingsManager().save();
         }
         if (!Gdx.input.isTouched()) pauseSliderDragging = false;

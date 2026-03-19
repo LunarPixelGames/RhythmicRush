@@ -917,9 +917,9 @@ public class MainMenuScreen extends AbstractScreen {
             float trackW = panelW * 0.36f;
             s.musicVolume = Math.max(0f, Math.min(1f, (tx - trackX) / trackW));
             game.getSoundManager().setMusicVolume(s.musicVolume);
-            s.save();
         }
         if (!Gdx.input.isTouched()) {
+            if (draggingSlider) s.save();
             draggingSlider = false;
             draggingSliderRow = -1;
         }
