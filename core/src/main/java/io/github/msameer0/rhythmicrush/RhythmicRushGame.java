@@ -35,7 +35,7 @@ public class RhythmicRushGame extends Game {
     private ProgressManager progressManager;
     private LevelManager levelManager;
     private SettingsManager settingsManager;
-    private AdController adController;
+    private final AdController adController;
 
     /**
      * Constructs the game with platform-specific implementations.

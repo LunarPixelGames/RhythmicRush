@@ -88,4 +88,12 @@ public class Ship extends AbstractPlayer {
     public boolean isSafeFromBelow() {
         return true;
     }
+
+    public float getGroundY() {
+        return groundY;
+    }
+
+    public void setGroundY(float groundY) {
+        this.groundY = groundY;
+    }
 }

@@ -22,7 +22,7 @@ public class Spike extends AbstractHazard {
     private static final float HITBOX_CENTER_X = (TEXTURE_SIZE - HITBOX_W) / 2f;
 
     private float rotation;
-    private Rectangle spikeHitbox;
+    private final Rectangle spikeHitbox;
 
     /**
      * Constructs a new Spike instance with default values and initializes its specialized hitbox.

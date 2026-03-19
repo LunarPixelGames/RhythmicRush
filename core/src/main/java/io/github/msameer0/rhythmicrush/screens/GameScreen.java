@@ -52,17 +52,17 @@ public class GameScreen extends AbstractScreen {
     private static final float DEATH_PAUSE_DURATION = 0.75f;
     private static final float MUSIC_FADE_DURATION = 3f;
 
-    private GameWorld world;
-    private FixedTickEngine engine;
-    private GameRenderer renderer;
-    private BitmapFont font;
-    private BitmapFont pauseFont;
-    private GlyphLayout glyphLayout;
+    private final GameWorld world;
+    private final FixedTickEngine engine;
+    private final GameRenderer renderer;
+    private final BitmapFont font;
+    private final BitmapFont pauseFont;
+    private final GlyphLayout glyphLayout;
     private Music levelMusic;
 
-    private OrthographicCamera gameCamera;
-    private Viewport gameViewport;
-    private LevelData levelData;
+    private final OrthographicCamera gameCamera;
+    private final Viewport gameViewport;
+    private final LevelData levelData;
     private int levelIndex = 0;
 
     private boolean deathPaused = false;
@@ -87,7 +87,7 @@ public class GameScreen extends AbstractScreen {
     private float popupTimer = -1f;
     private int popupBestPct = 0;
 
-    private ShapeRenderer shapes;
+    private final ShapeRenderer shapes;
     private Texture panelTexture;
     private int lastPanelW = -1, lastPanelH = -1;
 
@@ -96,8 +96,8 @@ public class GameScreen extends AbstractScreen {
     private static final float BTN_SIZE = 72f;
     private static final float PAUSE_BTN = 44f;
 
-    private TextureRegion resumeRegion;
-    private TextureRegion backRegion;
+    private final TextureRegion resumeRegion;
+    private final TextureRegion backRegion;
 
     private static final Color COL_OVERLAY = new Color(0f, 0f, 0f, 0.65f);
     private static final Color COL_PANEL = new Color(0.11f, 0.11f, 0.17f, 1f);
@@ -1100,7 +1100,6 @@ public class GameScreen extends AbstractScreen {
         if (hits(t, resumeX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE)) {
             setPaused(false);
             ignoreInputUntilRelease = true;
-            return;
         }
     }
 
@@ -1253,7 +1252,7 @@ public class GameScreen extends AbstractScreen {
         if (s.showPercentage && s.showProgressBar) totalW += GAP;
         if (s.showProgressBar) totalW += BAR_W;
 
-        float startX = screenCX - totalW / 2f;
+        float barX = screenCX - totalW / 2f;
 
         if (s.showPercentage) {
             boolean isPB = false;
@@ -1264,14 +1263,13 @@ public class GameScreen extends AbstractScreen {
             game.getBatch().setProjectionMatrix(gameCamera.combined);
             game.getBatch().begin();
             font.setColor(isPB ? COL_HEADING : Color.WHITE);
-            font.draw(game.getBatch(), _hudSb, startX, LINE_Y + textH / 2f);
+            font.draw(game.getBatch(), _hudSb, barX, LINE_Y + textH / 2f);
             game.getBatch().end();
             font.getData().setScale(1f);
-            startX += textW + (s.showProgressBar ? GAP : 0f);
+            barX += textW + (s.showProgressBar ? GAP : 0f);
         }
 
         if (s.showProgressBar) {
-            float barX = startX;
             float barY = LINE_Y - BAR_H / 2f;
             float r = BAR_H / 2f;
             float fillW = BAR_W * progress;

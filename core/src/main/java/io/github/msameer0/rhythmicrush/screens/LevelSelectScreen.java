@@ -3,6 +3,7 @@ package io.github.msameer0.rhythmicrush.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -37,8 +38,8 @@ public class LevelSelectScreen extends AbstractScreen {
 
     private static final float PANEL_CORNER_RADIUS = 40f;
 
-    private Array<LevelData> levels = new Array<>();
-    private int selectedLevel = 0;
+    private final Array<LevelData> levels = new Array<>();
+    private int selectedLevel;
 
     private BitmapFont font;
     private final GlyphLayout layout = new GlyphLayout();
@@ -122,7 +123,7 @@ public class LevelSelectScreen extends AbstractScreen {
     /**
      * Scans the internal assets directory for level files and populates the level list.
      * <p>
-     * This method uses the {@link io.github.msameer0.rhythmicrush.game.level.LevelManager} 
+     * This method uses the {@link io.github.msameer0.rhythmicrush.game.level.LevelManager}
      * which pre-loads all levels at startup for better performance.
      * <p>
      * If no valid levels are found, a placeholder level entry is created to prevent
@@ -160,8 +161,6 @@ public class LevelSelectScreen extends AbstractScreen {
         switch (difficulty.toLowerCase()) {
             case "easy":
                 return 0;
-            case "normal":
-                return 1;
             case "hard":
                 return 2;
             case "insane":
@@ -204,14 +203,14 @@ public class LevelSelectScreen extends AbstractScreen {
         float vw = viewport.getWorldWidth();
         float vh = viewport.getWorldHeight();
 
-        float backW = vw * 0.08f, backH = backW;
-        float leftW = vw * 0.08f, leftH = leftW;
-        float rightW = vw * 0.08f, rightH = rightW;
+        float backW = vw * 0.08f;
+        float leftW = vw * 0.08f;
+        float rightW = vw * 0.08f;
 
-        if (btnBack != null) btnBack.setBounds(10, vh - backH - 10, backW, backH);
-        if (btnLeft != null) btnLeft.setBounds(10, vh / 2f - leftH / 2f, leftW, leftH);
+        if (btnBack != null) btnBack.setBounds(10, vh - backW - 10, backW, backW);
+        if (btnLeft != null) btnLeft.setBounds(10, vh / 2f - leftW / 2f, leftW, leftW);
         if (btnRight != null)
-            btnRight.setBounds(vw - rightW - 10, vh / 2f - rightH / 2f, rightW, rightH);
+            btnRight.setBounds(vw - rightW - 10, vh / 2f - rightW / 2f, rightW, rightW);
 
         panelW = vw * 0.6f;
         panelH = vh * 0.28f;
@@ -279,7 +278,7 @@ public class LevelSelectScreen extends AbstractScreen {
     @Override
     protected void draw() {
         Gdx.gl.glClearColor(0.15f, 0.15f, 0.2f, 1f);
-        Gdx.gl.glClear(Gdx.gl.GL_COLOR_BUFFER_BIT);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         game.getBatch().begin();
 
@@ -341,8 +340,7 @@ public class LevelSelectScreen extends AbstractScreen {
         layout.setText(font, current.name);
 
         // Center everything in the panel
-        float startX = panelX + (panelW - (iconSize + spacing + layout.width)) / 2f;
-        float iconX = startX;
+        float iconX = panelX + (panelW - (iconSize + spacing + layout.width)) / 2f;
         float iconY = panelY + panelH / 2f - iconSize / 2f + 10f;
         float textX = iconX + iconSize + spacing;
         float textY = panelY + panelH / 2f + layout.height / 2f + 10f;
@@ -381,7 +379,7 @@ public class LevelSelectScreen extends AbstractScreen {
                 break;
             }
         }
-        
+
         font.getData().setScale(0.35f);
         String counter = (currentLevelNum > 0 ? currentLevelNum : "?") + " / " + levels.size;
         layout.setText(font, counter);
@@ -469,12 +467,12 @@ public class LevelSelectScreen extends AbstractScreen {
      */
     private void playSelected() {
         Vector2 t = viewport.unproject(new Vector2(Gdx.input.getX(), Gdx.input.getY()));
-        
+
         if (isTransitioning) {
             // Check current level panel
             if (hits(t, panelX, panelY, panelW, panelH)) {
                 LevelData data = levels.get(selectedLevel);
-                if (!"-1.json".equals(data.fileName)) 
+                if (!"-1.json".equals(data.fileName))
                     game.setScreen(new GameScreen(game, data, selectedLevel));
                 return;
             }
@@ -482,13 +480,12 @@ public class LevelSelectScreen extends AbstractScreen {
             float nextX = panelX + transitionDir * viewport.getWorldWidth();
             if (hits(t, nextX, panelY, panelW, panelH)) {
                 LevelData data = levels.get(nextLevelIndex);
-                if (!"-1.json".equals(data.fileName)) 
+                if (!"-1.json".equals(data.fileName))
                     game.setScreen(new GameScreen(game, data, nextLevelIndex));
-                return;
             }
         } else {
             LevelData data = levels.get(selectedLevel);
-            if (!"-1.json".equals(data.fileName)) 
+            if (!"-1.json".equals(data.fileName))
                 game.setScreen(new GameScreen(game, data, selectedLevel));
         }
     }

@@ -35,8 +35,8 @@ import com.badlogic.gdx.utils.Array;
 public class GameWorld implements Tickable {
 
     private AbstractPlayer player;
-    private float groundY = 50f;
-    private float scrollSpeed = 320f;
+    private final float groundY = 50f;
+    private final float scrollSpeed = 320f;
     private boolean playerDead = false;
     private float cullX = 0f;
 
