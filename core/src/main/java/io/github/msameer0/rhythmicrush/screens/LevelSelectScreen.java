@@ -378,7 +378,7 @@ public class LevelSelectScreen extends AbstractScreen {
         drawTextWithShadow(font, diffLabel, textX, textY - nameH - 4f, new Color(1f, 1f, 1f, 0.55f));
 
         // --- Stats ---
-        String levelKey = levels.get(selectedLevel).index + ".json";
+        String levelKey = current.fileName != null ? current.fileName : current.name + ".json";
         LevelProgress progress = game.getProgressManager().getOrCreate(levelKey);
 
         font.getData().setScale(0.42f);
@@ -393,8 +393,16 @@ public class LevelSelectScreen extends AbstractScreen {
         drawTextWithShadow(font, attemptsText, statsX - layout.width / 2f, panelY - 44f, new Color(1f, 1f, 1f, 0.55f));
 
         // --- Level counter ---
+        int currentLevelNum = -1;
+        for (int i = 0; i < levels.size; i++) {
+            if (levels.get(i).data == current) {
+                currentLevelNum = i + 1;
+                break;
+            }
+        }
+        
         font.getData().setScale(0.35f);
-        String counter = (selectedLevel + 1) + " / " + levels.size;
+        String counter = (currentLevelNum > 0 ? currentLevelNum : "?") + " / " + levels.size;
         layout.setText(font, counter);
         drawTextWithShadow(font, counter,
             viewport.getWorldWidth() / 2f - layout.width / 2f, 22f,
@@ -454,7 +462,12 @@ public class LevelSelectScreen extends AbstractScreen {
      *            level, 1 for the next level).
      */
     private void navigate(int dir) {
-        if (isTransitioning) return; // ignore input during animation
+        if (isTransitioning) {
+            // Finalize previous transition immediately
+            selectedLevel = nextLevelIndex;
+            panelX = viewport.getWorldWidth()/2f - panelW/2f;
+            isTransitioning = false;
+        }
 
         nextLevelIndex = (selectedLevel + dir + levels.size) % levels.size;
         transitionDir = dir;
@@ -468,17 +481,36 @@ public class LevelSelectScreen extends AbstractScreen {
     }
 
     /**
-     * Transitions the game to the {@link GameScreen} using the currently selected level.
+     * Transitions the game to the {@link GameScreen} using the level that was actually clicked.
      * <p>
-     * This method retrieves the {@link LevelEntry} corresponding to the current
-     * {@code selectedLevel} index. If the entry is valid (i.e., not a placeholder
-     * with an index less than 0), it initializes a new game session with the
-     * associated {@link LevelData}.
+     * If a transition is in progress, this method detects whether the user clicked
+     * the outgoing panel or the incoming panel based on their current screen positions.
      */
     private void playSelected() {
-        LevelEntry entry = levels.get(selectedLevel);
-        if (entry.index < 0) return;
-        game.setScreen(new GameScreen(game, entry.data, selectedLevel));
+        Vector2 t = viewport.unproject(new Vector2(Gdx.input.getX(), Gdx.input.getY()));
+        
+        if (isTransitioning) {
+            // Check current level panel
+            if (hits(t, panelX, panelY, panelW, panelH)) {
+                LevelEntry entry = levels.get(selectedLevel);
+                if (entry.index >= 0) game.setScreen(new GameScreen(game, entry.data, selectedLevel));
+                return;
+            }
+            // Check next level panel
+            float nextX = panelX + transitionDir * viewport.getWorldWidth();
+            if (hits(t, nextX, panelY, panelW, panelH)) {
+                LevelEntry entry = levels.get(nextLevelIndex);
+                if (entry.index >= 0) game.setScreen(new GameScreen(game, entry.data, nextLevelIndex));
+                return;
+            }
+        } else {
+            LevelEntry entry = levels.get(selectedLevel);
+            if (entry.index >= 0) game.setScreen(new GameScreen(game, entry.data, selectedLevel));
+        }
+    }
+
+    private static boolean hits(Vector2 t, float x, float y, float w, float h) {
+        return t.x >= x && t.x <= x + w && t.y >= y && t.y <= y + h;
     }
 
     /**
