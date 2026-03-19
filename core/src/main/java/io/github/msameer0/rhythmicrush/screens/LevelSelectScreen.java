@@ -11,7 +11,6 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.files.FileHandle;
 
 import com.badlogic.gdx.utils.Array;
 
@@ -19,7 +18,6 @@ import io.github.msameer0.rhythmicrush.font.FontManager;
 import io.github.msameer0.rhythmicrush.RhythmicRushGame;
 import io.github.msameer0.rhythmicrush.game.level.LevelData;
 import io.github.msameer0.rhythmicrush.game.level.LevelProgress;
-import io.github.msameer0.rhythmicrush.game.level.LevelSerializer;
 import io.github.msameer0.rhythmicrush.ui.AnimatedButton;
 
 /**
@@ -39,21 +37,7 @@ public class LevelSelectScreen extends AbstractScreen {
 
     private static final float PANEL_CORNER_RADIUS = 40f;
 
-    /**
-     * A helper class that represents a single level entry in the selection list.
-     * It pairs the {@link LevelData} with its corresponding file index.
-     */
-    private static class LevelEntry {
-        final LevelData data;
-        final int index;
-
-        LevelEntry(LevelData data, int index) {
-            this.data = data;
-            this.index = index;
-        }
-    }
-
-    private Array<LevelEntry> levels = new Array<>();
+    private Array<LevelData> levels = new Array<>();
     private int selectedLevel = 0;
 
     private BitmapFont font;
@@ -147,17 +131,14 @@ public class LevelSelectScreen extends AbstractScreen {
      */
     private void loadLevels() {
         levels.clear();
-        Array<LevelData> loadedLevels = game.getLevelManager().getLevels();
-        
-        for (int i = 0; i < loadedLevels.size; i++) {
-            levels.add(new LevelEntry(loadedLevels.get(i), i));
-        }
+        levels.addAll(game.getLevelManager().getLevels());
 
         if (levels.size == 0) {
             LevelData placeholder = new LevelData();
             placeholder.name = "No Levels Found";
             placeholder.difficulty = "normal";
-            levels.add(new LevelEntry(placeholder, -1));
+            placeholder.fileName = "-1.json";
+            levels.add(placeholder);
         }
         selectedLevel = Math.max(0, Math.min(selectedLevel, levels.size - 1));
     }
@@ -303,15 +284,15 @@ public class LevelSelectScreen extends AbstractScreen {
         game.getBatch().begin();
 
         if (isTransitioning) {
-            LevelData oldLevel = levels.get(selectedLevel).data;
-            LevelData newLevel = levels.get(nextLevelIndex).data;
+            LevelData oldLevel = levels.get(selectedLevel);
+            LevelData newLevel = levels.get(nextLevelIndex);
 
             float offset = transitionDir * viewport.getWorldWidth();
 
             drawLevelPanel(oldLevel, panelX, panelY);
             drawLevelPanel(newLevel, panelX + offset, panelY);
         } else {
-            drawLevelPanel(levels.get(selectedLevel).data, panelX, panelY);
+            drawLevelPanel(levels.get(selectedLevel), panelX, panelY);
         }
 
         game.getBatch().end();
@@ -395,7 +376,7 @@ public class LevelSelectScreen extends AbstractScreen {
         // --- Level counter ---
         int currentLevelNum = -1;
         for (int i = 0; i < levels.size; i++) {
-            if (levels.get(i).data == current) {
+            if (levels.get(i) == current) {
                 currentLevelNum = i + 1;
                 break;
             }
@@ -492,20 +473,23 @@ public class LevelSelectScreen extends AbstractScreen {
         if (isTransitioning) {
             // Check current level panel
             if (hits(t, panelX, panelY, panelW, panelH)) {
-                LevelEntry entry = levels.get(selectedLevel);
-                if (entry.index >= 0) game.setScreen(new GameScreen(game, entry.data, selectedLevel));
+                LevelData data = levels.get(selectedLevel);
+                if (!"-1.json".equals(data.fileName)) 
+                    game.setScreen(new GameScreen(game, data, selectedLevel));
                 return;
             }
             // Check next level panel
             float nextX = panelX + transitionDir * viewport.getWorldWidth();
             if (hits(t, nextX, panelY, panelW, panelH)) {
-                LevelEntry entry = levels.get(nextLevelIndex);
-                if (entry.index >= 0) game.setScreen(new GameScreen(game, entry.data, nextLevelIndex));
+                LevelData data = levels.get(nextLevelIndex);
+                if (!"-1.json".equals(data.fileName)) 
+                    game.setScreen(new GameScreen(game, data, nextLevelIndex));
                 return;
             }
         } else {
-            LevelEntry entry = levels.get(selectedLevel);
-            if (entry.index >= 0) game.setScreen(new GameScreen(game, entry.data, selectedLevel));
+            LevelData data = levels.get(selectedLevel);
+            if (!"-1.json".equals(data.fileName)) 
+                game.setScreen(new GameScreen(game, data, selectedLevel));
         }
     }
 

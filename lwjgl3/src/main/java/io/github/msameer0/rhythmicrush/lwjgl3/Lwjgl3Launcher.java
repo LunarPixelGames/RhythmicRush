@@ -1,5 +1,6 @@
 package io.github.msameer0.rhythmicrush.lwjgl3;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import io.github.msameer0.rhythmicrush.RhythmicRushGame;
@@ -17,12 +18,12 @@ public class Lwjgl3Launcher {
         RhythmicRushGame game = new RhythmicRushGame(new AdController() {
             @Override
             public void showInterstitialAd() {
-                System.out.println("Not showing ad on PC.");
+                Gdx.app.log("AdController", "Not showing ad on PC.");
             }
 
             @Override
             public void showBannerAd(boolean show) {
-                System.out.println("Not showing ad on PC.");
+                Gdx.app.log("AdController", "Not showing ad on PC.");
             }
 
             @Override
