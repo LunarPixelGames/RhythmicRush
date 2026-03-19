@@ -131,7 +131,7 @@ public class LevelEditorApp extends ApplicationAdapter {
                         music.play();
                     }
                 } catch (RuntimeException e) {
-                    System.err.println("couldnt load music: " + e.getMessage());
+                    Gdx.app.error("Playtest", "couldnt load music: " + e.getMessage());
                 }
             }
         }

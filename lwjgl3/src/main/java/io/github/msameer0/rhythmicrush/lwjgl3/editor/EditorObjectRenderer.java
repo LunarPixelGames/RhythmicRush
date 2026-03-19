@@ -44,11 +44,11 @@ public class EditorObjectRenderer {
             for (BlockType type : BlockType.values()) {
                 TextureRegion region = blocksAtlas.findRegion(type.textureName);
                 if (region != null) blockRegions.put(type, region);
-                else System.err.println("[EditorRenderer] Missing region: " + type.textureName);
+                else Gdx.app.error("EditorRenderer", "Missing region: " + type.textureName);
             }
             atlasLoaded = true;
         } catch (Exception e) {
-            System.err.println("[EditorRenderer] Could not load blocks atlas, falling back to colors: " + e.getMessage());
+            Gdx.app.error("EditorRenderer", "Could not load blocks atlas, falling back to colors: " + e.getMessage());
             atlasLoaded = false;
         }
 
@@ -56,7 +56,7 @@ public class EditorObjectRenderer {
             spikesAtlas = new TextureAtlas(Gdx.files.internal("game/objects/spikes.atlas"));
             spikeRegion = spikesAtlas.findRegion("spike");
         } catch (Exception e) {
-            System.err.println("[EditorRenderer] Could not load spikes atlas: " + e.getMessage());
+            Gdx.app.error("EditorRenderer", "Could not load spikes atlas: " + e.getMessage());
         }
 
     }
@@ -135,7 +135,12 @@ public class EditorObjectRenderer {
             batch.setProjectionMatrix(camera.combined);
             batch.begin();
             batch.setColor(1f, 1f, 1f, 0.5f);
-            batch.draw(previewRegion, wx, wy, size, size);
+            batch.draw(previewRegion,
+                wx, wy,
+                size / 2f, size / 2f,   // origin = center
+                size, size,
+                1f, 1f,
+                rotation);              // apply rotation
             batch.setColor(Color.WHITE);
             batch.end();
 
@@ -144,22 +149,6 @@ public class EditorObjectRenderer {
             shapes.setColor(Color.WHITE);
             shapes.rect(wx, wy, size, size);
             shapes.end();
-            return;
-        }
-
-        if (previewRegion != null) {
-            batch.setProjectionMatrix(camera.combined);
-            batch.begin();
-            batch.setColor(1f, 1f, 1f, 0.5f);
-            batch.draw(previewRegion,
-                wx, wy,
-                size / 2f, size / 2f,   // origin = center
-                size, size,
-                1f, 1f,
-                rotation);              // ← apply rotation
-            batch.setColor(Color.WHITE);
-            batch.end();
-            // outline...
             return;
         }
 

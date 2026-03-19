@@ -23,7 +23,7 @@ public class AnimatedButton {
     private boolean pressed = false;
     private boolean pendingFire = false;
 
-    private Runnable action;
+    private final Runnable action;
 
     /**
      * Constructs a new AnimatedButton with a specified texture, position, dimensions, and click action.
@@ -87,15 +87,13 @@ public class AnimatedButton {
      *
      * @param tx the x-coordinate of the touch event
      * @param ty the y-coordinate of the touch event
-     * @return true if the button was hit and the event was handled, false otherwise
      */
-    public boolean onTouchDown(float tx, float ty) {
-        if (!hits(tx, ty)) return false;
+    public void onTouchDown(float tx, float ty) {
+        if (!hits(tx, ty)) return;
         pressed = true;
         target = PRESS_SCALE;
         velocity = 0f;
         pendingFire = false;
-        return true;
     }
 
     /**

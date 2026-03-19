@@ -79,7 +79,7 @@ public class MainMenuScreen extends AbstractScreen {
     private int draggingSliderRow = -1;
 
     private boolean fpsInputActive = false;
-    private StringBuilder fpsInputBuffer = new StringBuilder();
+    private final StringBuilder fpsInputBuffer = new StringBuilder();
 
     private Texture panelTexture;
     private int lastPanelW = -1, lastPanelH = -1;
@@ -331,7 +331,7 @@ public class MainMenuScreen extends AbstractScreen {
 
         float scaleRef = rowStep / 68f;
         settingsFontScale = 0.65f * scaleRef;
-        settingsHeadingScale = 1.00f * scaleRef;
+        settingsHeadingScale = scaleRef;
 
         recomputePanelHeight();
     }

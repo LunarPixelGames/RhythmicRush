@@ -20,8 +20,6 @@ import io.github.msameer0.rhythmicrush.game.level.LevelData;
 import io.github.msameer0.rhythmicrush.game.level.LevelSerializer;
 
 import com.badlogic.gdx.utils.Array;
-import java.util.LinkedHashSet;
-import java.util.Set;
 
 /**
  * PC-only level editor screen.
@@ -686,12 +684,12 @@ public class LevelEditorScreen implements Screen {
             FileHandle fh = Gdx.files.internal("musics/" + filename);
             if (!fh.exists()) fh = Gdx.files.local("assets/musics/" + filename);
             if (!fh.exists()) fh = Gdx.files.absolute(filename);
-            if (!fh.exists()) { System.err.println("[Editor] Music not found: " + filename); return; }
+            if (!fh.exists()) { Gdx.app.error("Editor", "Music not found: " + filename); return; }
             music = Gdx.audio.newMusic(fh);
             music.setLooping(false);
             levelMeta.musicFile = filename;
         } catch (Exception ex) {
-            System.err.println("[Editor] Could not load music: " + ex.getMessage());
+            Gdx.app.error("Editor", "Could not load music: " + ex.getMessage());
         }
     }
 
@@ -718,20 +716,20 @@ public class LevelEditorScreen implements Screen {
         if (!filename.endsWith(".json")) filename += ".json";
         FileHandle fh = Gdx.files.local(filename);
         LevelSerializer.save(buildLevelData(), fh);
-        System.out.println("[Editor] Saved: " + fh.path());
+        Gdx.app.log("Editor", "Saved: " + fh.path());
     }
 
     private void loadLevel(String filename) {
         if (!filename.endsWith(".json")) filename += ".json";
         FileHandle fh = Gdx.files.local(filename);
-        if (!fh.exists()) { System.err.println("[Editor] Not found: " + fh.path()); return; }
+        if (!fh.exists()) { Gdx.app.error("Editor", "Not found: " + fh.path()); return; }
         LevelData data = LevelSerializer.load(fh);
         placed.clear(); selection.clear();
         placed.addAll(data.objects);
         levelMeta = data;
         resetEditorColors();
         if (data.musicFile != null && !data.musicFile.isEmpty()) loadMusic(data.musicFile);
-        System.out.println("[Editor] Loaded: " + fh.path() + " (" + placed.size + " objects)");
+        Gdx.app.log("Editor", "Loaded: " + fh.path() + " (" + placed.size + " objects)");
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
