@@ -7,6 +7,7 @@ import io.github.msameer0.rhythmicrush.ads.AdController;
 import io.github.msameer0.rhythmicrush.atlas.AtlasManager;
 import io.github.msameer0.rhythmicrush.audio.SoundManager;
 import io.github.msameer0.rhythmicrush.font.FontManager;
+import io.github.msameer0.rhythmicrush.game.level.LevelManager;
 import io.github.msameer0.rhythmicrush.game.level.ProgressManager;
 import io.github.msameer0.rhythmicrush.screens.MainMenuScreen;
 import io.github.msameer0.rhythmicrush.settings.SettingsManager;
@@ -32,6 +33,7 @@ public class RhythmicRushGame extends Game {
     private FontManager fontManager;
     private WindowController windowController;
     private ProgressManager progressManager;
+    private LevelManager levelManager;
     private SettingsManager settingsManager;
     private AdController adController;
 
@@ -57,6 +59,7 @@ public class RhythmicRushGame extends Game {
         fontManager = new FontManager();
         soundManager = new SoundManager();
         progressManager = new ProgressManager();
+        levelManager = new LevelManager();
 
         soundManager.setMusicVolume(settingsManager.musicVolume);
         settingsManager.applyFpsCap();
@@ -73,6 +76,15 @@ public class RhythmicRushGame extends Game {
      */
     public SpriteBatch getBatch() {
         return batch;
+    }
+
+    /**
+     * Retrieves the level manager responsible for loading and caching level data.
+     *
+     * @return the {@link LevelManager} instance for the game
+     */
+    public LevelManager getLevelManager() {
+        return levelManager;
     }
 
     /**
