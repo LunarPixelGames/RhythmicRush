@@ -138,9 +138,8 @@ public class LevelSelectScreen extends AbstractScreen {
     /**
      * Scans the internal assets directory for level files and populates the level list.
      * <p>
-     * This method searches for JSON files in the "levels/" directory following a numeric
-     * naming convention (e.g., "0.json", "1.json"). It continues loading until a file index
-     * is missing or a parsing error occurs.
+     * This method uses the {@link io.github.msameer0.rhythmicrush.game.level.LevelManager} 
+     * which pre-loads all levels at startup for better performance.
      * <p>
      * If no valid levels are found, a placeholder level entry is created to prevent
      * the interface from being empty. Finally, it ensures the {@code selectedLevel}
@@ -148,19 +147,12 @@ public class LevelSelectScreen extends AbstractScreen {
      */
     private void loadLevels() {
         levels.clear();
-        int index = 0;
-        while (true) {
-            FileHandle fh = Gdx.files.internal("levels/" + index + ".json");
-            if (!fh.exists()) break;
-            try {
-                LevelData data = LevelSerializer.load(fh);
-                levels.add(new LevelEntry(data, index));
-                index++;
-            } catch (Exception e) {
-                Gdx.app.error("LevelSelect", "Failed to load level " + index + ": " + e.getMessage());
-                break;
-            }
+        Array<LevelData> loadedLevels = game.getLevelManager().getLevels();
+        
+        for (int i = 0; i < loadedLevels.size; i++) {
+            levels.add(new LevelEntry(loadedLevels.get(i), i));
         }
+
         if (levels.size == 0) {
             LevelData placeholder = new LevelData();
             placeholder.name = "No Levels Found";
