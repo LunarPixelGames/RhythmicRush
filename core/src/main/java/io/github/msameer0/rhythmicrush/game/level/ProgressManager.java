@@ -44,6 +44,7 @@ public class ProgressManager {
      * </p>
      */
     public void save() {
+        Gdx.app.log("ProgressManager", "Saving progress...");
         try {
             FileHandle file = Gdx.files.local(SAVE_PATH);
             file.parent().mkdirs();
@@ -52,12 +53,13 @@ public class ProgressManager {
             boolean first = true;
             for (ObjectMap.Entry<String, LevelProgress> entry : map) {
                 if (!first) sb.append(",\n");
-                first = false;
                 sb.append("  \"").append(entry.key).append("\": ");
                 sb.append(json.toJson(entry.value));
+                first = false;
             }
             sb.append("\n}");
             file.writeString(sb.toString(), false);
+            Gdx.app.log("ProgressManager", "Progress saved successfully.");
         } catch (Exception e) {
             Gdx.app.error("ProgressManager", "Failed to save progress: " + e.getMessage());
         }
@@ -74,15 +76,20 @@ public class ProgressManager {
      * </p>
      */
     private void load() {
+        Gdx.app.log("ProgressManager", "Loading progress...");
         try {
             FileHandle file = Gdx.files.local(SAVE_PATH);
-            if (!file.exists()) return;
+            if (!file.exists()) {
+                Gdx.app.log("ProgressManager", "No progress file found.");
+                return;
+            }
 
             JsonValue root = new com.badlogic.gdx.utils.JsonReader().parse(file);
             for (JsonValue entry = root.child; entry != null; entry = entry.next) {
                 LevelProgress p = json.readValue(LevelProgress.class, entry);
                 if (p != null) map.put(entry.name, p);
             }
+            Gdx.app.log("ProgressManager", "Progress loaded: " + map.size + " entries.");
         } catch (Exception e) {
             Gdx.app.error("ProgressManager", "Failed to load progress: " + e.getMessage());
         }

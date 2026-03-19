@@ -70,6 +70,7 @@ public class SettingsManager {
      * </p>
      */
     public void save() {
+        Gdx.app.log("SettingsManager", "Saving settings...");
         try {
             Data snapshot = new Data();
             snapshot.menuMusicEnabled = menuMusicEnabled;
@@ -86,6 +87,7 @@ public class SettingsManager {
             FileHandle file = Gdx.files.local(SAVE_PATH);
             file.parent().mkdirs();
             file.writeString(json.prettyPrint(snapshot), false);
+            Gdx.app.log("SettingsManager", "Settings saved successfully.");
         } catch (Exception e) {
             Gdx.app.error("SettingsManager", "Failed to save: " + e.getMessage());
         }
@@ -101,9 +103,13 @@ public class SettingsManager {
      * </p>
      */
     private void load() {
+        Gdx.app.log("SettingsManager", "Loading settings...");
         try {
             FileHandle file = Gdx.files.local(SAVE_PATH);
-            if (!file.exists()) return;
+            if (!file.exists()) {
+                Gdx.app.log("SettingsManager", "No settings file found. Using defaults.");
+                return;
+            }
             Data d = json.fromJson(Data.class, file);
             if (d == null) return;
             menuMusicEnabled = d.menuMusicEnabled;
@@ -117,6 +123,7 @@ public class SettingsManager {
             enableVsync = d.enableVsync;
             showPercentage = d.showPercentage;
             showProgressBar = d.showProgressBar;
+            Gdx.app.log("SettingsManager", "Settings loaded successfully.");
         } catch (Exception e) {
             Gdx.app.error("SettingsManager", "Failed to load: " + e.getMessage());
         }

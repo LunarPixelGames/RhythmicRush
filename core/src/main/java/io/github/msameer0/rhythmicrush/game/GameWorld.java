@@ -190,6 +190,7 @@ public class GameWorld implements Tickable {
     public GameWorld() {
         player = cubePool.obtain().init(100, groundY);
         player.setWorld(this);
+        com.badlogic.gdx.Gdx.app.log("GameWorld", "Player initialized.");
     }
 
 
@@ -256,6 +257,7 @@ public class GameWorld implements Tickable {
      * @param data the {@code LevelData} containing the layout and configuration of the level to be loaded
      */
     public void loadLevel(LevelData data) {
+        com.badlogic.gdx.Gdx.app.log("GameWorld", "Loading level: " + data.name);
         currentLevelData = data;
         freeAllActiveObjects();
 
@@ -333,6 +335,7 @@ public class GameWorld implements Tickable {
         freePlayer();
         player = cubePool.obtain().init(100, groundY);
         player.setWorld(this);
+        com.badlogic.gdx.Gdx.app.log("GameWorld", "Player initialized.");
     }
 
 
@@ -553,7 +556,12 @@ public class GameWorld implements Tickable {
         }
         if (postEndTimer >= 0) {
             postEndTimer += delta;
-            if (postEndTimer >= POST_END_DELAY) levelComplete = true;
+            if (postEndTimer >= POST_END_DELAY) {
+                if (!levelComplete) {
+                    com.badlogic.gdx.Gdx.app.log("GameWorld", "Level completed!");
+                    levelComplete = true;
+                }
+            }
         }
     }
 
@@ -734,7 +742,10 @@ public class GameWorld implements Tickable {
      * any necessary game-over or reset logic.</p>
      */
     public void playerDied() {
-        playerDead = true;
+        if (!playerDead) {
+            com.badlogic.gdx.Gdx.app.log("GameWorld", "Player died.");
+            playerDead = true;
+        }
     }
 
     /**

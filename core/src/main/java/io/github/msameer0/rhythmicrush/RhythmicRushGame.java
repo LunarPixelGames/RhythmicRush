@@ -53,6 +53,7 @@ public class RhythmicRushGame extends Game {
      */
     @Override
     public void create() {
+        com.badlogic.gdx.Gdx.app.log("Game", "Initializing RhythmicRush...");
         batch = new SpriteBatch();
         atlasManager = new AtlasManager();
         settingsManager = new SettingsManager();
@@ -66,6 +67,8 @@ public class RhythmicRushGame extends Game {
         settingsManager.applyVsync();
 
         if (settingsManager.menuMusicEnabled) soundManager.playMenuMusic();
+        
+        com.badlogic.gdx.Gdx.app.log("Game", "Initialization complete. Entering Main Menu.");
         setScreen(new MainMenuScreen(this));
     }
 
@@ -166,10 +169,12 @@ public class RhythmicRushGame extends Game {
      */
     @Override
     public void dispose() {
+        com.badlogic.gdx.Gdx.app.log("Game", "Disposing game resources...");
         super.dispose();
         batch.dispose();
         soundManager.dispose();
         atlasManager.dispose();
         fontManager.dispose();
+        com.badlogic.gdx.Gdx.app.log("Game", "Game disposed.");
     }
 }

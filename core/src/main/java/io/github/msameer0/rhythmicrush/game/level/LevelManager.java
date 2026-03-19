@@ -15,7 +15,9 @@ public class LevelManager {
     private final Array<LevelData> levels = new Array<>();
 
     public LevelManager() {
+        Gdx.app.log("LevelManager", "Scanning and pre-loading all levels...");
         loadAll();
+        Gdx.app.log("LevelManager", "Pre-loaded " + levels.size + " levels.");
     }
 
     /**

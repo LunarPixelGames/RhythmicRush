@@ -34,6 +34,7 @@ public class FontManager {
      * If the font file cannot be loaded, it falls back to the default LibGDX {@link BitmapFont}.
      */
     public FontManager() {
+        Gdx.app.log("FontManager", "Initializing fonts...");
         fonts = new BitmapFont[SIZES.length];
         FreeTypeFontGenerator gen = null;
         try {
@@ -47,6 +48,7 @@ public class FontManager {
                 p.size = SIZES[i];
                 fonts[i] = gen.generateFont(p);
             }
+            Gdx.app.log("FontManager", "Fonts initialized successfully.");
         } catch (Exception e) {
             Gdx.app.error("FontManager", "Could not load font: " + e.getMessage());
             for (int i = 0; i < SIZES.length; i++) {
@@ -57,10 +59,11 @@ public class FontManager {
         }
     }
 
-    /**
-     * Returns the font closest to the requested size.
-     * Use the SIZE_* constants for clarity.
-     */
+    public void dispose() {
+        Gdx.app.log("FontManager", "Disposing fonts...");
+        for (BitmapFont f : fonts) if (f != null) f.dispose();
+        Gdx.app.log("FontManager", "Fonts disposed.");
+    }
     public BitmapFont get(int size) {
         int best = 0;
         int bestDiff = Math.abs(SIZES[0] - size);
@@ -72,9 +75,5 @@ public class FontManager {
             }
         }
         return fonts[best];
-    }
-
-    public void dispose() {
-        for (BitmapFont f : fonts) if (f != null) f.dispose();
     }
 }

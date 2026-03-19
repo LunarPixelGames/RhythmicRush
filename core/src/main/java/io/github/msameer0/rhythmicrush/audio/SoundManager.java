@@ -26,9 +26,11 @@ public class SoundManager {
      */
     public void playMenuMusic() {
         if (menuMusic == null) {
+            Gdx.app.log("SoundManager", "Loading menu music...");
             menuMusic = Gdx.audio.newMusic(Gdx.files.internal("musics/954091_vulg.mp3"));
             menuMusic.setLooping(true);
             menuMusic.setVolume(musicVolume);
+            Gdx.app.log("SoundManager", "Menu music loaded.");
         }
 
         if (!menuMusic.isPlaying()) {
@@ -104,9 +106,11 @@ public class SoundManager {
 
     public void dispose() {
         if (menuMusic != null) {
+            Gdx.app.log("SoundManager", "Disposing menu music...");
             menuMusic.stop();
             menuMusic.dispose();
             menuMusic = null;
+            Gdx.app.log("SoundManager", "Menu music disposed.");
         }
     }
 }
