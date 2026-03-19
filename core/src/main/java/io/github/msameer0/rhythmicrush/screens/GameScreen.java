@@ -459,6 +459,10 @@ public class GameScreen extends AbstractScreen {
                 deathTimer = 0f;
                 musicFading = false;
                 musicFadeTimer = 0f;
+                levelCompletedState = false;
+                levelEndingSequence = false;
+                levelEndTimer = 0f;
+                paused = false;
                 lastJumpHeld = false;
                 popupTimer = -1f;
                 world.reset();
@@ -517,7 +521,6 @@ public class GameScreen extends AbstractScreen {
         // 1. Trigger the ending sequence the exact moment the level is beaten
         if (world.isLevelComplete() && !levelEndingSequence && !levelCompletedState) {
             recordComplete(); // Record the win immediately so stats are updated
-            checkAndShowAd(true);
             levelEndingSequence = true;
             levelEndTimer = 0f;
         }
@@ -537,6 +540,7 @@ public class GameScreen extends AbstractScreen {
 
             if (levelEndTimer >= END_DELAY_TOTAL) {
                 levelCompletedState = true;
+                checkAndShowAd(true);
                 stopAndDisposeMusic();
                 Gdx.input.setCursorCatched(false);
             }
@@ -595,7 +599,7 @@ public class GameScreen extends AbstractScreen {
 
         if (paused) {
             drawPauseOverlayUI();
-        } else if (world.isLevelComplete()) {
+        } else if (levelCompletedState) {
             drawCompleteOverlayUI();
         }
 
@@ -1025,6 +1029,9 @@ public class GameScreen extends AbstractScreen {
      */
     private void triggerRestart() {
         levelCompletedState = false;
+        levelEndingSequence = false;
+        levelEndTimer = 0f;
+        paused = false;
         lastJumpHeld = false;
         popupTimer = -1f;
         stopAndDisposeMusic();
@@ -1127,6 +1134,10 @@ public class GameScreen extends AbstractScreen {
         deathTimer = 0f;
         musicFading = false;
         musicFadeTimer = 0f;
+        levelCompletedState = false;
+        levelEndingSequence = false;
+        levelEndTimer = 0f;
+        paused = false;
         lastDelta = 0f;
         lastJumpHeld = false;
         popupTimer = -1f;
