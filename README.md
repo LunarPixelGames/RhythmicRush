@@ -1,7 +1,7 @@
 # RhythmicRush
 
-[![Get it on Google Play](https://img.shields.io/badge/Google_Play-Available_Now-414141?style=for-the-badge&logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=io.github.msameer0.rhythmicrush)
-[![Available on itch.io](https://img.shields.io/badge/itch.io-Available_Now-fa5c5c?style=for-the-badge&logo=itch.io&logoColor=white)](https://msameer0.itch.io/rhythmic-rush)
+[![Get it on Google Play](https://img.shields.io/badge/Google_Play-Coming Soon-414141?style=for-the-badge&logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=io.github.msameer0.rhythmicrush)
+[![Available on itch.io](https://img.shields.io/badge/itch.io-Available_Now-fa5c5c?style=for-the-badge&logo=itch.io&logoColor=white)](https://samispoggers.itch.io/rhythmic-rush)
 
 RhythmicRush is a rhythm-based platformer where timing is everything. It’s a game about finding your flow, learning patterns, and navigating through levels that react to the music you're hearing.
 
