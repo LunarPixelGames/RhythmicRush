@@ -24,6 +24,15 @@
 -dontwarn android.support.**
 -dontwarn com.badlogic.gdx.backends.android.AndroidFragmentApplication
 
+# Rules for RhythmicRush
+# These rules prevent ProGuard from obfuscating classes that are serialized to/from JSON.
+# LibGDX's Json uses reflection, so the class and field names must be preserved.
+-keep public class io.github.msameer0.rhythmicrush.game.level.LevelData { *; }
+-keep public class io.github.msameer0.rhythmicrush.game.level.LevelData$ObjectEntry { *; }
+-keep public class io.github.msameer0.rhythmicrush.game.level.LevelProgress { *; }
+-keep public class io.github.msameer0.rhythmicrush.settings.SettingsManager$Data { *; }
+
+
 # Needed by the gdx-controllers official extension.
 -keep class com.badlogic.gdx.controllers.android.AndroidControllers
 
