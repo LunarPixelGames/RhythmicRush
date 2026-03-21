@@ -1,5 +1,6 @@
 package io.github.msameer0.rhythmicrush.game;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 
 import io.github.msameer0.rhythmicrush.game.engine.ObjectPool;
@@ -15,6 +16,7 @@ import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
 import io.github.msameer0.rhythmicrush.game.gameplay.players.Cube;
 import io.github.msameer0.rhythmicrush.game.gameplay.players.Ship;
 import io.github.msameer0.rhythmicrush.game.level.LevelData;
+import io.github.msameer0.rhythmicrush.game.registries.Registries;
 import io.github.msameer0.rhythmicrush.game.trigger.AbstractTrigger;
 import io.github.msameer0.rhythmicrush.game.trigger.ColorTrigger;
 import io.github.msameer0.rhythmicrush.game.trigger.PulseTrigger;
@@ -203,7 +205,7 @@ public class GameWorld implements Tickable {
     public GameWorld() {
         player = cubePool.obtain().init(100, groundY);
         player.setWorld(this);
-        com.badlogic.gdx.Gdx.app.log("GameWorld", "Player initialized.");
+        Gdx.app.log("GameWorld", "Player initialized.");
     }
 
 
@@ -253,22 +255,6 @@ public class GameWorld implements Tickable {
         return obtainShip(x, y, 0, false);
     }
 
-
-    /**
-     * Loads and initializes a level based on the provided {@link LevelData}.
-     *
-     * <p>This method performs a full reset of the game world state, which includes:
-     * <ul>
-     *   <li>Freeing all currently active blocks, hazards, and portals back to their respective object pools</li>
-     *   <li>Resetting level progress, player status, and color fade states</li>
-     *   <li>Parsing level objects (blocks, spikes, portals, and color triggers) and instantiating them</li>
-     *   <li>Setting initial background and ground colors</li>
-     *   <li>Sorting game objects by their horizontal position to optimize collision and culling logic</li>
-     *   <li>Resetting the player to the starting {@link Cube} state</li>
-     * </ul>
-     *
-     * @param data the {@code LevelData} containing the layout and configuration of the level to be loaded
-     */
     public void startBgFade(Color target, float duration) {
         bgFade.init(baseBgColor, target, duration);
     }
@@ -285,8 +271,14 @@ public class GameWorld implements Tickable {
         groundPulse.init(target, fadeIn, hold, fadeOut);
     }
 
+    public AbstractPlayer obtainPlayer(String typeId) {
+        if ("cube".equals(typeId)) return cubePool.obtain();
+        if ("ship".equals(typeId)) return shipPool.obtain();
+        return Registries.PLAYERS.create(typeId);
+    }
+
     public void loadLevel(LevelData data) {
-        com.badlogic.gdx.Gdx.app.log("GameWorld", "Loading level: " + data.name);
+        Gdx.app.log("GameWorld", "Loading level: " + data.name);
         currentLevelData = data;
         freeAllActiveObjects();
 
@@ -308,56 +300,48 @@ public class GameWorld implements Tickable {
         groundColor.set(baseGroundColor);
 
         for (LevelData.ObjectEntry e : data.objects) {
-            switch (e.type) {
-                case "block": {
-                    BlockType bt = BlockType.DEFAULT;
-                    if (e.blockType != null) {
-                        for (BlockType t : BlockType.values())
-                            if (t.textureName.equals(e.blockType)) {
-                                bt = t;
-                                break;
-                            }
-                    }
-                    Block b = blockPool.obtain().init(e.x, e.y, e.size, bt);
-                    blocks.add(b);
-                    break;
+            if (Registries.BLOCKS.has(e.type)) {
+                BlockType bt = BlockType.DEFAULT;
+                if (e.blockType != null) {
+                    for (BlockType t : BlockType.values())
+                        if (t.textureName.equals(e.blockType)) {
+                            bt = t;
+                            break;
+                        }
                 }
-                case "spike": {
+                Block b = blockPool.obtain().init(e.x, e.y, e.size, bt);
+                blocks.add(b);
+            } else if (Registries.HAZARDS.has(e.type)) {
+                if ("spike".equals(e.type)) {
                     Spike s = spikePool.obtain().init(e.x, e.y, e.rotation);
                     hazards.add(s);
                     activeSpikes.add(s);
-                    break;
                 }
-                case "cube_portal": {
-                    CubePortal p = cubePortalPool.obtain();
+            } else if (Registries.PORTALS.has(e.type)) {
+                AbstractPortal p = null;
+                if ("cube_portal".equals(e.type)) {
+                    p = cubePortalPool.obtain();
+                    activeCubePortals.add((CubePortal) p);
+                } else if ("ship_portal".equals(e.type)) {
+                    p = shipPortalPool.obtain();
+                    activeShipPortals.add((ShipPortal) p);
+                }
+                if (p != null) {
                     p.init(e.x, e.y);
                     portals.add(p);
-                    activeCubePortals.add(p);
-                    break;
                 }
-                case "ship_portal": {
-                    ShipPortal p = shipPortalPool.obtain();
-                    p.init(e.x, e.y);
-                    portals.add(p);
-                    activeShipPortals.add(p);
-                    break;
-                }
-                case "color_trigger": {
-                    Color targetBg = (e.triggerBgColor != null && !e.triggerBgColor.isEmpty())
-                        ? hexToColor(e.triggerBgColor) : null;
-                    Color targetGround = (e.triggerGroundColor != null && !e.triggerGroundColor.isEmpty())
-                        ? hexToColor(e.triggerGroundColor) : null;
-                    triggers.add(new ColorTrigger(e.x, targetBg, targetGround, e.fadeDuration));
-                    break;
-                }
-                case "pulse_trigger": {
-                    Color pulseBg = (e.pulseBgColor != null && !e.pulseBgColor.isEmpty())
-                        ? hexToColor(e.pulseBgColor) : null;
-                    Color pulseGround = (e.pulseGroundColor != null && !e.pulseGroundColor.isEmpty())
-                        ? hexToColor(e.pulseGroundColor) : null;
-                    triggers.add(new PulseTrigger(e.x, pulseBg, pulseGround, e.fadeInTime, e.holdTime, e.fadeOutTime));
-                    break;
-                }
+            } else if ("color_trigger".equals(e.type)) {
+                Color targetBg = (e.triggerBgColor != null && !e.triggerBgColor.isEmpty())
+                    ? hexToColor(e.triggerBgColor) : null;
+                Color targetGround = (e.triggerGroundColor != null && !e.triggerGroundColor.isEmpty())
+                    ? hexToColor(e.triggerGroundColor) : null;
+                triggers.add(new ColorTrigger(e.x, targetBg, targetGround, e.fadeDuration));
+            } else if ("pulse_trigger".equals(e.type)) {
+                Color pulseBg = (e.pulseBgColor != null && !e.pulseBgColor.isEmpty())
+                    ? hexToColor(e.pulseBgColor) : null;
+                Color pulseGround = (e.pulseGroundColor != null && !e.pulseGroundColor.isEmpty())
+                    ? hexToColor(e.pulseGroundColor) : null;
+                triggers.add(new PulseTrigger(e.x, pulseBg, pulseGround, e.fadeInTime, e.holdTime, e.fadeOutTime));
             }
         }
 
@@ -374,9 +358,9 @@ public class GameWorld implements Tickable {
         portals.sort((a, b2) -> Float.compare(a.getX(), b2.getX()));
 
         freePlayer();
-        player = cubePool.obtain().init(100, groundY);
+        player = obtainPlayer("cube").init(100, groundY);
         player.setWorld(this);
-        com.badlogic.gdx.Gdx.app.log("GameWorld", "Player initialized.");
+        Gdx.app.log("GameWorld", "Player initialized.");
     }
 
 
@@ -407,7 +391,7 @@ public class GameWorld implements Tickable {
             backgroundColor.set(baseBgColor);
             groundColor.set(baseGroundColor);
             freePlayer();
-            player = cubePool.obtain().init(100, groundY);
+            player = obtainPlayer("cube").init(100, groundY);
             player.setWorld(this);
         }
     }
@@ -522,10 +506,17 @@ public class GameWorld implements Tickable {
         for (int i = portalStart; i < portals.size; i++) {
             AbstractPortal portal = portals.get(i);
             if (portal.getX() > rangeMax) break;
-            AbstractPlayer next = portal.tryTouch(player);
-            if (next != player) {
-                freePlayer();
-                player = next;
+            if (portal.tryTouch(player)) {
+                AbstractPlayer next = null;
+                if (portal instanceof CubePortal) next = obtainPlayer("cube").init(player.getX(), player.getY());
+                else if (portal instanceof ShipPortal) next = obtainPlayer("ship").init(player.getX(), player.getY());
+
+                if (next != null) {
+                    next.setWorld(this);
+                    next.copyState(player);
+                    freePlayer();
+                    player = next;
+                }
             }
         }
 
@@ -619,7 +610,7 @@ public class GameWorld implements Tickable {
             postEndTimer += delta;
             if (postEndTimer >= POST_END_DELAY) {
                 if (!levelComplete) {
-                    com.badlogic.gdx.Gdx.app.log("GameWorld", "Level completed!");
+                    Gdx.app.log("GameWorld", "Level completed!");
                     levelComplete = true;
                 }
             }
@@ -804,7 +795,7 @@ public class GameWorld implements Tickable {
      */
     public void playerDied() {
         if (!playerDead) {
-            com.badlogic.gdx.Gdx.app.log("GameWorld", "Player died.");
+            Gdx.app.log("GameWorld", "Player died.");
             playerDead = true;
         }
     }

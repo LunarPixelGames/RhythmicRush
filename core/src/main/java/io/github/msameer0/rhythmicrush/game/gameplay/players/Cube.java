@@ -1,10 +1,13 @@
 package io.github.msameer0.rhythmicrush.game.gameplay.players;
 
+import io.github.msameer0.rhythmicrush.game.registries.Registry;
+
 /**
  * Represents a specific player character implementation that follows a "Cube" mechanic.
  * The Cube is affected by gravity and can perform a single jump when grounded.
  * This class supports object pooling through its no-arg constructor and {@link #init(float, float)} method.
  */
+@Registry(id = "cube")
 public class Cube extends AbstractPlayer {
     public float gravity = -1800f;
     public float jumpVelocity = 600f;
@@ -27,6 +30,7 @@ public class Cube extends AbstractPlayer {
     /**
      * Reinitialise this Cube for reuse from the pool.
      */
+    @Override
     public Cube init(float startX, float startY, float velocityY, boolean jumpHeld) {
         this.type = PlayerType.CUBE;
         x = startX;
@@ -42,6 +46,7 @@ public class Cube extends AbstractPlayer {
     /**
      * Legacy init for backward compatibility.
      */
+    @Override
     public Cube init(float startX, float startY) {
         return init(startX, startY, 0, false);
     }
@@ -90,5 +95,14 @@ public class Cube extends AbstractPlayer {
     @Override
     public boolean isGrounded() {
         return isGrounded;
+    }
+
+    @Override
+    public void copyState(AbstractPlayer other) {
+            this.x = other.x;
+            this.y = other.y;
+            this.velocityY = other.velocityY;
+            this.isGrounded = other.isGrounded();
+            this.jumpHeld = other.isJumpHeld();
     }
 }

@@ -1,5 +1,7 @@
 package io.github.msameer0.rhythmicrush.game.gameplay.players;
 
+import io.github.msameer0.rhythmicrush.game.registries.Registry;
+
 /**
  * Represents a specific player mode where the player controls a flying vehicle.
  * <p>
@@ -8,6 +10,7 @@ package io.github.msameer0.rhythmicrush.game.gameplay.players;
  * terminal velocity constants for both upward and downward movement.
  * </p>
  */
+@Registry(id = "ship")
 public class Ship extends AbstractPlayer {
 
     private boolean flyHeld = false;
@@ -35,6 +38,7 @@ public class Ship extends AbstractPlayer {
     /**
      * Reinitialise this Ship for reuse from the pool.
      */
+    @Override
     public Ship init(float startX, float startY, float velocityY, boolean flyHeld) {
         this.type = PlayerType.SHIP;
         x = startX;
@@ -49,6 +53,7 @@ public class Ship extends AbstractPlayer {
     /**
      * Legacy init for backward compatibility.
      */
+    @Override
     public Ship init(float startX, float startY) {
         return init(startX, startY, 0, false);
     }
@@ -95,5 +100,12 @@ public class Ship extends AbstractPlayer {
 
     public void setGroundY(float groundY) {
         this.groundY = groundY;
+    }
+
+    @Override
+    public void copyState(AbstractPlayer other) {
+        this.x = other.x;
+        this.y = other.y;
+        this.velocityY = other.velocityY;
     }
 }

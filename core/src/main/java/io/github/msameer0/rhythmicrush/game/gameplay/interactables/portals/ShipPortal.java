@@ -1,12 +1,13 @@
 package io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals;
 
-import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
+import io.github.msameer0.rhythmicrush.game.registries.Registry;
 
 /**
  * A portal that transforms the player into a ship mode.
  * When touched, it triggers the world to replace the current player instance
  * with a ship-specific player instance at the same coordinates.
  */
+@Registry(id = "ship_portal")
 public class ShipPortal extends AbstractPortal {
 
     /**
@@ -33,17 +34,5 @@ public class ShipPortal extends AbstractPortal {
         super.init(x, y);
         this.type = PortalType.SHIP;
         return this;
-    }
-
-    /**
-     * Handles the interaction when a player touches the portal. Transforms the current
-     * player into a ship entity at their current coordinates.
-     *
-     * @param player the player entity that touched the portal
-     * @return the new ship-based player instance
-     */
-    @Override
-    public AbstractPlayer onTouch(AbstractPlayer player) {
-        return player.getWorld().obtainShip(player.getX(), player.getY(), player.getVelocityY(), player.isJumpHeld());
     }
 }

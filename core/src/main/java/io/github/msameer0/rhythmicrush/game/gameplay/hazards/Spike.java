@@ -3,6 +3,7 @@ package io.github.msameer0.rhythmicrush.game.gameplay.hazards;
 import com.badlogic.gdx.math.Rectangle;
 
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
+import io.github.msameer0.rhythmicrush.game.registries.Registry;
 
 /**
  * Represents a spike hazard within the game environment.
@@ -13,6 +14,7 @@ import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
  * (supporting 0, 90, 180, and 270 degrees).
  * </p>
  */
+@Registry(id = "spike")
 public class Spike extends AbstractHazard {
 
     private static final float PLAYER_SIZE = 50f;

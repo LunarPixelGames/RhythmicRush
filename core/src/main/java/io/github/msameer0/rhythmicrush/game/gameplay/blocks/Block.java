@@ -4,6 +4,7 @@ import com.badlogic.gdx.math.Rectangle;
 
 import io.github.msameer0.rhythmicrush.game.GameWorld;
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
+import io.github.msameer0.rhythmicrush.game.registries.Registry;
 
 /**
  * Represents a physical platform or obstacle within the game world.
@@ -18,6 +19,7 @@ import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
  * usage during gameplay.
  * </p>
  */
+@Registry(id = "block")
 public class Block {
 
     protected float x, y;

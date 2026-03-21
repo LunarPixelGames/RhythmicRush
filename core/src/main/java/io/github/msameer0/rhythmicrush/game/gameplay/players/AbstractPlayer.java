@@ -30,6 +30,9 @@ public abstract class AbstractPlayer {
         bounds = new Rectangle(x, y, width, height);
     }
 
+    public abstract AbstractPlayer init(float startX, float startY, float velocityY, boolean flyHeld);
+    public abstract AbstractPlayer init(float startX, float startY);
+
     public abstract void update(float delta, float groundY);
 
     public abstract void jump();
@@ -100,4 +103,6 @@ public abstract class AbstractPlayer {
     public boolean isSafeFromBelow() {
         return false;
     }
+
+    public abstract void copyState(AbstractPlayer other);
 }

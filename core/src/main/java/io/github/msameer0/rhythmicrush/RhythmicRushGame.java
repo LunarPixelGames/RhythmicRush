@@ -9,6 +9,7 @@ import io.github.msameer0.rhythmicrush.audio.SoundManager;
 import io.github.msameer0.rhythmicrush.font.FontManager;
 import io.github.msameer0.rhythmicrush.game.level.LevelManager;
 import io.github.msameer0.rhythmicrush.game.level.ProgressManager;
+import io.github.msameer0.rhythmicrush.game.registries.Registries;
 import io.github.msameer0.rhythmicrush.screens.MainMenuScreen;
 import io.github.msameer0.rhythmicrush.settings.SettingsManager;
 import io.github.msameer0.rhythmicrush.window.WindowController;
@@ -54,6 +55,7 @@ public class RhythmicRushGame extends Game {
     @Override
     public void create() {
         com.badlogic.gdx.Gdx.app.log("Game", "Initializing RhythmicRush...");
+        Registries.init();
         batch = new SpriteBatch();
         atlasManager = new AtlasManager();
         settingsManager = new SettingsManager();
