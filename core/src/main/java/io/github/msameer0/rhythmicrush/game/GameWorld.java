@@ -160,7 +160,8 @@ public class GameWorld implements Tickable {
             if (!active) return 0f;
             if (elapsed < fadeIn) return fadeIn > 0 ? elapsed / fadeIn : 1f;
             if (elapsed < fadeIn + hold) return 1f;
-            if (elapsed < fadeIn + hold + fadeOut) return fadeOut > 0 ? 1f - (elapsed - fadeIn - hold) / fadeOut : 0f;
+            if (elapsed < fadeIn + hold + fadeOut)
+                return fadeOut > 0 ? 1f - (elapsed - fadeIn - hold) / fadeOut : 0f;
             return 0f;
         }
 
@@ -216,9 +217,9 @@ public class GameWorld implements Tickable {
      * <p>This method also establishes the bidirectional link between the new
      * player instance and this game world.</p>
      *
-     * @param x the initial horizontal position of the cube
-     * @param y the initial vertical position of the cube
-     * @param vy the initial vertical velocity
+     * @param x        the initial horizontal position of the cube
+     * @param y        the initial vertical position of the cube
+     * @param vy       the initial vertical velocity
      * @param jumpHeld the initial jump input state
      * @return an initialized {@code Cube} instance linked to this world
      */
@@ -239,9 +240,9 @@ public class GameWorld implements Tickable {
      * <p>This method also establishes the bidirectional link between the new
      * player instance and this game world.</p>
      *
-     * @param x the initial horizontal position of the ship
-     * @param y the initial vertical position of the ship
-     * @param vy the initial vertical velocity
+     * @param x        the initial horizontal position of the ship
+     * @param y        the initial vertical position of the ship
+     * @param vy       the initial vertical velocity
      * @param jumpHeld the initial jump input state
      * @return an initialized {@code Ship} instance linked to this world
      */
@@ -330,18 +331,22 @@ public class GameWorld implements Tickable {
                     p.init(e.x, e.y);
                     portals.add(p);
                 }
-            } else if ("color_trigger".equals(e.type)) {
-                Color targetBg = (e.triggerBgColor != null && !e.triggerBgColor.isEmpty())
-                    ? hexToColor(e.triggerBgColor) : null;
-                Color targetGround = (e.triggerGroundColor != null && !e.triggerGroundColor.isEmpty())
-                    ? hexToColor(e.triggerGroundColor) : null;
-                triggers.add(new ColorTrigger(e.x, targetBg, targetGround, e.fadeDuration));
-            } else if ("pulse_trigger".equals(e.type)) {
-                Color pulseBg = (e.pulseBgColor != null && !e.pulseBgColor.isEmpty())
-                    ? hexToColor(e.pulseBgColor) : null;
-                Color pulseGround = (e.pulseGroundColor != null && !e.pulseGroundColor.isEmpty())
-                    ? hexToColor(e.pulseGroundColor) : null;
-                triggers.add(new PulseTrigger(e.x, pulseBg, pulseGround, e.fadeInTime, e.holdTime, e.fadeOutTime));
+            } else if (Registries.TRIGGERS.has(e.type)) {
+                AbstractTrigger trigger = Registries.TRIGGERS.create(e.type);
+                if (trigger instanceof ColorTrigger) {
+                    Color targetBg = (e.triggerBgColor != null && !e.triggerBgColor.isEmpty())
+                        ? hexToColor(e.triggerBgColor) : null;
+                    Color targetGround = (e.triggerGroundColor != null && !e.triggerGroundColor.isEmpty())
+                        ? hexToColor(e.triggerGroundColor) : null;
+                    ((ColorTrigger) trigger).init(e.x, targetBg, targetGround, e.fadeDuration);
+                } else if (trigger instanceof PulseTrigger) {
+                    Color pulseBg = (e.pulseBgColor != null && !e.pulseBgColor.isEmpty())
+                        ? hexToColor(e.pulseBgColor) : null;
+                    Color pulseGround = (e.pulseGroundColor != null && !e.pulseGroundColor.isEmpty())
+                        ? hexToColor(e.pulseGroundColor) : null;
+                    ((PulseTrigger) trigger).init(e.x, pulseBg, pulseGround, e.fadeInTime, e.holdTime, e.fadeOutTime);
+                }
+                triggers.add(trigger);
             }
         }
 
@@ -484,9 +489,12 @@ public class GameWorld implements Tickable {
 
         player.update(delta, groundY);
 
-        for (int i = portalCull; i < portals.size; i++) portals.get(i).updatePosition(scrollSpeed, delta);
-        for (int i = hazardCull; i < hazards.size; i++) hazards.get(i).updatePosition(scrollSpeed, delta);
-        for (int i = blockCull; i < blocks.size; i++) blocks.get(i).updatePosition(scrollSpeed, delta);
+        for (int i = portalCull; i < portals.size; i++)
+            portals.get(i).updatePosition(scrollSpeed, delta);
+        for (int i = hazardCull; i < hazards.size; i++)
+            hazards.get(i).updatePosition(scrollSpeed, delta);
+        for (int i = blockCull; i < blocks.size; i++)
+            blocks.get(i).updatePosition(scrollSpeed, delta);
 
         final float px = player.x;
         final float rangeMin = px - 300f;
@@ -508,8 +516,10 @@ public class GameWorld implements Tickable {
             if (portal.getX() > rangeMax) break;
             if (portal.tryTouch(player)) {
                 AbstractPlayer next = null;
-                if (portal instanceof CubePortal) next = obtainPlayer("cube").init(player.getX(), player.getY());
-                else if (portal instanceof ShipPortal) next = obtainPlayer("ship").init(player.getX(), player.getY());
+                if (portal instanceof CubePortal)
+                    next = obtainPlayer("cube").init(player.getX(), player.getY());
+                else if (portal instanceof ShipPortal)
+                    next = obtainPlayer("ship").init(player.getX(), player.getY());
 
                 if (next != null) {
                     next.setWorld(this);
@@ -586,7 +596,7 @@ public class GameWorld implements Tickable {
             if (h.getX() + h.getWidth() >= cullX) break;
             if (h instanceof Spike) {
                 spikePool.free((Spike) h);
-                activeSpikes.removeValue((Spike)h, true);
+                activeSpikes.removeValue((Spike) h, true);
             }
             hazardCull++;
         }
@@ -595,10 +605,10 @@ public class GameWorld implements Tickable {
             if (p.getX() + p.getWidth() >= cullX) break;
             if (p instanceof CubePortal) {
                 cubePortalPool.free((CubePortal) p);
-                activeCubePortals.removeValue((CubePortal)p, true);
+                activeCubePortals.removeValue((CubePortal) p, true);
             } else if (p instanceof ShipPortal) {
                 shipPortalPool.free((ShipPortal) p);
-                activeShipPortals.removeValue((ShipPortal)p, true);
+                activeShipPortals.removeValue((ShipPortal) p, true);
             }
             portalCull++;
         }

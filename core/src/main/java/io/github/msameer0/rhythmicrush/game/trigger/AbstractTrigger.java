@@ -6,8 +6,12 @@ import io.github.msameer0.rhythmicrush.game.GameWorld;
  * Base class for all triggers that activate based on the player's X position.
  */
 public abstract class AbstractTrigger {
-    public final float worldX;
+    public float worldX;
     public boolean fired = false;
+
+    public AbstractTrigger() {
+        this.worldX = 0;
+    }
 
     public AbstractTrigger(float worldX) {
         this.worldX = worldX;
