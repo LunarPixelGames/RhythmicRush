@@ -15,6 +15,9 @@ import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
 import io.github.msameer0.rhythmicrush.game.gameplay.players.Cube;
 import io.github.msameer0.rhythmicrush.game.gameplay.players.Ship;
 import io.github.msameer0.rhythmicrush.game.level.LevelData;
+import io.github.msameer0.rhythmicrush.game.trigger.AbstractTrigger;
+import io.github.msameer0.rhythmicrush.game.trigger.ColorTrigger;
+import io.github.msameer0.rhythmicrush.game.trigger.PulseTrigger;
 
 import com.badlogic.gdx.utils.Array;
 
@@ -116,29 +119,6 @@ public class GameWorld implements Tickable {
     };
 
     /**
-     * Represents a trigger point in the level that initiates a color transition
-     * for the background and/or the ground.
-     *
-     * <p>When the player's horizontal world position crosses {@code worldX},
-     * the trigger fires and starts a linear interpolation (fade) towards
-     * the specified target colors.</p>
-     */
-    private static class ColorTrigger {
-        final float worldX;
-        final Color targetBg;
-        final Color targetGround;
-        final float fadeDuration;
-        boolean fired = false;
-
-        ColorTrigger(float worldX, Color targetBg, Color targetGround, float fadeDuration) {
-            this.worldX = worldX;
-            this.targetBg = targetBg;
-            this.targetGround = targetGround;
-            this.fadeDuration = fadeDuration;
-        }
-    }
-
-    /**
      * Internal state tracker for managing a linear color transition (fade).
      *
      * <p>This class stores the source and target colors, the total duration,
@@ -160,10 +140,41 @@ public class GameWorld implements Tickable {
         }
     }
 
+    private static class ColorPulse {
+        final Color target = new Color();
+        float fadeIn, hold, fadeOut, elapsed;
+        boolean active = false;
+
+        void init(Color target, float fadeIn, float hold, float fadeOut) {
+            this.target.set(target);
+            this.fadeIn = fadeIn;
+            this.hold = hold;
+            this.fadeOut = fadeOut;
+            this.elapsed = 0f;
+            this.active = true;
+        }
+
+        float getIntensity() {
+            if (!active) return 0f;
+            if (elapsed < fadeIn) return fadeIn > 0 ? elapsed / fadeIn : 1f;
+            if (elapsed < fadeIn + hold) return 1f;
+            if (elapsed < fadeIn + hold + fadeOut) return fadeOut > 0 ? 1f - (elapsed - fadeIn - hold) / fadeOut : 0f;
+            return 0f;
+        }
+
+        void update(float delta) {
+            if (!active) return;
+            elapsed += delta;
+            if (elapsed >= fadeIn + hold + fadeOut) active = false;
+        }
+    }
+
     private final ColorFade bgFade = new ColorFade();
     private final ColorFade groundFade = new ColorFade();
+    private final ColorPulse bgPulse = new ColorPulse();
+    private final ColorPulse groundPulse = new ColorPulse();
 
-    private final Array<ColorTrigger> colorTriggers = new Array<>();
+    private final Array<AbstractTrigger> triggers = new Array<>();
 
     private LevelData currentLevelData = null;
     private float levelEndX = 0f;
@@ -172,8 +183,10 @@ public class GameWorld implements Tickable {
     private boolean levelComplete = false;
     private static final float POST_END_DELAY = 2f;
 
-    private Color backgroundColor = new Color(0.1f, 0.1f, 0.18f, 1f);
-    private Color groundColor = new Color(0.09f, 0.13f, 0.24f, 1f);
+    private Color baseBgColor = new Color(0.1f, 0.1f, 0.18f, 1f);
+    private Color baseGroundColor = new Color(0.09f, 0.13f, 0.24f, 1f);
+    private Color backgroundColor = new Color(baseBgColor);
+    private Color groundColor = new Color(baseGroundColor);
 
     private final Array<Spike> activeSpikes = new Array<>();
     private final Array<CubePortal> activeCubePortals = new Array<>();
@@ -256,23 +269,43 @@ public class GameWorld implements Tickable {
      *
      * @param data the {@code LevelData} containing the layout and configuration of the level to be loaded
      */
+    public void startBgFade(Color target, float duration) {
+        bgFade.init(baseBgColor, target, duration);
+    }
+
+    public void startGroundFade(Color target, float duration) {
+        groundFade.init(baseGroundColor, target, duration);
+    }
+
+    public void startBgPulse(Color target, float fadeIn, float hold, float fadeOut) {
+        bgPulse.init(target, fadeIn, hold, fadeOut);
+    }
+
+    public void startGroundPulse(Color target, float fadeIn, float hold, float fadeOut) {
+        groundPulse.init(target, fadeIn, hold, fadeOut);
+    }
+
     public void loadLevel(LevelData data) {
         com.badlogic.gdx.Gdx.app.log("GameWorld", "Loading level: " + data.name);
         currentLevelData = data;
         freeAllActiveObjects();
 
-        colorTriggers.clear();
+        triggers.clear();
         bgFade.active = false;
         groundFade.active = false;
+        bgPulse.active = false;
+        groundPulse.active = false;
         playerDead = false;
         levelComplete = false;
         worldScrolled = 0f;
         postEndTimer = -1f;
 
-        if (data.bgColor != null && !data.bgColor.isEmpty())
-            backgroundColor = hexToColor(data.bgColor);
-        if (data.groundColor != null && !data.groundColor.isEmpty())
-            groundColor = hexToColor(data.groundColor);
+        String bg = (data.bgColor != null && !data.bgColor.isEmpty()) ? data.bgColor : "1a1a2e";
+        String gnd = (data.groundColor != null && !data.groundColor.isEmpty()) ? data.groundColor : "16213e";
+        baseBgColor.set(hexToColor(bg));
+        baseGroundColor.set(hexToColor(gnd));
+        backgroundColor.set(baseBgColor);
+        groundColor.set(baseGroundColor);
 
         for (LevelData.ObjectEntry e : data.objects) {
             switch (e.type) {
@@ -314,7 +347,15 @@ public class GameWorld implements Tickable {
                         ? hexToColor(e.triggerBgColor) : null;
                     Color targetGround = (e.triggerGroundColor != null && !e.triggerGroundColor.isEmpty())
                         ? hexToColor(e.triggerGroundColor) : null;
-                    colorTriggers.add(new ColorTrigger(e.x, targetBg, targetGround, e.fadeDuration));
+                    triggers.add(new ColorTrigger(e.x, targetBg, targetGround, e.fadeDuration));
+                    break;
+                }
+                case "pulse_trigger": {
+                    Color pulseBg = (e.pulseBgColor != null && !e.pulseBgColor.isEmpty())
+                        ? hexToColor(e.pulseBgColor) : null;
+                    Color pulseGround = (e.pulseGroundColor != null && !e.pulseGroundColor.isEmpty())
+                        ? hexToColor(e.pulseGroundColor) : null;
+                    triggers.add(new PulseTrigger(e.x, pulseBg, pulseGround, e.fadeInTime, e.holdTime, e.fadeOutTime));
                     break;
                 }
             }
@@ -351,14 +392,20 @@ public class GameWorld implements Tickable {
         if (currentLevelData != null) loadLevel(currentLevelData);
         else {
             freeAllActiveObjects();
-            colorTriggers.clear();
+            triggers.clear();
             bgFade.active = false;
             groundFade.active = false;
+            bgPulse.active = false;
+            groundPulse.active = false;
             playerDead = false;
             levelComplete = false;
             worldScrolled = 0f;
             postEndTimer = -1f;
             levelEndX = 0f;
+            baseBgColor.set(0.1f, 0.1f, 0.18f, 1f);
+            baseGroundColor.set(0.09f, 0.13f, 0.24f, 1f);
+            backgroundColor.set(baseBgColor);
+            groundColor.set(baseGroundColor);
             freePlayer();
             player = cubePool.obtain().init(100, groundY);
             player.setWorld(this);
@@ -499,28 +546,42 @@ public class GameWorld implements Tickable {
         worldScrolled += scrollSpeed * delta;
 
         float playerWorldX = 100f + worldScrolled;
-        for (ColorTrigger ct : colorTriggers) {
-            if (!ct.fired && playerWorldX >= ct.worldX) {
-                ct.fired = true;
-                if (ct.targetBg != null) bgFade.init(backgroundColor, ct.targetBg, ct.fadeDuration);
-                if (ct.targetGround != null)
-                    groundFade.init(groundColor, ct.targetGround, ct.fadeDuration);
+        for (AbstractTrigger t : triggers) {
+            if (!t.fired && playerWorldX >= t.worldX) {
+                t.fired = true;
+                t.fire(this);
             }
         }
 
         if (bgFade.active) {
             bgFade.elapsed += delta;
             float t = Math.min(bgFade.elapsed / bgFade.duration, 1f);
-            backgroundColor.set(lerp(bgFade.from.r, bgFade.to.r, t), lerp(bgFade.from.g, bgFade.to.g, t),
+            baseBgColor.set(lerp(bgFade.from.r, bgFade.to.r, t), lerp(bgFade.from.g, bgFade.to.g, t),
                 lerp(bgFade.from.b, bgFade.to.b, t), 1f);
             if (t >= 1f) bgFade.active = false;
         }
         if (groundFade.active) {
             groundFade.elapsed += delta;
             float t = Math.min(groundFade.elapsed / groundFade.duration, 1f);
-            groundColor.set(lerp(groundFade.from.r, groundFade.to.r, t), lerp(groundFade.from.g, groundFade.to.g, t),
+            baseGroundColor.set(lerp(groundFade.from.r, groundFade.to.r, t), lerp(groundFade.from.g, groundFade.to.g, t),
                 lerp(groundFade.from.b, groundFade.to.b, t), 1f);
             if (t >= 1f) groundFade.active = false;
+        }
+
+        bgPulse.update(delta);
+        groundPulse.update(delta);
+
+        // Final colors for rendering
+        backgroundColor.set(baseBgColor);
+        if (bgPulse.active) {
+            float intensity = bgPulse.getIntensity();
+            backgroundColor.lerp(bgPulse.target, intensity);
+        }
+
+        groundColor.set(baseGroundColor);
+        if (groundPulse.active) {
+            float intensity = groundPulse.getIntensity();
+            groundColor.lerp(groundPulse.target, intensity);
         }
 
         while (blockCull < blocks.size) {

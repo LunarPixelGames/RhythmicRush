@@ -33,6 +33,13 @@ public class LevelData {
         public String triggerGroundColor;
         public float fadeDuration = 1f;
 
+        // Pulse Trigger fields
+        public String pulseBgColor;
+        public String pulseGroundColor;
+        public float fadeInTime = 0.1f;
+        public float holdTime = 0.2f;
+        public float fadeOutTime = 0.5f;
+
         public ObjectEntry() {
         }
 

@@ -79,6 +79,7 @@ public class LevelEditorScreen implements Screen {
         new PaletteEntry("Cube Portal",   "cube_portal",   new Color(0.25f, 0.85f, 0.55f, 1f)),
         new PaletteEntry("Ship Portal",   "ship_portal",   new Color(0.25f, 0.55f, 0.85f, 1f)),
         new PaletteEntry("Color Trigger", "color_trigger", new Color(1f,    0.85f, 0.2f,  1f)),
+        new PaletteEntry("Pulse Trigger", "pulse_trigger", new Color(1f,    0.4f,  0.8f,  1f)),
     };
 
     // ── Editor state ──────────────────────────────────────────────────────────
@@ -114,10 +115,14 @@ public class LevelEditorScreen implements Screen {
     private StringBuilder musicInputBuffer  = new StringBuilder();
 
     // ── Editor preview colors ─────────────────────────────────────────────────
-    private Color editorBgColor     = new Color(0.1f,  0.1f,  0.18f, 1f);
-    private Color editorGroundColor = new Color(0.09f, 0.13f, 0.24f, 1f);
+    private Color baseEditorBgColor     = new Color(0.1f,  0.1f,  0.18f, 1f);
+    private Color baseEditorGroundColor = new Color(0.09f, 0.13f, 0.24f, 1f);
+    private Color editorBgColor     = new Color(baseEditorBgColor);
+    private Color editorGroundColor = new Color(baseEditorGroundColor);
     private EditorColorFade bgFade     = null;
     private EditorColorFade groundFade = null;
+    private EditorColorPulse bgPulse     = null;
+    private EditorColorPulse groundPulse = null;
     private final Array<LevelData.ObjectEntry> firedTriggers = new Array<>();
 
     private static class EditorColorFade {
@@ -127,15 +132,34 @@ public class LevelEditorScreen implements Screen {
         }
     }
 
+    private static class EditorColorPulse {
+        final Color target; final float fadeIn, hold, fadeOut; float elapsed = 0f;
+        EditorColorPulse(Color target, float fadeIn, float hold, float fadeOut) {
+            this.target = new Color(target); this.fadeIn = fadeIn; this.hold = hold; this.fadeOut = fadeOut;
+        }
+        float getIntensity() {
+            if (elapsed < fadeIn) return fadeIn > 0 ? elapsed / fadeIn : 1f;
+            if (elapsed < fadeIn + hold) return 1f;
+            if (elapsed < fadeIn + hold + fadeOut) return fadeOut > 0 ? 1f - (elapsed - fadeIn - hold) / fadeOut : 0f;
+            return 0f;
+        }
+        boolean isFinished() { return elapsed >= fadeIn + hold + fadeOut; }
+    }
+
     // ── Color trigger edit menu ───────────────────────────────────────────────
+
     private boolean               editMenuOpen  = false;
     private LevelData.ObjectEntry editTarget    = null;
     private int                   editField     = 0;
     private StringBuilder editBgInput    = new StringBuilder();
     private StringBuilder editGndInput   = new StringBuilder();
     private StringBuilder editFadeInput  = new StringBuilder();
+    private StringBuilder editHoldInput  = new StringBuilder();
+    private StringBuilder editFadeInInput  = new StringBuilder();
+    private StringBuilder editFadeOutInput = new StringBuilder();
 
     // ── Rendering ─────────────────────────────────────────────────────────────
+
     private SpriteBatch   batch;
     private ShapeRenderer shapes;
     private BitmapFont    font;
@@ -207,36 +231,61 @@ public class LevelEditorScreen implements Screen {
         if (music == null || !music.isPlaying()) return;
         float musicX = 100f + music.getPosition() * SCROLL_SPEED;
         for (LevelData.ObjectEntry e : placed) {
-            if (!"color_trigger".equals(e.type)) continue;
+            if (!"color_trigger".equals(e.type) && !"pulse_trigger".equals(e.type)) continue;
             if (firedTriggers.contains(e, true)) continue;
             if (musicX >= e.x + OBJECT_SIZE / 2f) {
                 firedTriggers.add(e);
-                if (e.triggerBgColor != null && !e.triggerBgColor.isEmpty())
-                    bgFade = new EditorColorFade(editorBgColor, GameWorld.hexToColor(e.triggerBgColor), e.fadeDuration);
-                if (e.triggerGroundColor != null && !e.triggerGroundColor.isEmpty())
-                    groundFade = new EditorColorFade(editorGroundColor, GameWorld.hexToColor(e.triggerGroundColor), e.fadeDuration);
+                if ("color_trigger".equals(e.type)) {
+                    if (e.triggerBgColor != null && !e.triggerBgColor.isEmpty())
+                        bgFade = new EditorColorFade(baseEditorBgColor, GameWorld.hexToColor(e.triggerBgColor), e.fadeDuration);
+                    if (e.triggerGroundColor != null && !e.triggerGroundColor.isEmpty())
+                        groundFade = new EditorColorFade(baseEditorGroundColor, GameWorld.hexToColor(e.triggerGroundColor), e.fadeDuration);
+                } else if ("pulse_trigger".equals(e.type)) {
+                    if (e.pulseBgColor != null && !e.pulseBgColor.isEmpty())
+                        bgPulse = new EditorColorPulse(GameWorld.hexToColor(e.pulseBgColor), e.fadeInTime, e.holdTime, e.fadeOutTime);
+                    if (e.pulseGroundColor != null && !e.pulseGroundColor.isEmpty())
+                        groundPulse = new EditorColorPulse(GameWorld.hexToColor(e.pulseGroundColor), e.fadeInTime, e.holdTime, e.fadeOutTime);
+                }
             }
         }
         if (bgFade != null) {
             bgFade.elapsed += delta;
             float t = Math.min(bgFade.elapsed / bgFade.duration, 1f);
-            editorBgColor.set(lerp(bgFade.from.r,bgFade.to.r,t), lerp(bgFade.from.g,bgFade.to.g,t), lerp(bgFade.from.b,bgFade.to.b,t), 1f);
+            baseEditorBgColor.set(lerp(bgFade.from.r,bgFade.to.r,t), lerp(bgFade.from.g,bgFade.to.g,t), lerp(bgFade.from.b,bgFade.to.b,t), 1f);
             if (t >= 1f) bgFade = null;
         }
         if (groundFade != null) {
             groundFade.elapsed += delta;
             float t = Math.min(groundFade.elapsed / groundFade.duration, 1f);
-            editorGroundColor.set(lerp(groundFade.from.r,groundFade.to.r,t), lerp(groundFade.from.g,groundFade.to.g,t), lerp(groundFade.from.b,groundFade.to.b,t), 1f);
+            baseEditorGroundColor.set(lerp(groundFade.from.r,groundFade.to.r,t), lerp(groundFade.from.g,groundFade.to.g,t), lerp(groundFade.from.b,groundFade.to.b,t), 1f);
             if (t >= 1f) groundFade = null;
         }
+
+        if (bgPulse != null) {
+            bgPulse.elapsed += delta;
+            if (bgPulse.isFinished()) bgPulse = null;
+        }
+        if (groundPulse != null) {
+            groundPulse.elapsed += delta;
+            if (groundPulse.isFinished()) groundPulse = null;
+        }
+
+        editorBgColor.set(baseEditorBgColor);
+        if (bgPulse != null) editorBgColor.lerp(bgPulse.target, bgPulse.getIntensity());
+
+        editorGroundColor.set(baseEditorGroundColor);
+        if (groundPulse != null) editorGroundColor.lerp(groundPulse.target, groundPulse.getIntensity());
     }
 
     private void resetEditorColors() {
         String bg  = (levelMeta.bgColor     != null && !levelMeta.bgColor.isEmpty())     ? levelMeta.bgColor     : "1a1a2e";
         String gnd = (levelMeta.groundColor != null && !levelMeta.groundColor.isEmpty()) ? levelMeta.groundColor : "16213e";
-        editorBgColor.set(GameWorld.hexToColor(bg));
-        editorGroundColor.set(GameWorld.hexToColor(gnd));
+        baseEditorBgColor.set(GameWorld.hexToColor(bg));
+        baseEditorGroundColor.set(GameWorld.hexToColor(gnd));
+        editorBgColor.set(baseEditorBgColor);
+        editorGroundColor.set(baseEditorGroundColor);
         bgFade = null; groundFade = null;
+        bgPulse = null; groundPulse = null;
         firedTriggers.clear();
     }
 
@@ -359,6 +408,14 @@ public class LevelEditorScreen implements Screen {
         c.triggerBgColor     = e.triggerBgColor;
         c.triggerGroundColor = e.triggerGroundColor;
         c.fadeDuration       = e.fadeDuration;
+
+        // Pulse fields
+        c.pulseBgColor       = e.pulseBgColor;
+        c.pulseGroundColor   = e.pulseGroundColor;
+        c.fadeInTime         = e.fadeInTime;
+        c.holdTime           = e.holdTime;
+        c.fadeOutTime        = e.fadeOutTime;
+
         return c;
     }
 
@@ -479,23 +536,34 @@ public class LevelEditorScreen implements Screen {
     private void drawColorTriggerLines() {
         float viewH = Gdx.graphics.getHeight();
         shapes.begin(ShapeRenderer.ShapeType.Line);
-        shapes.setColor(TRIGGER_LINE_COLOR);
         for (LevelData.ObjectEntry e : placed) {
-            if (!"color_trigger".equals(e.type)) continue;
+            if (!"color_trigger".equals(e.type) && !"pulse_trigger".equals(e.type)) continue;
+            shapes.setColor("pulse_trigger".equals(e.type) ? new Color(1f, 0.4f, 0.8f, 0.8f) : TRIGGER_LINE_COLOR);
             float cx = e.x + OBJECT_SIZE / 2f;
             shapes.line(cx, 0, cx, viewH);
         }
         shapes.end();
         batch.begin();
         for (LevelData.ObjectEntry e : placed) {
-            if (!"color_trigger".equals(e.type)) continue;
+            if (!"color_trigger".equals(e.type) && !"pulse_trigger".equals(e.type)) continue;
             float cx = e.x + OBJECT_SIZE / 2f;
-            font.setColor(e == editTarget ? new Color(1f, 1f, 0.4f, 1f) : TRIGGER_LINE_COLOR);
-            StringBuilder label = new StringBuilder("COL");
-            if (e.triggerBgColor     != null && !e.triggerBgColor.isEmpty())    label.append(" BG:#").append(e.triggerBgColor);
-            if (e.triggerGroundColor != null && !e.triggerGroundColor.isEmpty()) label.append(" GND:#").append(e.triggerGroundColor);
-            font.draw(batch, label.toString(), cx + 4, viewH - 28);
-            font.draw(batch, e.fadeDuration + "s", cx + 4, viewH - 50);
+            font.setColor(e == editTarget ? new Color(1f, 1f, 0.4f, 1f) : 
+                ("pulse_trigger".equals(e.type) ? new Color(1f, 0.4f, 0.8f, 1f) : TRIGGER_LINE_COLOR));
+            
+            StringBuilder label = new StringBuilder();
+            if ("color_trigger".equals(e.type)) {
+                label.append("COL");
+                if (e.triggerBgColor     != null && !e.triggerBgColor.isEmpty())    label.append(" BG:#").append(e.triggerBgColor);
+                if (e.triggerGroundColor != null && !e.triggerGroundColor.isEmpty()) label.append(" GND:#").append(e.triggerGroundColor);
+                font.draw(batch, label.toString(), cx + 4, viewH - 28);
+                font.draw(batch, e.fadeDuration + "s", cx + 4, viewH - 50);
+            } else {
+                label.append("PULSE");
+                if (e.pulseBgColor     != null && !e.pulseBgColor.isEmpty())    label.append(" BG:#").append(e.pulseBgColor);
+                if (e.pulseGroundColor != null && !e.pulseGroundColor.isEmpty()) label.append(" GND:#").append(e.pulseGroundColor);
+                font.draw(batch, label.toString(), cx + 4, viewH - 28);
+                font.draw(batch, e.fadeInTime + "/" + e.holdTime + "/" + e.fadeOutTime + "s", cx + 4, viewH - 50);
+            }
         }
         batch.end();
     }
@@ -591,9 +659,11 @@ public class LevelEditorScreen implements Screen {
     }
 
     private void drawEditMenu() {
+        if (editTarget == null) return;
+        boolean isPulse = "pulse_trigger".equals(editTarget.type);
         float cx = cameraX + Gdx.graphics.getWidth() / 2f - 280;
-        float cy = Gdx.graphics.getHeight() / 2f - 65;
-        float pw = 560, ph = 140;
+        float cy = Gdx.graphics.getHeight() / 2f - (isPulse ? 120 : 65);
+        float pw = 560, ph = isPulse ? 250 : 140;
 
         shapes.begin(ShapeRenderer.ShapeType.Filled);
         shapes.setColor(new Color(0.07f, 0.07f, 0.11f, 0.97f));
@@ -604,24 +674,47 @@ public class LevelEditorScreen implements Screen {
         shapes.rect(cx, cy, pw, ph);
         shapes.end();
 
-        drawSwatch(cx + 520, cy + ph - 38, editBgInput.toString());
-        drawSwatch(cx + 520, cy + ph - 66, editGndInput.toString());
+        if (!isPulse) {
+            drawSwatch(cx + 520, cy + ph - 38, editBgInput.toString());
+            drawSwatch(cx + 520, cy + ph - 66, editGndInput.toString());
 
-        String[] labels = {
-            "BG color hex     (blank = no change): ",
-            "Ground color hex (blank = no change): ",
-            "Fade seconds:                         "
-        };
-        StringBuilder[] bufs = { editBgInput, editGndInput, editFadeInput };
+            String[] labels = {
+                "BG color hex     (blank = no change): ",
+                "Ground color hex (blank = no change): ",
+                "Fade seconds:                         "
+            };
+            StringBuilder[] bufs = { editBgInput, editGndInput, editFadeInput };
 
-        batch.begin();
-        font.setColor(TRIGGER_LINE_COLOR);
-        font.draw(batch, "Edit Color Trigger — TAB next field  |  ENTER confirm  |  ESC cancel", cx + 8, cy + ph - 8);
-        for (int i = 0; i < 3; i++) {
-            font.setColor(i == editField ? new Color(1f, 0.95f, 0.35f, 1f) : new Color(1f, 1f, 1f, 0.55f));
-            font.draw(batch, labels[i] + bufs[i] + (i == editField ? "_" : ""), cx + 8, cy + ph - 32 - i * 30);
+            batch.begin();
+            font.setColor(TRIGGER_LINE_COLOR);
+            font.draw(batch, "Edit Color Trigger — TAB next field  |  ENTER confirm  |  ESC cancel", cx + 8, cy + ph - 8);
+            for (int i = 0; i < 3; i++) {
+                font.setColor(i == editField ? new Color(1f, 0.95f, 0.35f, 1f) : new Color(1f, 1f, 1f, 0.55f));
+                font.draw(batch, labels[i] + bufs[i] + (i == editField ? "_" : ""), cx + 8, cy + ph - 32 - i * 30);
+            }
+            batch.end();
+        } else {
+            drawSwatch(cx + 520, cy + ph - 38, editBgInput.toString());
+            drawSwatch(cx + 520, cy + ph - 66, editGndInput.toString());
+
+            String[] labels = {
+                "Pulse BG color hex     (blank = none): ",
+                "Pulse Ground color hex (blank = none): ",
+                "Fade In seconds:                       ",
+                "Hold seconds:                          ",
+                "Fade Out seconds:                      "
+            };
+            StringBuilder[] bufs = { editBgInput, editGndInput, editFadeInInput, editHoldInput, editFadeOutInput };
+
+            batch.begin();
+            font.setColor(TRIGGER_LINE_COLOR);
+            font.draw(batch, "Edit Pulse Trigger — TAB next field  |  ENTER confirm  |  ESC cancel", cx + 8, cy + ph - 8);
+            for (int i = 0; i < 5; i++) {
+                font.setColor(i == editField ? new Color(1f, 0.95f, 0.35f, 1f) : new Color(1f, 1f, 1f, 0.55f));
+                font.draw(batch, labels[i] + bufs[i] + (i == editField ? "_" : ""), cx + 8, cy + ph - 32 - i * 30);
+            }
+            batch.end();
         }
-        batch.end();
     }
 
     private void drawSwatch(float x, float y, String hex) {
@@ -651,13 +744,24 @@ public class LevelEditorScreen implements Screen {
         camera.unproject(v);
         for (int i = placed.size - 1; i >= 0; i--) {
             LevelData.ObjectEntry e = placed.get(i);
-            if (!"color_trigger".equals(e.type)) continue;
+            if (!"color_trigger".equals(e.type) && !"pulse_trigger".equals(e.type)) continue;
             if (v.x >= e.x && v.x <= e.x + e.size && v.y >= e.y && v.y <= e.y + e.size) {
                 editTarget = e; editField = 0;
-                editBgInput.setLength(0); editGndInput.setLength(0); editFadeInput.setLength(0);
-                if (e.triggerBgColor     != null) editBgInput.append(e.triggerBgColor);
-                if (e.triggerGroundColor != null) editGndInput.append(e.triggerGroundColor);
-                editFadeInput.append(e.fadeDuration);
+                editBgInput.setLength(0); editGndInput.setLength(0);
+                editFadeInput.setLength(0); editFadeInInput.setLength(0);
+                editHoldInput.setLength(0); editFadeOutInput.setLength(0);
+
+                if ("color_trigger".equals(e.type)) {
+                    if (e.triggerBgColor     != null) editBgInput.append(e.triggerBgColor);
+                    if (e.triggerGroundColor != null) editGndInput.append(e.triggerGroundColor);
+                    editFadeInput.append(e.fadeDuration);
+                } else if ("pulse_trigger".equals(e.type)) {
+                    if (e.pulseBgColor     != null) editBgInput.append(e.pulseBgColor);
+                    if (e.pulseGroundColor != null) editGndInput.append(e.pulseGroundColor);
+                    editFadeInInput.append(e.fadeInTime);
+                    editHoldInput.append(e.holdTime);
+                    editFadeOutInput.append(e.fadeOutTime);
+                }
                 editMenuOpen = true;
                 return;
             }
@@ -668,10 +772,22 @@ public class LevelEditorScreen implements Screen {
         if (editTarget == null) { editMenuOpen = false; return; }
         String bg  = editBgInput.toString().trim().replace("#", "");
         String gnd = editGndInput.toString().trim().replace("#", "");
-        editTarget.triggerBgColor     = bg.isEmpty()  ? null : bg;
-        editTarget.triggerGroundColor = gnd.isEmpty() ? null : gnd;
-        try { editTarget.fadeDuration = Float.parseFloat(editFadeInput.toString().trim()); }
-        catch (NumberFormatException ignored) { editTarget.fadeDuration = 1f; }
+
+        if ("color_trigger".equals(editTarget.type)) {
+            editTarget.triggerBgColor     = bg.isEmpty()  ? null : bg;
+            editTarget.triggerGroundColor = gnd.isEmpty() ? null : gnd;
+            try { editTarget.fadeDuration = Float.parseFloat(editFadeInput.toString().trim()); }
+            catch (NumberFormatException ignored) { editTarget.fadeDuration = 1f; }
+        } else if ("pulse_trigger".equals(editTarget.type)) {
+            editTarget.pulseBgColor     = bg.isEmpty()  ? null : bg;
+            editTarget.pulseGroundColor = gnd.isEmpty() ? null : gnd;
+            try { editTarget.fadeInTime = Float.parseFloat(editFadeInInput.toString().trim()); }
+            catch (NumberFormatException ignored) { editTarget.fadeInTime = 0.1f; }
+            try { editTarget.holdTime = Float.parseFloat(editHoldInput.toString().trim()); }
+            catch (NumberFormatException ignored) { editTarget.holdTime = 0.2f; }
+            try { editTarget.fadeOutTime = Float.parseFloat(editFadeOutInput.toString().trim()); }
+            catch (NumberFormatException ignored) { editTarget.fadeOutTime = 0.5f; }
+        }
         editMenuOpen = false; editTarget = null;
     }
 
@@ -861,10 +977,23 @@ public class LevelEditorScreen implements Screen {
             if (editMenuOpen) {
                 if      (c == '\r' || c == '\n') { confirmEdit(); return true; }
                 else if (c == 27)                { editMenuOpen = false; editTarget = null; return true; }
-                else if (c == '\t')              { editField = (editField + 1) % 3; return true; }
-                StringBuilder active = editField == 0 ? editBgInput : editField == 1 ? editGndInput : editFadeInput;
+                else if (c == '\t')              { 
+                    int maxFields = "pulse_trigger".equals(editTarget.type) ? 5 : 3;
+                    editField = (editField + 1) % maxFields; 
+                    return true; 
+                }
+                
+                StringBuilder active;
+                if ("pulse_trigger".equals(editTarget.type)) {
+                    StringBuilder[] bufs = { editBgInput, editGndInput, editFadeInInput, editHoldInput, editFadeOutInput };
+                    active = bufs[editField];
+                } else {
+                    StringBuilder[] bufs = { editBgInput, editGndInput, editFadeInput };
+                    active = bufs[editField];
+                }
+
                 if (c == '\b') { if (active.length() > 0) active.deleteCharAt(active.length()-1); }
-                else           { active.append(c); }
+                else if (Character.isDefined(c) && !Character.isISOControl(c)) { active.append(c); }
                 return true;
             }
             return false;
