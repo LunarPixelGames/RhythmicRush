@@ -35,7 +35,7 @@ public class Registries {
 
         PORTALS.register(CubePortal.class, () -> new CubePortal(0, 0));
         PORTALS.register(ShipPortal.class, () -> new ShipPortal(0, 0));
-        PORTALS.register(GravityPortal.class, () -> new GravityPortal(0, 0, false));
+        PORTALS.register(GravityPortal.class, () -> new GravityPortal(0, 0));
 
         PLAYERS.register(Cube.class, () -> new Cube(0, 0));
         PLAYERS.register(Ship.class, () -> new Ship(0, 0));

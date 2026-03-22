@@ -340,11 +340,10 @@ public class GameWorld implements Tickable {
                     activeShipPortals.add((ShipPortal) p);
                 } else if ("gravity_portal".equals(e.type)) {
                     p = gravityPortalPool.obtain();
-                    ((GravityPortal) p).init(e.x, e.y, e.flipped);
                     activeGravityPortals.add((GravityPortal) p);
                 }
                 if (p != null) {
-                    if (!(p instanceof GravityPortal)) p.init(e.x, e.y);
+                    p.init(e.x, e.y);
                     portals.add(p);
                 }
             } else if (Registries.TRIGGERS.has(e.type)) {
