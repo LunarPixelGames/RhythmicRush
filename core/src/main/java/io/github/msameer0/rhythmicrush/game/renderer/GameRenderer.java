@@ -107,6 +107,7 @@ public class GameRenderer {
      * @param showHitboxes Whether to render debug outlines and fills for entity hitboxes.
      */
     public void render(float delta, boolean paused, boolean showHitboxes) {
+        world.updateVisuals(delta);
         AbstractPlayer player = world.getPlayer();
 
         camera.position.x = player.x + CAMERA_X_OFFSET;

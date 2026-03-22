@@ -90,6 +90,8 @@ public class LevelEditorScreen extends AbstractScreen {
     // ── Level data ────────────────────────────────────────────────────────────
     private LevelData                          levelData;
     private final Array<LevelData.ObjectEntry> selection = new Array<>();
+
+    private final Array<LevelData.ObjectEntry> clipboard = new Array<>();
     private String                             savePath  = null;
 
     private int selectedBlockTypeIdx = 0;
@@ -633,6 +635,8 @@ public class LevelEditorScreen extends AbstractScreen {
         if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) && Gdx.input.isKeyJustPressed(Input.Keys.A)) { selection.clear(); selection.addAll(levelData.objects); }
         if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) && Gdx.input.isKeyJustPressed(Input.Keys.S)) saveLevel();
         if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) && Gdx.input.isKeyJustPressed(Input.Keys.L)) openLoadDialog();
+        if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) && Gdx.input.isKeyJustPressed(Input.Keys.C)) copySelection();
+        if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) && Gdx.input.isKeyJustPressed(Input.Keys.V)) pasteClipboard();
     }
 
     private void startPlaytest() {
@@ -737,6 +741,53 @@ public class LevelEditorScreen extends AbstractScreen {
         e.type = placementId; e.x = wx; e.y = wy; e.size = GRID_SIZE; e.rotation = 0f;
         if (Registries.BLOCKS.has(placementId)) e.blockType = BlockType.values()[selectedBlockTypeIdx].textureName;
         levelData.objects.add(e); selection.clear(); selection.add(e);
+    }
+
+    private void copySelection() {
+        if (selection.isEmpty()) return;
+        clipboard.clear();
+        for (LevelData.ObjectEntry e : selection) {
+            LevelData.ObjectEntry copy = new LevelData.ObjectEntry();
+            copy.type              = e.type;
+            copy.x                 = e.x;
+            copy.y                 = e.y;
+            copy.size              = e.size;
+            copy.rotation          = e.rotation;
+            copy.blockType         = e.blockType;
+            copy.triggerBgColor    = e.triggerBgColor;
+            copy.triggerGroundColor= e.triggerGroundColor;
+            copy.fadeDuration      = e.fadeDuration;
+            copy.pulseBgColor      = e.pulseBgColor;
+            copy.pulseGroundColor  = e.pulseGroundColor;
+            copy.fadeInTime        = e.fadeInTime;
+            copy.holdTime          = e.holdTime;
+            copy.fadeOutTime       = e.fadeOutTime;
+            clipboard.add(copy);
+        }
+    }
+
+    private void pasteClipboard() {
+        if (clipboard.isEmpty()) return;
+        selection.clear();
+        for (LevelData.ObjectEntry src : clipboard) {
+            LevelData.ObjectEntry copy = new LevelData.ObjectEntry();
+            copy.type              = src.type;
+            copy.x                 = src.x + GRID_SIZE;
+            copy.y                 = src.y + GRID_SIZE;
+            copy.size              = src.size;
+            copy.rotation          = src.rotation;
+            copy.blockType         = src.blockType;
+            copy.triggerBgColor    = src.triggerBgColor;
+            copy.triggerGroundColor= src.triggerGroundColor;
+            copy.fadeDuration      = src.fadeDuration;
+            copy.pulseBgColor      = src.pulseBgColor;
+            copy.pulseGroundColor  = src.pulseGroundColor;
+            copy.fadeInTime        = src.fadeInTime;
+            copy.holdTime          = src.holdTime;
+            copy.fadeOutTime       = src.fadeOutTime;
+            levelData.objects.add(copy);
+            selection.add(copy);
+        }
     }
 
     private float worldToSX(float wx, float canvasW) { return (wx - camX) * zoom + canvasW / 2f; }

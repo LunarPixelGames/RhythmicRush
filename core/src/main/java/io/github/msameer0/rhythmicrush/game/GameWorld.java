@@ -53,6 +53,7 @@ public class GameWorld implements Tickable {
     private int blockCull = 0;
     private int hazardCull = 0;
     private int portalCull = 0;
+    private int triggerIdx = 0;
 
     private static final float COLLISION_LOOKAHEAD = 1400f;
 
@@ -372,10 +373,12 @@ public class GameWorld implements Tickable {
         blockCull = 0;
         hazardCull = 0;
         portalCull = 0;
+        triggerIdx = 0;
 
         blocks.sort((a, b2) -> Float.compare(a.getX(), b2.getX()));
         hazards.sort((a, b2) -> Float.compare(a.getX(), b2.getX()));
         portals.sort((a, b2) -> Float.compare(a.getX(), b2.getX()));
+        triggers.sort((a, b2) -> Float.compare(a.worldX, b2.worldX));
 
         freePlayer();
         player = obtainPlayer("cube").init(100, groundY);
@@ -406,6 +409,7 @@ public class GameWorld implements Tickable {
             worldScrolled = 0f;
             postEndTimer = -1f;
             levelEndX = 0f;
+            triggerIdx = 0;
             baseBgColor.set(0.1f, 0.1f, 0.18f, 1f);
             baseGroundColor.set(0.09f, 0.13f, 0.24f, 1f);
             backgroundColor.set(baseBgColor);
@@ -572,43 +576,44 @@ public class GameWorld implements Tickable {
         worldScrolled += scrollSpeed * delta;
 
         float playerWorldX = 100f + worldScrolled;
-        for (AbstractTrigger t : triggers) {
-            if (!t.fired && playerWorldX >= t.worldX) {
-                t.fired = true;
-                t.fire(this);
-            }
+        while (triggerIdx < triggers.size) {
+            AbstractTrigger t = triggers.get(triggerIdx);
+            if (playerWorldX < t.worldX) break;
+            t.fired = true;
+            t.fire(this);
+            triggerIdx++;
         }
 
-        if (bgFade.active) {
-            bgFade.elapsed += delta;
-            float t = Math.min(bgFade.elapsed / bgFade.duration, 1f);
-            baseBgColor.set(lerp(bgFade.from.r, bgFade.to.r, t), lerp(bgFade.from.g, bgFade.to.g, t),
-                lerp(bgFade.from.b, bgFade.to.b, t), 1f);
-            if (t >= 1f) bgFade.active = false;
-        }
-        if (groundFade.active) {
-            groundFade.elapsed += delta;
-            float t = Math.min(groundFade.elapsed / groundFade.duration, 1f);
-            baseGroundColor.set(lerp(groundFade.from.r, groundFade.to.r, t), lerp(groundFade.from.g, groundFade.to.g, t),
-                lerp(groundFade.from.b, groundFade.to.b, t), 1f);
-            if (t >= 1f) groundFade.active = false;
-        }
-
-        bgPulse.update(delta);
-        groundPulse.update(delta);
-
-        // Final colors for rendering
-        backgroundColor.set(baseBgColor);
-        if (bgPulse.active) {
-            float intensity = bgPulse.getIntensity();
-            backgroundColor.lerp(bgPulse.target, intensity);
-        }
-
-        groundColor.set(baseGroundColor);
-        if (groundPulse.active) {
-            float intensity = groundPulse.getIntensity();
-            groundColor.lerp(groundPulse.target, intensity);
-        }
+//        if (bgFade.active) {
+//            bgFade.elapsed += delta;
+//            float t = Math.min(bgFade.elapsed / bgFade.duration, 1f);
+//            baseBgColor.set(lerp(bgFade.from.r, bgFade.to.r, t), lerp(bgFade.from.g, bgFade.to.g, t),
+//                lerp(bgFade.from.b, bgFade.to.b, t), 1f);
+//            if (t >= 1f) bgFade.active = false;
+//        }
+//        if (groundFade.active) {
+//            groundFade.elapsed += delta;
+//            float t = Math.min(groundFade.elapsed / groundFade.duration, 1f);
+//            baseGroundColor.set(lerp(groundFade.from.r, groundFade.to.r, t), lerp(groundFade.from.g, groundFade.to.g, t),
+//                lerp(groundFade.from.b, groundFade.to.b, t), 1f);
+//            if (t >= 1f) groundFade.active = false;
+//        }
+//
+//        bgPulse.update(delta);
+//        groundPulse.update(delta);
+//
+//        // Final colors for rendering
+//        backgroundColor.set(baseBgColor);
+//        if (bgPulse.active) {
+//            float intensity = bgPulse.getIntensity();
+//            backgroundColor.lerp(bgPulse.target, intensity);
+//        }
+//
+//        groundColor.set(baseGroundColor);
+//        if (groundPulse.active) {
+//            float intensity = groundPulse.getIntensity();
+//            groundColor.lerp(groundPulse.target, intensity);
+//        }
 
         while (blockCull < blocks.size) {
             Block b = blocks.get(blockCull);
@@ -653,6 +658,35 @@ public class GameWorld implements Tickable {
                 }
             }
         }
+    }
+
+    /** Call once per rendered frame (not per physics tick) — updates visual color transitions. */
+    public void updateVisuals(float delta) {
+        if (playerDead || levelComplete) return;
+
+        if (bgFade.active) {
+            bgFade.elapsed += delta;
+            float t = Math.min(bgFade.elapsed / bgFade.duration, 1f);
+            baseBgColor.set(lerp(bgFade.from.r, bgFade.to.r, t), lerp(bgFade.from.g, bgFade.to.g, t),
+                lerp(bgFade.from.b, bgFade.to.b, t), 1f);
+            if (t >= 1f) bgFade.active = false;
+        }
+        if (groundFade.active) {
+            groundFade.elapsed += delta;
+            float t = Math.min(groundFade.elapsed / groundFade.duration, 1f);
+            baseGroundColor.set(lerp(groundFade.from.r, groundFade.to.r, t), lerp(groundFade.from.g, groundFade.to.g, t),
+                lerp(groundFade.from.b, groundFade.to.b, t), 1f);
+            if (t >= 1f) groundFade.active = false;
+        }
+
+        bgPulse.update(delta);
+        groundPulse.update(delta);
+
+        backgroundColor.set(baseBgColor);
+        if (bgPulse.active) backgroundColor.lerp(bgPulse.target, bgPulse.getIntensity());
+
+        groundColor.set(baseGroundColor);
+        if (groundPulse.active) groundColor.lerp(groundPulse.target, groundPulse.getIntensity());
     }
 
 
