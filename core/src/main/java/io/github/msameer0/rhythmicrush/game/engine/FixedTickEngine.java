@@ -78,13 +78,13 @@ public class FixedTickEngine {
      * and retries buffered presses each step until consumed or expired.
      */
     public void update(float frameDelta) {
-        accumulator = Math.min(accumulator + frameDelta, MAX_ACCUMULATOR);
         frameStart  = accumulator;
+        accumulator = Math.min(accumulator + frameDelta, MAX_ACCUMULATOR);
 
         float elapsed = 0f;
 
         while (accumulator >= TICK_DELTA) {
-            float tickEnd = elapsed + TICK_DELTA;
+            float tickEnd = frameStart + elapsed + TICK_DELTA;
 
             // ── Deliver queued events that fall in this tick's window ──────────
             while (eventCount > 0 && eventOffset[eventHead] <= tickEnd) {
@@ -123,25 +123,6 @@ public class FixedTickEngine {
             tickable.tick(TICK_DELTA);
             accumulator -= TICK_DELTA;
             elapsed     += TICK_DELTA;
-        }
-
-        // Deliver leftover queued events (fractional tick remainder)
-        while (eventCount > 0) {
-            boolean held = eventHeld[eventHead];
-            eventHead  = (eventHead + 1) % QUEUE_CAPACITY;
-            eventCount--;
-
-            if (!held) {
-                bufferedPress   = false;
-                bufferStepsLeft = 0;
-                tickable.onInput(false);
-            } else {
-                boolean consumed = tickable.onInput(true);
-                if (!consumed) {
-                    bufferedPress   = true;
-                    bufferStepsLeft = BUFFER_STEPS;
-                }
-            }
         }
     }
 
