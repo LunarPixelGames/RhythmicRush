@@ -28,6 +28,7 @@ public class LevelData {
         public float x, y, size;
         public String blockType;
         public float rotation;
+        public boolean flipped;
 
         public String triggerBgColor;
         public String triggerGroundColor;

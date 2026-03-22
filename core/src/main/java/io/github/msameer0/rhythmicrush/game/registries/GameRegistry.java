@@ -1,6 +1,6 @@
 package io.github.msameer0.rhythmicrush.game.registries;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -9,8 +9,8 @@ import java.util.function.Supplier;
  * @param <T> The base type of objects in this registry.
  */
 public class GameRegistry<T> {
-    private final Map<String, Supplier<T>> factories = new HashMap<>();
-    private final Map<String, Class<? extends T>> classes = new HashMap<>();
+    private final Map<String, Supplier<T>> factories = new LinkedHashMap<>();
+    private final Map<String, Class<? extends T>> classes = new LinkedHashMap<>();
 
     /**
      * Registers a class and its factory.
@@ -34,6 +34,11 @@ public class GameRegistry<T> {
      */
     public boolean has(String id) {
         return factories.containsKey(id);
+    }
+
+    /** Returns all registered IDs in insertion order. */
+    public java.util.Set<String> getIds() {
+        return factories.keySet();
     }
 
     /**

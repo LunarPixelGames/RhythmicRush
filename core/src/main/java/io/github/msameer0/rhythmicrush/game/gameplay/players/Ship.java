@@ -45,6 +45,7 @@ public class Ship extends AbstractPlayer {
         y = startY;
         this.velocityY = velocityY;
         this.flyHeld = flyHeld;
+        this.gravityFlipped = false;
         world = null;
         bounds.setPosition(x, y);
         return this;
@@ -61,17 +62,31 @@ public class Ship extends AbstractPlayer {
     @Override
     public void update(float delta, float groundY) {
         this.groundY = groundY;
-        if (flyHeld) {
-            velocityY += accel * delta;
-            if (velocityY > maxUpSpeed) velocityY = maxUpSpeed;
+        if (!gravityFlipped) {
+            if (flyHeld) {
+                velocityY += accel * delta;
+                if (velocityY > maxUpSpeed) velocityY = maxUpSpeed;
+            } else {
+                velocityY -= decel * delta;
+                if (velocityY < maxDownSpeed) velocityY = maxDownSpeed;
+            }
         } else {
-            velocityY -= decel * delta;
-            if (velocityY < maxDownSpeed) velocityY = maxDownSpeed;
+            if (flyHeld) {
+                velocityY -= accel * delta;
+                if (velocityY < -maxUpSpeed) velocityY = -maxUpSpeed;
+            } else {
+                velocityY += decel * delta;
+                if (velocityY > -maxDownSpeed) velocityY = -maxDownSpeed;
+            }
         }
+
         y += velocityY * delta;
-        if (y < groundY) {
-            y = groundY;
-            velocityY = 0;
+
+        if (!gravityFlipped) {
+            if (y < groundY) {
+                y = groundY;
+                velocityY = 0;
+            }
         }
         updateBounds();
     }
@@ -107,5 +122,7 @@ public class Ship extends AbstractPlayer {
         this.x = other.x;
         this.y = other.y;
         this.velocityY = other.velocityY;
+        this.gravityFlipped = other.isGravityFlipped();
+        this.flyHeld = other.isJumpHeld();
     }
 }

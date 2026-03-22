@@ -16,7 +16,8 @@ import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
 public abstract class AbstractPortal {
     public enum PortalType {
         CUBE,
-        SHIP
+        SHIP,
+        GRAVITY
     }
 
     protected PortalType type;

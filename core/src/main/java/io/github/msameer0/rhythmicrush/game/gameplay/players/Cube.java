@@ -38,6 +38,7 @@ public class Cube extends AbstractPlayer {
         this.velocityY = velocityY;
         isGrounded = false;
         this.jumpHeld = jumpHeld;
+        this.gravityFlipped = false;
         world = null;
         bounds.setPosition(x, y);
         return this;
@@ -54,12 +55,19 @@ public class Cube extends AbstractPlayer {
     @Override
     public void update(float delta, float groundY) {
         isGrounded = false;
-        velocityY += gravity * delta;
+        float effectiveGravity = gravityFlipped ? -gravity : gravity;
+        velocityY += effectiveGravity * delta;
         y += velocityY * delta;
-        if (y <= groundY) {
-            y = groundY;
-            velocityY = 0;
-            isGrounded = true;
+
+        if (!gravityFlipped) {
+            if (y <= groundY) {
+                y = groundY;
+                velocityY = 0;
+                isGrounded = true;
+            }
+        } else {
+            // If we want a ceiling limit, we could add it here.
+            // For now, standard ground behavior is only for normal gravity.
         }
         updateBounds();
     }
@@ -67,7 +75,7 @@ public class Cube extends AbstractPlayer {
     @Override
     public void jump() {
         if (isGrounded) {
-            velocityY = jumpVelocity;
+            velocityY = gravityFlipped ? -jumpVelocity : jumpVelocity;
             isGrounded = false;
         }
     }
@@ -104,5 +112,6 @@ public class Cube extends AbstractPlayer {
             this.velocityY = other.velocityY;
             this.isGrounded = other.isGrounded();
             this.jumpHeld = other.isJumpHeld();
+            this.gravityFlipped = other.isGravityFlipped();
     }
 }
