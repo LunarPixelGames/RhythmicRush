@@ -107,6 +107,7 @@ public class GameRenderer {
      * @param showHitboxes Whether to render debug outlines and fills for entity hitboxes.
      */
     public void render(float delta, boolean paused, boolean showHitboxes) {
+        world.updateVisuals(delta);
         AbstractPlayer player = world.getPlayer();
 
         camera.position.x = player.x + CAMERA_X_OFFSET;
@@ -192,6 +193,14 @@ public class GameRenderer {
             shape.end();
             batch.begin();
             return;
+        }
+
+        if (player.isGravityFlipped()) {
+            if (!region.isFlipY())
+                region.flip(false, true);
+        } else {
+            if (region.isFlipY())
+                region.flip(false, true);
         }
 
         float scaleX = (pType == AbstractPlayer.PlayerType.SHIP) ? 1.35f : 1f;
@@ -280,7 +289,12 @@ public class GameRenderer {
                 playerVisualRotation = lerp(playerVisualRotation, nearest90, delta * 15f);
             } else if (!world.isPlayerDead() && !paused) {
                 float t = delta * 60f;
-                playerVisualRotation -= (Math.abs(vy) * CUBE_SPIN_FACTOR / 60f + 5f / 60f) * t + 300f * delta;
+                float rotation = (Math.abs(vy) * CUBE_SPIN_FACTOR / 60f + 5f / 60f) * t + 300f * delta;
+                if (player.isGravityFlipped()) {
+                    playerVisualRotation += rotation;
+                } else {
+                    playerVisualRotation -= rotation;
+                }
             }
         } else if (pType == AbstractPlayer.PlayerType.SHIP) {
             float targetAngle = Math.max(-SHIP_MAX_TILT, Math.min(SHIP_MAX_TILT, vy * SHIP_TILT_FACTOR));

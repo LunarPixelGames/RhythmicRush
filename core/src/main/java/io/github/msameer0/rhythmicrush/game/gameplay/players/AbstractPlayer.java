@@ -21,6 +21,7 @@ public abstract class AbstractPlayer {
     public float width = 50, height = 50;
     public float velocityY = 0;
     public Rectangle bounds;
+    protected boolean gravityFlipped = false;
 
     protected GameWorld world;
 
@@ -29,6 +30,9 @@ public abstract class AbstractPlayer {
         this.y = startY;
         bounds = new Rectangle(x, y, width, height);
     }
+
+    public abstract AbstractPlayer init(float startX, float startY, float velocityY, boolean flyHeld);
+    public abstract AbstractPlayer init(float startX, float startY);
 
     public abstract void update(float delta, float groundY);
 
@@ -75,7 +79,7 @@ public abstract class AbstractPlayer {
         updateBounds();
     }
 
-    public void setVelocityY(int vel) {
+    public void setVelocityY(float vel) {
         velocityY = vel;
     }
 
@@ -100,4 +104,14 @@ public abstract class AbstractPlayer {
     public boolean isSafeFromBelow() {
         return false;
     }
+
+    public boolean isGravityFlipped() {
+        return gravityFlipped;
+    }
+
+    public void setGravityFlipped(boolean gravityFlipped) {
+        this.gravityFlipped = gravityFlipped;
+    }
+
+    public abstract void copyState(AbstractPlayer other);
 }

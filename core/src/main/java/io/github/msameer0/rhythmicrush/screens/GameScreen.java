@@ -15,6 +15,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.TimeUtils;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
@@ -326,7 +327,7 @@ public class GameScreen extends AbstractScreen {
      * @return The world X-coordinate for the center of the pause button.
      */
     private float pauseCircleCX() {
-        return camRight() - PAUSE_BTN / 2f - 14f;
+        return camRight() - PAUSE_BTN / 2f - (game.getSettingsManager().uiPadding + 2f);
     }
 
     /**
@@ -336,7 +337,7 @@ public class GameScreen extends AbstractScreen {
      * @return The world Y-coordinate for the center of the pause button.
      */
     private float pauseCircleCY() {
-        return camTop() - PAUSE_BTN / 2f - 14f;
+        return camTop() - PAUSE_BTN / 2f - (game.getSettingsManager().uiPadding + 2f);
     }
 
 
@@ -512,7 +513,6 @@ public class GameScreen extends AbstractScreen {
             deathPaused = true;
             deathTimer = 0f;
             lastDelta = 0f;
-            checkAndShowAd(false);
             engine.reset();
             if (game.getSettingsManager().showHitboxesOnDeath)
                 hitboxesActive = true;
@@ -540,7 +540,7 @@ public class GameScreen extends AbstractScreen {
 
             if (levelEndTimer >= END_DELAY_TOTAL) {
                 levelCompletedState = true;
-                checkAndShowAd(true);
+                checkAndShowAd(1.0f);
                 stopAndDisposeMusic();
                 Gdx.input.setCursorCatched(false);
             }
@@ -623,7 +623,7 @@ public class GameScreen extends AbstractScreen {
         final float BAR_W = gameViewport.getWorldWidth() * 0.625f * 0.55f;
         final float BAR_H = 10f;
         final float GAP = 14f;
-        final float LINE_Y = camTop() - 18f;
+        final float LINE_Y = camTop() - (game.getSettingsManager().uiPadding + 6f);
 
         float textW = 0f;
         if (s.showPercentage) {
@@ -664,7 +664,7 @@ public class GameScreen extends AbstractScreen {
         int pct = Math.round(progress * 100f);
         final float BAR_W = gameViewport.getWorldWidth() * 0.625f * 0.55f;
         final float GAP = 14f;
-        final float LINE_Y = camTop() - 18f;
+        final float LINE_Y = camTop() - (game.getSettingsManager().uiPadding + 6f);
 
         _hudSb.setLength(0);
         _hudSb.append(pct).append('%');
@@ -716,8 +716,9 @@ public class GameScreen extends AbstractScreen {
      * Renders the attempt counters and FPS text.
      */
     private void drawSessionAttemptsText() {
-        float left = camLeft() + 12f;
-        float top = camTop() - 12f;
+        float p = game.getSettingsManager().uiPadding;
+        float left = camLeft() + p;
+        float top = camTop() - p;
         float shadowOffset = 2f;
 
         // Attempt
@@ -730,10 +731,10 @@ public class GameScreen extends AbstractScreen {
 
         float nextY = top - 26f;
         if (levelKey != null) {
-            LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
+            LevelProgress p1 = game.getProgressManager().getOrCreate(levelKey);
             // Best
             _hudSb.setLength(0);
-            _hudSb.append("Best  ").append(p.bestPercent).append('%');
+            _hudSb.append("Best  ").append(p1.bestPercent).append('%');
             font.setColor(0, 0, 0, HUD_BEST.a * 0.4f);
             font.draw(game.getBatch(), _hudSb, left + shadowOffset, nextY - shadowOffset);
             font.setColor(HUD_BEST);
@@ -1187,6 +1188,13 @@ public class GameScreen extends AbstractScreen {
             // Trigger the new best popup
             popupTimer = 0f;
             popupBestPct = pct;
+
+            // Chance to get an ad is equivalent to the new best you get (0.0 to 1.0)
+            checkAndShowAd(pct / 100f);
+        } else {
+            // 0% chance on random deaths (already implicit if we don't call it here, 
+            // but we call with 0 just to be safe and clear if needed, or just don't call)
+            // checkAndShowAd(0.0f);
         }
     }
 
@@ -1443,7 +1451,7 @@ public class GameScreen extends AbstractScreen {
 
 
     private final Vector2 _unprojectTmp2 = new Vector2();
-    private final com.badlogic.gdx.math.Vector3 _unprojectTmp = new com.badlogic.gdx.math.Vector3();
+    private final Vector3 _unprojectTmp = new Vector3();
 
     /**
      * Converts the current screen coordinates of the mouse or touch input into world coordinates.
@@ -1527,16 +1535,16 @@ public class GameScreen extends AbstractScreen {
 
     /**
      * Checks the 1-minute cooldown and RNG chances before showing an ad.
-     * @param isLevelComplete If true, forces a 100% chance to show the ad (still respects cooldown).
+     * @param adChance If true, forces a 100% chance to show the ad (still respects cooldown).
      */
-    private void checkAndShowAd(boolean isLevelComplete) {
+    private void checkAndShowAd(float adChance) {
         // 1. Check if 1 minute has passed since the last ad
         if (TimeUtils.timeSinceMillis(lastAdTimeMillis) < AD_COOLDOWN_MS) {
             return; // Cooldown is still active, skip the ad!
         }
 
-        // 2. Determine chance: 100% on win, 25% chance on normal death
-        boolean shouldShowAd = isLevelComplete || MathUtils.randomBoolean(0.25f);
+        // 2. Determine chance based on provided probability (0.0 to 1.0)
+        boolean shouldShowAd = MathUtils.randomBoolean(adChance);
 
         // 3. Show the ad and reset the timer!
         if (shouldShowAd && game.getAdController() != null) {

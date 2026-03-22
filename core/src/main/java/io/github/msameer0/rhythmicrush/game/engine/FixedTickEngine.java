@@ -1,100 +1,141 @@
 package io.github.msameer0.rhythmicrush.game.engine;
 
 /**
- * A fixed-timestep game engine designed to decouple game logic updates from the rendering frame rate.
+ * Drives a {@link Tickable} at a fixed rate of {@value TICK_RATE} ticks per second,
+ * completely decoupled from the render frame rate.
  *
- * <p>The engine maintains a constant tick rate (default 240Hz) using an accumulator to ensure
- * deterministic physics and logic updates regardless of the hardware's frame rate. It includes
- * an internal event queue to synchronize input events with the high-frequency ticks, preventing
- * input lag or missed inputs between frames.</p>
+ * <h3>Click-between-steps</h3>
+ * Input events are queued via {@link #queueInput(boolean, float)} with a frame-time
+ * offset. During {@link #update(float)}, each tick checks whether any queued event
+ * falls within its time window and delivers it at the correct step rather than always
+ * at the first step of the next frame.
  *
- * <p>This implementation is particularly suited for rhythm or precision-based games where
- * timing consistency is critical.</p>
+ * <h3>Click-on-steps (input buffering)</h3>
+ * If a press input is delivered at the correct step but {@link Tickable#onInput}
+ * returns {@code false} (player can't act on it yet — e.g. cube is mid-air), the
+ * engine holds the input for up to {@value BUFFER_STEPS} additional steps and retries
+ * it each step until it is consumed or the buffer expires. This ensures that taps
+ * slightly before a landing are still registered, which is critical for players
+ * running below 240 Hz.
+ *
+ * <p>Releases ({@code held=false}) are never buffered — they always clear the buffer.</p>
  */
 public class FixedTickEngine {
 
-    public static final int TICK_RATE = 240;
-    public static final float TICK_DELTA = 1f / TICK_RATE;
+    public static final int   TICK_RATE    = 240;
+    public static final float TICK_DELTA   = 1f / TICK_RATE;
+
+    /**
+     * How many steps a press input is held and retried if not immediately consumed.
+     * 6 steps ≈ 25 ms at 240 TPS — enough to cover ~1.5 frames at 60 fps.
+     */
+    public static final int BUFFER_STEPS = 6;
 
     private static final float MAX_ACCUMULATOR = 0.25f;
 
+    // ── Click-between-steps: input event queue ────────────────────────────────
     private static final int QUEUE_CAPACITY = 16;
-    private final boolean[] eventHeld = new boolean[QUEUE_CAPACITY];
-    private final float[] eventOffset = new float[QUEUE_CAPACITY];
-    private int eventHead = 0;
-    private int eventCount = 0;
+    private final boolean[] eventHeld   = new boolean[QUEUE_CAPACITY];
+    private final float[]   eventOffset = new float[QUEUE_CAPACITY];
+    private int             eventHead   = 0;
+    private int             eventCount  = 0;
+
+    // ── Click-on-steps: buffered press ────────────────────────────────────────
+    // When a press fires but isn't consumed, we store it here and retry each step.
+    private boolean bufferedPress    = false;
+    private int     bufferStepsLeft  = 0;
 
     private final Tickable tickable;
-    private float accumulator = 0f;
+    private float          accumulator = 0f;
+    private float          frameStart  = 0f;
 
-    /**
-     * Constructs a new FixedTickEngine with the specified logic handler.
-     *
-     * @param tickable the instance that will receive game logic updates and synchronized input events
-     */
     public FixedTickEngine(Tickable tickable) {
         this.tickable = tickable;
     }
 
     /**
-     * Queues an input event to be processed during the next engine update.
+     * Queue a jump input event to be delivered at the correct physics step.
      *
-     * <p>This allows input events captured at the variable frame rate to be synchronized
-     * with the fixed tick rate. The event will be dispatched to the {@link Tickable}
-     * instance when the engine's internal clock reaches the specified offset.</p>
-     *
-     * @param held whether the input key is currently pressed
-     * @param frameOffset the timing offset of the input, typically retrieved via {@link #getAccumulator()}
+     * @param held        true = jump pressed, false = released
+     * @param frameOffset seconds elapsed since the start of this frame
+     *                    (pass {@code getAccumulator()} before calling {@link #update(float)})
      */
     public void queueInput(boolean held, float frameOffset) {
+        if (!held) {
+            // Release: clear the buffer immediately and queue the release event
+            bufferedPress   = false;
+            bufferStepsLeft = 0;
+        }
         if (eventCount >= QUEUE_CAPACITY) return;
         int slot = (eventHead + eventCount) % QUEUE_CAPACITY;
-        eventHeld[slot] = held;
+        eventHeld[slot]   = held;
         eventOffset[slot] = frameOffset;
         eventCount++;
     }
 
     /**
-     * Updates the engine's internal clock and executes the necessary number of logic ticks
-     * based on the elapsed time.
+     * Call once per rendered frame. Delivers queued inputs at the correct step
+     * and retries buffered presses each step until consumed or expired.
      */
     public void update(float frameDelta) {
+        frameStart  = accumulator;
         accumulator = Math.min(accumulator + frameDelta, MAX_ACCUMULATOR);
+
         float elapsed = 0f;
 
         while (accumulator >= TICK_DELTA) {
-            float tickEnd = elapsed + TICK_DELTA;
+            float tickEnd = frameStart + elapsed + TICK_DELTA;
+
+            // ── Deliver queued events that fall in this tick's window ──────────
             while (eventCount > 0 && eventOffset[eventHead] <= tickEnd) {
-                tickable.onInput(eventHeld[eventHead]);
-                eventHead = (eventHead + 1) % QUEUE_CAPACITY;
+                boolean held = eventHeld[eventHead];
+                eventHead  = (eventHead + 1) % QUEUE_CAPACITY;
                 eventCount--;
+
+                if (!held) {
+                    // Release: always deliver, clear buffer
+                    bufferedPress   = false;
+                    bufferStepsLeft = 0;
+                    tickable.onInput(false);
+                } else {
+                    // Press: deliver and check if consumed
+                    boolean consumed = tickable.onInput(true);
+                    if (!consumed) {
+                        // Start buffering — retry on subsequent steps
+                        bufferedPress   = true;
+                        bufferStepsLeft = BUFFER_STEPS;
+                    }
+                }
+            }
+
+            // ── Retry buffered press if still pending ─────────────────────────
+            if (bufferedPress && bufferStepsLeft > 0) {
+                boolean consumed = tickable.onInput(true);
+                if (consumed) {
+                    bufferedPress   = false;
+                    bufferStepsLeft = 0;
+                } else {
+                    bufferStepsLeft--;
+                    if (bufferStepsLeft == 0) bufferedPress = false;
+                }
             }
 
             tickable.tick(TICK_DELTA);
             accumulator -= TICK_DELTA;
-            elapsed += TICK_DELTA;
-        }
-
-        while (eventCount > 0) {
-            tickable.onInput(eventHeld[eventHead]);
-            eventHead = (eventHead + 1) % QUEUE_CAPACITY;
-            eventCount--;
+            elapsed     += TICK_DELTA;
         }
     }
 
-    /**
-     * Resets the accumulator and clears queued input. Call after respawn.
-     */
+    /** Resets accumulator, queued inputs, and the buffer. Call after respawn. */
     public void reset() {
-        accumulator = 0f;
-        eventHead = 0;
-        eventCount = 0;
+        accumulator     = 0f;
+        frameStart      = 0f;
+        eventHead       = 0;
+        eventCount      = 0;
+        bufferedPress   = false;
+        bufferStepsLeft = 0;
     }
 
-    /**
-     * Current accumulator value — use as frameOffset when queuing input.
-     */
-    public float getAccumulator() {
-        return accumulator;
-    }
+    /** Current accumulator value — pass as frameOffset when queuing input. */
+    public float getAccumulator() { return accumulator; }
 }

@@ -16,7 +16,8 @@ import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
 public abstract class AbstractPortal {
     public enum PortalType {
         CUBE,
-        SHIP
+        SHIP,
+        GRAVITY
     }
 
     protected PortalType type;
@@ -88,29 +89,18 @@ public abstract class AbstractPortal {
     /**
      * Attempts to interact with the player. If the portal has not been used and
      * the player's bounds overlap with the portal's bounds, the portal is marked
-     * as used and the interaction logic is triggered.
+     * as used and returns true.
      *
      * @param player the player instance to check for collision
-     * @return the player instance after the interaction, which may be transformed
-     *         by the {@link #onTouch(AbstractPlayer)} method, or the original
-     *         player if no interaction occurred
+     * @return true if the player touched the portal, false otherwise.
      */
-    public AbstractPlayer tryTouch(AbstractPlayer player) {
+    public boolean tryTouch(AbstractPlayer player) {
         if (!used && player.getBounds().overlaps(bounds)) {
             used = true;
-            return onTouch(player);
+            return true;
         }
-        return player;
+        return false;
     }
-
-    /**
-     * Defines the specific interaction logic when a player touches the portal.
-     * Subclasses should implement this method to apply transformations or state changes to the player.
-     *
-     * @param player the player instance that collided with the portal
-     * @return the resulting player instance after the portal's effect is applied
-     */
-    public abstract AbstractPlayer onTouch(AbstractPlayer player);
 
     /**
      * Synchronizes the position of the portal's collision bounds with its current

@@ -1,5 +1,7 @@
 package io.github.msameer0.rhythmicrush.game.gameplay.players;
 
+import io.github.msameer0.rhythmicrush.game.registries.Registry;
+
 /**
  * Represents a specific player mode where the player controls a flying vehicle.
  * <p>
@@ -8,6 +10,7 @@ package io.github.msameer0.rhythmicrush.game.gameplay.players;
  * terminal velocity constants for both upward and downward movement.
  * </p>
  */
+@Registry(id = "ship")
 public class Ship extends AbstractPlayer {
 
     private boolean flyHeld = false;
@@ -35,12 +38,14 @@ public class Ship extends AbstractPlayer {
     /**
      * Reinitialise this Ship for reuse from the pool.
      */
+    @Override
     public Ship init(float startX, float startY, float velocityY, boolean flyHeld) {
         this.type = PlayerType.SHIP;
         x = startX;
         y = startY;
         this.velocityY = velocityY;
         this.flyHeld = flyHeld;
+        this.gravityFlipped = false;
         world = null;
         bounds.setPosition(x, y);
         return this;
@@ -49,6 +54,7 @@ public class Ship extends AbstractPlayer {
     /**
      * Legacy init for backward compatibility.
      */
+    @Override
     public Ship init(float startX, float startY) {
         return init(startX, startY, 0, false);
     }
@@ -56,17 +62,31 @@ public class Ship extends AbstractPlayer {
     @Override
     public void update(float delta, float groundY) {
         this.groundY = groundY;
-        if (flyHeld) {
-            velocityY += accel * delta;
-            if (velocityY > maxUpSpeed) velocityY = maxUpSpeed;
+        if (!gravityFlipped) {
+            if (flyHeld) {
+                velocityY += accel * delta;
+                if (velocityY > maxUpSpeed) velocityY = maxUpSpeed;
+            } else {
+                velocityY -= decel * delta;
+                if (velocityY < maxDownSpeed) velocityY = maxDownSpeed;
+            }
         } else {
-            velocityY -= decel * delta;
-            if (velocityY < maxDownSpeed) velocityY = maxDownSpeed;
+            if (flyHeld) {
+                velocityY -= accel * delta;
+                if (velocityY < -maxUpSpeed) velocityY = -maxUpSpeed;
+            } else {
+                velocityY += decel * delta;
+                if (velocityY > -maxDownSpeed) velocityY = -maxDownSpeed;
+            }
         }
+
         y += velocityY * delta;
-        if (y < groundY) {
-            y = groundY;
-            velocityY = 0;
+
+        if (!gravityFlipped) {
+            if (y < groundY) {
+                y = groundY;
+                velocityY = 0;
+            }
         }
         updateBounds();
     }
@@ -95,5 +115,14 @@ public class Ship extends AbstractPlayer {
 
     public void setGroundY(float groundY) {
         this.groundY = groundY;
+    }
+
+    @Override
+    public void copyState(AbstractPlayer other) {
+        this.x = other.x;
+        this.y = other.y;
+        this.velocityY = other.velocityY;
+        this.gravityFlipped = other.isGravityFlipped();
+        this.flyHeld = other.isJumpHeld();
     }
 }

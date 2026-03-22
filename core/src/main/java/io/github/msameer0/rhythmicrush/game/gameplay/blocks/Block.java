@@ -4,6 +4,7 @@ import com.badlogic.gdx.math.Rectangle;
 
 import io.github.msameer0.rhythmicrush.game.GameWorld;
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
+import io.github.msameer0.rhythmicrush.game.registries.Registry;
 
 /**
  * Represents a physical platform or obstacle within the game world.
@@ -18,6 +19,7 @@ import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
  * usage during gameplay.
  * </p>
  */
+@Registry(id = "block")
 public class Block {
 
     protected float x, y;
@@ -124,17 +126,35 @@ public class Block {
         if (overlapLeft < minOverlap) minOverlap = overlapLeft;
         if (overlapRight < minOverlap) minOverlap = overlapRight;
 
-        if (minOverlap == overlapTop && player.velocityY <= 0) {
-            player.setY(blockTop);
-            player.setVelocityY(0);
-            player.setGrounded(true);
-            return;
-        }
+        boolean flipped = player.isGravityFlipped();
 
-        if (minOverlap == overlapBottom && player.velocityY >= 0 && player.isSafeFromBelow()) {
-            player.setY(blockBottom - player.height);
-            player.setVelocityY(0);
-            return;
+        // Handle landing and bumping based on gravity
+        if (!flipped) {
+            if (minOverlap == overlapTop && player.velocityY <= 0) {
+                player.setY(blockTop);
+                player.setVelocityY(0);
+                player.setGrounded(true);
+                return;
+            }
+
+            if (minOverlap == overlapBottom && player.velocityY >= 0 && player.isSafeFromBelow()) {
+                player.setY(blockBottom - player.height);
+                player.setVelocityY(0);
+                return;
+            }
+        } else {
+            if (minOverlap == overlapBottom && player.velocityY >= 0) {
+                player.setY(blockBottom - player.height);
+                player.setVelocityY(0);
+                player.setGrounded(true);
+                return;
+            }
+
+            if (minOverlap == overlapTop && player.velocityY <= 0 && player.isSafeFromBelow()) {
+                player.setY(blockTop);
+                player.setVelocityY(0);
+                return;
+            }
         }
 
         float hMargin = playerRect.width * 0.25f;

@@ -223,6 +223,7 @@ public class MainMenuScreen extends AbstractScreen {
             }
             if (desktop)
                 rows.add(new SettingRow(RowType.TOGGLE, "VSync", "vsync"));
+            rows.add(new SettingRow(RowType.SLIDER, "UI Padding", "uiPadding"));
         }
         return rows;
     }
@@ -600,7 +601,10 @@ public class MainMenuScreen extends AbstractScreen {
                     drawToggleRow(ry, row.label, getToggleValue(row.id, s));
                     break;
                 case SLIDER:
-                    drawSliderRow(ry, row.label, s.musicVolume);
+                    float val;
+                    if ("uiPadding".equals(row.id)) val = s.uiPadding / 50f;
+                    else val = s.musicVolume;
+                    drawSliderRow(ry, row.label, val);
                     break;
                 case INT_FIELD:
                     drawIntFieldRow(ry, row.label, s.fpsCapValue);
@@ -852,6 +856,8 @@ public class MainMenuScreen extends AbstractScreen {
     private void handleMenuInput() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE))
             game.setScreen(new LevelSelectScreen(game));
+        if (Gdx.input.isKeyJustPressed(Input.Keys.P))
+            game.setScreen(new LevelEditorScreen(game));
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) Gdx.app.exit();
 
         Vector2 t = unproject();
@@ -915,8 +921,18 @@ public class MainMenuScreen extends AbstractScreen {
             float tx = unproject().x;
             float trackX = panelX + panelW - 28f - panelW * 0.36f;
             float trackW = panelW * 0.36f;
-            s.musicVolume = Math.max(0f, Math.min(1f, (tx - trackX) / trackW));
-            game.getSoundManager().setMusicVolume(s.musicVolume);
+            float norm = Math.max(0f, Math.min(1f, (tx - trackX) / trackW));
+
+            Array<SettingRow> pageRows = getPageRows(currentCat, currentSubPage);
+            if (draggingSliderRow >= 0 && draggingSliderRow < pageRows.size) {
+                SettingRow row = pageRows.get(draggingSliderRow);
+                if ("volume".equals(row.id)) {
+                    s.musicVolume = norm;
+                    game.getSoundManager().setMusicVolume(s.musicVolume);
+                } else if ("uiPadding".equals(row.id)) {
+                    s.uiPadding = norm * 50f;
+                }
+            }
         }
         if (!Gdx.input.isTouched()) {
             if (draggingSlider) s.save();
@@ -977,7 +993,8 @@ public class MainMenuScreen extends AbstractScreen {
                     if (hitPill(t, ry)) handleToggle(row.id, s);
                     break;
                 case SLIDER:
-                    if (hitSliderThumb(t, ry, s.musicVolume)) {
+                    float val = "uiPadding".equals(row.id) ? (s.uiPadding / 50f) : s.musicVolume;
+                    if (hitSliderThumb(t, ry, val)) {
                         draggingSlider = true;
                         draggingSliderRow = i;
                     }

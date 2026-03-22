@@ -28,10 +28,18 @@ public class LevelData {
         public float x, y, size;
         public String blockType;
         public float rotation;
+        public boolean flipped;
 
         public String triggerBgColor;
         public String triggerGroundColor;
         public float fadeDuration = 1f;
+
+        // Pulse Trigger fields
+        public String pulseBgColor;
+        public String pulseGroundColor;
+        public float fadeInTime = 0.1f;
+        public float holdTime = 0.2f;
+        public float fadeOutTime = 0.5f;
 
         public ObjectEntry() {
         }

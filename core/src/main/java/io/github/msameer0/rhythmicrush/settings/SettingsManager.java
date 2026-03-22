@@ -29,6 +29,7 @@ public class SettingsManager {
     public boolean enableVsync = false;
     public boolean showPercentage = true;
     public boolean showProgressBar = true;
+    public float uiPadding = 12f;
 
     /**
      * A data transfer object (DTO) used to represent a serializable snapshot of the settings.
@@ -46,6 +47,7 @@ public class SettingsManager {
         public boolean enableVsync = false;
         public boolean showPercentage = true;
         public boolean showProgressBar = true;
+        public float uiPadding = 12f;
     }
 
     private final Json json;
@@ -84,6 +86,7 @@ public class SettingsManager {
             snapshot.enableVsync = enableVsync;
             snapshot.showPercentage = showPercentage;
             snapshot.showProgressBar = showProgressBar;
+            snapshot.uiPadding = uiPadding;
             FileHandle file = Gdx.files.local(SAVE_PATH);
             file.parent().mkdirs();
             file.writeString(json.prettyPrint(snapshot), false);
@@ -123,6 +126,7 @@ public class SettingsManager {
             enableVsync = d.enableVsync;
             showPercentage = d.showPercentage;
             showProgressBar = d.showProgressBar;
+            uiPadding = d.uiPadding;
             Gdx.app.log("SettingsManager", "Settings loaded successfully.");
         } catch (Exception e) {
             Gdx.app.error("SettingsManager", "Failed to load: " + e.getMessage());

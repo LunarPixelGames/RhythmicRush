@@ -1,6 +1,6 @@
 package io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals;
 
-import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
+import io.github.msameer0.rhythmicrush.game.registries.Registry;
 
 /**
  * A portal that transforms the player into a cube-based movement mode upon contact.
@@ -8,6 +8,7 @@ import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
  * When triggered, this portal replaces the current player instance with a cube player
  * retrieved from the world's object pool.
  */
+@Registry(id = "cube_portal")
 public class CubePortal extends AbstractPortal {
 
     /**
@@ -34,17 +35,5 @@ public class CubePortal extends AbstractPortal {
         super.init(x, y);
         this.type = PortalType.CUBE;
         return this;
-    }
-
-    /**
-     * Handles the interaction when a player touches the portal, transforming
-     * the player into a cube-based movement mode.
-     *
-     * @param player the player instance that touched the portal
-     * @return the new player instance with cube physics applied
-     */
-    @Override
-    public AbstractPlayer onTouch(AbstractPlayer player) {
-        return player.getWorld().obtainCube(player.getX(), player.getY(), player.getVelocityY(), player.isJumpHeld());
     }
 }
