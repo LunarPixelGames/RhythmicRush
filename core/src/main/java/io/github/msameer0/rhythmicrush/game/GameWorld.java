@@ -463,8 +463,12 @@ public class GameWorld implements Tickable {
      * @param held {@code true} if the input is currently pressed, {@code false} otherwise
      */
     @Override
-    public void onInput(boolean held) {
-        if (player != null) player.setJumpHeld(held);
+    public boolean onInput(boolean held) {
+        if (player != null) {
+            player.setJumpHeld(held);
+            return player.isGrounded() || !held;
+        }
+        return true;
     }
 
     /**

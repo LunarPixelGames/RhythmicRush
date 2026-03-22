@@ -13,14 +13,22 @@ public interface Tickable {
     void tick(float delta);
 
     /**
-     * Called by {@link FixedTickEngine} at the physics step that corresponds to
-     * when the input event was actually detected — implementing click-between-steps.
+     * Called by {@link FixedTickEngine} when an input event should be delivered.
      *
-     * <p>Override this to receive jump press/release at the correct step.
-     * Default is a no-op so existing Tickable implementations don't break.</p>
+     * <p>Used by both <b>click-between-steps</b> (delivered at the step closest
+     * to when the input was detected) and <b>click-on-steps</b> (buffered and
+     * retried until the player can act on it).</p>
+     *
+     * <p>Return {@code true} if the input was consumed — the player was in a state
+     * where the input did something meaningful (e.g. cube is grounded, so jump fired).
+     * Return {@code false} if the input could not be acted on yet — the engine will
+     * retry it on the next step for up to {@link FixedTickEngine#BUFFER_STEPS} steps.</p>
+     *
+     * <p>Releases ({@code held=false}) should always return {@code true} — they are
+     * never buffered.</p>
      *
      * @param held true = jump/fly pressed, false = released
+     * @return true if consumed, false if should be retried next step
      */
-    default void onInput(boolean held) {
-    }
+    default boolean onInput(boolean held) { return true; }
 }
