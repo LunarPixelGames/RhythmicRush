@@ -48,7 +48,9 @@ def os = System.properties['os.name'].toLowerCase(Locale.ROOT)
 
 run {
   workingDir = rootProject.file('assets').path
-  //setIgnoreExitValue(true)
+
+  // This line bridges the gap between IntelliJ's VM Options and your App
+  systemProperties System.getProperties()
 
   if (os.contains('mac')) jvmArgs += "-XstartOnFirstThread"
   jvmArgs += "-Xss8m"

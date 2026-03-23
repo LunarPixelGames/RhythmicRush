@@ -856,7 +856,7 @@ public class MainMenuScreen extends AbstractScreen {
     private void handleMenuInput() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE))
             game.setScreen(new LevelSelectScreen(game));
-        if (Gdx.input.isKeyJustPressed(Input.Keys.P))
+        if (Gdx.input.isKeyJustPressed(Input.Keys.P) && System.getProperty("devMode") != null)
             game.setScreen(new LevelEditorScreen(game));
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) Gdx.app.exit();
 
