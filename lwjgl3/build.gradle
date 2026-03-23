@@ -49,12 +49,10 @@ def os = System.properties['os.name'].toLowerCase(Locale.ROOT)
 run {
   workingDir = rootProject.file('assets').path
 
-  // This line bridges the gap between IntelliJ's VM Options and your App
-  systemProperties System.getProperties()
-
   if (os.contains('mac')) jvmArgs += "-XstartOnFirstThread"
   jvmArgs += "-Xss8m"
   jvmArgs += "-Xmx512m"
+  jvmArgs += "-DdevMode=true"
 }
 
 jar {

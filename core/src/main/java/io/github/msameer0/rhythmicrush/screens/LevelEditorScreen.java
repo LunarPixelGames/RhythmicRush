@@ -117,6 +117,7 @@ public class LevelEditorScreen extends AbstractScreen {
     private final List<Tab> tabs          = new ArrayList<>();
     private float           sidebarScroll = 0f;
     private String          placementId   = null;
+    private boolean         gridSnapping  = true;
 
     // ── Playtest ──────────────────────────────────────────────────────────────
     private boolean            playtesting = false;
@@ -331,6 +332,12 @@ public class LevelEditorScreen extends AbstractScreen {
         layout.setText(font, musicLabel);
         float musicX = canvasW - zbw * 2 - 24f - layout.width;
         font.draw(game.getBatch(), musicLabel, musicX, y + TOPBAR_H / 2f + layout.height / 2f);
+
+        String gridStatus = "Grid: " + (gridSnapping ? "ON" : "OFF") + " [G]";
+        font.getData().setScale(0.40f);
+        font.setColor(gridSnapping ? Color.CYAN : Color.GRAY);
+        layout.setText(font, gridStatus);
+        font.draw(game.getBatch(), gridStatus, 8f, y + 10f);
 
         font.getData().setScale(0.40f);
         font.setColor(0.5f, 0.5f, 0.6f, 1f);
@@ -609,6 +616,8 @@ public class LevelEditorScreen extends AbstractScreen {
             if (Gdx.input.isKeyJustPressed(Input.Keys.Q)) for (LevelData.ObjectEntry e : selection) e.rotation = ((e.rotation + 45f) % 360f + 360f) % 360f;
             if (Gdx.input.isKeyJustPressed(Input.Keys.E)) for (LevelData.ObjectEntry e : selection) e.rotation = ((e.rotation - 45f) % 360f + 360f) % 360f;
         }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.G)) gridSnapping = !gridSnapping;
+
         boolean wL = Gdx.input.isKeyPressed(Input.Keys.A) || Gdx.input.isKeyPressed(Input.Keys.LEFT);
         boolean wR = Gdx.input.isKeyPressed(Input.Keys.D) || Gdx.input.isKeyPressed(Input.Keys.RIGHT);
         boolean wU = Gdx.input.isKeyPressed(Input.Keys.W) || Gdx.input.isKeyPressed(Input.Keys.UP);
@@ -618,7 +627,11 @@ public class LevelEditorScreen extends AbstractScreen {
             if (newDir != wasdDir) { wasdDir = newDir; wasdHeld = 0f; }
             wasdHeld += delta;
             if (wasdHeld == delta || (wasdHeld > WASD_INITIAL && Math.floor((wasdHeld - WASD_INITIAL) / WASD_REPEAT) > Math.floor(((wasdHeld - delta) - WASD_INITIAL) / WASD_REPEAT))) {
-                float dx = wL ? -GRID_SIZE : wR ? GRID_SIZE : 0, dy = wU ? GRID_SIZE : wD ? -GRID_SIZE : 0;
+                float step = GRID_SIZE;
+                if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT)) step = GRID_SIZE / 2f;
+                else if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT)) step = GRID_SIZE / 10f;
+
+                float dx = wL ? -step : wR ? step : 0, dy = wU ? step : wD ? -step : 0;
                 for (LevelData.ObjectEntry e : selection) { e.x += dx; e.y += dy; }
             }
         } else {
@@ -796,7 +809,10 @@ public class LevelEditorScreen extends AbstractScreen {
         float uiX = Gdx.input.getX(), uiY = Gdx.graphics.getHeight() - Gdx.input.getY() - TOPBAR_H;
         return _tv.set((uiX - canvasW / 2f) / zoom + camX, (uiY - canvasH / 2f) / zoom + camY);
     }
-    private float snap(float v) { return Math.round(v / GRID_SIZE) * GRID_SIZE; }
+    private float snap(float v) {
+        if (!gridSnapping) return v;
+        return Math.round(v / GRID_SIZE) * GRID_SIZE;
+    }
     private Vector2 uiMouse() { return new Vector2(Gdx.input.getX(), Gdx.graphics.getHeight() - Gdx.input.getY()); }
 
     private Color typeColor(String id) {
