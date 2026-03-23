@@ -37,28 +37,39 @@ public abstract class AbstractPlayer {
     }
 
     public void setMini(boolean mini) {
-        // Only apply the centering logic if we are switching FROM regular TO mini
-        if (mini && !this.mini) {
-            float oldWidth = this.width;
-            float oldHeight = this.height;
+        // 1. Store old dimensions to calculate offsets
+        float oldWidth = this.width;
+        float oldHeight = this.height;
 
+        if (mini && !this.mini) {
+            // GOING MINI: Center both X and Y
             this.mini = true;
             this.width = 25;
             this.height = 25;
 
-            // Shift x and y so the center point remains at the same world coordinate
             this.x += (oldWidth - this.width) / 2f;
             this.y += (oldHeight - this.height) / 2f;
         }
-        // If going from mini to regular (or if state hasn't changed), use your original logic
-        else if (!mini) {
+        else if (!mini && this.mini) {
+            // GOING REGULAR: Center X, but keep Y relative to the bottom
             this.mini = false;
             this.width = 50;
             this.height = 50;
+
+            // Shift X backward to keep the center point the same
+            this.x -= (this.width - oldWidth) / 2f;
+
+            // We do NOT touch Y here.
+            // By not touching Y, the player expands "upward" (if gravity is normal)
+            // or "downward" (if gravity is flipped), preventing clipping into the floor they are standing on.
+            // Inside the else if (!mini && this.mini) block:
+            if (gravityFlipped) {
+                this.y -= (this.height - oldHeight); // Grow "down" from the ceiling
+            }
         }
 
         bounds.setSize(width, height);
-        updateBounds(); // Ensure the rectangle follows the new x, y immediately
+        updateBounds();
     }
 
     public abstract AbstractPlayer init(float startX, float startY, float velocityY, boolean flyHeld);
