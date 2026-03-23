@@ -114,7 +114,13 @@ public class GameRenderer {
         world.updateVisuals(delta);
         AbstractPlayer player = world.getPlayer();
 
+
         camera.position.x = player.x + CAMERA_X_OFFSET;
+
+        if (player.isMini()) {
+            camera.position.x -= 12.5f;
+        }
+
         camera.update();
 
         final float worldWidth = camera.viewportWidth;
