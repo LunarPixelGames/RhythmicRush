@@ -92,10 +92,27 @@ public class GameScreen extends AbstractScreen {
     private Texture panelTexture;
     private int lastPanelW = -1, lastPanelH = -1;
 
-    private static final float PANEL_W = 520f;
-    private static final float PANEL_H = 360f;
-    private static final float BTN_SIZE = 72f;
+    private float panelW = 520f;
+    private float panelH = 360f;
+    private float btnSize = 72f;
+    private float uiScale = 1.0f;
     private static final float PAUSE_BTN = 44f;
+
+    private void updateScaledUI() {
+        boolean mobile = Gdx.app.getType() == com.badlogic.gdx.Application.ApplicationType.Android ||
+                         Gdx.app.getType() == com.badlogic.gdx.Application.ApplicationType.iOS;
+        if (mobile) {
+            panelW = 740f;
+            panelH = 480f;
+            btnSize = 100f;
+            uiScale = 1.4f;
+        } else {
+            panelW = 520f;
+            panelH = 360f;
+            btnSize = 72f;
+            uiScale = 1.0f;
+        }
+    }
 
     private final TextureRegion resumeRegion;
     private final TextureRegion backRegion;
@@ -222,7 +239,7 @@ public class GameScreen extends AbstractScreen {
      * @return The world X-coordinate where the slider track begins.
      */
     private float pauseSliderTrackX() {
-        return panelX() + PANEL_W * 0.18f;
+        return panelX() + panelW * 0.18f;
     }
 
     /**
@@ -231,7 +248,7 @@ public class GameScreen extends AbstractScreen {
      * @return The horizontal width of the slider track in world units.
      */
     private float pauseSliderTrackW() {
-        return PANEL_W * 0.64f;
+        return panelW * 0.64f;
     }
 
     /**
@@ -240,7 +257,7 @@ public class GameScreen extends AbstractScreen {
      * @return The world Y-coordinate where the center of the slider track is positioned.
      */
     private float pauseSliderY() {
-        return panelY() + BTN_SIZE + 38f;
+        return panelY() + btnSize + 38f;
     }
 
     /**
@@ -267,7 +284,7 @@ public class GameScreen extends AbstractScreen {
      * @return The world X-coordinate of the panel's left boundary.
      */
     private float panelX() {
-        return camCX() - PANEL_W / 2f;
+        return camCX() - panelW / 2f;
     }
 
     /**
@@ -277,7 +294,7 @@ public class GameScreen extends AbstractScreen {
      * @return The world Y-coordinate of the panel's bottom boundary.
      */
     private float panelY() {
-        return camCY() - PANEL_H / 2f;
+        return camCY() - panelH / 2f;
     }
 
     /**
@@ -307,7 +324,7 @@ public class GameScreen extends AbstractScreen {
      * @return The world X-coordinate where the back button should be drawn.
      */
     private float backX() {
-        return camCX() - BTN_SIZE - 16f;
+        return camCX() - btnSize - 16f;
     }
 
     /**
@@ -351,6 +368,7 @@ public class GameScreen extends AbstractScreen {
      */
     @Override
     public void show() {
+        updateScaledUI();
         game.getSoundManager().stopMenuMusic();
         startMusic();
         if (game.getSettingsManager().lockCursorInGame)
@@ -371,6 +389,7 @@ public class GameScreen extends AbstractScreen {
      */
     @Override
     public void resize(int width, int height) {
+        updateScaledUI();
         gameViewport.update(width, height, true);
         lastPanelW = -1;
     }
@@ -427,7 +446,8 @@ public class GameScreen extends AbstractScreen {
     protected void update(float delta) {
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            if (paused) exitToLevelSelect();
+            if (levelCompletedState) exitToLevelSelect();
+            else if (paused) setPaused(false);
             else setPaused(true);
             return;
         }
@@ -821,12 +841,12 @@ public class GameScreen extends AbstractScreen {
      */
     private void drawPauseOverlayUI() {
         float px = panelX(), py = panelY();
-        float shadowOffset = 2f;
+        float shadowOffset = 2f * uiScale;
 
-        int texW = (int) PANEL_W, texH = (int) PANEL_H;
+        int texW = (int) panelW, texH = (int) panelH;
         if (panelTexture == null || texW != lastPanelW || texH != lastPanelH) {
             if (panelTexture != null) panelTexture.dispose();
-            panelTexture = createRoundedRect(texW, texH, 24, COL_PANEL);
+            panelTexture = createRoundedRect(texW, texH, (int)(24 * uiScale), COL_PANEL);
             lastPanelW = texW;
             lastPanelH = texH;
         }
@@ -834,32 +854,32 @@ public class GameScreen extends AbstractScreen {
         game.getBatch().draw(panelTexture, px, py);
 
         String levelName = (levelData != null && levelData.name != null) ? levelData.name : "Level";
-        pauseFont.getData().setScale(1f);
+        pauseFont.getData().setScale(1.1f * uiScale);
         glyphLayout.setText(pauseFont, levelName);
-        float x = px + PANEL_W / 2f - glyphLayout.width / 2f;
-        float y = py + PANEL_H - 18f;
+        float x = px + panelW / 2f - glyphLayout.width / 2f;
+        float y = py + panelH - 18f * uiScale;
         pauseFont.setColor(0, 0, 0, COL_HEADING.a * 0.4f);
         pauseFont.draw(game.getBatch(), levelName, x + shadowOffset, y - shadowOffset);
         pauseFont.setColor(COL_HEADING);
         pauseFont.draw(game.getBatch(), levelName, x, y);
 
-        float sy = py + PANEL_H - 18f - glyphLayout.height - 22f;
+        float sy = py + panelH - 18f * uiScale - glyphLayout.height - 22f * uiScale;
         if (levelKey != null) {
             LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
-            pauseFont.getData().setScale(0.62f);
+            pauseFont.getData().setScale(0.68f * uiScale);
             String best = "Personal Best: " + p.bestPercent + "%";
             glyphLayout.setText(pauseFont, best);
-            x = px + PANEL_W / 2f - glyphLayout.width / 2f;
+            x = px + panelW / 2f - glyphLayout.width / 2f;
             pauseFont.setColor(0, 0, 0, COL_LABEL.a * 0.4f);
             pauseFont.draw(game.getBatch(), best, x + shadowOffset, sy - shadowOffset);
             pauseFont.setColor(COL_LABEL);
             pauseFont.draw(game.getBatch(), best, x, sy);
 
-            sy -= glyphLayout.height + 12f;
+            sy -= glyphLayout.height + 14f * uiScale;
             pauseFont.setColor(COL_DIM);
             String att = "Total: " + p.totalAttempts + "   Session: " + sessionAttempts;
             glyphLayout.setText(pauseFont, att);
-            x = px + PANEL_W / 2f - glyphLayout.width / 2f;
+            x = px + panelW / 2f - glyphLayout.width / 2f;
             pauseFont.setColor(0, 0, 0, COL_DIM.a * 0.4f);
             pauseFont.draw(game.getBatch(), att, x + shadowOffset, sy - shadowOffset);
             pauseFont.setColor(COL_DIM);
@@ -867,45 +887,45 @@ public class GameScreen extends AbstractScreen {
         }
 
         if (backRegion != null)
-            game.getBatch().draw(backRegion, backX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE * 0.9f);
+            game.getBatch().draw(backRegion, backX(), backY(), btnSize * 0.9f, btnSize * 0.9f);
         if (resumeRegion != null)
-            game.getBatch().draw(resumeRegion, resumeX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE * 0.9f);
+            game.getBatch().draw(resumeRegion, resumeX(), backY(), btnSize * 0.9f, btnSize * 0.9f);
 
         float sliderY = pauseSliderY();
-        pauseFont.getData().setScale(0.52f);
+        pauseFont.getData().setScale(0.58f * uiScale);
         _hudSb.setLength(0);
         _hudSb.append("Volume");
         glyphLayout.setText(pauseFont, _hudSb);
-        x = panelX() + PANEL_W / 2f - glyphLayout.width / 2f;
-        y = sliderY + glyphLayout.height + 10f;
+        x = panelX() + panelW / 2f - glyphLayout.width / 2f;
+        y = sliderY + glyphLayout.height + 12f * uiScale;
         pauseFont.setColor(0, 0, 0, COL_LABEL.a * 0.4f);
         pauseFont.draw(game.getBatch(), _hudSb, x + shadowOffset, y - shadowOffset);
         pauseFont.setColor(COL_LABEL);
         pauseFont.draw(game.getBatch(), _hudSb, x, y);
 
         float vol = game.getSettingsManager().musicVolume;
-        pauseFont.getData().setScale(0.44f);
+        pauseFont.getData().setScale(0.48f * uiScale);
         _hudSb.setLength(0);
         _hudSb.append(Math.round(vol * 100f)).append('%');
         glyphLayout.setText(pauseFont, _hudSb);
-        x = pauseSliderTrackX() - glyphLayout.width - 10f;
+        x = pauseSliderTrackX() - glyphLayout.width - 12f * uiScale;
         y = sliderY + glyphLayout.height / 2f;
         pauseFont.setColor(0, 0, 0, COL_DIM.a * 0.4f);
         pauseFont.draw(game.getBatch(), _hudSb, x + shadowOffset, y - shadowOffset);
         pauseFont.setColor(COL_DIM);
         pauseFont.draw(game.getBatch(), _hudSb, x, y);
 
-        pauseFont.getData().setScale(0.45f);
+        pauseFont.getData().setScale(0.5f * uiScale);
         glyphLayout.setText(pauseFont, "Back");
-        x = backX() + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f;
-        y = backY() - 4f;
+        x = backX() + btnSize * 0.9f / 2f - glyphLayout.width / 2f;
+        y = backY() - 6f * uiScale;
         pauseFont.setColor(0, 0, 0, COL_DIM.a * 0.4f);
         pauseFont.draw(game.getBatch(), "Back", x + shadowOffset, y - shadowOffset);
         pauseFont.setColor(COL_DIM);
         pauseFont.draw(game.getBatch(), "Back", x, y);
 
         glyphLayout.setText(pauseFont, "Resume");
-        x = resumeX() + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f;
+        x = resumeX() + btnSize * 0.9f / 2f - glyphLayout.width / 2f;
         pauseFont.setColor(0, 0, 0, COL_DIM.a * 0.4f);
         pauseFont.draw(game.getBatch(), "Resume", x + shadowOffset, y - shadowOffset);
         pauseFont.setColor(COL_DIM);
@@ -921,7 +941,7 @@ public class GameScreen extends AbstractScreen {
         float sliderY = pauseSliderY();
         float vol = game.getSettingsManager().musicVolume;
         float tx = pauseSliderTrackX(), tw = pauseSliderTrackW();
-        float trackH = 5f, thumbR = 10f;
+        float trackH = 5f * uiScale, thumbR = 10f * uiScale;
         float fillW = tw * vol;
 
         Gdx.gl.glEnable(GL20.GL_BLEND);
@@ -943,43 +963,43 @@ public class GameScreen extends AbstractScreen {
      */
     private void drawCompleteOverlayUI() {
         float px = panelX(), py = panelY();
-        float shadowOffset = 2f;
+        float shadowOffset = 2f * uiScale;
 
-        int texW = (int) PANEL_W, texH = (int) PANEL_H;
+        int texW = (int) panelW, texH = (int) panelH;
         if (panelTexture == null || texW != lastPanelW || texH != lastPanelH) {
             if (panelTexture != null) panelTexture.dispose();
-            panelTexture = createRoundedRect(texW, texH, 24, COL_PANEL);
+            panelTexture = createRoundedRect(texW, texH, (int)(24 * uiScale), COL_PANEL);
             lastPanelW = texW;
             lastPanelH = texH;
         }
 
         game.getBatch().draw(panelTexture, px, py);
 
-        pauseFont.getData().setScale(1.1f);
+        pauseFont.getData().setScale(1.25f * uiScale);
         glyphLayout.setText(pauseFont, "LEVEL COMPLETE");
-        float x = px + PANEL_W / 2f - glyphLayout.width / 2f;
-        float y = py + PANEL_H - 22f;
+        float x = px + panelW / 2f - glyphLayout.width / 2f;
+        float y = py + panelH - 22f * uiScale;
         pauseFont.setColor(0, 0, 0, COL_HEADING.a * 0.4f);
         pauseFont.draw(game.getBatch(), "LEVEL COMPLETE", x + shadowOffset, y - shadowOffset);
         pauseFont.setColor(COL_HEADING);
         pauseFont.draw(game.getBatch(), "LEVEL COMPLETE", x, y);
 
-        float sy = py + PANEL_H - 22f - glyphLayout.height - 35f;
+        float sy = py + panelH - 22f * uiScale - glyphLayout.height - 35f * uiScale;
         if (levelKey != null) {
             LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
-            pauseFont.getData().setScale(0.7f);
+            pauseFont.getData().setScale(0.85f * uiScale);
             String stats = "Total Attempts: " + p.totalAttempts;
             glyphLayout.setText(pauseFont, stats);
-            x = px + PANEL_W / 2f - glyphLayout.width / 2f;
+            x = px + panelW / 2f - glyphLayout.width / 2f;
             pauseFont.setColor(0, 0, 0, COL_LABEL.a * 0.4f);
             pauseFont.draw(game.getBatch(), stats, x + shadowOffset, sy - shadowOffset);
             pauseFont.setColor(COL_LABEL);
             pauseFont.draw(game.getBatch(), stats, x, sy);
 
-            sy -= glyphLayout.height + 18f;
+            sy -= glyphLayout.height + 20f * uiScale;
             String session = "Session Attempts: " + sessionAttempts;
             glyphLayout.setText(pauseFont, session);
-            x = px + PANEL_W / 2f - glyphLayout.width / 2f;
+            x = px + panelW / 2f - glyphLayout.width / 2f;
             pauseFont.setColor(0, 0, 0, COL_DIM.a * 0.4f);
             pauseFont.draw(game.getBatch(), session, x + shadowOffset, sy - shadowOffset);
             pauseFont.setColor(COL_DIM);
@@ -987,21 +1007,21 @@ public class GameScreen extends AbstractScreen {
         }
 
         if (backRegion != null)
-            game.getBatch().draw(backRegion, backX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE * 0.9f);
+            game.getBatch().draw(backRegion, backX(), backY(), btnSize * 0.9f, btnSize * 0.9f);
         if (resumeRegion != null)
-            game.getBatch().draw(resumeRegion, resumeX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE * 0.9f);
+            game.getBatch().draw(resumeRegion, resumeX(), backY(), btnSize * 0.9f, btnSize * 0.9f);
 
-        pauseFont.getData().setScale(0.45f);
+        pauseFont.getData().setScale(0.52f * uiScale);
         glyphLayout.setText(pauseFont, "Menu");
-        x = backX() + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f;
-        y = backY() - 4f;
+        x = backX() + btnSize * 0.9f / 2f - glyphLayout.width / 2f;
+        y = backY() - 6f * uiScale;
         pauseFont.setColor(0, 0, 0, COL_DIM.a * 0.4f);
         pauseFont.draw(game.getBatch(), "Menu", x + shadowOffset, y - shadowOffset);
         pauseFont.setColor(COL_DIM);
         pauseFont.draw(game.getBatch(), "Menu", x, y);
 
         glyphLayout.setText(pauseFont, "Replay");
-        x = resumeX() + BTN_SIZE * 0.9f / 2f - glyphLayout.width / 2f;
+        x = resumeX() + btnSize * 0.9f / 2f - glyphLayout.width / 2f;
         pauseFont.setColor(0, 0, 0, COL_DIM.a * 0.4f);
         pauseFont.draw(game.getBatch(), "Replay", x + shadowOffset, y - shadowOffset);
         pauseFont.setColor(COL_DIM);
@@ -1017,9 +1037,9 @@ public class GameScreen extends AbstractScreen {
         Vector2 t = unprojectWorld();
         if (!Gdx.input.justTouched()) return;
 
-        if (hits(t, backX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE)) {
+        if (hits(t, backX(), backY(), btnSize * 0.9f, btnSize)) {
             exitToLevelSelect();
-        } else if (hits(t, resumeX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE)) {
+        } else if (hits(t, resumeX(), backY(), btnSize * 0.9f, btnSize)) {
             triggerRestart();
             ignoreInputUntilRelease = true;
         }
@@ -1097,11 +1117,11 @@ public class GameScreen extends AbstractScreen {
             pauseSliderDragging = true;
             return;
         }
-        if (hits(t, backX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE)) {
+        if (hits(t, backX(), backY(), btnSize * 0.9f, btnSize)) {
             exitToLevelSelect();
             return;
         }
-        if (hits(t, resumeX(), backY(), BTN_SIZE * 0.9f, BTN_SIZE)) {
+        if (hits(t, resumeX(), backY(), btnSize * 0.9f, btnSize)) {
             setPaused(false);
             ignoreInputUntilRelease = true;
         }

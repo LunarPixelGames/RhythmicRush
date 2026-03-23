@@ -22,6 +22,7 @@ public abstract class AbstractPlayer {
     public float velocityY = 0;
     public Rectangle bounds;
     protected boolean gravityFlipped = false;
+    protected boolean mini = false;
 
     protected GameWorld world;
 
@@ -29,6 +30,22 @@ public abstract class AbstractPlayer {
         this.x = startX;
         this.y = startY;
         bounds = new Rectangle(x, y, width, height);
+    }
+
+    public boolean isMini() {
+        return mini;
+    }
+
+    public void setMini(boolean mini) {
+        this.mini = mini;
+        if (mini) {
+            width = 25;
+            height = 25;
+        } else {
+            width = 50;
+            height = 50;
+        }
+        bounds.setSize(width, height);
     }
 
     public abstract AbstractPlayer init(float startX, float startY, float velocityY, boolean flyHeld);

@@ -12,6 +12,7 @@ import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.AbstractPortal;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.CubePortal;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.GravityPortal;
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.MiniPortal;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.ShipPortal;
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
 import io.github.msameer0.rhythmicrush.game.gameplay.players.Cube;
@@ -111,6 +112,16 @@ public class GameWorld implements Tickable {
         protected void reset(GravityPortal p) {
         }
     };
+    private final ObjectPool<MiniPortal> miniPortalPool = new ObjectPool<MiniPortal>() {
+        @Override
+        protected MiniPortal create() {
+            return new MiniPortal();
+        }
+
+        @Override
+        protected void reset(MiniPortal p) {
+        }
+    };
     private final ObjectPool<Cube> cubePool = new ObjectPool<Cube>() {
         @Override
         protected Cube create() {
@@ -207,6 +218,7 @@ public class GameWorld implements Tickable {
     private final Array<CubePortal> activeCubePortals = new Array<>();
     private final Array<ShipPortal> activeShipPortals = new Array<>();
     private final Array<GravityPortal> activeGravityPortals = new Array<>();
+    private final Array<MiniPortal> activeMiniPortals = new Array<>();
 
 
     /**
@@ -342,6 +354,9 @@ public class GameWorld implements Tickable {
                 } else if ("gravity_portal".equals(e.type)) {
                     p = gravityPortalPool.obtain();
                     activeGravityPortals.add((GravityPortal) p);
+                } else if ("mini_portal".equals(e.type)) {
+                    p = miniPortalPool.obtain();
+                    activeMiniPortals.add((MiniPortal) p);
                 }
                 if (p != null) {
                     p.init(e.x, e.y);
@@ -454,6 +469,8 @@ public class GameWorld implements Tickable {
         activeShipPortals.clear();
         for (GravityPortal p : activeGravityPortals) gravityPortalPool.free(p);
         activeGravityPortals.clear();
+        for (MiniPortal p : activeMiniPortals) miniPortalPool.free(p);
+        activeMiniPortals.clear();
         portals.clear();
     }
 
@@ -542,6 +559,8 @@ public class GameWorld implements Tickable {
             if (portal.tryTouch(player)) {
                 if (portal instanceof GravityPortal) {
                     player.setGravityFlipped(!player.isGravityFlipped());
+                } else if (portal instanceof MiniPortal) {
+                    player.setMini(!player.isMini());
                 } else {
                     AbstractPlayer next = null;
                     if (portal instanceof CubePortal)

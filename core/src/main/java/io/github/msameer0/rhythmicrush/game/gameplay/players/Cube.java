@@ -45,6 +45,7 @@ public class Cube extends AbstractPlayer {
         isGrounded          = false;
         this.jumpHeld       = jumpHeld;
         this.gravityFlipped = false;
+        setMini(false);
         coyoteTimer         = 0f;
         world               = null;
         bounds.setPosition(x, y);
@@ -95,7 +96,8 @@ public class Cube extends AbstractPlayer {
     @Override
     public void jump() {
         if (canJump()) {
-            velocityY   = gravityFlipped ? -jumpVelocity : jumpVelocity;
+            float v = mini ? jumpVelocity * 0.75f : jumpVelocity;
+            velocityY   = gravityFlipped ? -v : v;
             isGrounded  = false;
             coyoteTimer = 0f; // consume the window so it can't fire twice
         }
@@ -126,6 +128,7 @@ public class Cube extends AbstractPlayer {
         this.isGrounded     = other.isGrounded();
         this.jumpHeld       = other.isJumpHeld();
         this.gravityFlipped = other.isGravityFlipped();
+        setMini(other.isMini());
         this.coyoteTimer    = 0f; // don't carry coyote state across portal transitions
     }
 }

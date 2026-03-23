@@ -17,7 +17,8 @@ public abstract class AbstractPortal {
     public enum PortalType {
         CUBE,
         SHIP,
-        GRAVITY
+        GRAVITY,
+        MINI
     }
 
     protected PortalType type;
