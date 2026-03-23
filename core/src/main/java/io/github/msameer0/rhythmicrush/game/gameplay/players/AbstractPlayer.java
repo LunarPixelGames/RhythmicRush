@@ -37,15 +37,28 @@ public abstract class AbstractPlayer {
     }
 
     public void setMini(boolean mini) {
-        this.mini = mini;
-        if (mini) {
-            width = 25;
-            height = 25;
-        } else {
-            width = 50;
-            height = 50;
+        // Only apply the centering logic if we are switching FROM regular TO mini
+        if (mini && !this.mini) {
+            float oldWidth = this.width;
+            float oldHeight = this.height;
+
+            this.mini = true;
+            this.width = 25;
+            this.height = 25;
+
+            // Shift x and y so the center point remains at the same world coordinate
+            this.x += (oldWidth - this.width) / 2f;
+            this.y += (oldHeight - this.height) / 2f;
         }
+        // If going from mini to regular (or if state hasn't changed), use your original logic
+        else if (!mini) {
+            this.mini = false;
+            this.width = 50;
+            this.height = 50;
+        }
+
         bounds.setSize(width, height);
+        updateBounds(); // Ensure the rectangle follows the new x, y immediately
     }
 
     public abstract AbstractPlayer init(float startX, float startY, float velocityY, boolean flyHeld);

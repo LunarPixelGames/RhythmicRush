@@ -47,6 +47,8 @@ public class GameRenderer {
     private final TextureRegion shipRegion;
     private final TextureRegion cubePortalRegion;
     private final TextureRegion shipPortalRegion;
+    private final TextureRegion gravityPortalRegion;
+    private final TextureRegion miniPortalRegion;
 
     private static final Color FALLBACK_CUBE_PORTAL = new Color(0f, 0.8f, 0f, 1f);
     private static final Color FALLBACK_SHIP_PORTAL = new Color(0f, 0.5f, 1f, 1f);
@@ -97,6 +99,8 @@ public class GameRenderer {
         shipRegion = atlasManager.getGamemodesAtlas().findRegion("ship");
         cubePortalRegion = atlasManager.getPortalsAtlas().findRegion("cube_portal");
         shipPortalRegion = atlasManager.getPortalsAtlas().findRegion("ship_portal");
+        gravityPortalRegion = atlasManager.getPortalsAtlas().findRegion("gravity_portal");
+        miniPortalRegion = atlasManager.getPortalsAtlas().findRegion("mini_portal");
     }
 
     /**
@@ -140,8 +144,25 @@ public class GameRenderer {
         batch.begin();
         for (AbstractPortal portal : world.getPortals()) {
             AbstractPortal.PortalType pType = portal.getType();
-            TextureRegion region = (pType == AbstractPortal.PortalType.CUBE)
-                ? cubePortalRegion : shipPortalRegion;
+            TextureRegion region = null;
+
+            // Determine which texture region to use based on the portal type
+            switch (pType) {
+                case CUBE:
+                    region = cubePortalRegion;
+                    break;
+                case SHIP:
+                    region = shipPortalRegion;
+                    break;
+                case GRAVITY:
+                    region = gravityPortalRegion;
+                    break;
+                case MINI:
+                    region = miniPortalRegion;
+                    break;
+            }
+
+            // Draw the texture region if it exists
             if (region != null) {
                 batch.draw(region, portal.getX(), portal.getY(),
                     portal.getWidth(), portal.getHeight());
