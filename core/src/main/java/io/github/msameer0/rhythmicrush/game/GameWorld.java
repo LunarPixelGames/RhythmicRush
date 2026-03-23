@@ -8,6 +8,7 @@ import io.github.msameer0.rhythmicrush.game.engine.Tickable;
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Block;
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.BlockType;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.AbstractHazard;
+import io.github.msameer0.rhythmicrush.game.gameplay.hazards.HalfSpike;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.AbstractPortal;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.CubePortal;
@@ -80,6 +81,17 @@ public class GameWorld implements Tickable {
 
         @Override
         protected void reset(Spike s) {
+        }
+    };
+    private final ObjectPool<HalfSpike> halfSpikePool = new ObjectPool<HalfSpike>() {
+        @Override
+        protected HalfSpike create() {
+            return new HalfSpike();
+        }
+
+        @Override
+        protected void reset(HalfSpike s) {
+
         }
     };
     private final ObjectPool<CubePortal> cubePortalPool = new ObjectPool<CubePortal>() {
@@ -215,6 +227,7 @@ public class GameWorld implements Tickable {
     private Color groundColor = new Color(baseGroundColor);
 
     private final Array<Spike> activeSpikes = new Array<>();
+    private final Array<HalfSpike> activeHalfSpikes = new Array<>();
     private final Array<CubePortal> activeCubePortals = new Array<>();
     private final Array<ShipPortal> activeShipPortals = new Array<>();
     private final Array<GravityPortal> activeGravityPortals = new Array<>();
@@ -342,6 +355,10 @@ public class GameWorld implements Tickable {
                     Spike s = spikePool.obtain().init(e.x, e.y, e.rotation);
                     hazards.add(s);
                     activeSpikes.add(s);
+                } else if ("half_spike".equals(e.type)) {
+                    HalfSpike hs = halfSpikePool.obtain().init(e.x, e.y, e.rotation);
+                    hazards.add(hs);
+                    activeHalfSpikes.add(hs);
                 }
             } else if (Registries.PORTALS.has(e.type)) {
                 AbstractPortal p = null;
@@ -460,6 +477,7 @@ public class GameWorld implements Tickable {
         blockPool.freeAll(blocks);
 
         for (Spike s : activeSpikes) spikePool.free(s);
+        for (HalfSpike s : activeHalfSpikes) halfSpikePool.free(s);
         activeSpikes.clear();
         hazards.clear();
 
@@ -646,6 +664,9 @@ public class GameWorld implements Tickable {
             if (h instanceof Spike) {
                 spikePool.free((Spike) h);
                 activeSpikes.removeValue((Spike) h, true);
+            } else if (h instanceof HalfSpike) {
+                halfSpikePool.free((HalfSpike) h);
+                activeHalfSpikes.removeValue((HalfSpike) h, true);
             }
             hazardCull++;
         }

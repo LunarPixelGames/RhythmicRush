@@ -14,6 +14,7 @@ import io.github.msameer0.rhythmicrush.game.GameWorld;
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Block;
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.BlockType;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.AbstractHazard;
+import io.github.msameer0.rhythmicrush.game.gameplay.hazards.HalfSpike;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.AbstractPortal;
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
@@ -43,6 +44,7 @@ public class GameRenderer {
     private final TextureRegion[] blockRegionsByOrdinal;
 
     private final TextureRegion spikeRegion;
+    private final TextureRegion halfSpikeRegion;
     private final TextureRegion cubeRegion;
     private final TextureRegion shipRegion;
     private final TextureRegion cubePortalRegion;
@@ -95,6 +97,7 @@ public class GameRenderer {
         }
 
         spikeRegion = atlasManager.getSpikesAtlas().findRegion("spike");
+        halfSpikeRegion = atlasManager.getSpikesAtlas().findRegion("half_spike");
         cubeRegion = atlasManager.getGamemodesAtlas().findRegion("cube");
         shipRegion = atlasManager.getGamemodesAtlas().findRegion("ship");
         cubePortalRegion = atlasManager.getPortalsAtlas().findRegion("cube_portal");
@@ -177,15 +180,28 @@ public class GameRenderer {
 
         if (spikeRegion != null) {
             for (AbstractHazard hazard : world.getHazards()) {
-                if (hazard.getType() == AbstractHazard.HazardType.SPIKE) {
-                    Spike spike = (Spike) hazard;
-                    batch.draw(spikeRegion,
-                        hazard.getX(), hazard.getY(),
-                        hazard.getWidth() / 2f,
-                        hazard.getHeight() / 2f,
-                        hazard.getWidth(), hazard.getHeight(),
-                        1f, 1f,
-                        spike.getRotation());
+                AbstractHazard.HazardType hType = hazard.getType();
+                switch (hType) {
+                    case SPIKE:
+                        Spike spike = (Spike) hazard;
+                        batch.draw(spikeRegion,
+                            hazard.getX(), hazard.getY(),
+                            hazard.getWidth() / 2f,
+                            hazard.getHeight() / 2f,
+                            hazard.getWidth(), hazard.getHeight(),
+                            1f, 1f,
+                            spike.getRotation());
+                        break;
+                    case HALF_SPIKE:
+                        HalfSpike hSpike = (HalfSpike) hazard;
+                        batch.draw(halfSpikeRegion,
+                            hazard.getX(), hazard.getY(),
+                            hazard.getWidth() / 2f,
+                            hazard.getHeight() / 2f,
+                            hazard.getWidth(), hazard.getHeight(),
+                            1f, 1f,
+                            hSpike.getRotation());
+                        break;
                 }
             }
         }
@@ -266,6 +282,9 @@ public class GameRenderer {
             if (h.getType() == AbstractHazard.HazardType.SPIKE) {
                 Rectangle r = ((Spike) h).getHitbox();
                 shape.rect(r.x, r.y, r.width, r.height);
+            } else if (h.getType() == AbstractHazard.HazardType.HALF_SPIKE) { // Add this
+                Rectangle r = ((HalfSpike) h).getHitbox();
+                shape.rect(r.x, r.y, r.width, r.height);
             } else {
                 shape.rect(h.getX(), h.getY(), h.getWidth(), h.getHeight());
             }
@@ -292,10 +311,13 @@ public class GameRenderer {
             if (h.getType() == AbstractHazard.HazardType.SPIKE) {
                 Rectangle r = ((Spike) h).getHitbox();
                 shape.rect(r.x, r.y, r.width, r.height);
-            } else {
-                shape.rect(h.getX(), h.getY(), h.getWidth(), h.getHeight());
+            } else if (h.getType() == AbstractHazard.HazardType.HALF_SPIKE) {
+                Rectangle r = ((HalfSpike) h).getHitbox();
+                shape.rect(r.x, r.y, r.width, r.height);
             }
         }
+
+
 
         shape.setColor(HB_PLAYER_LINE);
         shape.rect(pb.x, pb.y, pb.width, pb.height);
