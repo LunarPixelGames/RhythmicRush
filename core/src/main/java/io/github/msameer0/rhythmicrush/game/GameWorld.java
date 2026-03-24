@@ -10,6 +10,7 @@ import io.github.msameer0.rhythmicrush.game.gameplay.blocks.BlockType;
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Slope;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.AbstractHazard;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.HalfSpike;
+import io.github.msameer0.rhythmicrush.game.gameplay.hazards.SawBlade;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.AbstractPortal;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.CubePortal;
@@ -103,6 +104,16 @@ public class GameWorld implements Tickable {
         @Override
         protected void reset(HalfSpike s) {
 
+        }
+    };
+    private final ObjectPool<SawBlade> sawBladePool = new ObjectPool<SawBlade>() {
+        @Override
+        protected SawBlade create() {
+            return new SawBlade();
+        }
+
+        @Override
+        protected void reset(SawBlade s) {
         }
     };
     private final ObjectPool<CubePortal> cubePortalPool = new ObjectPool<CubePortal>() {
@@ -239,6 +250,7 @@ public class GameWorld implements Tickable {
 
     private final Array<Spike> activeSpikes = new Array<>();
     private final Array<HalfSpike> activeHalfSpikes = new Array<>();
+    private final Array<SawBlade> activeSawBlades = new Array<>();
     private final Array<CubePortal> activeCubePortals = new Array<>();
     private final Array<ShipPortal> activeShipPortals = new Array<>();
     private final Array<GravityPortal> activeGravityPortals = new Array<>();
@@ -375,6 +387,12 @@ public class GameWorld implements Tickable {
                     HalfSpike hs = halfSpikePool.obtain().init(e.x, e.y, e.rotation);
                     hazards.add(hs);
                     activeHalfSpikes.add(hs);
+                } else if ("saw_blade".equals(e.type)) {
+                    // e.size   = diameter in world units (stored in the same size field blocks use)
+                    // e.rotation = degrees-per-second spin speed (reuses the rotation field)
+                    SawBlade sb = sawBladePool.obtain().init(e.x, e.y, e.size, e.rotation);
+                    hazards.add(sb);
+                    activeSawBlades.add(sb);
                 }
             } else if (Registries.PORTALS.has(e.type)) {
                 AbstractPortal p = null;
@@ -494,6 +512,9 @@ public class GameWorld implements Tickable {
             if (b instanceof Slope) slopePool.free((Slope) b);
             else blockPool.free(b);
         }
+
+        for (SawBlade sb : activeSawBlades) sawBladePool.free(sb);
+        activeSawBlades.clear();
 
         blocks.clear();
         for (Spike s : activeSpikes) spikePool.free(s);
@@ -687,6 +708,9 @@ public class GameWorld implements Tickable {
             } else if (h instanceof HalfSpike) {
                 halfSpikePool.free((HalfSpike) h);
                 activeHalfSpikes.removeValue((HalfSpike) h, true);
+            } else if (h instanceof SawBlade) {
+                sawBladePool.free((SawBlade) h);
+                activeSawBlades.removeValue((SawBlade) h, true);
             }
             hazardCull++;
         }

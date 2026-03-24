@@ -16,6 +16,7 @@ import io.github.msameer0.rhythmicrush.game.gameplay.blocks.BlockType;
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Slope;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.AbstractHazard;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.HalfSpike;
+import io.github.msameer0.rhythmicrush.game.gameplay.hazards.SawBlade;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.AbstractPortal;
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
@@ -47,6 +48,7 @@ public class GameRenderer {
 
     private final TextureRegion spikeRegion;
     private final TextureRegion halfSpikeRegion;
+    private final TextureRegion sawBladeRegion;
     private final TextureRegion cubeRegion;
     private final TextureRegion shipRegion;
     private final TextureRegion cubePortalRegion;
@@ -108,6 +110,7 @@ public class GameRenderer {
         shipPortalRegion = atlasManager.getPortalsAtlas().findRegion("ship_portal");
         gravityPortalRegion = atlasManager.getPortalsAtlas().findRegion("gravity_portal");
         miniPortalRegion = atlasManager.getPortalsAtlas().findRegion("mini_portal");
+        sawBladeRegion = atlasManager.getSpikesAtlas().findRegion("saw_blade");
     }
 
     /**
@@ -206,6 +209,18 @@ public class GameRenderer {
                             1f, 1f,
                             hSpike.getRotation());
                         break;
+                    case SAW_BLADE:
+                        SawBlade saw = (SawBlade) hazard;
+                        if (sawBladeRegion != null) {
+                            float d = saw.getDiameter();
+                            if (!paused) saw.tickVisualRotation(delta);  // ← add !paused check
+                            batch.draw(sawBladeRegion,
+                                saw.getX(), saw.getY(),
+                                d / 2f, d / 2f,
+                                d, d, 1f, 1f,
+                                saw.getVisualRotation());
+                        }
+                        break;
                 }
             }
         }
@@ -286,12 +301,12 @@ public class GameRenderer {
         for (Block b : world.getBlocks()) {
             if (b instanceof Slope) {
                 Slope s = (Slope) b;
-                float rot = ((int) s.getRotation() % 360 + 360) % 360;
+                float rot = ((int) -s.getRotation() % 360 + 360) % 360;
                 float x = s.getX(), y = s.getY(), w = s.getWidth(), h = s.getHeight();
-                if (rot == 0)      shape.triangle(x, y, x + w, y, x + w, y + h); // / floor
-                else if (rot == 90)  shape.triangle(x, y, x + w, y, x, y + h);     // \ floor
-                else if (rot == 180) shape.triangle(x, y + h, x + w, y + h, x + w, y); // \ ceiling
-                else if (rot == 270) shape.triangle(x, y, x, y + h, x + w, y + h);     // / ceiling
+                if      (rot == 0)   shape.triangle(x,     y,     x + w, y,     x + w, y + h); // BR solid
+                else if (rot == 90)  shape.triangle(x,     y + h, x + w, y + h, x + w, y    ); // TR solid
+                else if (rot == 180) shape.triangle(x,     y,     x,     y + h, x + w, y + h); // TL solid
+                else if (rot == 270) shape.triangle(x,     y,     x,     y + h, x + w, y    ); // BL solid
                 else shape.rect(x, y, w, h);
             } else {
                 shape.rect(b.getX(), b.getY(), b.getWidth(), b.getHeight());
@@ -332,9 +347,20 @@ public class GameRenderer {
         for (Block b : world.getBlocks()) {
             if (b instanceof Slope) {
                 Slope s = (Slope) b;
-                float[] line = s.getSlopeLine();
-                shape.line(line[0], line[1], line[2], line[3]);
-                shape.rect(s.getX(), s.getY(), s.getWidth(), s.getHeight());
+                float rot = ((int) s.getRotation() % 360 + 360) % 360;
+                float x = s.getX(), y = s.getY(), w = s.getWidth(), h = s.getHeight();
+                float[] line = s.getSlopeLine(); // [x1,y1, x2,y2] — the two ends of the hypotenuse
+
+                // The solid corner is the one NOT on the hypotenuse.
+                // BR(0) and TL(180) share the "/" diagonal — solid corners are BR and TL respectively.
+                // TR(90) and BL(270) share the "\" diagonal — solid corners are TR and BL respectively.
+                float solidCX, solidCY;
+                if      (rot == 0)   { solidCX = x + w; solidCY = y;     } // BR
+                else if (rot == 90)  { solidCX = x + w; solidCY = y + h; } // TR
+                else if (rot == 180) { solidCX = x;     solidCY = y + h; } // TL
+                else                 { solidCX = x;     solidCY = y;     } // BL (270)
+
+                shape.triangle(line[0], line[1], line[2], line[3], solidCX, solidCY);
             } else {
                 shape.rect(b.getX(), b.getY(), b.getWidth(), b.getHeight());
             }
@@ -354,6 +380,11 @@ public class GameRenderer {
             } else if (h.getType() == AbstractHazard.HazardType.HALF_SPIKE) {
                 Rectangle r = ((HalfSpike) h).getHitbox();
                 shape.rect(r.x, r.y, r.width, r.height);
+            } else if (h.getType() == AbstractHazard.HazardType.SAW_BLADE) {
+                SawBlade saw = (SawBlade) h;
+                shape.circle(saw.getX() + saw.getDiameter() / 2f,
+                    saw.getY() + saw.getDiameter() / 2f,
+                    saw.getDiameter() / 2f, 32);
             }
         }
 

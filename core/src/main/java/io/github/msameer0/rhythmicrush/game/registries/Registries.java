@@ -4,6 +4,7 @@ import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Block;
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Slope;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.AbstractHazard;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.HalfSpike;
+import io.github.msameer0.rhythmicrush.game.gameplay.hazards.SawBlade;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.AbstractPortal;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.CubePortal;
@@ -37,6 +38,7 @@ public class Registries {
 
         HAZARDS.register(Spike.class, Spike::new);
         HAZARDS.register(HalfSpike.class, HalfSpike::new);
+        HAZARDS.register(SawBlade.class, SawBlade::new);
 
         PORTALS.register(CubePortal.class, () -> new CubePortal(0, 0));
         PORTALS.register(ShipPortal.class, () -> new ShipPortal(0, 0));

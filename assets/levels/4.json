@@ -345,6 +345,57 @@
 		"fadeInTime": 0.1,
 		"holdTime": 0.2,
 		"fadeOutTime": 0.5
+	},
+	{
+		"type": "gravity_portal",
+		"x": 1700,
+		"y": 250,
+		"size": 50,
+		"blockType": null,
+		"rotation": 0,
+		"flipped": false,
+		"triggerBgColor": null,
+		"triggerGroundColor": null,
+		"fadeDuration": 1,
+		"pulseBgColor": null,
+		"pulseGroundColor": null,
+		"fadeInTime": 0.1,
+		"holdTime": 0.2,
+		"fadeOutTime": 0.5
+	},
+	{
+		"type": "saw_blade",
+		"x": 2000,
+		"y": 0,
+		"size": 100,
+		"blockType": null,
+		"rotation": 100,
+		"flipped": false,
+		"triggerBgColor": null,
+		"triggerGroundColor": null,
+		"fadeDuration": 1,
+		"pulseBgColor": null,
+		"pulseGroundColor": null,
+		"fadeInTime": 0.1,
+		"holdTime": 0.2,
+		"fadeOutTime": 0.5
+	},
+	{
+		"type": "saw_blade",
+		"x": 1450,
+		"y": -100,
+		"size": 200,
+		"blockType": null,
+		"rotation": 10,
+		"flipped": false,
+		"triggerBgColor": null,
+		"triggerGroundColor": null,
+		"fadeDuration": 1,
+		"pulseBgColor": null,
+		"pulseGroundColor": null,
+		"fadeInTime": 0.1,
+		"holdTime": 0.2,
+		"fadeOutTime": 0.5
 	}
 ]
 }

@@ -10,7 +10,8 @@ import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
 public abstract class AbstractHazard {
     public enum HazardType {
         SPIKE,
-        HALF_SPIKE
+        HALF_SPIKE,
+        SAW_BLADE
     }
 
     protected HazardType type;
