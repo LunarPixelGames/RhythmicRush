@@ -63,6 +63,7 @@ public class Ship extends AbstractPlayer {
     @Override
     public void update(float delta, float groundY) {
         this.groundY = groundY;
+        currentSlopeRotation = 0f;
         float effectiveAccel = mini ? accel * 1.3f : accel;
         float effectiveDecel = mini ? decel * 1.3f : decel;
         
@@ -128,6 +129,7 @@ public class Ship extends AbstractPlayer {
         this.velocityY = other.velocityY;
         this.gravityFlipped = other.isGravityFlipped();
         this.flyHeld = other.isJumpHeld();
+        this.currentSlopeRotation = other.getCurrentSlopeRotation();
         setMini(other.isMini());
     }
 }

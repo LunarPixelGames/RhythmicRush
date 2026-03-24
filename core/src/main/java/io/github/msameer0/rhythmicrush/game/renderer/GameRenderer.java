@@ -13,6 +13,7 @@ import io.github.msameer0.rhythmicrush.atlas.AtlasManager;
 import io.github.msameer0.rhythmicrush.game.GameWorld;
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Block;
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.BlockType;
+import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Slope;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.AbstractHazard;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.HalfSpike;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike;
@@ -42,6 +43,7 @@ public class GameRenderer {
     private final ShapeRenderer shape;
 
     private final TextureRegion[] blockRegionsByOrdinal;
+    private final TextureRegion slopeRegion;
 
     private final TextureRegion spikeRegion;
     private final TextureRegion halfSpikeRegion;
@@ -95,6 +97,8 @@ public class GameRenderer {
             blockRegionsByOrdinal[type.ordinal()] =
                 atlasManager.getBlocksAtlas().findRegion(type.textureName);
         }
+
+        slopeRegion = atlasManager.getBlocksAtlas().findRegion("slope");
 
         spikeRegion = atlasManager.getSpikesAtlas().findRegion("spike");
         halfSpikeRegion = atlasManager.getSpikesAtlas().findRegion("half_spike");
@@ -207,10 +211,21 @@ public class GameRenderer {
         }
 
         for (Block block : world.getBlocks()) {
-            TextureRegion region = blockRegionsByOrdinal[block.getType().ordinal()];
-            if (region != null) {
-                batch.draw(region, block.getX(), block.getY(),
-                    block.getWidth(), block.getHeight());
+            if (block instanceof Slope) {
+                Slope slope = (Slope) block;
+                TextureRegion region = (slopeRegion != null) ? slopeRegion : blockRegionsByOrdinal[block.getType().ordinal()];
+                if (region != null) {
+                    batch.draw(region, slope.getX(), slope.getY(),
+                        slope.getWidth() / 2f, slope.getHeight() / 2f,
+                        slope.getWidth(), slope.getHeight(), 1f, 1f,
+                        -slope.getRotation());
+                }
+            } else {
+                TextureRegion region = blockRegionsByOrdinal[block.getType().ordinal()];
+                if (region != null) {
+                    batch.draw(region, block.getX(), block.getY(),
+                        block.getWidth(), block.getHeight());
+                }
             }
         }
 
@@ -268,8 +283,20 @@ public class GameRenderer {
 
         shape.begin(ShapeRenderer.ShapeType.Filled);
         shape.setColor(HB_BLOCK_FILL);
-        for (Block b : world.getBlocks())
-            shape.rect(b.getX(), b.getY(), b.getWidth(), b.getHeight());
+        for (Block b : world.getBlocks()) {
+            if (b instanceof Slope) {
+                Slope s = (Slope) b;
+                float rot = ((int) s.getRotation() % 360 + 360) % 360;
+                float x = s.getX(), y = s.getY(), w = s.getWidth(), h = s.getHeight();
+                if (rot == 0)      shape.triangle(x, y, x + w, y, x + w, y + h); // / floor
+                else if (rot == 90)  shape.triangle(x, y, x + w, y, x, y + h);     // \ floor
+                else if (rot == 180) shape.triangle(x, y + h, x + w, y + h, x + w, y); // \ ceiling
+                else if (rot == 270) shape.triangle(x, y, x, y + h, x + w, y + h);     // / ceiling
+                else shape.rect(x, y, w, h);
+            } else {
+                shape.rect(b.getX(), b.getY(), b.getWidth(), b.getHeight());
+            }
+        }
 
         shape.setColor(HB_PORTAL_FILL);
         for (AbstractPortal p : world.getPortals()) {
@@ -293,12 +320,25 @@ public class GameRenderer {
         shape.setColor(HB_PLAYER_FILL);
         Rectangle pb = player.getBounds();
         shape.rect(pb.x, pb.y, pb.width, pb.height);
+
+        // Show inner circle hitbox for slopes
+        shape.setColor(1.0f, 1.0f, 1.0f, 0.5f);
+        float radius = player.width * 0.5f * Slope.CIRCLE_RATIO;
+        shape.circle(pb.x + pb.width * 0.5f, pb.y + pb.height * 0.5f, radius);
         shape.end();
 
         shape.begin(ShapeRenderer.ShapeType.Line);
         shape.setColor(HB_BLOCK_LINE);
-        for (Block b : world.getBlocks())
-            shape.rect(b.getX(), b.getY(), b.getWidth(), b.getHeight());
+        for (Block b : world.getBlocks()) {
+            if (b instanceof Slope) {
+                Slope s = (Slope) b;
+                float[] line = s.getSlopeLine();
+                shape.line(line[0], line[1], line[2], line[3]);
+                shape.rect(s.getX(), s.getY(), s.getWidth(), s.getHeight());
+            } else {
+                shape.rect(b.getX(), b.getY(), b.getWidth(), b.getHeight());
+            }
+        }
 
         shape.setColor(HB_PORTAL_LINE);
         for (AbstractPortal p : world.getPortals()) {
@@ -321,6 +361,9 @@ public class GameRenderer {
 
         shape.setColor(HB_PLAYER_LINE);
         shape.rect(pb.x, pb.y, pb.width, pb.height);
+
+        shape.setColor(1.0f, 1.0f, 1.0f, 0.8f);
+        shape.circle(pb.x + pb.width * 0.5f, pb.y + pb.height * 0.5f, radius);
         shape.end();
         Gdx.gl.glDisable(GL20.GL_BLEND);
     }
@@ -332,10 +375,17 @@ public class GameRenderer {
         float vy = player.getVelocityY();
         AbstractPlayer.PlayerType pType = player.getType();
 
+        // 1. Fetch the current slope rotation
+        float slopeRot = player.getCurrentSlopeRotation();
+
         if (pType == AbstractPlayer.PlayerType.CUBE) {
             if (player.isGrounded()) {
-                float nearest90 = Math.round(playerVisualRotation / 90f) * 90f;
-                playerVisualRotation = lerp(playerVisualRotation, nearest90, delta * 15f);
+                // 2. Offset the rounding logic by the slope rotation
+                // This prevents the cube from infinitely spinning when landing on a 45-deg incline
+                float nearest90 = Math.round((playerVisualRotation - slopeRot) / 90f) * 90f;
+                float targetRotation = nearest90 + slopeRot;
+
+                playerVisualRotation = lerp(playerVisualRotation, targetRotation, delta * 15f);
             } else if (!world.isPlayerDead() && !paused) {
                 float t = delta * 60f;
                 float rotation = (Math.abs(vy) * CUBE_SPIN_FACTOR / 60f + 5f / 60f) * t + 300f * delta;
@@ -347,6 +397,12 @@ public class GameRenderer {
             }
         } else if (pType == AbstractPlayer.PlayerType.SHIP) {
             float targetAngle = Math.max(-SHIP_MAX_TILT, Math.min(SHIP_MAX_TILT, vy * SHIP_TILT_FACTOR));
+
+            // 3. If the ship is grounded, conform to the slope angle
+            if (player.isGrounded()) {
+                targetAngle += slopeRot;
+            }
+
             playerVisualRotation = lerp(playerVisualRotation, targetAngle, SHIP_TILT_LERP * delta);
         } else {
             playerVisualRotation = 0f;

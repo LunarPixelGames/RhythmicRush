@@ -61,6 +61,7 @@ public class Cube extends AbstractPlayer {
     public void update(float delta, float groundY) {
         boolean wasGrounded = isGrounded;
         isGrounded = false;
+        currentSlopeRotation = 0f;
 
         float effectiveGravity = gravityFlipped ? -gravity : gravity;
         velocityY += effectiveGravity * delta;
@@ -128,6 +129,7 @@ public class Cube extends AbstractPlayer {
         this.isGrounded     = other.isGrounded();
         this.jumpHeld       = other.isJumpHeld();
         this.gravityFlipped = other.isGravityFlipped();
+        this.currentSlopeRotation = other.getCurrentSlopeRotation();
         setMini(other.isMini());
         this.coyoteTimer    = 0f; // don't carry coyote state across portal transitions
     }

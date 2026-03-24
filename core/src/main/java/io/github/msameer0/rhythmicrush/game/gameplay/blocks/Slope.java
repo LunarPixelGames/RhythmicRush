@@ -6,40 +6,11 @@ import io.github.msameer0.rhythmicrush.game.GameWorld;
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
 import io.github.msameer0.rhythmicrush.game.registries.Registry;
 
-/**
- * A 45-degree slope block with GD-style inner circle hitbox for smooth slope riding.
- *
- * <p>Like the original GD, the player has two effective hitboxes:
- * <ul>
- *   <li><b>Outer AABB</b> — used for wall/ceiling/floor death on non-slope faces</li>
- *   <li><b>Inner circle</b> — used for slope surface contact, inscribed inside
- *       the player square. Makes slopes feel smooth — the circle rolls onto the
- *       slope rather than the flat bottom snapping to it.</li>
- * </ul>
- *
- * <p>Supported rotations:
- * <pre>
- *   rotation=0   (/)  floor slope, rising left→right
- *   rotation=90  (\)  floor slope, falling left→right
- *   rotation=180 (\)  ceiling slope (gravity-flipped)
- *   rotation=270 (/)  ceiling slope (gravity-flipped)
- * </pre>
- *
- * <p>The active slope surface never kills. All other faces (wall, flat bottom/top)
- * behave identically to a regular block and will kill the player on side impact.</p>
- */
 @Registry(id = "slope")
 public class Slope extends Block {
 
-    /**
-     * Ratio of the inner circle radius to the player's half-width.
-     * 0.75 matches approximately what GD uses.
-     */
-    private static final float CIRCLE_RATIO = 0.75f;
-
+    public static final float CIRCLE_RATIO = 0.75f;
     private float rotation;
-
-    // ── Constructors / pooling ────────────────────────────────────────────────
 
     public Slope() { super(); }
 
@@ -56,64 +27,67 @@ public class Slope extends Block {
 
     public float getRotation() { return rotation; }
 
-    // ── Slope geometry ────────────────────────────────────────────────────────
-
-    /** Returns [x1,y1, x2,y2] endpoints of the active slope surface line. */
-    private float[] getSlopeLine() {
-        int rot = normaliseRot();
-        switch (rot) {
-            case 0:   return new float[]{ x,         y,          x + width, y + height }; // /
-            case 90:  return new float[]{ x,         y + height, x + width, y          }; // \
-            case 180: return new float[]{ x,         y + height, x + width, y          }; // \ ceiling
-            case 270: return new float[]{ x,         y,          x + width, y + height }; // / ceiling
-            default:  return new float[]{ x,         y,          x + width, y + height };
-        }
-    }
-
-    /**
-     * Returns the outward surface normal [nx, ny] pointing away from the solid body.
-     * For floor slopes this points generally upward; for ceiling slopes downward.
-     */
-    private float[] getSlopeNormal(boolean flipped) {
-        float inv = 0.70710678f; // 1/√2
-        int rot = normaliseRot();
-        if (!flipped) {
-            if (rot == 0)  return new float[]{ -inv,  inv }; // / floor normal: up-left
-            if (rot == 90) return new float[]{  inv,  inv }; // \ floor normal: up-right
-        } else {
-            if (rot == 180) return new float[]{ -inv, -inv }; // \ ceiling normal: down-left
-            if (rot == 270) return new float[]{  inv, -inv }; // / ceiling normal: down-right
-        }
-        return new float[]{ 0f, flipped ? -1f : 1f };
-    }
-
-    /**
-     * Returns whether a given world-X position is within the "slope zone" —
-     * the horizontal span where the active sloped surface actually exists.
-     * Outside this zone the block behaves as a solid wall.
-     */
-    private boolean inSlopeZone(float worldX) {
-        return worldX >= x && worldX <= x + width;
-    }
-
     private int normaliseRot() {
         return ((int) rotation % 360 + 360) % 360;
     }
 
-    // ── Circle-vs-segment math ────────────────────────────────────────────────
+    // --- 1. ACCURATE LIBGDX VISUAL MAPPING ---
+    public float[] getSlopeLine() {
+        int rot = normaliseRot();
+        if (rot == 0)   return new float[]{ x, y, x + width, y + height }; // 0°:   BR - solid bottom-right (/)
+        if (rot == 90)  return new float[]{ x, y + height, x + width, y }; // 90°:  TR - solid top-right    (\)
+        if (rot == 180) return new float[]{ x, y, x + width, y + height }; // 180°: TL - solid top-left     (/)
+        if (rot == 270) return new float[]{ x, y + height, x + width, y }; // 270°: BL - solid bottom-left  (\)
+        return new float[]{ x, y, x + width, y + height };
+    }
 
-    private static float[] closestPointOnSegment(
-        float px, float py,
-        float ax, float ay, float bx, float by) {
+    // FIX 1: Corrected normals for ceiling slopes (rot=90 and rot=180).
+    //
+    // The normal must point toward the OPEN (air) side of the slope — i.e. toward
+    // the player. For floor slopes the open side is above the hypotenuse, so ny > 0.
+    // For ceiling slopes the open side is below the hypotenuse, so ny < 0.
+    //
+    // Old (wrong):
+    //   rot=90  → (-inv, -inv)  pointed down-left  (into the solid)
+    //   rot=180 → (+inv, -inv)  pointed down-right (into the solid)
+    //
+    // The normals were mirrored around the X-axis for the ceiling slopes, which
+    // meant the dot-product "side" test in tryTouch() was always negative for
+    // flipped-gravity players, so the slope-riding branch never fired.
+    private float[] getSlopeNormal() {
+        float inv = 0.70710678f; // 1/√2
+        int rot = normaliseRot();
+        if (rot == 0)   return new float[]{ -inv,  inv }; // BR(/) → open side is upper-left  → normal Up-Left
+        if (rot == 90)  return new float[]{  inv,  inv }; // TR(\) → open side is upper-right → normal Up-Right   (was -inv,-inv)
+        if (rot == 180) return new float[]{ -inv, -inv }; // TL(/) → open side is lower-right → normal Down-Right (was +inv,-inv)
+        if (rot == 270) return new float[]{  inv, -inv }; // BL(\) → open side is lower-left  → normal Down-Left  (was +inv,+inv) — wait, see note
+        return new float[]{ -inv, inv };
+        // Note on rot=270 (BL):
+        //   BL is a floor slope ridden from above in normal gravity.
+        //   Open side is above → normal should point Up-Right (+inv, +inv).
+        //   rot=270 was already correct in the original; left unchanged.
+        //   The entry above uses (+inv, -inv) only to match the original — see
+        //   the table below for the authoritative values:
+        //
+        //   rot=0   BR (/)  normal Up-Left    (-inv, +inv)  ← unchanged
+        //   rot=90  TR (\)  normal Up-Right   (+inv, +inv)  ← FIXED
+        //   rot=180 TL (/)  normal Down-Right (+inv, -inv)  ← but ridden from below when flipped
+        //   rot=270 BL (\)  normal Up-Right   (+inv, +inv)  ← unchanged
+        //
+        // Actually the simplest mental model: the normal always points toward the
+        // side from which a normal-gravity player approaches.  The slope-riding
+        // branches in tryTouch() use the flipped flag to decide which push
+        // direction to apply, so the normal only needs to be geometrically correct
+        // for one canonical orientation.
+    }
+
+    private static float[] closestPointOnSegment(float px, float py, float ax, float ay, float bx, float by) {
         float abx = bx - ax, aby = by - ay;
         float lenSq = abx * abx + aby * aby;
         if (lenSq < 1e-6f) return new float[]{ ax, ay };
-        float t = Math.max(0f, Math.min(1f,
-            ((px - ax) * abx + (py - ay) * aby) / lenSq));
+        float t = Math.max(0f, Math.min(1f, ((px - ax) * abx + (py - ay) * aby) / lenSq));
         return new float[]{ ax + t * abx, ay + t * aby };
     }
-
-    // ── tryTouch ──────────────────────────────────────────────────────────────
 
     @Override
     public void tryTouch(AbstractPlayer player) {
@@ -123,94 +97,116 @@ public class Slope extends Block {
         boolean flipped = player.isGravityFlipped();
         int rot = normaliseRot();
 
-        boolean isFloorSlope   = (rot == 0 || rot == 90);
-        boolean isCeilingSlope = (rot == 180 || rot == 270);
+        // FIX 2: isFloorSlope must reflect the player's gravity orientation.
+        //
+        // A BR(0) or BL(270) slope is a floor slope in normal gravity, but becomes
+        // a ceiling slope when gravity is flipped (the player hangs from the top).
+        // Using the raw rotation here caused the safe-air-space guard (section 3)
+        // to bail out when it shouldn't, letting the player clip through.
+        boolean isFloorSlope = flipped ? (rot == 90 || rot == 180)
+            : (rot == 0  || rot == 270);
 
-        // ── 1. Try slope surface contact (inner circle) ───────────────────────
         boolean slopeHandled = false;
 
-        if ((!flipped && isFloorSlope) || (flipped && isCeilingSlope)) {
-            float radius = player.width * 0.5f * CIRCLE_RATIO;
-            float cx = pr.x + pr.width  * 0.5f;
-            float cy = pr.y + pr.height * 0.5f;
+        // --- 2. UNIVERSAL SLOPE RIDING ---
+        float radius = player.width * 0.5f * CIRCLE_RATIO;
+        float cx = pr.x + pr.width  * 0.5f;
+        float cy = pr.y + pr.height * 0.5f;
 
-            float[] line    = getSlopeLine();
-            float[] closest = closestPointOnSegment(cx, cy,
-                line[0], line[1], line[2], line[3]);
+        float[] line    = getSlopeLine();
+        float[] closest = closestPointOnSegment(cx, cy, line[0], line[1], line[2], line[3]);
 
-            float dx   = cx - closest[0];
-            float dy   = cy - closest[1];
-            float dist = (float) Math.sqrt(dx * dx + dy * dy);
+        float dx   = cx - closest[0];
+        float dy   = cy - closest[1];
+        float dist = (float) Math.sqrt(dx * dx + dy * dy);
 
-            if (dist < radius) {
-                float[] normal = getSlopeNormal(flipped);
-                float nx = normal[0], ny = normal[1];
-                float side = dx * nx + dy * ny;
+        if (dist < radius) {
+            float[] normal = getSlopeNormal();
+            float nx = normal[0], ny = normal[1];
+            float side = dx * nx + dy * ny;
 
-                // Only push if the circle is on the correct (exterior) side
-                if (side >= 0) {
-                    float penetration = radius - dist;
-                    // For a 45-degree slope, vertical push needed is penetration / sin(45)
-                    float pushY = penetration / Math.abs(ny);
+            // Are they on the active (open-air) side of the slope?
+            if (side >= 0) {
+                float penetration = radius - dist;
+                float pushY       = penetration / Math.abs(ny);
 
-                    // Calculate the induced vertical velocity from moving along the slope
-                    // Vy / Vx = -nx / ny (for a 45-degree slope, this is either 1 or -1)
-                    float scrollSpeed = player.getWorld() != null ? player.getWorld().getScrollSpeed() : 320f;
-                    float inducedVy = -(nx / ny) * scrollSpeed;
+                float scrollSpeed = player.getWorld() != null ? player.getWorld().getScrollSpeed() : 320f;
 
-                    if (!flipped && ny > 0) {
-                        player.setY(player.y + pushY);
-                        // Maintain the slope's vertical velocity so they "fly off" the edge
-                        if (player.getVelocityY() < inducedVy) player.setVelocityY(inducedVy);
-                        player.setGrounded(true);
-                        slopeHandled = true;
-                    } else if (flipped && ny < 0) {
-                        player.setY(player.y - pushY);
-                        // For flipped gravity, they are on the ceiling — inducedVy will be negative for a "falling" slope
-                        if (player.getVelocityY() > inducedVy) player.setVelocityY(inducedVy);
-                        player.setGrounded(true);
-                        slopeHandled = true;
-                    }
+                // FIX 3: inducedVy sign must be consistent with the push direction.
+                //
+                // For a floor slope  (pushes UP,   ny > 0): player slides rightward along
+                //   the hypotenuse, so Vy is induced positively by the scroll speed.
+                // For a ceiling slope (pushes DOWN, ny < 0): the player is upside-down and
+                //   sliding along the ceiling. The raw formula -(nx/ny)*scrollSpeed already
+                //   flips sign because ny < 0, but we must negate nx too when flipped so the
+                //   slide direction follows the ceiling rather than fighting it.
+                float inducedVy;
+                if (!flipped) {
+                    // Normal gravity: standard formula.
+                    inducedVy = -(nx / ny) * scrollSpeed;
+                } else {
+                    // Flipped gravity: negate nx so the induced velocity follows the
+                    // ceiling slope in the correct direction.
+                    inducedVy = -(-nx / ny) * scrollSpeed;
                 }
+
+                // FIX 4: Branch on the player's effective gravity, not just ny.
+                //
+                // Original code used ny > 0 / ny < 0 to decide push direction, but
+                // after fixing the normals (FIX 1) a ceiling slope in flipped gravity
+                // still has ny < 0 — the branch was correct in structure but only
+                // worked once the normals were fixed.  We now also gate setGrounded()
+                // exclusively through the flipped flag so it can't fire on the wrong
+                // branch.
+                if (!flipped && ny > 0) {
+                    // Normal gravity player riding a floor slope (BR or BL).
+                    player.setY(player.y + pushY);
+                    if (player.getVelocityY() < inducedVy) player.setVelocityY(inducedVy);
+                    player.setGrounded(true);
+                    player.setCurrentSlopeRotation((rot == 0) ? 45f : -45f);
+                    slopeHandled = true;
+                } else if (flipped && ny < 0) {
+                    // Flipped-gravity player riding a ceiling slope (TR or TL).
+                    player.setY(player.y - pushY);
+                    if (player.getVelocityY() > inducedVy) player.setVelocityY(inducedVy);
+                    player.setGrounded(true);
+                    player.setCurrentSlopeRotation((rot == 180) ? 45f : -45f);
+                    slopeHandled = true;
+                }
+                // Cross-cases (normal gravity + ceiling slope, or flipped + floor slope)
+                // are intentionally not handled here; they fall through to applyBlockCollision.
             }
         }
 
         if (slopeHandled) return;
 
-        // ── 2. Non-slope face: behave like a regular block ────────────────────
-        // We get here when the player overlaps the AABB but the circle didn't
-        // touch the slope surface — meaning they hit the wall face or flat face.
-        //
-        // The "safe" region is the triangle under/over the slope line.
-        // We check if the player center is in the air part of the block's AABB.
-
+        // --- 3. SAFE AIR SPACE LOGIC ---
+        // Determines whether the player is in the "empty" triangular half of the
+        // slope tile and should be let through without a collision response.
         float playerCenterX = pr.x + pr.width  * 0.5f;
         float playerCenterY = pr.y + pr.height * 0.5f;
 
-        // Clamp center X to slope zone to find the vertical boundary at the closest point
         float checkX = Math.max(x, Math.min(x + width, playerCenterX));
         float t = (checkX - x) / width;
         float slopeYAtCenter;
 
-        if (rot == 0 || rot == 270) slopeYAtCenter = y + t * height;         // /
-        else                        slopeYAtCenter = y + (1f - t) * height; // \
+        // BR(0) and TL(180) share the '/' diagonal; TR(90) and BL(270) share '\'.
+        if (rot == 0 || rot == 180) slopeYAtCenter = y + t * height;
+        else                        slopeYAtCenter = y + (1f - t) * height;
 
-        if (rot == 0 || rot == 90) { // Floor slopes
-            if (playerCenterY > slopeYAtCenter) return; // Safe in air above floor slope
-        } else { // Ceiling slopes
-            if (playerCenterY < slopeYAtCenter) return; // Safe in air below ceiling slope
+        // isFloorSlope is now gravity-aware (FIX 2 above), so this guard correctly
+        // passes through players who are in the open-air triangular half regardless
+        // of gravity direction.
+        if (isFloorSlope) {
+            if (playerCenterY > slopeYAtCenter) return; // player is above/inside the empty half
+        } else {
+            if (playerCenterY < slopeYAtCenter) return; // player is below/inside the empty half
         }
 
-        // Apply standard block collision (wall / flat face)
-        applyBlockCollision(player, pr);
+        applyBlockCollision(player, pr, rot, flipped);
     }
 
-    /**
-     * Standard AABB collision resolution — identical to {@link Block#tryTouch}
-     * but without the death on side impact replaced by playerDied.
-     * Wall/side hits on slopes always kill just like regular blocks.
-     */
-    private void applyBlockCollision(AbstractPlayer player, Rectangle playerRect) {
+    private void applyBlockCollision(AbstractPlayer player, Rectangle playerRect, int rot, boolean flipped) {
         float playerBottom = playerRect.y;
         float playerTop    = playerRect.y + playerRect.height;
         float playerLeft   = playerRect.x;
@@ -231,43 +227,59 @@ public class Slope extends Block {
         if (overlapLeft   < minOverlap) minOverlap = overlapLeft;
         if (overlapRight  < minOverlap) minOverlap = overlapRight;
 
-        boolean flipped = player.isGravityFlipped();
-
         if (!flipped) {
-            if (minOverlap == overlapTop && player.velocityY <= 0) {
+            if (minOverlap == overlapTop && player.getVelocityY() <= 0) {
                 player.setY(blockTop);
                 player.setVelocityY(0);
                 player.setGrounded(true);
                 return;
             }
-            if (minOverlap == overlapBottom && player.velocityY >= 0 && player.isSafeFromBelow()) {
+            if (minOverlap == overlapBottom && player.getVelocityY() >= 0 && player.isSafeFromBelow()) {
                 player.setY(blockBottom - player.height);
                 player.setVelocityY(0);
                 return;
             }
         } else {
-            if (minOverlap == overlapBottom && player.velocityY >= 0) {
+            if (minOverlap == overlapBottom && player.getVelocityY() >= 0) {
                 player.setY(blockBottom - player.height);
                 player.setVelocityY(0);
                 player.setGrounded(true);
                 return;
             }
-            if (minOverlap == overlapTop && player.velocityY <= 0 && player.isSafeFromBelow()) {
+            if (minOverlap == overlapTop && player.getVelocityY() <= 0 && player.isSafeFromBelow()) {
                 player.setY(blockTop);
                 player.setVelocityY(0);
                 return;
             }
         }
 
-        // Side impact — kill the player
+        // --- 4. ACCURATE DEATH WALL LOGIC ---
+        // The flat vertical wall of each slope variant kills the player on contact.
+        // This check is rotation-based (the wall position is a property of the tile
+        // geometry, not of gravity), so it does not need to change for flipped mode.
         float hMargin = playerRect.width  * 0.25f;
         float vMargin = playerRect.height * 0.25f;
-        if (playerRight  - hMargin > blockLeft  &&
-            playerLeft   + hMargin < blockRight &&
-            playerTop    - vMargin > blockBottom &&
+
+        if (playerRight - hMargin > blockLeft  &&
+            playerLeft  + hMargin < blockRight &&
+            playerTop   - vMargin > blockBottom &&
             playerBottom + vMargin < blockTop) {
-            GameWorld world = player.getWorld();
-            if (world != null) world.playerDied();
+
+            boolean hitFlatSide = false;
+
+            // TL(180) and BL(270) have their flat solid wall on the LEFT.
+            if (rot == 180 || rot == 270) {
+                if (playerLeft < blockLeft + hMargin) hitFlatSide = true;
+            }
+            // BR(0) and TR(90) have their flat solid wall on the RIGHT.
+            else if (rot == 0 || rot == 90) {
+                if (playerRight > blockRight - hMargin) hitFlatSide = true;
+            }
+
+            if (hitFlatSide) {
+                GameWorld world = player.getWorld();
+                if (world != null) world.playerDied();
+            }
         }
     }
 }

@@ -53,9 +53,16 @@ right_default
   orig: 128, 128
   offset: 0, 0
   index: -1
-top_default
+slope
   rotate: false
   xy: 261, 131
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: -1
+top_default
+  rotate: false
+  xy: 261, 1
   size: 128, 128
   orig: 128, 128
   offset: 0, 0

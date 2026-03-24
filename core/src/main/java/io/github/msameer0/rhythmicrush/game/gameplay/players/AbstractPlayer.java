@@ -23,6 +23,7 @@ public abstract class AbstractPlayer {
     public Rectangle bounds;
     protected boolean gravityFlipped = false;
     protected boolean mini = false;
+    protected float currentSlopeRotation = 0f;
 
     protected GameWorld world;
 
@@ -152,6 +153,14 @@ public abstract class AbstractPlayer {
 
     public void setGravityFlipped(boolean gravityFlipped) {
         this.gravityFlipped = gravityFlipped;
+    }
+
+    public float getCurrentSlopeRotation() {
+        return currentSlopeRotation;
+    }
+
+    public void setCurrentSlopeRotation(float rot) {
+        this.currentSlopeRotation = rot;
     }
 
     public abstract void copyState(AbstractPlayer other);
