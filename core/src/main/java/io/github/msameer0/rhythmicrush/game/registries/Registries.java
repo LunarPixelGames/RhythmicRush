@@ -1,6 +1,7 @@
 package io.github.msameer0.rhythmicrush.game.registries;
 
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Block;
+import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Slope;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.AbstractHazard;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.HalfSpike;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike;
@@ -32,6 +33,7 @@ public class Registries {
      */
     public static void init() {
         BLOCKS.register(Block.class, Block::new);
+        BLOCKS.register(Slope.class, Slope::new);
 
         HAZARDS.register(Spike.class, Spike::new);
         HAZARDS.register(HalfSpike.class, HalfSpike::new);

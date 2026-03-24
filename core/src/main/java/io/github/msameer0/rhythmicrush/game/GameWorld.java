@@ -7,6 +7,7 @@ import io.github.msameer0.rhythmicrush.game.engine.ObjectPool;
 import io.github.msameer0.rhythmicrush.game.engine.Tickable;
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Block;
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.BlockType;
+import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Slope;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.AbstractHazard;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.HalfSpike;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike;
@@ -71,6 +72,16 @@ public class GameWorld implements Tickable {
 
         @Override
         protected void reset(Block b) {
+        }
+    };
+    private final ObjectPool<Slope> slopePool = new ObjectPool<Slope>() {
+        @Override
+        protected Slope create() {
+            return new Slope();
+        }
+
+        @Override
+        protected void reset(Slope s) {
         }
     };
     private final ObjectPool<Spike> spikePool = new ObjectPool<Spike>() {
@@ -348,8 +359,13 @@ public class GameWorld implements Tickable {
                             break;
                         }
                 }
-                Block b = blockPool.obtain().init(e.x, e.y, e.size, bt);
-                blocks.add(b);
+                if ("slope".equals(e.type)) {
+                    Slope s = slopePool.obtain().init(e.x, e.y, e.size, bt, e.rotation);
+                    blocks.add(s);
+                } else {
+                    Block b = blockPool.obtain().init(e.x, e.y, e.size, bt);
+                    blocks.add(b);
+                }
             } else if (Registries.HAZARDS.has(e.type)) {
                 if ("spike".equals(e.type)) {
                     Spike s = spikePool.obtain().init(e.x, e.y, e.rotation);
@@ -474,8 +490,12 @@ public class GameWorld implements Tickable {
      * allocations during level transitions or resets.</p>
      */
     private void freeAllActiveObjects() {
-        blockPool.freeAll(blocks);
+        for (Block b : blocks) {
+            if (b instanceof Slope) slopePool.free((Slope) b);
+            else blockPool.free(b);
+        }
 
+        blocks.clear();
         for (Spike s : activeSpikes) spikePool.free(s);
         for (HalfSpike s : activeHalfSpikes) halfSpikePool.free(s);
         activeSpikes.clear();
@@ -861,6 +881,8 @@ public class GameWorld implements Tickable {
     }
 
     public float getWorldScrolled() { return worldScrolled; }
+
+    public float getScrollSpeed() { return scrollSpeed; }
 
     /**
      * Retrieves the list of all active blocks currently managed by the game world.
