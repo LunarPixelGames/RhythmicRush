@@ -436,7 +436,7 @@ public class LevelEditorScreen extends AbstractScreen {
             if (region == null) continue;
             boolean sel = selection.contains(e, true);
             game.getBatch().setColor(sel ? 1.3f : 1f, sel ? 1.3f : 1f, sel ? 1.3f : 1f, 1f);
-            game.getBatch().draw(region, sx, sy, dim / 2f, dim / 2f, dim, dim, 1f, 1f, -e.rotation);
+            game.getBatch().draw(region, sx, sy, dim / 2f, dim / 2f, dim, dim, 1f, 1f, e.rotation);
         }
         game.getBatch().setColor(Color.WHITE);
         game.getBatch().end();
@@ -613,8 +613,8 @@ public class LevelEditorScreen extends AbstractScreen {
             if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT_BRACKET)) { musicFileIdx = (musicFileIdx + 1) % musicFiles.size(); levelData.musicFile = musicFiles.get(musicFileIdx); }
         }
         if (!selection.isEmpty()) {
-            if (Gdx.input.isKeyJustPressed(Input.Keys.Q)) for (LevelData.ObjectEntry e : selection) e.rotation = ((e.rotation + 45f) % 360f + 360f) % 360f;
-            if (Gdx.input.isKeyJustPressed(Input.Keys.E)) for (LevelData.ObjectEntry e : selection) e.rotation = ((e.rotation - 45f) % 360f + 360f) % 360f;
+            if (Gdx.input.isKeyJustPressed(Input.Keys.Q)) for (LevelData.ObjectEntry e : selection) e.rotation = ((e.rotation + 90f) % 360f + 360f) % 360f;
+            if (Gdx.input.isKeyJustPressed(Input.Keys.E)) for (LevelData.ObjectEntry e : selection) e.rotation = ((e.rotation - 90f) % 360f + 360f) % 360f;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.G)) gridSnapping = !gridSnapping;
 

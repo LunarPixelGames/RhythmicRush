@@ -124,13 +124,10 @@ public class GameRenderer {
         world.updateVisuals(delta);
         AbstractPlayer player = world.getPlayer();
 
-
         camera.position.x = player.x + CAMERA_X_OFFSET;
-
         if (player.isMini()) {
             camera.position.x -= 12.5f;
         }
-
         camera.update();
 
         final float worldWidth = camera.viewportWidth;
@@ -140,6 +137,25 @@ public class GameRenderer {
         shape.setProjectionMatrix(camera.combined);
         batch.setProjectionMatrix(camera.combined);
 
+        // ── 1. Saw blades — below everything including the ground ────────────────
+        batch.begin();
+        for (AbstractHazard hazard : world.getHazards()) {
+            if (hazard.getType() == AbstractHazard.HazardType.SAW_BLADE) {
+                SawBlade saw = (SawBlade) hazard;
+                if (sawBladeRegion != null) {
+                    float d = saw.getDiameter();
+                    if (!paused) saw.tickVisualRotation(delta);
+                    batch.draw(sawBladeRegion,
+                        saw.getX(), saw.getY(),
+                        d / 2f, d / 2f,
+                        d, d, 1f, 1f,
+                        saw.getVisualRotation());
+                }
+            }
+        }
+        batch.end();
+
+        // ── 2. Ground ────────────────────────────────────────────────────────────
         shape.begin(ShapeRenderer.ShapeType.Filled);
         shape.setColor(world.getGroundColor());
         shape.rect(worldLeft, 0, worldWidth, world.getGroundY());
@@ -157,83 +173,64 @@ public class GameRenderer {
         }
         shape.end();
 
+        // ── 3. Portals, spikes, blocks, player ───────────────────────────────────
         batch.begin();
+
         for (AbstractPortal portal : world.getPortals()) {
             AbstractPortal.PortalType pType = portal.getType();
             TextureRegion region = null;
-
-            // Determine which texture region to use based on the portal type
             switch (pType) {
-                case CUBE:
-                    region = cubePortalRegion;
-                    break;
-                case SHIP:
-                    region = shipPortalRegion;
-                    break;
-                case GRAVITY:
-                    region = gravityPortalRegion;
-                    break;
-                case MINI:
-                    region = miniPortalRegion;
-                    break;
+                case CUBE:    region = cubePortalRegion;    break;
+                case SHIP:    region = shipPortalRegion;    break;
+                case GRAVITY: region = gravityPortalRegion; break;
+                case MINI:    region = miniPortalRegion;    break;
             }
-
-            // Draw the texture region if it exists
             if (region != null) {
                 batch.draw(region, portal.getX(), portal.getY(),
                     portal.getWidth(), portal.getHeight());
             }
         }
 
-        if (spikeRegion != null) {
-            for (AbstractHazard hazard : world.getHazards()) {
-                AbstractHazard.HazardType hType = hazard.getType();
-                switch (hType) {
-                    case SPIKE:
+        for (AbstractHazard hazard : world.getHazards()) {
+            AbstractHazard.HazardType hType = hazard.getType();
+            switch (hType) {
+                case SPIKE:
+                    if (spikeRegion != null) {
                         Spike spike = (Spike) hazard;
                         batch.draw(spikeRegion,
                             hazard.getX(), hazard.getY(),
-                            hazard.getWidth() / 2f,
-                            hazard.getHeight() / 2f,
+                            hazard.getWidth() / 2f, hazard.getHeight() / 2f,
                             hazard.getWidth(), hazard.getHeight(),
-                            1f, 1f,
-                            spike.getRotation());
-                        break;
-                    case HALF_SPIKE:
+                            1f, 1f, spike.getRotation());
+                    }
+                    break;
+                case HALF_SPIKE:
+                    if (halfSpikeRegion != null) {
                         HalfSpike hSpike = (HalfSpike) hazard;
                         batch.draw(halfSpikeRegion,
                             hazard.getX(), hazard.getY(),
-                            hazard.getWidth() / 2f,
-                            hazard.getHeight() / 2f,
+                            hazard.getWidth() / 2f, hazard.getHeight() / 2f,
                             hazard.getWidth(), hazard.getHeight(),
-                            1f, 1f,
-                            hSpike.getRotation());
-                        break;
-                    case SAW_BLADE:
-                        SawBlade saw = (SawBlade) hazard;
-                        if (sawBladeRegion != null) {
-                            float d = saw.getDiameter();
-                            if (!paused) saw.tickVisualRotation(delta);  // ← add !paused check
-                            batch.draw(sawBladeRegion,
-                                saw.getX(), saw.getY(),
-                                d / 2f, d / 2f,
-                                d, d, 1f, 1f,
-                                saw.getVisualRotation());
-                        }
-                        break;
-                }
+                            1f, 1f, hSpike.getRotation());
+                    }
+                    break;
+                case SAW_BLADE:
+                    // Already drawn in pass 1 — skip.
+                    break;
             }
         }
 
         for (Block block : world.getBlocks()) {
             if (block instanceof Slope) {
                 Slope slope = (Slope) block;
-                TextureRegion region = (slopeRegion != null) ? slopeRegion : blockRegionsByOrdinal[block.getType().ordinal()];
+                TextureRegion region = (slopeRegion != null)
+                    ? slopeRegion : blockRegionsByOrdinal[block.getType().ordinal()];
                 if (region != null) {
-                    batch.draw(region, slope.getX(), slope.getY(),
+                    batch.draw(region,
+                        slope.getX(), slope.getY(),
                         slope.getWidth() / 2f, slope.getHeight() / 2f,
-                        slope.getWidth(), slope.getHeight(), 1f, 1f,
-                        -slope.getRotation());
+                        slope.getWidth(), slope.getHeight(),
+                        1f, 1f, slope.getRotation());
                 }
             } else {
                 TextureRegion region = blockRegionsByOrdinal[block.getType().ordinal()];
@@ -250,7 +247,6 @@ public class GameRenderer {
 
         if (showHitboxes) drawHitboxes(player);
     }
-
     /**
      * Renders the player character sprite.
      */
@@ -301,7 +297,7 @@ public class GameRenderer {
         for (Block b : world.getBlocks()) {
             if (b instanceof Slope) {
                 Slope s = (Slope) b;
-                float rot = ((int) -s.getRotation() % 360 + 360) % 360;
+                float rot = ((int) s.getRotation() % 360 + 360) % 360;
                 float x = s.getX(), y = s.getY(), w = s.getWidth(), h = s.getHeight();
                 if      (rot == 0)   shape.triangle(x,     y,     x + w, y,     x + w, y + h); // BR solid
                 else if (rot == 90)  shape.triangle(x,     y + h, x + w, y + h, x + w, y    ); // TR solid

@@ -86,17 +86,17 @@ public class HalfSpike extends AbstractHazard {
      * by calculating the appropriate offset and bounds for 0, 90, 180, and 270 degrees.
      */
     private void updateHitbox() {
-        switch (Math.round(rotation) % 360) {
-            case 90:
+        switch ((Math.round(rotation / 90f) * 90 % 360 + 360) % 360) {
+            case 90: // 90 CCW = Pointing LEFT (Base on RIGHT)
                 spikeHitbox.set(x + TEXTURE_SIZE - HITBOX_H, y + HITBOX_CENTER_X, HITBOX_H, HITBOX_W);
                 break;
-            case 180:
+            case 180: // 180 CCW = Pointing DOWN (Base on TOP)
                 spikeHitbox.set(x + HITBOX_CENTER_X, y + TEXTURE_SIZE - HITBOX_H, HITBOX_W, HITBOX_H);
                 break;
-            case 270:
+            case 270: // 270 CCW = Pointing RIGHT (Base on LEFT)
                 spikeHitbox.set(x, y + HITBOX_CENTER_X, HITBOX_H, HITBOX_W);
                 break;
-            default:
+            default: // 0 CCW = Pointing UP (Base on BOTTOM)
                 spikeHitbox.set(x + HITBOX_CENTER_X, y, HITBOX_W, HITBOX_H);
                 break;
         }
