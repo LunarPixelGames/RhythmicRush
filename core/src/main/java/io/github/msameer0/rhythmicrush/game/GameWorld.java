@@ -612,6 +612,12 @@ public class GameWorld implements Tickable {
         while (portalStart < portals.size && portals.get(portalStart).getX() + portals.get(portalStart).getWidth() < rangeMin)
             portalStart++;
 
+        for (int i = blockStart; i < blocks.size; i++) {
+            Block b = blocks.get(i);
+            if (b.getX() > rangeMax) break;
+            b.tryTouch(player);
+        }
+
         for (int i = portalStart; i < portals.size; i++) {
             AbstractPortal portal = portals.get(i);
             if (portal.getX() > rangeMax) break;
@@ -647,12 +653,6 @@ public class GameWorld implements Tickable {
             AbstractHazard h = hazards.get(i);
             if (h.getX() > rangeMax) break;
             h.tryTouch(player);
-        }
-
-        for (int i = blockStart; i < blocks.size; i++) {
-            Block b = blocks.get(i);
-            if (b.getX() > rangeMax) break;
-            b.tryTouch(player);
         }
 
         player.tryJump();

@@ -13,8 +13,6 @@ import io.github.msameer0.rhythmicrush.game.registries.Registry;
  */
 @Registry(id = "cube")
 public class Cube extends AbstractPlayer {
-
-    public float gravity      = -1800f;
     public float jumpVelocity =   600f;
 
     private boolean jumpHeld   = false;
@@ -27,6 +25,7 @@ public class Cube extends AbstractPlayer {
 
     public Cube(float startX, float groundY) {
         super(startX, groundY);
+        this.gravity = -1800f;
         this.type = PlayerType.CUBE;
     }
 
@@ -34,6 +33,7 @@ public class Cube extends AbstractPlayer {
     public Cube() {
         super(0, 0);
         this.type = PlayerType.CUBE;
+        this.gravity = -1800f;
     }
 
     @Override
@@ -41,6 +41,7 @@ public class Cube extends AbstractPlayer {
         this.type           = PlayerType.CUBE;
         x                   = startX;
         y                   = startY;
+        this.gravity = -1800f;
         this.velocityY      = velocityY;
         isGrounded          = false;
         this.jumpHeld       = jumpHeld;
@@ -68,11 +69,15 @@ public class Cube extends AbstractPlayer {
         y += velocityY * delta;
 
         if (!gravityFlipped) {
-            if (y <= groundY) {
+            if (!isGrounded && y <= groundY) {
                 y          = groundY;
                 velocityY  = 0;
                 isGrounded = true;
             }
+        } else {
+            // Need to handle flipped floor snapping too if it exists
+            float ceilingY = 720 - groundY - height; // Assuming standard 720p height, though groundY is world-relative
+            // Actually, the project seems to only use groundY as the bottom limit.
         }
 
         // Coyote timer: reset to full window when grounded, count down when airborne

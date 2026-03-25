@@ -16,6 +16,7 @@ public abstract class AbstractPlayer {
         SHIP
     }
 
+    public float gravity;
     protected PlayerType type;
     public float x, y;
     public float width = 50, height = 50;
@@ -71,6 +72,10 @@ public abstract class AbstractPlayer {
 
         bounds.setSize(width, height);
         updateBounds();
+    }
+
+    public float getGravity() {
+        return gravity;
     }
 
     public abstract AbstractPlayer init(float startX, float startY, float velocityY, boolean flyHeld);

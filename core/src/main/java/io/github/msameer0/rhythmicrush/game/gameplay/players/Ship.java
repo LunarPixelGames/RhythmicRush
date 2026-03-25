@@ -24,6 +24,7 @@ public class Ship extends AbstractPlayer {
 
     public Ship(float startX, float startY) {
         super(startX, startY);
+        this.gravity = -1800f;
         this.type = PlayerType.SHIP;
     }
 
@@ -32,6 +33,7 @@ public class Ship extends AbstractPlayer {
      */
     public Ship() {
         super(0, 0);
+        this.gravity = -1800f;
         this.type = PlayerType.SHIP;
     }
 
@@ -43,6 +45,7 @@ public class Ship extends AbstractPlayer {
         this.type = PlayerType.SHIP;
         x = startX;
         y = startY;
+        this.gravity = -1800f;
         this.velocityY = velocityY;
         this.flyHeld = flyHeld;
         this.gravityFlipped = false;
@@ -66,7 +69,7 @@ public class Ship extends AbstractPlayer {
         currentSlopeRotation = 0f;
         float effectiveAccel = mini ? accel * 1.3f : accel;
         float effectiveDecel = mini ? decel * 1.3f : decel;
-        
+
         if (!gravityFlipped) {
             if (flyHeld) {
                 velocityY += effectiveAccel * delta;
