@@ -630,6 +630,12 @@ public class GameWorld implements Tickable {
                     if (next != null) {
                         next.setWorld(this);
                         next.copyState(player);
+
+                        // FIX: Overwrite the double-shifted coordinates!
+                        // Force the new player to sit exactly where the old player was.
+                        next.x = player.x;
+                        next.setY(player.y); // Using setY() triggers your protected updateBounds() method!
+
                         freePlayer();
                         player = next;
                     }
