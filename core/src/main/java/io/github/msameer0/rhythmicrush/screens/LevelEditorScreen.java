@@ -74,9 +74,14 @@ public class LevelEditorScreen extends AbstractScreen {
     private GlyphLayout        layout;
 
     private TextureRegion[] blockRegions;
+    private TextureRegion   slopeRegion;
     private TextureRegion   spikeRegion;
+    private TextureRegion   halfSpikeRegion;
+    private TextureRegion   sawBladeRegion;
     private TextureRegion   cubePortalRegion;
     private TextureRegion   shipPortalRegion;
+    private TextureRegion   gravityPortalRegion;
+    private TextureRegion   miniPortalRegion;
 
     // ── Canvas state ──────────────────────────────────────────────────────────
     private float   camX = 400f, camY = 200f;
@@ -183,9 +188,14 @@ public class LevelEditorScreen extends AbstractScreen {
         blockRegions = new TextureRegion[btypes.length];
         for (BlockType bt : btypes)
             blockRegions[bt.ordinal()] = game.getAtlasManager().getBlocksAtlas().findRegion(bt.textureName);
+        slopeRegion      = game.getAtlasManager().getBlocksAtlas().findRegion("slope");
         spikeRegion      = game.getAtlasManager().getSpikesAtlas().findRegion("spike");
+        halfSpikeRegion  = game.getAtlasManager().getSpikesAtlas().findRegion("half_spike");
+        sawBladeRegion   = game.getAtlasManager().getSpikesAtlas().findRegion("saw_blade");
         cubePortalRegion = game.getAtlasManager().getPortalsAtlas().findRegion("cube_portal");
         shipPortalRegion = game.getAtlasManager().getPortalsAtlas().findRegion("ship_portal");
+        gravityPortalRegion = game.getAtlasManager().getPortalsAtlas().findRegion("gravity_portal");
+        miniPortalRegion    = game.getAtlasManager().getPortalsAtlas().findRegion("mini_portal");
 
         buildTabs();
         scanMusicFiles();
@@ -559,12 +569,24 @@ public class LevelEditorScreen extends AbstractScreen {
                     shapes.rect(ix, iy, cell, cell);
                     shapes.end();
                 }
-                game.getBatch().begin();
-                font.getData().setScale(MathUtils.clamp(0.40f * (cell / ITEM_SIZE), 0.28f, 0.48f));
-                String display = id.length() > 10 ? id.substring(0, 9) + "…" : id;
-                layout.setText(font, display);
-                font.draw(game.getBatch(), display, ix + cell / 2f - layout.width / 2f, iy + cell / 2f + layout.height / 2f);
-                game.getBatch().end();
+
+                LevelData.ObjectEntry tmp = new LevelData.ObjectEntry();
+                tmp.type = id;
+                if (Registries.BLOCKS.has(id)) tmp.blockType = BlockType.values()[selectedBlockTypeIdx].textureName;
+                TextureRegion itemReg = regionFor(tmp);
+
+                if (itemReg != null) {
+                    game.getBatch().begin();
+                    game.getBatch().draw(itemReg, ix + ITEM_PAD, iy + ITEM_PAD, cell - ITEM_PAD * 2, cell - ITEM_PAD * 2);
+                    game.getBatch().end();
+                } else {
+                    game.getBatch().begin();
+                    font.getData().setScale(MathUtils.clamp(0.40f * (cell / ITEM_SIZE), 0.28f, 0.48f));
+                    String display = id.length() > 10 ? id.substring(0, 9) + "…" : id;
+                    layout.setText(font, display);
+                    font.draw(game.getBatch(), display, ix + cell / 2f - layout.width / 2f, iy + cell / 2f + layout.height / 2f);
+                    game.getBatch().end();
+                }
             }
             col++;
             if (col >= cols) col = 0;
@@ -824,9 +846,14 @@ public class LevelEditorScreen extends AbstractScreen {
     }
 
     private TextureRegion regionFor(LevelData.ObjectEntry e) {
+        if ("slope".equals(e.type)) return slopeRegion;
         if ("spike".equals(e.type)) return spikeRegion;
+        if ("half_spike".equals(e.type)) return halfSpikeRegion;
+        if ("saw_blade".equals(e.type)) return sawBladeRegion;
         if ("cube_portal".equals(e.type)) return cubePortalRegion;
         if ("ship_portal".equals(e.type)) return shipPortalRegion;
+        if ("gravity_portal".equals(e.type)) return gravityPortalRegion;
+        if ("mini_portal".equals(e.type)) return miniPortalRegion;
         if (Registries.BLOCKS.has(e.type)) {
             BlockType bt = BlockType.DEFAULT;
             if (e.blockType != null) for (BlockType t : BlockType.values()) if (t.textureName.equals(e.blockType)) { bt = t; break; }
