@@ -23,6 +23,12 @@ public class Slope extends Block {
         return this;
     }
 
+    @Override
+    public void reset() {
+        super.reset();
+        this.rotation = 0f;
+    }
+
     public float getRotation() { return rotation; }
 
     private int normaliseRot() {

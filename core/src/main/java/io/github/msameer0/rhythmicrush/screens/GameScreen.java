@@ -23,6 +23,7 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 
 import io.github.msameer0.rhythmicrush.font.FontManager;
 import io.github.msameer0.rhythmicrush.RhythmicRushGame;
+import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
 import io.github.msameer0.rhythmicrush.settings.SettingsManager;
 import io.github.msameer0.rhythmicrush.game.GameWorld;
 import io.github.msameer0.rhythmicrush.game.engine.FixedTickEngine;
@@ -65,6 +66,7 @@ public class GameScreen extends AbstractScreen {
     private final Viewport gameViewport;
     private final LevelData levelData;
     private int levelIndex = 0;
+    private final boolean isPracticeMode;
 
     private boolean deathPaused = false;
     private float deathTimer = 0f;
@@ -80,6 +82,23 @@ public class GameScreen extends AbstractScreen {
     private String levelKey = null;
 
     private final StringBuilder _hudSb = new StringBuilder(32);
+
+    private static class CheckpointState {
+        float worldScrolled;
+        float playerX; // Relative to camera/screen
+        float playerWorldX; // Absolute world X
+        AbstractPlayer.PlayerType playerType;
+        float playerY, playerVY;
+        boolean gravityFlipped, mini;
+        float slopeRotation;
+        int triggerIdx;
+        Color baseBgColor = new Color();
+        Color baseGroundColor = new Color();
+        Color backgroundColor = new Color();
+        Color groundColor = new Color();
+    }
+
+    private final com.badlogic.gdx.utils.Array<CheckpointState> checkpoints = new com.badlogic.gdx.utils.Array<>();
 
     private static final float POPUP_FADE_IN = 0.25f;
     private static final float POPUP_HOLD = 1.20f;
@@ -97,6 +116,18 @@ public class GameScreen extends AbstractScreen {
     private float btnSize = 72f;
     private float uiScale = 1.0f;
     private static final float PAUSE_BTN = 44f;
+    private float practicePlusX, practicePlusY, practiceMinusX, practiceMinusY, practiceBtnSize;
+
+    private void updatePracticeBtnCoords() {
+        float pad = game.getSettingsManager().uiPadding;
+        float spacing = 35f * uiScale; // Increased gap
+        float totalW = practiceBtnSize * 2 + spacing;
+        
+        practicePlusX = camCX() - totalW / 2f;
+        practicePlusY = camBot() + pad; // Directly influenced by padding
+        practiceMinusX = practicePlusX + practiceBtnSize + spacing;
+        practiceMinusY = practicePlusY;
+    }
 
     private void updateScaledUI() {
         boolean mobile = Gdx.app.getType() == com.badlogic.gdx.Application.ApplicationType.Android ||
@@ -106,11 +137,13 @@ public class GameScreen extends AbstractScreen {
             panelH = 480f;
             btnSize = 100f;
             uiScale = 1.4f;
+            practiceBtnSize = 80f;
         } else {
             panelW = 520f;
             panelH = 360f;
             btnSize = 72f;
             uiScale = 1.0f;
+            practiceBtnSize = 60f;
         }
     }
 
@@ -150,9 +183,14 @@ public class GameScreen extends AbstractScreen {
      * @param levelIndex The index of the level in the level selection list.
      */
     public GameScreen(RhythmicRushGame game, LevelData levelData, int levelIndex) {
+        this(game, levelData, levelIndex, false);
+    }
+
+    public GameScreen(RhythmicRushGame game, LevelData levelData, int levelIndex, boolean isPracticeMode) {
         super(game);
         this.levelData = levelData;
         this.levelIndex = levelIndex;
+        this.isPracticeMode = isPracticeMode;
 
         gameCamera = new OrthographicCamera();
         gameViewport = new ExtendViewport(1280, 720, gameCamera);
@@ -476,21 +514,7 @@ public class GameScreen extends AbstractScreen {
                 if (popupTimer >= POPUP_TOTAL) popupTimer = -1f;
             }
             if (deathTimer >= DEATH_PAUSE_DURATION) {
-                deathPaused = false;
-                deathTimer = 0f;
-                musicFading = false;
-                musicFadeTimer = 0f;
-                levelCompletedState = false;
-                levelEndingSequence = false;
-                levelEndTimer = 0f;
-                paused = false;
-                lastJumpHeld = false;
-                popupTimer = -1f;
-                world.reset();
-                engine.reset();
-                startMusic();
-                recordAttempt();
-                hitboxesActive = game.getSettingsManager().showHitboxes;
+                triggerRespawn();
             }
             return;
         }
@@ -512,6 +536,11 @@ public class GameScreen extends AbstractScreen {
             return;
         }
 
+        if (isPracticeMode) {
+            if (Gdx.input.isKeyJustPressed(Input.Keys.Z)) placeCheckpoint();
+            if (Gdx.input.isKeyJustPressed(Input.Keys.X)) removeLastCheckpoint();
+        }
+
         if (Gdx.input.justTouched()) {
             Vector2 t = unprojectWorld();
             float cx = pauseCircleCX(), cy = pauseCircleCY(), r = PAUSE_BTN / 2f + 8f;
@@ -519,6 +548,20 @@ public class GameScreen extends AbstractScreen {
             if (dx * dx + dy * dy <= r * r) {
                 setPaused(true);
                 return;
+            }
+
+            if (isPracticeMode) {
+                updatePracticeBtnCoords();
+                if (hits(t, practicePlusX, practicePlusY, practiceBtnSize, practiceBtnSize)) {
+                    placeCheckpoint();
+                    ignoreInputUntilRelease = true;
+                    return;
+                }
+                if (hits(t, practiceMinusX, practiceMinusY, practiceBtnSize, practiceBtnSize)) {
+                    removeLastCheckpoint();
+                    ignoreInputUntilRelease = true;
+                    return;
+                }
             }
         }
 
@@ -584,6 +627,7 @@ public class GameScreen extends AbstractScreen {
     @Override
     protected void draw() {
         gameViewport.apply();
+        updatePracticeBtnCoords();
 
         Color bg = world.getBackgroundColor();
         Gdx.gl.glClearColor(bg.r, bg.g, bg.b, 1f);
@@ -601,6 +645,10 @@ public class GameScreen extends AbstractScreen {
 
         drawProgressBarShapes();
         drawPauseButtonShapes();
+        if (isPracticeMode) {
+            drawPracticeButtonShapes();
+            drawCheckpoints();
+        }
 
         if (paused || levelCompletedState) {
             shapes.setColor(COL_OVERLAY);
@@ -616,6 +664,7 @@ public class GameScreen extends AbstractScreen {
         drawProgressBarText();
         drawSessionAttemptsText();
         drawNewBestPopupText();
+        if (isPracticeMode) drawPracticeButtonText();
 
         if (paused) {
             drawPauseOverlayUI();
@@ -631,6 +680,39 @@ public class GameScreen extends AbstractScreen {
         }
     }
 
+    private void drawPracticeButtonShapes() {
+        float opacity = game.getSettingsManager().practiceButtonOpacity;
+        shapes.setColor(0.15f, 0.15f, 0.15f, 0.6f * opacity);
+        shapes.rect(practicePlusX, practicePlusY, practiceBtnSize, practiceBtnSize);
+        shapes.rect(practiceMinusX, practiceMinusY, practiceBtnSize, practiceBtnSize);
+    }
+
+    private void drawPracticeButtonText() {
+        float opacity = game.getSettingsManager().practiceButtonOpacity;
+        font.getData().setScale(1.5f * uiScale);
+
+        // Center "+" 
+        glyphLayout.setText(font, "+");
+        float plusX = practicePlusX + (practiceBtnSize - glyphLayout.width) / 2f;
+        float plusY = practicePlusY + (practiceBtnSize + glyphLayout.height) / 2f;
+
+        // Center "-"
+        glyphLayout.setText(font, "-");
+        float minusX = practiceMinusX + (practiceBtnSize - glyphLayout.width) / 2f;
+        float minusY = practiceMinusY + (practiceBtnSize + glyphLayout.height) / 2f;
+
+        // Shadow
+        font.setColor(0, 0, 0, 0.4f * opacity);
+        font.draw(game.getBatch(), "+", plusX + 2f * uiScale, plusY - 2f * uiScale);
+        font.draw(game.getBatch(), "-", minusX + 2f * uiScale, minusY - 2f * uiScale);
+
+        // Main
+        font.setColor(1, 1, 1, opacity);
+        font.draw(game.getBatch(), "+", plusX, plusY);
+        font.draw(game.getBatch(), "-", minusX, minusY);
+
+        font.getData().setScale(1f);
+    }
     /**
      * Renders the fill and background shapes for the level progress bar.
      */
@@ -736,21 +818,25 @@ public class GameScreen extends AbstractScreen {
      * Renders the attempt counters and FPS text.
      */
     private void drawSessionAttemptsText() {
-        float p = game.getSettingsManager().uiPadding;
+        SettingsManager s = game.getSettingsManager();
+        float p = s.uiPadding;
         float left = camLeft() + p;
         float top = camTop() - p;
         float shadowOffset = 2f;
+        float nextY = top;
 
         // Attempt
-        _hudSb.setLength(0);
-        _hudSb.append("Attempt  ").append(sessionAttempts);
-        font.setColor(0, 0, 0, HUD_ATTEMPT.a * 0.4f);
-        font.draw(game.getBatch(), _hudSb, left + shadowOffset, top - shadowOffset);
-        font.setColor(HUD_ATTEMPT);
-        font.draw(game.getBatch(), _hudSb, left, top);
+        if (s.showAttempts) {
+            _hudSb.setLength(0);
+            _hudSb.append("Attempt  ").append(sessionAttempts);
+            font.setColor(0, 0, 0, HUD_ATTEMPT.a * 0.4f);
+            font.draw(game.getBatch(), _hudSb, left + shadowOffset, nextY - shadowOffset);
+            font.setColor(HUD_ATTEMPT);
+            font.draw(game.getBatch(), _hudSb, left, nextY);
+            nextY -= 26f;
+        }
 
-        float nextY = top - 26f;
-        if (levelKey != null) {
+        if (s.showBest && levelKey != null) {
             LevelProgress p1 = game.getProgressManager().getOrCreate(levelKey);
             // Best
             _hudSb.setLength(0);
@@ -762,7 +848,7 @@ public class GameScreen extends AbstractScreen {
             nextY -= 26f;
         }
 
-        if (game.getSettingsManager().showFps) {
+        if (s.showFps) {
             // FPS
             _hudSb.setLength(0);
             _hudSb.append("FPS  ").append(Gdx.graphics.getFramesPerSecond());
@@ -1151,6 +1237,10 @@ public class GameScreen extends AbstractScreen {
      *     <li>Resets the {@link GameWorld} and {@link FixedTickEngine} to their initial states.</li>
      */
     private void triggerRespawn() {
+        if (isPracticeMode && checkpoints.size > 0) {
+            respawnAtCheckpoint();
+            return;
+        }
         recordDeath();
         stopAndDisposeMusic();
         deathPaused = false;
@@ -1167,6 +1257,104 @@ public class GameScreen extends AbstractScreen {
         world.reset();
         engine.reset();
         startMusic();
+        recordAttempt();
+        hitboxesActive = game.getSettingsManager().showHitboxes;
+    }
+
+    private void placeCheckpoint() {
+        CheckpointState s = new CheckpointState();
+        s.worldScrolled = world.getWorldScrolled();
+        AbstractPlayer p = world.getPlayer();
+        s.playerX = p.getX();
+        s.playerWorldX = p.getWorldX();
+        s.playerType = p.getType();
+        s.playerY = p.getY();
+        s.playerVY = p.getVelocityY();
+        s.gravityFlipped = p.isGravityFlipped();
+        s.mini = p.isMini();
+        s.slopeRotation = p.getCurrentSlopeRotation();
+        s.triggerIdx = world.getTriggerIdx();
+        s.baseBgColor.set(world.getBaseBgColor());
+        s.baseGroundColor.set(world.getBaseGroundColor());
+        s.backgroundColor.set(world.getBackgroundColor());
+        s.groundColor.set(world.getGroundColor());
+        checkpoints.add(s);
+    }
+
+    private void removeLastCheckpoint() {
+        if (checkpoints.size > 0) checkpoints.removeIndex(checkpoints.size - 1);
+    }
+
+    private void drawCheckpoints() {
+        if (!isPracticeMode || checkpoints.size == 0) return;
+
+        float scroll = world.getWorldScrolled();
+        float hw = 12f;  // half width
+        float hh = 18f;  // half height (stretched)
+
+        for (CheckpointState s : checkpoints) {
+            float dx = s.playerX - (scroll - s.worldScrolled);
+            float dy = s.playerY + 25f;
+
+            // 1. Draw Outline (Dark Green)
+            shapes.setColor(0.1f, 0.4f, 0.1f, 0.8f);
+            drawDiamond(dx, dy, hw + 2f, hh + 2f);
+
+            // 2. Draw Fill (Lime)
+            shapes.setColor(0.6f, 1.0f, 0.2f, 0.9f);
+            drawDiamond(dx, dy, hw, hh);
+        }
+    }
+
+    private void drawDiamond(float x, float y, float hw, float hh) {
+        shapes.triangle(x, y + hh, x - hw, y, x + hw, y); // Top
+        shapes.triangle(x, y - hh, x - hw, y, x + hw, y); // Bottom
+    }
+
+    private void respawnAtCheckpoint() {
+        if (checkpoints.size == 0) {
+            triggerRespawn(); // Should not happen but fallback
+            return;
+        }
+        CheckpointState s = checkpoints.peek();
+
+        deathPaused = false;
+        deathTimer = 0f;
+        musicFading = false;
+        musicFadeTimer = 0f;
+        levelCompletedState = false;
+        levelEndingSequence = false;
+        levelEndTimer = 0f;
+        paused = false;
+        lastDelta = 0f;
+        lastJumpHeld = false;
+        popupTimer = -1f;
+
+        // Restore world state
+        world.fastForwardTo(s.worldScrolled);
+        world.setWorldScrolled(s.worldScrolled);
+        world.setBaseBgColor(s.baseBgColor);
+        world.setBaseGroundColor(s.baseGroundColor);
+        world.setBackgroundColor(s.backgroundColor);
+        world.setGroundColor(s.groundColor);
+        world.setTriggerIdx(s.triggerIdx);
+
+        // Restore player state
+        AbstractPlayer p = world.obtainPlayer(s.playerType == AbstractPlayer.PlayerType.CUBE ? "cube" : "ship");
+        p.init(s.playerX, s.playerY, s.playerVY, false);
+        p.worldX = s.playerWorldX;
+        p.setGravityFlipped(s.gravityFlipped);
+        p.setMini(s.mini);
+        p.setCurrentSlopeRotation(s.slopeRotation);
+        world.setPlayer(p);
+
+        engine.reset();
+
+        // Sync music with checkpoint
+        stopAndDisposeMusic();
+        float startTime = s.worldScrolled / world.getScrollSpeed();
+        startMusic(startTime);
+
         recordAttempt();
         hitboxesActive = game.getSettingsManager().showHitboxes;
     }
@@ -1199,7 +1387,7 @@ public class GameScreen extends AbstractScreen {
      * </p>
      */
     private void recordDeath() {
-        if (levelKey == null) return;
+        if (levelKey == null || isPracticeMode) return;
         int pct = Math.round(world.getProgress() * 100f);
         LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
         if (pct > p.bestPercent) {
@@ -1212,7 +1400,7 @@ public class GameScreen extends AbstractScreen {
             // Chance to get an ad is equivalent to the new best you get (0.0 to 1.0)
             checkAndShowAd(pct / 100f);
         } else {
-            // 0% chance on random deaths (already implicit if we don't call it here, 
+            // 0% chance on random deaths (already implicit if we don't call it here,
             // but we call with 0 just to be safe and clear if needed, or just don't call)
             // checkAndShowAd(0.0f);
         }
@@ -1227,7 +1415,7 @@ public class GameScreen extends AbstractScreen {
      * </p>
      */
     private void recordComplete() {
-        if (levelKey == null) return;
+        if (levelKey == null || isPracticeMode) return;
         LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
         p.bestPercent = 100;
         game.getProgressManager().save();
@@ -1437,6 +1625,10 @@ public class GameScreen extends AbstractScreen {
      * <p>
      */
     private void startMusic() {
+        startMusic(0f);
+    }
+
+    private void startMusic(float startTime) {
         if (levelData == null || levelData.musicFile == null || levelData.musicFile.isEmpty())
             return;
         try {
@@ -1446,7 +1638,12 @@ public class GameScreen extends AbstractScreen {
                 levelMusic = Gdx.audio.newMusic(fh);
                 levelMusic.setVolume(game.getSettingsManager().musicVolume);
                 levelMusic.setLooping(false);
-                levelMusic.play();
+                if (startTime > 0) {
+                    levelMusic.play();
+                    levelMusic.setPosition(startTime);
+                } else {
+                    levelMusic.play();
+                }
             }
         } catch (Exception e) {
             Gdx.app.error("GameScreen", "Could not load music: " + e.getMessage());

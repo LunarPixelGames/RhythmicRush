@@ -29,7 +29,10 @@ public class SettingsManager {
     public boolean enableVsync = false;
     public boolean showPercentage = true;
     public boolean showProgressBar = true;
+    public boolean showAttempts = true;
+    public boolean showBest = true;
     public float uiPadding = 12f;
+    public float practiceButtonOpacity = 0.5f;
 
     /**
      * A data transfer object (DTO) used to represent a serializable snapshot of the settings.
@@ -47,7 +50,10 @@ public class SettingsManager {
         public boolean enableVsync = false;
         public boolean showPercentage = true;
         public boolean showProgressBar = true;
+        public boolean showAttempts = true;
+        public boolean showBest = true;
         public float uiPadding = 12f;
+        public float practiceButtonOpacity = 0.5f;
     }
 
     private final Json json;
@@ -86,7 +92,10 @@ public class SettingsManager {
             snapshot.enableVsync = enableVsync;
             snapshot.showPercentage = showPercentage;
             snapshot.showProgressBar = showProgressBar;
+            snapshot.showAttempts = showAttempts;
+            snapshot.showBest = showBest;
             snapshot.uiPadding = uiPadding;
+            snapshot.practiceButtonOpacity = practiceButtonOpacity;
             FileHandle file = Gdx.files.local(SAVE_PATH);
             file.parent().mkdirs();
             file.writeString(json.prettyPrint(snapshot), false);
@@ -126,7 +135,10 @@ public class SettingsManager {
             enableVsync = d.enableVsync;
             showPercentage = d.showPercentage;
             showProgressBar = d.showProgressBar;
+            showAttempts = d.showAttempts;
+            showBest = d.showBest;
             uiPadding = d.uiPadding;
+            practiceButtonOpacity = d.practiceButtonOpacity;
             Gdx.app.log("SettingsManager", "Settings loaded successfully.");
         } catch (Exception e) {
             Gdx.app.error("SettingsManager", "Failed to load: " + e.getMessage());

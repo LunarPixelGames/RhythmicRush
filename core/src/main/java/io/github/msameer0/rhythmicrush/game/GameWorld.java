@@ -73,6 +73,7 @@ public class GameWorld implements Tickable {
 
         @Override
         protected void reset(Block b) {
+            b.reset();
         }
     };
     private final ObjectPool<Slope> slopePool = new ObjectPool<Slope>() {
@@ -83,6 +84,7 @@ public class GameWorld implements Tickable {
 
         @Override
         protected void reset(Slope s) {
+            s.reset();
         }
     };
     private final ObjectPool<Spike> spikePool = new ObjectPool<Spike>() {
@@ -339,8 +341,41 @@ public class GameWorld implements Tickable {
         return Registries.PLAYERS.create(typeId);
     }
 
+    public Color getBaseBgColor() { return baseBgColor; }
+    public Color getBaseGroundColor() { return baseGroundColor; }
+    public int getTriggerIdx() { return triggerIdx; }
+
+    public void setBaseBgColor(Color c) { baseBgColor.set(c); }
+    public void setBaseGroundColor(Color c) { baseGroundColor.set(c); }
+    public void setBackgroundColor(Color c) { backgroundColor.set(c); }
+    public void setGroundColor(Color c) { groundColor.set(c); }
+    public void setTriggerIdx(int idx) { triggerIdx = idx; }
+
+    public void setWorldScrolled(float s) {
+        this.worldScrolled = s;
+    }
+
+    public void setPlayer(AbstractPlayer next) {
+        freePlayer();
+        this.player = next;
+        next.setWorld(this);
+    }
+
+    public void fastForwardTo(float scrolled) {
+        this.worldScrolled = scrolled;
+        // We need to re-initialize everything relative to the new scrolled amount.
+        // The easiest way is to re-load from the data but shift every X.
+        if (currentLevelData != null) {
+            loadLevel(currentLevelData, scrolled, false);
+        }
+    }
+
     public void loadLevel(LevelData data) {
-        Gdx.app.log("GameWorld", "Loading level: " + data.name);
+        loadLevel(data, 0f, true);
+    }
+
+    public void loadLevel(LevelData data, float startScrolled, boolean resetPlayer) {
+        Gdx.app.log("GameWorld", "Loading level: " + data.name + " at scrolled=" + startScrolled);
         currentLevelData = data;
         freeAllActiveObjects();
 
@@ -351,7 +386,7 @@ public class GameWorld implements Tickable {
         groundPulse.active = false;
         playerDead = false;
         levelComplete = false;
-        worldScrolled = 0f;
+        worldScrolled = startScrolled;
         postEndTimer = -1f;
 
         String bg = (data.bgColor != null && !data.bgColor.isEmpty()) ? data.bgColor : "1a1a2e";
@@ -362,7 +397,9 @@ public class GameWorld implements Tickable {
         groundColor.set(baseGroundColor);
 
         for (LevelData.ObjectEntry e : data.objects) {
+            float rx = e.x - startScrolled;
             if (Registries.BLOCKS.has(e.type)) {
+                if (e.x + e.size < startScrolled - 200) continue;
                 BlockType bt = BlockType.DEFAULT;
                 if (e.blockType != null) {
                     for (BlockType t : BlockType.values())
@@ -372,29 +409,31 @@ public class GameWorld implements Tickable {
                         }
                 }
                 if ("slope".equals(e.type)) {
-                    Slope s = slopePool.obtain().init(e.x, e.y, e.size, bt, e.rotation);
+                    Slope s = slopePool.obtain().init(rx, e.y, e.size, bt, e.rotation);
                     blocks.add(s);
                 } else {
-                    Block b = blockPool.obtain().init(e.x, e.y, e.size, bt);
+                    Block b = blockPool.obtain().init(rx, e.y, e.size, bt);
                     blocks.add(b);
                 }
             } else if (Registries.HAZARDS.has(e.type)) {
+                float hW = ("saw_blade".equals(e.type)) ? e.size : 50f;
+                if (e.x + hW < startScrolled - 100) continue;
+
                 if ("spike".equals(e.type)) {
-                    Spike s = spikePool.obtain().init(e.x, e.y, e.rotation);
+                    Spike s = spikePool.obtain().init(rx, e.y, e.rotation);
                     hazards.add(s);
                     activeSpikes.add(s);
                 } else if ("half_spike".equals(e.type)) {
-                    HalfSpike hs = halfSpikePool.obtain().init(e.x, e.y, e.rotation);
+                    HalfSpike hs = halfSpikePool.obtain().init(rx, e.y, e.rotation);
                     hazards.add(hs);
                     activeHalfSpikes.add(hs);
                 } else if ("saw_blade".equals(e.type)) {
-                    // e.size   = diameter in world units (stored in the same size field blocks use)
-                    // e.rotation = degrees-per-second spin speed (reuses the rotation field)
-                    SawBlade sb = sawBladePool.obtain().init(e.x, e.y, e.size, e.rotation);
+                    SawBlade sb = sawBladePool.obtain().init(rx, e.y, e.size, e.rotation);
                     hazards.add(sb);
                     activeSawBlades.add(sb);
                 }
             } else if (Registries.PORTALS.has(e.type)) {
+                if (e.x + 50f < startScrolled - 100) continue;
                 AbstractPortal p = null;
                 if ("cube_portal".equals(e.type)) {
                     p = cubePortalPool.obtain();
@@ -410,7 +449,7 @@ public class GameWorld implements Tickable {
                     activeMiniPortals.add((MiniPortal) p);
                 }
                 if (p != null) {
-                    p.init(e.x, e.y);
+                    p.init(rx, e.y);
                     portals.add(p);
                 }
             } else if (Registries.TRIGGERS.has(e.type)) {
@@ -433,23 +472,24 @@ public class GameWorld implements Tickable {
         }
 
         levelEndX = data.getLevelEndX();
-        blockStart = 0;
-        hazardStart = 0;
-        portalStart = 0;
-        blockCull = 0;
-        hazardCull = 0;
-        portalCull = 0;
-        triggerIdx = 0;
 
         blocks.sort((a, b2) -> Float.compare(a.getX(), b2.getX()));
         hazards.sort((a, b2) -> Float.compare(a.getX(), b2.getX()));
         portals.sort((a, b2) -> Float.compare(a.getX(), b2.getX()));
         triggers.sort((a, b2) -> Float.compare(a.worldX, b2.worldX));
 
-        freePlayer();
-        player = obtainPlayer("cube").init(100, groundY);
-        player.setWorld(this);
-        Gdx.app.log("GameWorld", "Player initialized.");
+        triggerIdx = 0;
+        float playerWorldX = 100f + startScrolled;
+        while (triggerIdx < triggers.size && triggers.get(triggerIdx).worldX <= playerWorldX) {
+            triggerIdx++;
+        }
+
+        if (resetPlayer) {
+            freePlayer();
+            player = obtainPlayer("cube").init(100, groundY);
+            player.worldX = 100f + worldScrolled;
+            player.setWorld(this);
+        }
     }
 
 
@@ -475,7 +515,6 @@ public class GameWorld implements Tickable {
             worldScrolled = 0f;
             postEndTimer = -1f;
             levelEndX = 0f;
-            triggerIdx = 0;
             baseBgColor.set(0.1f, 0.1f, 0.18f, 1f);
             baseGroundColor.set(0.09f, 0.13f, 0.24f, 1f);
             backgroundColor.set(baseBgColor);
@@ -508,29 +547,46 @@ public class GameWorld implements Tickable {
      * allocations during level transitions or resets.</p>
      */
     private void freeAllActiveObjects() {
-        for (Block b : blocks) {
+        // ONLY free objects that are NOT already culled!
+        // Culled objects (index < blockCull/hazardCull/portalCull) are already back in the pool.
+        for (int i = blockCull; i < blocks.size; i++) {
+            Block b = blocks.get(i);
             if (b instanceof Slope) slopePool.free((Slope) b);
             else blockPool.free(b);
         }
+        blocks.clear();
 
-        for (SawBlade sb : activeSawBlades) sawBladePool.free(sb);
+        for (int i = hazardCull; i < hazards.size; i++) {
+            AbstractHazard h = hazards.get(i);
+            if (h instanceof Spike) spikePool.free((Spike) h);
+            else if (h instanceof HalfSpike) halfSpikePool.free((HalfSpike) h);
+            else if (h instanceof SawBlade) sawBladePool.free((SawBlade) h);
+        }
+        hazards.clear();
+        activeSpikes.clear();
+        activeHalfSpikes.clear();
         activeSawBlades.clear();
 
-        blocks.clear();
-        for (Spike s : activeSpikes) spikePool.free(s);
-        for (HalfSpike s : activeHalfSpikes) halfSpikePool.free(s);
-        activeSpikes.clear();
-        hazards.clear();
-
-        for (CubePortal p : activeCubePortals) cubePortalPool.free(p);
-        activeCubePortals.clear();
-        for (ShipPortal p : activeShipPortals) shipPortalPool.free(p);
-        activeShipPortals.clear();
-        for (GravityPortal p : activeGravityPortals) gravityPortalPool.free(p);
-        activeGravityPortals.clear();
-        for (MiniPortal p : activeMiniPortals) miniPortalPool.free(p);
-        activeMiniPortals.clear();
+        for (int i = portalCull; i < portals.size; i++) {
+            AbstractPortal p = portals.get(i);
+            if (p instanceof CubePortal) cubePortalPool.free((CubePortal) p);
+            else if (p instanceof ShipPortal) shipPortalPool.free((ShipPortal) p);
+            else if (p instanceof GravityPortal) gravityPortalPool.free((GravityPortal) p);
+            else if (p instanceof MiniPortal) miniPortalPool.free((MiniPortal) p);
+        }
         portals.clear();
+        activeCubePortals.clear();
+        activeShipPortals.clear();
+        activeGravityPortals.clear();
+        activeMiniPortals.clear();
+        
+        // After freeing what remained, reset the indices so the next load/reset starts fresh
+        blockCull = 0;
+        hazardCull = 0;
+        portalCull = 0;
+        blockStart = 0;
+        hazardStart = 0;
+        portalStart = 0;
     }
 
 
@@ -658,11 +714,11 @@ public class GameWorld implements Tickable {
         player.tryJump();
 
         worldScrolled += scrollSpeed * delta;
+        player.worldX = 100f + worldScrolled;
 
-        float playerWorldX = 100f + worldScrolled;
         while (triggerIdx < triggers.size) {
             AbstractTrigger t = triggers.get(triggerIdx);
-            if (playerWorldX < t.worldX) break;
+            if (player.worldX < t.worldX) break;
             t.fired = true;
             t.fire(this);
             triggerIdx++;
@@ -702,7 +758,8 @@ public class GameWorld implements Tickable {
         while (blockCull < blocks.size) {
             Block b = blocks.get(blockCull);
             if (b.getX() + b.getWidth() >= cullX - 200) break;
-            blockPool.free(b);
+            if (b instanceof Slope) slopePool.free((Slope) b);
+            else blockPool.free(b);
             blockCull++;
         }
         while (hazardCull < hazards.size) {
@@ -732,6 +789,9 @@ public class GameWorld implements Tickable {
             } else if (p instanceof GravityPortal) {
                 gravityPortalPool.free((GravityPortal) p);
                 activeGravityPortals.removeValue((GravityPortal) p, true);
+            } else if (p instanceof MiniPortal) {
+                miniPortalPool.free((MiniPortal) p);
+                activeMiniPortals.removeValue((MiniPortal) p, true);
             }
             portalCull++;
         }
@@ -841,6 +901,10 @@ public class GameWorld implements Tickable {
      *
      * @return the current {@code AbstractPlayer} instance
      */
+    public float getScrollSpeed() {
+        return scrollSpeed;
+    }
+
     public AbstractPlayer getPlayer() {
         return player;
     }
@@ -911,8 +975,6 @@ public class GameWorld implements Tickable {
     }
 
     public float getWorldScrolled() { return worldScrolled; }
-
-    public float getScrollSpeed() { return scrollSpeed; }
 
     /**
      * Retrieves the list of all active blocks currently managed by the game world.
