@@ -705,18 +705,6 @@ public class MainMenuScreen extends AbstractScreen {
             ry + layout.height / 2f,
             COL_LABEL
         );
-        font.getData().setScale(settingsFontScale * 0.62f);
-        String hint = value ? "ON" : "OFF";
-        Color hintColor = value ? COL_ON : COL_DIM;
-        layout.setText(font, hint);
-
-        drawTextWithShadow(
-            font,
-            hint,
-            pillX + pillW / 2f - layout.width / 2f,
-            ry + layout.height / 2f,
-            hintColor
-        );
         font.getData().setScale(1f);
         game.getBatch().end();
     }
