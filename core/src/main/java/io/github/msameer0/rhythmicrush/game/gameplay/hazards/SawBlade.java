@@ -94,7 +94,7 @@ public class SawBlade extends AbstractHazard {
      */
     @Override
     public void tryTouch(AbstractPlayer player) {
-        float radius = width * 0.5f;
+        float radius = width * 0.35f;
         float cx = x + radius;
         float cy = y + radius;
 
