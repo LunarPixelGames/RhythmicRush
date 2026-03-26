@@ -212,6 +212,9 @@ public class MainMenuScreen extends AbstractScreen {
             rows.add(new SettingRow(RowType.TOGGLE, "Show Hitboxes on Death", "hitboxesDeath"));
             rows.add(new SettingRow(RowType.TOGGLE, "Show Percentage", "showPercentage"));
             rows.add(new SettingRow(RowType.TOGGLE, "Show Progress Bar", "showProgressBar"));
+            rows.add(new SettingRow(RowType.TOGGLE, "Show Attempts", "showAttempts"));
+            rows.add(new SettingRow(RowType.TOGGLE, "Show Best", "showBest"));
+            rows.add(new SettingRow(RowType.SLIDER, "Practice Buttons Opacity", "practiceOpacity"));
             if (desktop)
                 rows.add(new SettingRow(RowType.TOGGLE, "Lock Cursor in Game", "lockCursor"));
         } else {
@@ -603,6 +606,7 @@ public class MainMenuScreen extends AbstractScreen {
                 case SLIDER:
                     float val;
                     if ("uiPadding".equals(row.id)) val = s.uiPadding / 50f;
+                    else if ("practiceOpacity".equals(row.id)) val = s.practiceButtonOpacity;
                     else val = s.musicVolume;
                     drawSliderRow(ry, row.label, val);
                     break;
@@ -646,6 +650,10 @@ public class MainMenuScreen extends AbstractScreen {
                 return s.showPercentage;
             case "showProgressBar":
                 return s.showProgressBar;
+            case "showAttempts":
+                return s.showAttempts;
+            case "showBest":
+                return s.showBest;
             default:
                 return false;
         }
@@ -696,18 +704,6 @@ public class MainMenuScreen extends AbstractScreen {
             panelX + 28f,
             ry + layout.height / 2f,
             COL_LABEL
-        );
-        font.getData().setScale(settingsFontScale * 0.62f);
-        String hint = value ? "ON" : "OFF";
-        Color hintColor = value ? COL_ON : COL_DIM;
-        layout.setText(font, hint);
-
-        drawTextWithShadow(
-            font,
-            hint,
-            pillX + pillW / 2f - layout.width / 2f,
-            ry + layout.height / 2f,
-            hintColor
         );
         font.getData().setScale(1f);
         game.getBatch().end();
@@ -931,6 +927,8 @@ public class MainMenuScreen extends AbstractScreen {
                     game.getSoundManager().setMusicVolume(s.musicVolume);
                 } else if ("uiPadding".equals(row.id)) {
                     s.uiPadding = norm * 50f;
+                } else if ("practiceOpacity".equals(row.id)) {
+                    s.practiceButtonOpacity = norm;
                 }
             }
         }
@@ -993,7 +991,11 @@ public class MainMenuScreen extends AbstractScreen {
                     if (hitPill(t, ry)) handleToggle(row.id, s);
                     break;
                 case SLIDER:
-                    float val = "uiPadding".equals(row.id) ? (s.uiPadding / 50f) : s.musicVolume;
+                    float val;
+                    if ("uiPadding".equals(row.id)) val = s.uiPadding / 50f;
+                    else if ("practiceOpacity".equals(row.id)) val = s.practiceButtonOpacity;
+                    else val = s.musicVolume;
+
                     if (hitSliderThumb(t, ry, val)) {
                         draggingSlider = true;
                         draggingSliderRow = i;
@@ -1074,6 +1076,14 @@ public class MainMenuScreen extends AbstractScreen {
                 break;
             case "showProgressBar":
                 s.showProgressBar = !s.showProgressBar;
+                s.save();
+                break;
+            case "showAttempts":
+                s.showAttempts = !s.showAttempts;
+                s.save();
+                break;
+            case "showBest":
+                s.showBest = !s.showBest;
                 s.save();
                 break;
             case "capFps":

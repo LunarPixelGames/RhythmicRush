@@ -29,7 +29,9 @@ public abstract class ObjectPool<T> {
      */
     public T obtain() {
         if (free.size == 0) return create();
-        return free.pop();
+        T obj = free.pop();
+        reset(obj);
+        return obj;
     }
 
     /**

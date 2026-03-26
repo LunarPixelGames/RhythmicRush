@@ -19,6 +19,7 @@ public abstract class AbstractPlayer {
     public float gravity;
     protected PlayerType type;
     public float x, y;
+    public float worldX;
     public float width = 50, height = 50;
     public float velocityY = 0;
     public Rectangle bounds;
@@ -107,6 +108,14 @@ public abstract class AbstractPlayer {
 
     public float getX() {
         return x;
+    }
+
+    public float getWorldX() {
+        return worldX;
+    }
+
+    public void setWorldX(float worldX) {
+        this.worldX = worldX;
     }
 
     public float getY() {

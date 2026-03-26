@@ -94,6 +94,18 @@ public class Block {
     }
 
     /**
+     * Resets the block's state to default values for object pooling.
+     */
+    public void reset() {
+        this.x = 0;
+        this.y = 0;
+        this.width = 0;
+        this.height = 0;
+        this.type = BlockType.DEFAULT;
+        this.bounds.set(0, 0, 0, 0);
+    }
+
+    /**
      * Handles collision detection and response between the player and this block.
      * <p>
      * This method calculates the overlap between the player's bounding box and the block's

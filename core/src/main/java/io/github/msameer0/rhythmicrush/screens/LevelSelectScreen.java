@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Vector2;
 
@@ -47,7 +48,7 @@ public class LevelSelectScreen extends AbstractScreen {
     private TextureRegion backButton, leftArrow, rightArrow;
     private TextureRegion[] difficultyTextures;
 
-    private AnimatedButton btnBack, btnLeft, btnRight, btnPanel;
+    private AnimatedButton btnBack, btnLeft, btnRight, btnPanel, btnPractice;
 
     private Texture panelTexture;
     private int lastPanelW = -1, lastPanelH = -1;
@@ -117,6 +118,7 @@ public class LevelSelectScreen extends AbstractScreen {
         btnLeft = new AnimatedButton(leftArrow, 0, 0, 0, 0, () -> navigate(-1));
         btnRight = new AnimatedButton(rightArrow, 0, 0, 0, 0, () -> navigate(1));
         btnPanel = new AnimatedButton(null, 0, 0, 0, 0, this::playSelected);
+        btnPractice = new AnimatedButton(null, 0, 0, 0, 0, this::playPractice);
         updateScaledSizes();
     }
 
@@ -217,6 +219,10 @@ public class LevelSelectScreen extends AbstractScreen {
         panelX = vw / 2f - panelW / 2f;
         panelY = vh / 2f - panelH / 2f + 40;
         if (btnPanel != null) btnPanel.setBounds(panelX, panelY, panelW, panelH);
+
+        float practiceSize = vw * 0.06f;
+        if (btnPractice != null)
+            btnPractice.setBounds(panelX + panelW + 15, panelY, practiceSize, practiceSize);
     }
 
     /**
@@ -236,6 +242,7 @@ public class LevelSelectScreen extends AbstractScreen {
         btnLeft.update(delta);
         btnRight.update(delta);
         btnPanel.update(delta);
+        btnPractice.update(delta);
         handleInput();
 
         if (isTransitioning) {
@@ -316,6 +323,31 @@ public class LevelSelectScreen extends AbstractScreen {
         btnBack.draw(game.getBatch());
         btnLeft.draw(game.getBatch());
         btnRight.draw(game.getBatch());
+
+        // --- Practice Button ---
+        if (!isTransitioning) {
+            float px = btnPractice.x;
+            float py = btnPractice.y;
+            float ps = btnPractice.w;
+
+            // Simple rounded rect for P button
+            game.getBatch().end();
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+            ShapeRenderer shapes = new ShapeRenderer();
+            shapes.setProjectionMatrix(camera.combined);
+            shapes.begin(ShapeRenderer.ShapeType.Filled);
+            shapes.setColor(0.15f, 0.45f, 0.15f, 0.8f);
+            drawRoundedRect(shapes, px, py, ps, ps, 10f);
+            shapes.end();
+            shapes.dispose();
+            Gdx.gl.glDisable(GL20.GL_BLEND);
+            game.getBatch().begin();
+
+            font.getData().setScale(0.65f);
+            layout.setText(font, "P");
+            drawTextWithShadow(font, "P", px + ps / 2f - layout.width / 2f, py + ps / 2f + layout.height / 2f, Color.WHITE);
+        }
 
         // --- Level icon + name ---
         TextureRegion diffRegion = difficultyTexture(current.difficulty);
@@ -416,19 +448,28 @@ public class LevelSelectScreen extends AbstractScreen {
             btnLeft.onTouchDown(t.x, t.y);
             btnRight.onTouchDown(t.x, t.y);
             btnPanel.onTouchDown(t.x, t.y);
+            btnPractice.onTouchDown(t.x, t.y);
         }
         if (!Gdx.input.isTouched()) {
             btnBack.onTouchUp(t.x, t.y);
             btnLeft.onTouchUp(t.x, t.y);
             btnRight.onTouchUp(t.x, t.y);
             btnPanel.onTouchUp(t.x, t.y);
+            btnPractice.onTouchUp(t.x, t.y);
         }
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT)) navigate(-1);
         if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT)) navigate(1);
         if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) playSelected();
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) playSelected();
+        if (Gdx.input.isKeyJustPressed(Input.Keys.P)) playPractice();
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) game.setScreen(new MainMenuScreen(game));
+    }
+
+    private void playPractice() {
+        LevelData data = levels.get(selectedLevel);
+        if (!"-1.json".equals(data.fileName))
+            game.setScreen(new GameScreen(game, data, selectedLevel, true));
     }
 
     /**
@@ -492,6 +533,16 @@ public class LevelSelectScreen extends AbstractScreen {
 
     private static boolean hits(Vector2 t, float x, float y, float w, float h) {
         return t.x >= x && t.x <= x + w && t.y >= y && t.y <= y + h;
+    }
+
+    private void drawRoundedRect(ShapeRenderer shapes, float x, float y, float w, float h, float r) {
+        shapes.rect(x + r, y, w - 2 * r, h);
+        shapes.rect(x, y + r, r, h - 2 * r);
+        shapes.rect(x + w - r, y + r, r, h - 2 * r);
+        shapes.circle(x + r, y + r, r, 16);
+        shapes.circle(x + w - r, y + r, r, 16);
+        shapes.circle(x + r, y + h - r, r, 16);
+        shapes.circle(x + w - r, y + h - r, r, 16);
     }
 
     /**
