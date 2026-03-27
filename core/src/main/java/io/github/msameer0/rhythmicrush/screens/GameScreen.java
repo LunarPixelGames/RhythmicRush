@@ -85,8 +85,8 @@ public class GameScreen extends AbstractScreen {
 
     private static class CheckpointState {
         float worldScrolled;
-        float playerX; // Relative to camera/screen
-        float playerWorldX; // Absolute world X
+        float playerX;
+        float playerWorldX;
         AbstractPlayer.PlayerType playerType;
         float playerY, playerVY;
         boolean gravityFlipped, mini;
@@ -120,11 +120,11 @@ public class GameScreen extends AbstractScreen {
 
     private void updatePracticeBtnCoords() {
         float pad = game.getSettingsManager().uiPadding;
-        float spacing = 35f * uiScale; // Increased gap
+        float spacing = 35f * uiScale;
         float totalW = practiceBtnSize * 2 + spacing;
-        
+
         practicePlusX = camCX() - totalW / 2f;
-        practicePlusY = camBot() + pad; // Directly influenced by padding
+        practicePlusY = camBot() + pad;
         practiceMinusX = practicePlusX + practiceBtnSize + spacing;
         practiceMinusY = practicePlusY;
     }
@@ -172,7 +172,7 @@ public class GameScreen extends AbstractScreen {
     private static final float END_MUSIC_FADE_START = 1.0f;
 
     private static long lastAdTimeMillis = 0;
-    private static final long AD_COOLDOWN_MS = 60000;   // <- this is 6 minutes
+    private static final long AD_COOLDOWN_MS = 60000;
 
     /**
      * Constructs a new GameScreen, initializing the core game logic, physics engine,
@@ -638,7 +638,6 @@ public class GameScreen extends AbstractScreen {
         game.getBatch().setProjectionMatrix(gameCamera.combined);
         shapes.setProjectionMatrix(gameCamera.combined);
 
-        // 1. Draw UI Shapes
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapes.begin(ShapeRenderer.ShapeType.Filled);
@@ -658,7 +657,6 @@ public class GameScreen extends AbstractScreen {
         shapes.end();
         Gdx.gl.glDisable(GL20.GL_BLEND);
 
-        // 2. Draw UI Text and Sprites
         game.getBatch().begin();
 
         drawProgressBarText();
@@ -674,7 +672,6 @@ public class GameScreen extends AbstractScreen {
 
         game.getBatch().end();
 
-        // 3. Pause Slider (needs shapes again, but we keep it separate to avoid complexity for now)
         if (paused) {
             drawPauseSliderShapes();
         }
@@ -691,22 +688,18 @@ public class GameScreen extends AbstractScreen {
         float opacity = game.getSettingsManager().practiceButtonOpacity;
         font.getData().setScale(1.5f * uiScale);
 
-        // Center "+" 
         glyphLayout.setText(font, "+");
         float plusX = practicePlusX + (practiceBtnSize - glyphLayout.width) / 2f;
         float plusY = practicePlusY + (practiceBtnSize + glyphLayout.height) / 2f;
 
-        // Center "-"
         glyphLayout.setText(font, "-");
         float minusX = practiceMinusX + (practiceBtnSize - glyphLayout.width) / 2f;
         float minusY = practiceMinusY + (practiceBtnSize + glyphLayout.height) / 2f;
 
-        // Shadow
         font.setColor(0, 0, 0, 0.4f * opacity);
         font.draw(game.getBatch(), "+", plusX + 2f * uiScale, plusY - 2f * uiScale);
         font.draw(game.getBatch(), "-", minusX + 2f * uiScale, minusY - 2f * uiScale);
 
-        // Main
         font.setColor(1, 1, 1, opacity);
         font.draw(game.getBatch(), "+", plusX, plusY);
         font.draw(game.getBatch(), "-", minusX, minusY);
@@ -790,11 +783,9 @@ public class GameScreen extends AbstractScreen {
         }
         Color textColor = isPB ? COL_HEADING : Color.WHITE;
 
-        // Shadow
         font.setColor(0, 0, 0, textColor.a * 0.4f);
         font.draw(game.getBatch(), _hudSb, textDrawX + 2f, LINE_Y + textH / 2f - 2f);
 
-        // Text
         font.setColor(textColor);
         font.draw(game.getBatch(), _hudSb, textDrawX, LINE_Y + textH / 2f);
         font.getData().setScale(1f);
@@ -825,7 +816,6 @@ public class GameScreen extends AbstractScreen {
         float shadowOffset = 2f;
         float nextY = top;
 
-        // Attempt
         if (s.showAttempts) {
             _hudSb.setLength(0);
             _hudSb.append("Attempt  ").append(sessionAttempts);
@@ -838,7 +828,6 @@ public class GameScreen extends AbstractScreen {
 
         if (s.showBest && levelKey != null) {
             LevelProgress p1 = game.getProgressManager().getOrCreate(levelKey);
-            // Best
             _hudSb.setLength(0);
             _hudSb.append("Best  ").append(p1.bestPercent).append('%');
             font.setColor(0, 0, 0, HUD_BEST.a * 0.4f);
@@ -849,7 +838,6 @@ public class GameScreen extends AbstractScreen {
         }
 
         if (s.showFps) {
-            // FPS
             _hudSb.setLength(0);
             _hudSb.append("FPS  ").append(Gdx.graphics.getFramesPerSecond());
             font.setColor(0, 0, 0, HUD_FPS.a * 0.4f);
@@ -887,7 +875,6 @@ public class GameScreen extends AbstractScreen {
         float cx = gameCamera.position.x;
         float cy = gameCamera.position.y;
 
-        // Draw "NEW BEST"
         font.getData().setScale(scale);
         _hudSb.setLength(0);
         _hudSb.append("NEW BEST");
@@ -895,26 +882,21 @@ public class GameScreen extends AbstractScreen {
         float newBestTextHeight = glyphLayout.height;
         float newBestTextY = cy + newBestTextHeight / 2f;
 
-        // Shadow
         font.setColor(0, 0, 0, alpha * 0.4f);
         font.draw(game.getBatch(), _hudSb, cx - glyphLayout.width / 2f + 2f, newBestTextY - 2f);
 
-        // Text
         font.setColor(COL_HEADING.r, COL_HEADING.g, COL_HEADING.b, alpha);
         font.draw(game.getBatch(), _hudSb, cx - glyphLayout.width / 2f, newBestTextY);
 
-        // Draw percentage
         font.getData().setScale(scale * 0.6f);
         _hudSb.setLength(0);
         _hudSb.append(popupBestPct).append('%');
         glyphLayout.setText(font, _hudSb);
         float percentageTextY = newBestTextY - newBestTextHeight - 5f;
 
-        // Shadow
         font.setColor(0, 0, 0, alpha * 0.85f * 0.4f);
         font.draw(game.getBatch(), _hudSb, cx - glyphLayout.width / 2f + 2f, percentageTextY - 2f);
 
-        // Text
         font.setColor(1f, 1f, 1f, alpha * 0.85f);
         font.draw(game.getBatch(), _hudSb, cx - glyphLayout.width / 2f, percentageTextY);
 
@@ -1289,31 +1271,29 @@ public class GameScreen extends AbstractScreen {
         if (!isPracticeMode || checkpoints.size == 0) return;
 
         float scroll = world.getWorldScrolled();
-        float hw = 12f;  // half width
-        float hh = 18f;  // half height (stretched)
+        float hw = 12f;
+        float hh = 18f;
 
         for (CheckpointState s : checkpoints) {
             float dx = s.playerX - (scroll - s.worldScrolled);
             float dy = s.playerY + 25f;
 
-            // 1. Draw Outline (Dark Green)
             shapes.setColor(0.1f, 0.4f, 0.1f, 0.8f);
             drawDiamond(dx, dy, hw + 2f, hh + 2f);
 
-            // 2. Draw Fill (Lime)
             shapes.setColor(0.6f, 1.0f, 0.2f, 0.9f);
             drawDiamond(dx, dy, hw, hh);
         }
     }
 
     private void drawDiamond(float x, float y, float hw, float hh) {
-        shapes.triangle(x, y + hh, x - hw, y, x + hw, y); // Top
-        shapes.triangle(x, y - hh, x - hw, y, x + hw, y); // Bottom
+        shapes.triangle(x, y + hh, x - hw, y, x + hw, y);
+        shapes.triangle(x, y - hh, x - hw, y, x + hw, y);
     }
 
     private void respawnAtCheckpoint() {
         if (checkpoints.size == 0) {
-            triggerRespawn(); // Should not happen but fallback
+            triggerRespawn();
             return;
         }
         CheckpointState s = checkpoints.peek();
@@ -1330,7 +1310,6 @@ public class GameScreen extends AbstractScreen {
         lastJumpHeld = false;
         popupTimer = -1f;
 
-        // Restore world state
         world.fastForwardTo(s.worldScrolled);
         world.setWorldScrolled(s.worldScrolled);
         world.setBaseBgColor(s.baseBgColor);
@@ -1339,7 +1318,6 @@ public class GameScreen extends AbstractScreen {
         world.setGroundColor(s.groundColor);
         world.setTriggerIdx(s.triggerIdx);
 
-        // Restore player state
         AbstractPlayer p = world.obtainPlayer(s.playerType == AbstractPlayer.PlayerType.CUBE ? "cube" : "ship");
         p.init(s.playerX, s.playerY, s.playerVY, false);
         p.worldX = s.playerWorldX;
@@ -1350,7 +1328,6 @@ public class GameScreen extends AbstractScreen {
 
         engine.reset();
 
-        // Sync music with checkpoint
         stopAndDisposeMusic();
         float startTime = s.worldScrolled / world.getScrollSpeed();
         startMusic(startTime);
@@ -1393,16 +1370,10 @@ public class GameScreen extends AbstractScreen {
         if (pct > p.bestPercent) {
             p.bestPercent = pct;
             game.getProgressManager().save();
-            // Trigger the new best popup
             popupTimer = 0f;
             popupBestPct = pct;
 
-            // Chance to get an ad is equivalent to the new best you get (0.0 to 1.0)
             checkAndShowAd(pct / 100f);
-        } else {
-            // 0% chance on random deaths (already implicit if we don't call it here,
-            // but we call with 0 just to be safe and clear if needed, or just don't call)
-            // checkAndShowAd(0.0f);
         }
     }
 
@@ -1755,15 +1726,12 @@ public class GameScreen extends AbstractScreen {
      * @param adChance If true, forces a 100% chance to show the ad (still respects cooldown).
      */
     private void checkAndShowAd(float adChance) {
-        // 1. Check if 1 minute has passed since the last ad
         if (TimeUtils.timeSinceMillis(lastAdTimeMillis) < AD_COOLDOWN_MS) {
-            return; // Cooldown is still active, skip the ad!
+            return;
         }
 
-        // 2. Determine chance based on provided probability (0.0 to 1.0)
         boolean shouldShowAd = MathUtils.randomBoolean(adChance);
 
-        // 3. Show the ad and reset the timer!
         if (shouldShowAd && game.getAdController() != null) {
             game.getAdController().showInterstitialAd();
             lastAdTimeMillis = TimeUtils.millis();

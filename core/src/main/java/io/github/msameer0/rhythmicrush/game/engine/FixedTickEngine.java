@@ -33,15 +33,12 @@ public class FixedTickEngine {
 
     private static final float MAX_ACCUMULATOR = 0.25f;
 
-    // ── Click-between-steps: input event queue ────────────────────────────────
     private static final int QUEUE_CAPACITY = 16;
     private final boolean[] eventHeld   = new boolean[QUEUE_CAPACITY];
     private final float[]   eventOffset = new float[QUEUE_CAPACITY];
     private int             eventHead   = 0;
     private int             eventCount  = 0;
 
-    // ── Click-on-steps: buffered press ────────────────────────────────────────
-    // When a press fires but isn't consumed, we store it here and retry each step.
     private boolean bufferedPress    = false;
     private int     bufferStepsLeft  = 0;
 
@@ -62,7 +59,6 @@ public class FixedTickEngine {
      */
     public void queueInput(boolean held, float frameOffset) {
         if (!held) {
-            // Release: clear the buffer immediately and queue the release event
             bufferedPress   = false;
             bufferStepsLeft = 0;
         }
@@ -86,29 +82,24 @@ public class FixedTickEngine {
         while (accumulator >= TICK_DELTA) {
             float tickEnd = frameStart + elapsed + TICK_DELTA;
 
-            // ── Deliver queued events that fall in this tick's window ──────────
             while (eventCount > 0 && eventOffset[eventHead] <= tickEnd) {
                 boolean held = eventHeld[eventHead];
                 eventHead  = (eventHead + 1) % QUEUE_CAPACITY;
                 eventCount--;
 
                 if (!held) {
-                    // Release: always deliver, clear buffer
                     bufferedPress   = false;
                     bufferStepsLeft = 0;
                     tickable.onInput(false);
                 } else {
-                    // Press: deliver and check if consumed
                     boolean consumed = tickable.onInput(true);
                     if (!consumed) {
-                        // Start buffering — retry on subsequent steps
                         bufferedPress   = true;
                         bufferStepsLeft = BUFFER_STEPS;
                     }
                 }
             }
 
-            // ── Retry buffered press if still pending ─────────────────────────
             if (bufferedPress && bufferStepsLeft > 0) {
                 boolean consumed = tickable.onInput(true);
                 if (consumed) {

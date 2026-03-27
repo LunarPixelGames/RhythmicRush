@@ -87,7 +87,7 @@ public class HalfSpike extends AbstractHazard {
      */
     private void updateHitbox() {
         switch ((Math.round(rotation / 90f) * 90 % 360 + 360) % 360) {
-            case 90: // 90 CCW = Pointing LEFT (Base on RIGHT)
+            case 90:
                 spikeHitbox.set(x + TEXTURE_SIZE - HITBOX_H, y + HITBOX_CENTER_X, HITBOX_H, HITBOX_W);
                 break;
             case 180: // 180 CCW = Pointing DOWN (Base on TOP)

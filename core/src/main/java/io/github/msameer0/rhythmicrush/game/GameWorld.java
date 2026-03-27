@@ -363,8 +363,6 @@ public class GameWorld implements Tickable {
 
     public void fastForwardTo(float scrolled) {
         this.worldScrolled = scrolled;
-        // We need to re-initialize everything relative to the new scrolled amount.
-        // The easiest way is to re-load from the data but shift every X.
         if (currentLevelData != null) {
             loadLevel(currentLevelData, scrolled, false);
         }
@@ -547,8 +545,6 @@ public class GameWorld implements Tickable {
      * allocations during level transitions or resets.</p>
      */
     private void freeAllActiveObjects() {
-        // ONLY free objects that are NOT already culled!
-        // Culled objects (index < blockCull/hazardCull/portalCull) are already back in the pool.
         for (int i = blockCull; i < blocks.size; i++) {
             Block b = blocks.get(i);
             if (b instanceof Slope) slopePool.free((Slope) b);
@@ -579,8 +575,7 @@ public class GameWorld implements Tickable {
         activeShipPortals.clear();
         activeGravityPortals.clear();
         activeMiniPortals.clear();
-        
-        // After freeing what remained, reset the indices so the next load/reset starts fresh
+
         blockCull = 0;
         hazardCull = 0;
         portalCull = 0;
@@ -693,10 +688,8 @@ public class GameWorld implements Tickable {
                         next.setWorld(this);
                         next.copyState(player);
 
-                        // FIX: Overwrite the double-shifted coordinates!
-                        // Force the new player to sit exactly where the old player was.
                         next.x = player.x;
-                        next.setY(player.y); // Using setY() triggers your protected updateBounds() method!
+                        next.setY(player.y);
 
                         freePlayer();
                         player = next;
@@ -723,37 +716,6 @@ public class GameWorld implements Tickable {
             t.fire(this);
             triggerIdx++;
         }
-
-//        if (bgFade.active) {
-//            bgFade.elapsed += delta;
-//            float t = Math.min(bgFade.elapsed / bgFade.duration, 1f);
-//            baseBgColor.set(lerp(bgFade.from.r, bgFade.to.r, t), lerp(bgFade.from.g, bgFade.to.g, t),
-//                lerp(bgFade.from.b, bgFade.to.b, t), 1f);
-//            if (t >= 1f) bgFade.active = false;
-//        }
-//        if (groundFade.active) {
-//            groundFade.elapsed += delta;
-//            float t = Math.min(groundFade.elapsed / groundFade.duration, 1f);
-//            baseGroundColor.set(lerp(groundFade.from.r, groundFade.to.r, t), lerp(groundFade.from.g, groundFade.to.g, t),
-//                lerp(groundFade.from.b, groundFade.to.b, t), 1f);
-//            if (t >= 1f) groundFade.active = false;
-//        }
-//
-//        bgPulse.update(delta);
-//        groundPulse.update(delta);
-//
-//        // Final colors for rendering
-//        backgroundColor.set(baseBgColor);
-//        if (bgPulse.active) {
-//            float intensity = bgPulse.getIntensity();
-//            backgroundColor.lerp(bgPulse.target, intensity);
-//        }
-//
-//        groundColor.set(baseGroundColor);
-//        if (groundPulse.active) {
-//            float intensity = groundPulse.getIntensity();
-//            groundColor.lerp(groundPulse.target, intensity);
-//        }
 
         while (blockCull < blocks.size) {
             Block b = blocks.get(blockCull);

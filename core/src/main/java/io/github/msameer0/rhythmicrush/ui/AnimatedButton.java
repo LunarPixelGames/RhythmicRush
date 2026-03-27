@@ -56,9 +56,7 @@ public class AnimatedButton {
      * @param delta the time elapsed since the last update in seconds
      */
     public void update(float delta) {
-        // Use sub-stepping to ensure physics stability even at very low frame rates.
-        // Spring systems are sensitive to large time steps and can become unstable.
-        float remaining = Math.min(delta, 0.25f); // Cap maximum delta to avoid huge jumps after pauses
+        float remaining = Math.min(delta, 0.25f);
         float step = 0.01f;
 
         while (remaining > 0) {

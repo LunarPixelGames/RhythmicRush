@@ -56,9 +56,6 @@ public class Slope extends Block {
         float bB = bounds.y, bT = bounds.y + bounds.height;
         float bW = bounds.width, bH = bounds.height;
 
-        // 1. Broad-phase AABB Collision
-        // FIX: Added a generous margin. When riding descending slopes, the player's radius
-        // pushes their bounding box slightly outside the physical bounds of the next tile.
         float margin = r * 2.0f;
         if (cx + r < bL - margin || cx - r > bR + margin || cy + r < bB - margin || cy - r > bT + margin) return;
 
@@ -66,23 +63,18 @@ public class Slope extends Block {
         int rot = normaliseRot();
         float scrollSpeed = player.getWorld() != null ? player.getWorld().getScrollSpeed() : 320f;
 
-        // 2. Define Your Exact Level Editor Mapping FIRST
         boolean isFloor   = (rot == 0 || rot == 270);
         boolean isCeiling = (rot == 90 || rot == 180);
 
         boolean isClimbing   = (!flipped && rot == 0) || (flipped && rot == 90);
         boolean isDescending = (!flipped && rot == 270) || (flipped && rot == 180);
 
-        // Check if player is a ship
         boolean isShip = player.getType() == AbstractPlayer.PlayerType.SHIP;
 
-        // Optimization: If gravity doesn't match the slope, ignore it entirely...
-        // UNLESS they are a SHIP, because Ships need to slide against opposite ceilings safely!
         if (!isShip) {
             if ((!flipped && !isFloor) || (flipped && !isCeiling)) return;
         }
 
-        // 3. Line Segment and Normal Vector Generation
         float lx1, ly1, lx2, ly2, nx, ny;
         float edgeLen = (float) Math.sqrt(bW * bW + bH * bH);
 
@@ -100,9 +92,6 @@ public class Slope extends Block {
             nx = -bH / edgeLen; ny = -bW / edgeLen;
         }
 
-        // --- CRITICAL ALIGNMENT FIX ---
-        // If the math generated a normal pointing the wrong way for your custom mapping,
-        // we flip it here. Ceilings MUST point down (ny < 0), Floors MUST point up (ny > 0).
         if (isCeiling && ny > 0) {
             nx = -nx;
             ny = -ny;
@@ -111,21 +100,14 @@ public class Slope extends Block {
             ny = -ny;
         }
 
-        // 4. Narrow-phase collision detection
         float dist = (cx - lx1) * nx + (cy - ly1) * ny;
 
-        // FIX: Directional Conditional Snapping!
         float snapTolerance = 0f;
 
         if (isDescending) {
-            // SLIDING DOWN: Always snap! This catches the player the instant they
-            // run off a flat block onto a decline, preventing the corner bump.
             snapTolerance = r * 0.5f;
         }
         else if (isClimbing) {
-            // CLIMBING UP: Only snap if ALREADY riding a slope!
-            // This prevents the incline from reaching out and yanking the player
-            // down into the flat surface before they naturally collide with the ramp.
             if (player.getCurrentSlopeRotation() != 0f) {
                 snapTolerance = r * 0.5f;
             }
@@ -139,44 +121,33 @@ public class Slope extends Block {
         float t = ((cx - lx1) * edgeDx + (cy - ly1) * edgeDy) / (edgeLen * edgeLen);
         if (t < -0.01f || t > 1.01f) return;
 
-        // ---------------------------------------------------------
-        // 5. PREEMPTIVE JUMP ESCAPE LOGIC
         float targetVy = -(scrollSpeed * nx) / ny;
 
         boolean isJumpingOff = false;
 
-        // Define what constitutes a "Floor" for the player's current gravity
         boolean isFloorForPlayer = (!flipped && isFloor) || (flipped && isCeiling);
 
-        // You can only "jump off" of a floor. Ceilings must ALWAYS block the player!
         if (isFloorForPlayer) {
             if (!flipped && player.getVelocityY() > Math.max(0, targetVy) + 1.5f) isJumpingOff = true;
             if (flipped && player.getVelocityY() < Math.min(0, targetVy) - 1.5f) isJumpingOff = true;
         }
 
         if (isJumpingOff) return;
-        // ---------------------------------------------------------
 
-        // 6. Jank-Free Vertical Push-out
         float penetration = r - dist;
 
-        // By DIVIDING by ny we project 100% of the penetration onto the Y axis.
         float pushOutY = penetration / ny;
 
         float newCy = cy + pushOutY;
         float offsetY = cy - player.y;
         player.setY(newCy - offsetY);
 
-        // 7. Slope Riding Physics
-
-        // Only ground the player if they are actually riding a floor!
         if (isFloorForPlayer) {
             player.setGrounded(true);
         }
 
         player.setCurrentSlopeRotation(isClimbing ? 45f : -45f);
 
-        // (The targetVy forcing logic remains the exact same as before)
         if (isDescending) {
             player.setVelocityY(targetVy);
         }

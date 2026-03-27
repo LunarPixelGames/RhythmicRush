@@ -75,17 +75,13 @@ public class Cube extends AbstractPlayer {
                 isGrounded = true;
             }
         } else {
-            // Need to handle flipped floor snapping too if it exists
-            float ceilingY = 720 - groundY - height; // Assuming standard 720p height, though groundY is world-relative
-            // Actually, the project seems to only use groundY as the bottom limit.
+            float ceilingY = 720 - groundY - height;
         }
 
-        // Coyote timer: reset to full window when grounded, count down when airborne
         if (isGrounded) {
             coyoteTimer = COYOTE_TIME;
         } else {
             if (wasGrounded) {
-                // Just left the ground this step — keep the full window, start counting next step
             } else {
                 coyoteTimer = Math.max(0f, coyoteTimer - delta);
             }
@@ -105,7 +101,7 @@ public class Cube extends AbstractPlayer {
             float v = mini ? jumpVelocity * 0.75f : jumpVelocity;
             velocityY   = gravityFlipped ? -v : v;
             isGrounded  = false;
-            coyoteTimer = 0f; // consume the window so it can't fire twice
+            coyoteTimer = 0f;
         }
     }
 
@@ -136,6 +132,6 @@ public class Cube extends AbstractPlayer {
         this.gravityFlipped = other.isGravityFlipped();
         this.currentSlopeRotation = other.getCurrentSlopeRotation();
         setMini(other.isMini());
-        this.coyoteTimer    = 0f; // don't carry coyote state across portal transitions
+        this.coyoteTimer    = 0f;
     }
 }

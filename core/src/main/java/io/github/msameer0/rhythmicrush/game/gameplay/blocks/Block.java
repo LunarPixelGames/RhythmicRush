@@ -140,7 +140,6 @@ public class Block {
 
         boolean flipped = player.isGravityFlipped();
 
-        // Handle landing and bumping based on gravity
         if (!flipped) {
             if (minOverlap == overlapTop && player.velocityY <= 0) {
                 player.setY(blockTop);

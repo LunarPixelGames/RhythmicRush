@@ -307,7 +307,6 @@ public class LevelSelectScreen extends AbstractScreen {
     private void drawLevelPanel(LevelData current,  float panelX,  float panelY) {
         game.getBatch().setProjectionMatrix(camera.combined);
 
-        // --- Panel texture ---
         int texW = (int) panelW, texH = (int) panelH;
         if (panelTexture == null || texW != lastPanelW || texH != lastPanelH) {
             if (panelTexture != null) panelTexture.dispose();
@@ -324,13 +323,11 @@ public class LevelSelectScreen extends AbstractScreen {
         btnLeft.draw(game.getBatch());
         btnRight.draw(game.getBatch());
 
-        // --- Practice Button ---
         if (!isTransitioning) {
             float px = btnPractice.x;
             float py = btnPractice.y;
             float ps = btnPractice.w;
 
-            // Simple rounded rect for P button
             game.getBatch().end();
             Gdx.gl.glEnable(GL20.GL_BLEND);
             Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
@@ -349,7 +346,6 @@ public class LevelSelectScreen extends AbstractScreen {
             drawTextWithShadow(font, "P", px + ps / 2f - layout.width / 2f, py + ps / 2f + layout.height / 2f, Color.WHITE);
         }
 
-        // --- Level icon + name ---
         TextureRegion diffRegion = difficultyTexture(current.difficulty);
         float iconSize = panelH * 0.55f;
         float spacing = panelW * 0.05f;
@@ -359,7 +355,6 @@ public class LevelSelectScreen extends AbstractScreen {
         float nameW = layout.width;
         float nameH = layout.height;
 
-        // max 90% of panel width
         float maxTotalWidth = panelW * 0.9f;
         float scale = 1f;
         float totalWidth = iconSize + spacing + nameW;
@@ -367,11 +362,9 @@ public class LevelSelectScreen extends AbstractScreen {
             scale = (maxTotalWidth - iconSize - spacing) / nameW;
         }
 
-        // Apply scaling to text
         font.getData().setScale(0.85f * scale);
         layout.setText(font, current.name);
 
-        // Center everything in the panel
         float iconX = panelX + (panelW - (iconSize + spacing + layout.width)) / 2f;
         float iconY = panelY + panelH / 2f - iconSize / 2f + 10f;
         float textX = iconX + iconSize + spacing;
@@ -380,7 +373,6 @@ public class LevelSelectScreen extends AbstractScreen {
         game.getBatch().draw(diffRegion, iconX, iconY, iconSize, iconSize);
         drawTextWithShadow(font, current.name, textX, textY, Color.WHITE);
 
-        // --- Difficulty label below name ---
         font.getData().setScale(0.38f * scale); // scale label similarly
         String diffLabel = current.difficulty != null
             ? current.difficulty.substring(0, 1).toUpperCase() + current.difficulty.substring(1)
@@ -388,7 +380,6 @@ public class LevelSelectScreen extends AbstractScreen {
         layout.setText(font, diffLabel);
         drawTextWithShadow(font, diffLabel, textX, textY - nameH - 4f, new Color(1f, 1f, 1f, 0.55f));
 
-        // --- Stats ---
         String levelKey = current.fileName != null ? current.fileName : current.name + ".json";
         LevelProgress progress = game.getProgressManager().getOrCreate(levelKey);
 
@@ -403,7 +394,6 @@ public class LevelSelectScreen extends AbstractScreen {
         layout.setText(font, attemptsText);
         drawTextWithShadow(font, attemptsText, statsX - layout.width / 2f, panelY - 44f, new Color(1f, 1f, 1f, 0.55f));
 
-        // --- Level counter ---
         int currentLevelNum = -1;
         for (int i = 0; i < levels.size; i++) {
             if (levels.get(i) == current) {
@@ -483,7 +473,6 @@ public class LevelSelectScreen extends AbstractScreen {
      */
     private void navigate(int dir) {
         if (isTransitioning) {
-            // Finalize previous transition immediately
             selectedLevel = nextLevelIndex;
             panelX = viewport.getWorldWidth()/2f - panelW/2f;
             isTransitioning = false;
@@ -492,9 +481,8 @@ public class LevelSelectScreen extends AbstractScreen {
         nextLevelIndex = (selectedLevel + dir + levels.size) % levels.size;
         transitionDir = dir;
 
-        // starting and target X positions
         panelXStart = panelX;
-        panelXTarget = panelX - dir * viewport.getWorldWidth(); // slide full screen width
+        panelXTarget = panelX - dir * viewport.getWorldWidth();
 
         transitionTime = 0f;
         isTransitioning = true;
@@ -510,14 +498,12 @@ public class LevelSelectScreen extends AbstractScreen {
         Vector2 t = viewport.unproject(new Vector2(Gdx.input.getX(), Gdx.input.getY()));
 
         if (isTransitioning) {
-            // Check current level panel
             if (hits(t, panelX, panelY, panelW, panelH)) {
                 LevelData data = levels.get(selectedLevel);
                 if (!"-1.json".equals(data.fileName))
                     game.setScreen(new GameScreen(game, data, selectedLevel));
                 return;
             }
-            // Check next level panel
             float nextX = panelX + transitionDir * viewport.getWorldWidth();
             if (hits(t, nextX, panelY, panelW, panelH)) {
                 LevelData data = levels.get(nextLevelIndex);

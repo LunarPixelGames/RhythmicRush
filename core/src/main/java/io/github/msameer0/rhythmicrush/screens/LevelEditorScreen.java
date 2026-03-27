@@ -39,7 +39,6 @@ import java.util.Map;
  */
 public class LevelEditorScreen extends AbstractScreen {
 
-    // ── Layout constants ──────────────────────────────────────────────────────
     private static final float SIDEBAR_W  = 260f;
     private static final float TOPBAR_H   = 48f;
     private static final float GRID_SIZE  = 50f;
@@ -48,7 +47,6 @@ public class LevelEditorScreen extends AbstractScreen {
     private static final float TAB_H      = 34f;
     private static final float CAM_SPEED  = 400f;
 
-    // ── Colors ────────────────────────────────────────────────────────────────
     private static final Color C_BG       = new Color(0.10f, 0.10f, 0.14f, 1f);
     private static final Color C_CANVAS   = new Color(0.13f, 0.13f, 0.18f, 1f);
     private static final Color C_SIDEBAR  = new Color(0.09f, 0.09f, 0.13f, 1f);
@@ -66,7 +64,6 @@ public class LevelEditorScreen extends AbstractScreen {
     private static final Color C_SEL_OUT  = new Color(0.35f, 0.65f, 1.00f, 1f);
     private static final Color C_TRAIL    = new Color(0.35f, 1.00f, 0.55f, 0.80f);
 
-    // ── Rendering ─────────────────────────────────────────────────────────────
     private OrthographicCamera uiCam;
     private ScreenViewport     uiViewport;
     private ShapeRenderer      shapes;
@@ -83,7 +80,6 @@ public class LevelEditorScreen extends AbstractScreen {
     private TextureRegion   gravityPortalRegion;
     private TextureRegion   miniPortalRegion;
 
-    // ── Canvas state ──────────────────────────────────────────────────────────
     private float   camX = 400f, camY = 200f;
     private float   zoom = 1.0f;
     private boolean panning = false;
@@ -92,7 +88,6 @@ public class LevelEditorScreen extends AbstractScreen {
     private boolean rubberBanding = false;
     private float   rbStartWX, rbStartWY;
 
-    // ── Level data ────────────────────────────────────────────────────────────
     private LevelData                          levelData;
     private final Array<LevelData.ObjectEntry> selection = new Array<>();
 
@@ -110,7 +105,6 @@ public class LevelEditorScreen extends AbstractScreen {
     private static final float WASD_INITIAL = 0.25f;
     private static final float WASD_REPEAT  = 0.07f;
 
-    // ── Sidebar ───────────────────────────────────────────────────────────────
     private static class Tab {
         String             label;
         List<String>       ids    = new ArrayList<>();
@@ -124,7 +118,6 @@ public class LevelEditorScreen extends AbstractScreen {
     private String          placementId   = null;
     private boolean         gridSnapping  = true;
 
-    // ── Playtest ──────────────────────────────────────────────────────────────
     private boolean            playtesting = false;
     private GameWorld          ptWorld;
     private GameRenderer       ptRenderer;
@@ -138,7 +131,6 @@ public class LevelEditorScreen extends AbstractScreen {
     private int              trailTick    = 0;
     private boolean          trailHasData = false;
 
-    // ── Inline property panel ─────────────────────────────────────────────────
     private boolean               propPanelOpen  = false;
     private LevelData.ObjectEntry propTarget     = null;
     private int                   propField      = 0;
@@ -154,7 +146,6 @@ public class LevelEditorScreen extends AbstractScreen {
     private static final Color C_PROP_ACTIVE = new Color(1.00f, 0.95f, 0.35f, 1f);
     private static final Color C_PROP_DIM    = new Color(1.00f, 1.00f, 1.00f, 0.50f);
 
-    // ── Load Level Dialog ─────────────────────────────────────────────────────
     private boolean      loadDialogOpen = false;
     private List<String> levelFiles     = new ArrayList<>();
     private float        loadScroll     = 0f;

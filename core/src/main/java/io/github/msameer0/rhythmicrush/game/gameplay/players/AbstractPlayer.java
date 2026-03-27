@@ -40,12 +40,10 @@ public abstract class AbstractPlayer {
     }
 
     public void setMini(boolean mini) {
-        // 1. Store old dimensions to calculate offsets
         float oldWidth = this.width;
         float oldHeight = this.height;
 
         if (mini && !this.mini) {
-            // GOING MINI: Center both X and Y
             this.mini = true;
             this.width = 25;
             this.height = 25;
@@ -54,20 +52,14 @@ public abstract class AbstractPlayer {
             this.y += (oldHeight - this.height) / 2f;
         }
         else if (!mini && this.mini) {
-            // GOING REGULAR: Center X, but keep Y relative to the bottom
             this.mini = false;
             this.width = 50;
             this.height = 50;
 
-            // Shift X backward to keep the center point the same
             this.x -= (this.width - oldWidth) / 2f;
 
-            // We do NOT touch Y here.
-            // By not touching Y, the player expands "upward" (if gravity is normal)
-            // or "downward" (if gravity is flipped), preventing clipping into the floor they are standing on.
-            // Inside the else if (!mini && this.mini) block:
             if (gravityFlipped) {
-                this.y -= (this.height - oldHeight); // Grow "down" from the ceiling
+                this.y -= (this.height - oldHeight);
             }
         }
 

@@ -30,7 +30,6 @@ public class SawBlade extends AbstractHazard {
     /** Accumulated visual rotation in degrees. Driven by {@link #updatePosition}. */
     private float visualRotation = 0f;
 
-    // ── Constructors ──────────────────────────────────────────────────────────
 
     /** Full constructor used when creating directly (not from pool). */
     public SawBlade(float x, float y, float diameter, float degreesPerSecond) {
@@ -45,7 +44,6 @@ public class SawBlade extends AbstractHazard {
         this.type = HazardType.SAW_BLADE;
     }
 
-    // ── Pool init ─────────────────────────────────────────────────────────────
 
     /**
      * Reinitialises this instance for reuse from the pool.
@@ -71,7 +69,6 @@ public class SawBlade extends AbstractHazard {
         return init(x, y, diameter, degreesPerSecond);
     }
 
-    // ── Update ────────────────────────────────────────────────────────────────
 
     /**
      * Scrolls the blade leftward and advances the visual rotation.
@@ -80,10 +77,8 @@ public class SawBlade extends AbstractHazard {
     @Override
     public void updatePosition(float scrollSpeed, float delta) {
         super.updatePosition(scrollSpeed, delta);
-        // rotation is now handled per render frame in tickVisualRotation()
     }
 
-    // ── Collision ─────────────────────────────────────────────────────────────
 
     /**
      * Overrides the default AABB overlap check with a true circle–rectangle test.
@@ -100,7 +95,6 @@ public class SawBlade extends AbstractHazard {
 
         com.badlogic.gdx.math.Rectangle pr = player.getBounds();
 
-        // Closest point on the player AABB to the circle centre
         float closestX = Math.max(pr.x, Math.min(cx, pr.x + pr.width));
         float closestY = Math.max(pr.y, Math.min(cy, pr.y + pr.height));
 
@@ -125,7 +119,6 @@ public class SawBlade extends AbstractHazard {
         }
     }
 
-    // ── Accessors ─────────────────────────────────────────────────────────────
 
     /** Current visual rotation in degrees (use this in the renderer). */
     public float getVisualRotation() {
@@ -134,6 +127,6 @@ public class SawBlade extends AbstractHazard {
 
     /** Diameter of the blade in world units. */
     public float getDiameter() {
-        return width; // width == height == diameter
+        return width;
     }
 }

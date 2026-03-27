@@ -137,7 +137,6 @@ public class GameRenderer {
         shape.setProjectionMatrix(camera.combined);
         batch.setProjectionMatrix(camera.combined);
 
-        // ── 1. Saw blades — below everything including the ground ────────────────
         batch.begin();
         for (AbstractHazard hazard : world.getHazards()) {
             if (hazard.getType() == AbstractHazard.HazardType.SAW_BLADE) {
@@ -155,7 +154,6 @@ public class GameRenderer {
         }
         batch.end();
 
-        // ── 2. Ground ────────────────────────────────────────────────────────────
         shape.begin(ShapeRenderer.ShapeType.Filled);
         shape.setColor(world.getGroundColor());
         shape.rect(worldLeft, 0, worldWidth, world.getGroundY());
@@ -173,7 +171,6 @@ public class GameRenderer {
         }
         shape.end();
 
-        // ── 3. Portals, spikes, blocks, player ───────────────────────────────────
         batch.begin();
 
         for (AbstractPortal portal : world.getPortals()) {
@@ -215,7 +212,6 @@ public class GameRenderer {
                     }
                     break;
                 case SAW_BLADE:
-                    // Already drawn in pass 1 — skip.
                     break;
             }
         }
@@ -332,7 +328,6 @@ public class GameRenderer {
         Rectangle pb = player.getBounds();
         shape.rect(pb.x, pb.y, pb.width, pb.height);
 
-        // Show inner circle hitbox for slopes
         shape.setColor(1.0f, 1.0f, 1.0f, 0.5f);
         float radius = player.width * 0.5f * Slope.CIRCLE_RATIO;
         shape.circle(pb.x + pb.width * 0.5f, pb.y + pb.height * 0.5f, radius);
@@ -345,16 +340,13 @@ public class GameRenderer {
                 Slope s = (Slope) b;
                 float rot = ((int) s.getRotation() % 360 + 360) % 360;
                 float x = s.getX(), y = s.getY(), w = s.getWidth(), h = s.getHeight();
-                float[] line = s.getSlopeLine(); // [x1,y1, x2,y2] — the two ends of the hypotenuse
+                float[] line = s.getSlopeLine();
 
-                // The solid corner is the one NOT on the hypotenuse.
-                // BR(0) and TL(180) share the "/" diagonal — solid corners are BR and TL respectively.
-                // TR(90) and BL(270) share the "\" diagonal — solid corners are TR and BL respectively.
                 float solidCX, solidCY;
-                if      (rot == 0)   { solidCX = x + w; solidCY = y;     } // BR
-                else if (rot == 90)  { solidCX = x + w; solidCY = y + h; } // TR
-                else if (rot == 180) { solidCX = x;     solidCY = y + h; } // TL
-                else                 { solidCX = x;     solidCY = y;     } // BL (270)
+                if      (rot == 0)   { solidCX = x + w; solidCY = y;     }
+                else if (rot == 90)  { solidCX = x + w; solidCY = y + h; }
+                else if (rot == 180) { solidCX = x;     solidCY = y + h; }
+                else                 { solidCX = x;     solidCY = y;     }
 
                 shape.triangle(line[0], line[1], line[2], line[3], solidCX, solidCY);
             } else {
@@ -402,13 +394,10 @@ public class GameRenderer {
         float vy = player.getVelocityY();
         AbstractPlayer.PlayerType pType = player.getType();
 
-        // 1. Fetch the current slope rotation
         float slopeRot = player.getCurrentSlopeRotation();
 
         if (pType == AbstractPlayer.PlayerType.CUBE) {
             if (player.isGrounded()) {
-                // 2. Offset the rounding logic by the slope rotation
-                // This prevents the cube from infinitely spinning when landing on a 45-deg incline
                 float nearest90 = Math.round((playerVisualRotation - slopeRot) / 90f) * 90f;
                 float targetRotation = nearest90 + slopeRot;
 
@@ -425,7 +414,6 @@ public class GameRenderer {
         } else if (pType == AbstractPlayer.PlayerType.SHIP) {
             float targetAngle = Math.max(-SHIP_MAX_TILT, Math.min(SHIP_MAX_TILT, vy * SHIP_TILT_FACTOR));
 
-            // 3. If the ship is grounded, conform to the slope angle
             if (player.isGrounded()) {
                 targetAngle += slopeRot;
             }

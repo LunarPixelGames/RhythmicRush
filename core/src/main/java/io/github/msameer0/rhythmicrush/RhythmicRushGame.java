@@ -1,6 +1,7 @@
 package io.github.msameer0.rhythmicrush;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 import io.github.msameer0.rhythmicrush.ads.AdController;
@@ -69,7 +70,7 @@ public class RhythmicRushGame extends Game {
         settingsManager.applyVsync();
 
         if (settingsManager.menuMusicEnabled) soundManager.playMenuMusic();
-        
+
         com.badlogic.gdx.Gdx.app.log("Game", "Initialization complete. Entering Main Menu.");
         setScreen(new MainMenuScreen(this));
     }
@@ -177,6 +178,6 @@ public class RhythmicRushGame extends Game {
         soundManager.dispose();
         atlasManager.dispose();
         fontManager.dispose();
-        com.badlogic.gdx.Gdx.app.log("Game", "Game disposed.");
+        Gdx.app.log("Game", "Game disposed.");
     }
 }
