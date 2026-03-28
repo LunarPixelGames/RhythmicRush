@@ -1,5 +1,6 @@
 package io.github.msameer0.rhythmicrush.android;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.app.ActivityManager;
 import android.view.View;
@@ -7,6 +8,7 @@ import android.widget.RelativeLayout;
 
 import androidx.annotation.NonNull;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.android.AndroidApplication;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 
@@ -138,6 +140,16 @@ public class AndroidLauncher extends AndroidApplication implements AdController 
         super.onResume();
         if (adView != null) {
             adView.resume();
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == AndroidUpdateManager.UPDATE_REQUEST_CODE) {
+            if (resultCode != RESULT_OK) {
+                Gdx.app.log("UpdateTest", "User cancelled or update failed");
+            }
         }
     }
 
