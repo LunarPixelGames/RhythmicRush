@@ -220,9 +220,10 @@ public class LevelSelectScreen extends AbstractScreen {
         panelY = vh / 2f - panelH / 2f + 40;
         if (btnPanel != null) btnPanel.setBounds(panelX, panelY, panelW, panelH);
 
-        float practiceSize = vw * 0.06f;
+        float practiceW = vw * 0.28f;
+        float practiceH = vh * 0.07f;
         if (btnPractice != null)
-            btnPractice.setBounds(panelX + panelW + 15, panelY, practiceSize, practiceSize);
+            btnPractice.setBounds(vw - practiceW - 20, vh - practiceH - 20, practiceW, practiceH);
     }
 
     /**
@@ -299,9 +300,37 @@ public class LevelSelectScreen extends AbstractScreen {
             drawLevelPanel(newLevel, panelX + offset, panelY);
         } else {
             drawLevelPanel(levels.get(selectedLevel), panelX, panelY);
+            drawPracticeButton();
         }
 
         game.getBatch().end();
+    }
+
+    private void drawPracticeButton() {
+        if (btnPractice == null) return;
+        float scale = btnPractice.getScale();
+        float bw = btnPractice.w * scale;
+        float bh = btnPractice.h * scale;
+        float bx = btnPractice.x + btnPractice.w / 2f - bw / 2f;
+        float by = btnPractice.y + btnPractice.h / 2f - bh / 2f;
+
+        game.getBatch().end();
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        ShapeRenderer shapes = new ShapeRenderer();
+        shapes.setProjectionMatrix(camera.combined);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        shapes.setColor(0.15f, 0.45f, 0.15f, 0.8f);
+        drawRoundedRect(shapes, bx, by, bw, bh, 10f);
+        shapes.end();
+        shapes.dispose();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+        game.getBatch().begin();
+
+        font.getData().setScale(0.35f * scale);
+        String text = "Enter Practice Mode";
+        layout.setText(font, text);
+        drawTextWithShadow(font, text, bx + bw / 2f - layout.width / 2f, by + bh / 2f + layout.height / 2f, Color.WHITE);
     }
 
     private void drawLevelPanel(LevelData current,  float panelX,  float panelY) {
@@ -322,29 +351,6 @@ public class LevelSelectScreen extends AbstractScreen {
         btnBack.draw(game.getBatch());
         btnLeft.draw(game.getBatch());
         btnRight.draw(game.getBatch());
-
-        if (!isTransitioning) {
-            float px = btnPractice.x;
-            float py = btnPractice.y;
-            float ps = btnPractice.w;
-
-            game.getBatch().end();
-            Gdx.gl.glEnable(GL20.GL_BLEND);
-            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-            ShapeRenderer shapes = new ShapeRenderer();
-            shapes.setProjectionMatrix(camera.combined);
-            shapes.begin(ShapeRenderer.ShapeType.Filled);
-            shapes.setColor(0.15f, 0.45f, 0.15f, 0.8f);
-            drawRoundedRect(shapes, px, py, ps, ps, 10f);
-            shapes.end();
-            shapes.dispose();
-            Gdx.gl.glDisable(GL20.GL_BLEND);
-            game.getBatch().begin();
-
-            font.getData().setScale(0.65f);
-            layout.setText(font, "P");
-            drawTextWithShadow(font, "P", px + ps / 2f - layout.width / 2f, py + ps / 2f + layout.height / 2f, Color.WHITE);
-        }
 
         TextureRegion diffRegion = difficultyTexture(current.difficulty);
         float iconSize = panelH * 0.55f;
@@ -522,13 +528,18 @@ public class LevelSelectScreen extends AbstractScreen {
     }
 
     private void drawRoundedRect(ShapeRenderer shapes, float x, float y, float w, float h, float r) {
-        shapes.rect(x + r, y, w - 2 * r, h);
-        shapes.rect(x, y + r, r, h - 2 * r);
-        shapes.rect(x + w - r, y + r, r, h - 2 * r);
-        shapes.circle(x + r, y + r, r, 16);
-        shapes.circle(x + w - r, y + r, r, 16);
-        shapes.circle(x + r, y + h - r, r, 16);
-        shapes.circle(x + w - r, y + h - r, r, 16);
+        // Draw the middle horizontal bar
+        shapes.rect(x, y + r, w, h - 2 * r);
+        // Draw the bottom horizontal bar (between corners)
+        shapes.rect(x + r, y, w - 2 * r, r);
+        // Draw the top horizontal bar (between corners)
+        shapes.rect(x + r, y + h - r, w - 2 * r, r);
+
+        // Draw the four corner circles
+        shapes.circle(x + r, y + r, r, 20);
+        shapes.circle(x + w - r, y + r, r, 20);
+        shapes.circle(x + r, y + h - r, r, 20);
+        shapes.circle(x + w - r, y + h - r, r, 20);
     }
 
     /**

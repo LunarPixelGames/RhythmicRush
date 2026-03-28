@@ -154,6 +154,13 @@ public class AnimatedButton {
     }
 
     /**
+     * @return the current animation scale of the button.
+     */
+    public float getScale() {
+        return scale;
+    }
+
+    /**
      * Sets the texture region used to render the button.
      *
      * @param r the new {@link TextureRegion} to be displayed
