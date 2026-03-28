@@ -128,6 +128,7 @@ public class MainMenuScreen extends AbstractScreen {
      */
     public MainMenuScreen(RhythmicRushGame game) {
         super(game);
+        game.getUpdateManager().checkForUpdate();
     }
 
     /**

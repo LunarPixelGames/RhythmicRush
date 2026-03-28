@@ -13,6 +13,7 @@ import io.github.msameer0.rhythmicrush.game.level.ProgressManager;
 import io.github.msameer0.rhythmicrush.game.registries.Registries;
 import io.github.msameer0.rhythmicrush.screens.MainMenuScreen;
 import io.github.msameer0.rhythmicrush.settings.SettingsManager;
+import io.github.msameer0.rhythmicrush.update.UpdateManager;
 import io.github.msameer0.rhythmicrush.window.WindowController;
 
 /**
@@ -39,12 +40,19 @@ public class RhythmicRushGame extends Game {
     private SettingsManager settingsManager;
     private final AdController adController;
 
+    public UpdateManager getUpdateManager() {
+        return updateManager;
+    }
+
+    private final UpdateManager updateManager;
+
     /**
      * Constructs the game with platform-specific implementations.
      * @param adController The platform-specific ad controller (e.g., AdMob for Android, Dummy for PC)
      */
-    public RhythmicRushGame(AdController adController) {
+    public RhythmicRushGame(AdController adController, UpdateManager updateManager) {
         this.adController = adController;
+        this.updateManager = updateManager;
     }
 
     /**

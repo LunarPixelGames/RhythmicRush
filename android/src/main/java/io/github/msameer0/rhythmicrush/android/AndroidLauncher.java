@@ -35,6 +35,8 @@ public class AndroidLauncher extends AndroidApplication implements AdController 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        AndroidUpdateManager updateManager = new AndroidUpdateManager(this);
+
         MobileAds.initialize(this, initializationStatus -> {
         });
 
@@ -45,7 +47,7 @@ public class AndroidLauncher extends AndroidApplication implements AdController 
         RelativeLayout layout = new RelativeLayout(this);
 
         // 2. Initialize the Game View
-        View gameView = initializeForView(new RhythmicRushGame(this), configuration);
+        View gameView = initializeForView(new RhythmicRushGame(this, updateManager), configuration);
         layout.addView(gameView);
 
         // 3. Initialize the Banner Ad View

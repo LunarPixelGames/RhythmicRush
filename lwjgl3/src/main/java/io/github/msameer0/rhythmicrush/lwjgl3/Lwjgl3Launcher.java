@@ -5,6 +5,7 @@ import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import io.github.msameer0.rhythmicrush.RhythmicRushGame;
 import io.github.msameer0.rhythmicrush.ads.AdController;
+import io.github.msameer0.rhythmicrush.update.UpdateManager;
 
 /** Launches the desktop (LWJGL3) application. */
 public class Lwjgl3Launcher {
@@ -30,7 +31,10 @@ public class Lwjgl3Launcher {
             public boolean isAdLoaded() {
                 return false;
             }
-        });
+        },
+            () -> {
+
+            });
 
         // IMPORTANT: set the controller BEFORE new Lwjgl3Application(...)
         // because Lwjgl3Application calls game.create() in its constructor

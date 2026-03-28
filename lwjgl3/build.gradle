@@ -1,19 +1,23 @@
 
 buildscript {
-  repositories {
+    ext.kotlin_version = '2.2.0'
+    repositories {
     gradlePluginPortal()
-  }
+        mavenCentral()
+    }
   dependencies {
     classpath "io.github.fourlastor:construo:2.1.0"
     if(enableGraalNative == 'true') {
       classpath "org.graalvm.buildtools.native:org.graalvm.buildtools.native.gradle.plugin:0.9.28"
     }
+      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
   }
 }
 plugins {
   id "application"
 }
 apply plugin: 'io.github.fourlastor.construo'
+apply plugin: 'kotlin'
 
 
 import io.github.fourlastor.construo.Target
@@ -22,8 +26,6 @@ sourceSets.main.resources.srcDirs += [ rootProject.file('assets').path ]
 application.mainClass = 'io.github.msameer0.rhythmicrush.lwjgl3.Lwjgl3Launcher'
 application.applicationName = appName
 eclipse.project.name = appName + '-lwjgl3'
-java.sourceCompatibility = 8
-java.targetCompatibility = 8
 if (JavaVersion.current().isJava9Compatible()) {
         compileJava.options.release.set(8)
 }
@@ -42,6 +44,7 @@ dependencies {
       implementation "io.github.berstanio:gdx-svmhelper-extension-freetype:$graalHelperVersion"
 
     }
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 }
 
 def os = System.properties['os.name'].toLowerCase(Locale.ROOT)
@@ -199,4 +202,10 @@ startScripts.classpath = project.tasks.jar.outputs.files
 
 if(enableGraalNative == 'true') {
   apply from: file("nativeimage.gradle")
+}
+repositories {
+    mavenCentral()
+}
+kotlin {
+    jvmToolchain(17)
 }
