@@ -90,7 +90,20 @@ class AndroidUpdateManager(private val activity: Activity) : UpdateManager {
         }
     }
 
+    fun onStop() {
+        appUpdateManager.appUpdateInfo.addOnSuccessListener { info ->
+            if (info.installStatus() == InstallStatus.DOWNLOADED) {
+                appUpdateManager.completeUpdate()
+            }
+        }
+    }
+
     fun onDestroy() {
+        appUpdateManager.appUpdateInfo.addOnSuccessListener { info ->
+            if (info.installStatus() == InstallStatus.DOWNLOADED) {
+                appUpdateManager.completeUpdate()
+            }
+        }
         appUpdateManager.unregisterListener(installStateListener)
     }
 

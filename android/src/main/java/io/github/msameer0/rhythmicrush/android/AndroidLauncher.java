@@ -53,6 +53,12 @@ public class AndroidLauncher extends AndroidApplication {
     }
 
     @Override
+    protected void onStop() {
+        updateManager.onStop();
+        super.onStop();
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         adController.onResume();
