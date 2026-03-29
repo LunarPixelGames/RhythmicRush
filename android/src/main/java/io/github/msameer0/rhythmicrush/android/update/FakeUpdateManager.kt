@@ -1,4 +1,4 @@
-package io.github.msameer0.rhythmicrush.android
+package io.github.msameer0.rhythmicrush.android.update
 
 import android.app.Activity
 import com.google.android.play.core.appupdate.AppUpdateOptions

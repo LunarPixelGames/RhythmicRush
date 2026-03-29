@@ -6860,7 +6860,7 @@
 	{
 		"type": "block",
 		"x": 5800,
-		"y": 250,
+		"y": 225,
 		"size": 50,
 		"blockType": "pillar",
 		"rotation": 0,
@@ -6877,7 +6877,7 @@
 	{
 		"type": "block",
 		"x": 5800,
-		"y": 200,
+		"y": 175,
 		"size": 50,
 		"blockType": "pillar",
 		"rotation": 0,
@@ -6894,7 +6894,7 @@
 	{
 		"type": "block",
 		"x": 5800,
-		"y": 100,
+		"y": 75,
 		"size": 50,
 		"blockType": "pillar",
 		"rotation": 0,
@@ -6911,7 +6911,7 @@
 	{
 		"type": "block",
 		"x": 5800,
-		"y": 150,
+		"y": 125,
 		"size": 50,
 		"blockType": "pillar",
 		"rotation": 0,
@@ -6928,7 +6928,7 @@
 	{
 		"type": "block",
 		"x": 5800,
-		"y": 50,
+		"y": 25,
 		"size": 50,
 		"blockType": "pillar",
 		"rotation": 0,
@@ -6945,7 +6945,7 @@
 	{
 		"type": "block",
 		"x": 5800,
-		"y": 500,
+		"y": 525,
 		"size": 50,
 		"blockType": "pillar",
 		"rotation": 0,
@@ -6962,7 +6962,7 @@
 	{
 		"type": "block",
 		"x": 5800,
-		"y": 550,
+		"y": 575,
 		"size": 50,
 		"blockType": "pillar",
 		"rotation": 0,
@@ -6979,7 +6979,7 @@
 	{
 		"type": "block",
 		"x": 5800,
-		"y": 600,
+		"y": 625,
 		"size": 50,
 		"blockType": "pillar",
 		"rotation": 0,
@@ -6996,7 +6996,7 @@
 	{
 		"type": "block",
 		"x": 5800,
-		"y": 650,
+		"y": 675,
 		"size": 50,
 		"blockType": "pillar",
 		"rotation": 0,
@@ -7013,7 +7013,7 @@
 	{
 		"type": "block",
 		"x": 5800,
-		"y": 700,
+		"y": 725,
 		"size": 50,
 		"blockType": "pillar",
 		"rotation": 0,
@@ -7030,44 +7030,10 @@
 	{
 		"type": "block",
 		"x": 5800,
-		"y": 750,
+		"y": 775,
 		"size": 50,
 		"blockType": "pillar",
 		"rotation": 0,
-		"flipped": false,
-		"triggerBgColor": null,
-		"triggerGroundColor": null,
-		"fadeDuration": 1,
-		"pulseBgColor": null,
-		"pulseGroundColor": null,
-		"fadeInTime": 0.1,
-		"holdTime": 0.2,
-		"fadeOutTime": 0.5
-	},
-	{
-		"type": "spike",
-		"x": 5800,
-		"y": 300,
-		"size": 50,
-		"blockType": null,
-		"rotation": 0,
-		"flipped": false,
-		"triggerBgColor": null,
-		"triggerGroundColor": null,
-		"fadeDuration": 1,
-		"pulseBgColor": null,
-		"pulseGroundColor": null,
-		"fadeInTime": 0.1,
-		"holdTime": 0.2,
-		"fadeOutTime": 0.5
-	},
-	{
-		"type": "spike",
-		"x": 5800,
-		"y": 450,
-		"size": 50,
-		"blockType": null,
-		"rotation": 180,
 		"flipped": false,
 		"triggerBgColor": null,
 		"triggerGroundColor": null,
@@ -7455,7 +7421,7 @@
 	{
 		"type": "spike",
 		"x": 5950,
-		"y": 450,
+		"y": 475,
 		"size": 50,
 		"blockType": null,
 		"rotation": 180,
@@ -7472,7 +7438,7 @@
 	{
 		"type": "spike",
 		"x": 6100,
-		"y": 450,
+		"y": 475,
 		"size": 50,
 		"blockType": null,
 		"rotation": 180,
@@ -7489,7 +7455,7 @@
 	{
 		"type": "spike",
 		"x": 5950,
-		"y": 300,
+		"y": 275,
 		"size": 50,
 		"blockType": null,
 		"rotation": 0,
@@ -7506,7 +7472,7 @@
 	{
 		"type": "spike",
 		"x": 6100,
-		"y": 300,
+		"y": 275,
 		"size": 50,
 		"blockType": null,
 		"rotation": 0,
@@ -7523,7 +7489,7 @@
 	{
 		"type": "block",
 		"x": 5950,
-		"y": 500,
+		"y": 525,
 		"size": 50,
 		"blockType": "default",
 		"rotation": 0,
@@ -7540,7 +7506,7 @@
 	{
 		"type": "block",
 		"x": 6100,
-		"y": 500,
+		"y": 525,
 		"size": 50,
 		"blockType": "default",
 		"rotation": 0,
@@ -7557,7 +7523,7 @@
 	{
 		"type": "block",
 		"x": 5950,
-		"y": 250,
+		"y": 225,
 		"size": 50,
 		"blockType": "default",
 		"rotation": 0,
@@ -7574,7 +7540,7 @@
 	{
 		"type": "block",
 		"x": 6100,
-		"y": 250,
+		"y": 225,
 		"size": 50,
 		"blockType": "default",
 		"rotation": 0,
@@ -7591,7 +7557,7 @@
 	{
 		"type": "block",
 		"x": 6000,
-		"y": 200,
+		"y": 175,
 		"size": 50,
 		"blockType": "default",
 		"rotation": 0,
@@ -7608,7 +7574,7 @@
 	{
 		"type": "block",
 		"x": 5950,
-		"y": 200,
+		"y": 175,
 		"size": 50,
 		"blockType": "default",
 		"rotation": 0,
@@ -7625,7 +7591,7 @@
 	{
 		"type": "block",
 		"x": 6100,
-		"y": 200,
+		"y": 175,
 		"size": 50,
 		"blockType": "default",
 		"rotation": 0,
@@ -7642,7 +7608,7 @@
 	{
 		"type": "block",
 		"x": 6050,
-		"y": 200,
+		"y": 175,
 		"size": 50,
 		"blockType": "default",
 		"rotation": 0,
@@ -7659,7 +7625,7 @@
 	{
 		"type": "block",
 		"x": 5950,
-		"y": 550,
+		"y": 575,
 		"size": 50,
 		"blockType": "default",
 		"rotation": 0,
@@ -7676,7 +7642,7 @@
 	{
 		"type": "block",
 		"x": 6000,
-		"y": 550,
+		"y": 575,
 		"size": 50,
 		"blockType": "default",
 		"rotation": 0,
@@ -7693,7 +7659,7 @@
 	{
 		"type": "block",
 		"x": 6050,
-		"y": 550,
+		"y": 575,
 		"size": 50,
 		"blockType": "default",
 		"rotation": 0,
@@ -7710,7 +7676,7 @@
 	{
 		"type": "block",
 		"x": 6100,
-		"y": 550,
+		"y": 575,
 		"size": 50,
 		"blockType": "default",
 		"rotation": 0,
@@ -7727,7 +7693,7 @@
 	{
 		"type": "block",
 		"x": 6000,
-		"y": 600,
+		"y": 625,
 		"size": 50,
 		"blockType": "left_default",
 		"rotation": 0,
@@ -7744,7 +7710,7 @@
 	{
 		"type": "block",
 		"x": 6000,
-		"y": 650,
+		"y": 675,
 		"size": 50,
 		"blockType": "left_default",
 		"rotation": 0,
@@ -7761,7 +7727,7 @@
 	{
 		"type": "block",
 		"x": 6000,
-		"y": 700,
+		"y": 725,
 		"size": 50,
 		"blockType": "left_default",
 		"rotation": 0,
@@ -7778,7 +7744,7 @@
 	{
 		"type": "block",
 		"x": 6000,
-		"y": 750,
+		"y": 775,
 		"size": 50,
 		"blockType": "left_default",
 		"rotation": 0,
@@ -7795,7 +7761,7 @@
 	{
 		"type": "block",
 		"x": 6000,
-		"y": 150,
+		"y": 125,
 		"size": 50,
 		"blockType": "left_default",
 		"rotation": 0,
@@ -7812,7 +7778,7 @@
 	{
 		"type": "block",
 		"x": 6000,
-		"y": 50,
+		"y": 25,
 		"size": 50,
 		"blockType": "left_default",
 		"rotation": 0,
@@ -7829,7 +7795,7 @@
 	{
 		"type": "block",
 		"x": 6000,
-		"y": 100,
+		"y": 75,
 		"size": 50,
 		"blockType": "left_default",
 		"rotation": 0,
@@ -7846,7 +7812,7 @@
 	{
 		"type": "block",
 		"x": 6050,
-		"y": 600,
+		"y": 625,
 		"size": 50,
 		"blockType": "right_default",
 		"rotation": 0,
@@ -7863,7 +7829,7 @@
 	{
 		"type": "block",
 		"x": 6050,
-		"y": 650,
+		"y": 675,
 		"size": 50,
 		"blockType": "right_default",
 		"rotation": 0,
@@ -7880,7 +7846,7 @@
 	{
 		"type": "block",
 		"x": 6050,
-		"y": 700,
+		"y": 725,
 		"size": 50,
 		"blockType": "right_default",
 		"rotation": 0,
@@ -7897,7 +7863,7 @@
 	{
 		"type": "block",
 		"x": 6050,
-		"y": 750,
+		"y": 775,
 		"size": 50,
 		"blockType": "right_default",
 		"rotation": 0,
@@ -7914,7 +7880,7 @@
 	{
 		"type": "block",
 		"x": 6050,
-		"y": 150,
+		"y": 125,
 		"size": 50,
 		"blockType": "right_default",
 		"rotation": 0,
@@ -7931,7 +7897,7 @@
 	{
 		"type": "block",
 		"x": 6050,
-		"y": 100,
+		"y": 75,
 		"size": 50,
 		"blockType": "right_default",
 		"rotation": 0,
@@ -7948,7 +7914,7 @@
 	{
 		"type": "block",
 		"x": 6050,
-		"y": 50,
+		"y": 25,
 		"size": 50,
 		"blockType": "right_default",
 		"rotation": 0,
@@ -18183,6 +18149,40 @@
 		"type": "block",
 		"x": 12800,
 		"y": 450,
+		"size": 50,
+		"blockType": "default",
+		"rotation": 0,
+		"flipped": false,
+		"triggerBgColor": null,
+		"triggerGroundColor": null,
+		"fadeDuration": 1,
+		"pulseBgColor": null,
+		"pulseGroundColor": null,
+		"fadeInTime": 0.1,
+		"holdTime": 0.2,
+		"fadeOutTime": 0.5
+	},
+	{
+		"type": "block",
+		"x": 5800,
+		"y": 275,
+		"size": 50,
+		"blockType": "default",
+		"rotation": 0,
+		"flipped": false,
+		"triggerBgColor": null,
+		"triggerGroundColor": null,
+		"fadeDuration": 1,
+		"pulseBgColor": null,
+		"pulseGroundColor": null,
+		"fadeInTime": 0.1,
+		"holdTime": 0.2,
+		"fadeOutTime": 0.5
+	},
+	{
+		"type": "block",
+		"x": 5800,
+		"y": 475,
 		"size": 50,
 		"blockType": "default",
 		"rotation": 0,
