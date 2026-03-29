@@ -154,10 +154,6 @@ public class GameRenderer {
         }
         batch.end();
 
-        shape.begin(ShapeRenderer.ShapeType.Filled);
-        shape.setColor(world.getGroundColor());
-        shape.rect(worldLeft, 0, worldWidth, world.getGroundY());
-
         for (AbstractPortal portal : world.getPortals()) {
             AbstractPortal.PortalType pType = portal.getType();
             TextureRegion region = (pType == AbstractPortal.PortalType.CUBE)
@@ -240,6 +236,14 @@ public class GameRenderer {
         updatePlayerRotation(player, delta, paused);
         drawPlayerInBatch(player);
         batch.end();
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shape.begin(ShapeRenderer.ShapeType.Filled);
+        shape.setColor(world.getGroundColor());
+        shape.rect(worldLeft, 0, worldWidth, world.getGroundY());
+        shape.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
 
         if (showHitboxes) drawHitboxes(player);
     }
