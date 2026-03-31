@@ -206,6 +206,11 @@ if(enableGraalNative == 'true') {
 repositories {
     mavenCentral()
 }
-kotlin {
-    jvmToolchain(17)
+// REMOVE any kotlin { } block entirely
+
+// ADD only this:
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+  kotlinOptions {
+    jvmTarget = "1.8"
+  }
 }
