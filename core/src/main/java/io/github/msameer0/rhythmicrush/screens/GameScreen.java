@@ -119,7 +119,7 @@ public class GameScreen extends AbstractScreen {
     private float practicePlusX, practicePlusY, practiceMinusX, practiceMinusY, practiceBtnSize;
 
     private void updatePracticeBtnCoords() {
-        float pad = game.getSettingsManager().uiPadding;
+        float pad = game.getSettingsManager().getUiPadding();
         float spacing = 35f * uiScale;
         float totalW = practiceBtnSize * 2 + spacing;
 
@@ -213,7 +213,7 @@ public class GameScreen extends AbstractScreen {
             recordAttempt();
         }
 
-        hitboxesActive = game.getSettingsManager().showHitboxes;
+        hitboxesActive = game.getSettingsManager().getShowHitboxes();
     }
 
 
@@ -382,7 +382,7 @@ public class GameScreen extends AbstractScreen {
      * @return The world X-coordinate for the center of the pause button.
      */
     private float pauseCircleCX() {
-        return camRight() - PAUSE_BTN / 2f - (game.getSettingsManager().uiPadding + 2f);
+        return camRight() - PAUSE_BTN / 2f - (game.getSettingsManager().getUiPadding() + 2f);
     }
 
     /**
@@ -392,7 +392,7 @@ public class GameScreen extends AbstractScreen {
      * @return The world Y-coordinate for the center of the pause button.
      */
     private float pauseCircleCY() {
-        return camTop() - PAUSE_BTN / 2f - (game.getSettingsManager().uiPadding + 2f);
+        return camTop() - PAUSE_BTN / 2f - (game.getSettingsManager().getUiPadding() + 2f);
     }
 
 
@@ -409,7 +409,7 @@ public class GameScreen extends AbstractScreen {
         updateScaledUI();
         game.getSoundManager().stopMenuMusic();
         startMusic();
-        if (game.getSettingsManager().lockCursorInGame)
+        if (game.getSettingsManager().getLockCursorInGame())
             Gdx.input.setCursorCatched(true);
     }
 
@@ -523,7 +523,7 @@ public class GameScreen extends AbstractScreen {
 
         if (musicFading && levelMusic != null) {
             musicFadeTimer += delta;
-            float base = game.getSettingsManager().musicVolume;
+            float base = game.getSettingsManager().getMusicVolume();
             float volume = base * (1f - Math.min(musicFadeTimer / MUSIC_FADE_DURATION, 1f));
             levelMusic.setVolume(volume);
             if (musicFadeTimer >= MUSIC_FADE_DURATION) {
@@ -577,7 +577,7 @@ public class GameScreen extends AbstractScreen {
             deathTimer = 0f;
             lastDelta = 0f;
             engine.reset();
-            if (game.getSettingsManager().showHitboxesOnDeath)
+            if (game.getSettingsManager().getShowHitboxesOnDeath())
                 hitboxesActive = true;
         }
 
@@ -597,7 +597,7 @@ public class GameScreen extends AbstractScreen {
 
                 float fadeProgress = Math.min(timeSpentFading / fadeDuration, 1f);
 
-                float baseVol = game.getSettingsManager().musicVolume;
+                float baseVol = game.getSettingsManager().getMusicVolume();
                 levelMusic.setVolume(baseVol * (1f - fadeProgress));
             }
 
@@ -678,14 +678,14 @@ public class GameScreen extends AbstractScreen {
     }
 
     private void drawPracticeButtonShapes() {
-        float opacity = game.getSettingsManager().practiceButtonOpacity;
+        float opacity = game.getSettingsManager().getPracticeButtonOpacity();
         shapes.setColor(0.15f, 0.15f, 0.15f, 0.6f * opacity);
         shapes.rect(practicePlusX, practicePlusY, practiceBtnSize, practiceBtnSize);
         shapes.rect(practiceMinusX, practiceMinusY, practiceBtnSize, practiceBtnSize);
     }
 
     private void drawPracticeButtonText() {
-        float opacity = game.getSettingsManager().practiceButtonOpacity;
+        float opacity = game.getSettingsManager().getPracticeButtonOpacity();
         font.getData().setScale(1.5f * uiScale);
 
         glyphLayout.setText(font, "+");
@@ -713,15 +713,15 @@ public class GameScreen extends AbstractScreen {
         float progress = world.getProgress();
         if (progress <= 0f) return;
         SettingsManager s = game.getSettingsManager();
-        if (!s.showProgressBar) return;
+        if (!s.getShowProgressBar()) return;
 
         final float BAR_W = gameViewport.getWorldWidth() * 0.625f * 0.55f;
         final float BAR_H = 10f;
         final float GAP = 14f;
-        final float LINE_Y = camTop() - (game.getSettingsManager().uiPadding + 6f);
+        final float LINE_Y = camTop() - (game.getSettingsManager().getUiPadding() + 6f);
 
         float textW = 0f;
-        if (s.showPercentage) {
+        if (s.getShowPercentage()) {
             _hudSb.setLength(0);
             _hudSb.append(Math.round(progress * 100f)).append('%');
             font.getData().setScale(1.2f);
@@ -729,7 +729,7 @@ public class GameScreen extends AbstractScreen {
             textW = glyphLayout.width;
         }
 
-        float totalW = (s.showPercentage ? textW + GAP : 0f) + BAR_W;
+        float totalW = (s.getShowPercentage() ? textW + GAP : 0f) + BAR_W;
         float startX = gameCamera.position.x - totalW / 2f;
 
         float r = BAR_H / 2f;
@@ -754,12 +754,12 @@ public class GameScreen extends AbstractScreen {
         float progress = world.getProgress();
         if (progress <= 0f) return;
         SettingsManager s = game.getSettingsManager();
-        if (!s.showPercentage) return;
+        if (!s.getShowPercentage()) return;
 
         int pct = Math.round(progress * 100f);
         final float BAR_W = gameViewport.getWorldWidth() * 0.625f * 0.55f;
         final float GAP = 14f;
-        final float LINE_Y = camTop() - (game.getSettingsManager().uiPadding + 6f);
+        final float LINE_Y = camTop() - (game.getSettingsManager().getUiPadding() + 6f);
 
         _hudSb.setLength(0);
         _hudSb.append(pct).append('%');
@@ -768,11 +768,11 @@ public class GameScreen extends AbstractScreen {
         float textW = glyphLayout.width;
         float textH = glyphLayout.height;
 
-        float totalW = textW + (s.showProgressBar ? GAP + BAR_W : 0f);
+        float totalW = textW + (s.getShowProgressBar() ? GAP + BAR_W : 0f);
         float startX = gameCamera.position.x - totalW / 2f;
 
         float textDrawX = startX;
-        if (s.showProgressBar) {
+        if (s.getShowProgressBar()) {
             textDrawX = startX + BAR_W + GAP;
         }
 
@@ -810,13 +810,13 @@ public class GameScreen extends AbstractScreen {
      */
     private void drawSessionAttemptsText() {
         SettingsManager s = game.getSettingsManager();
-        float p = s.uiPadding;
+        float p = s.getUiPadding();
         float left = camLeft() + p;
         float top = camTop() - p;
         float shadowOffset = 2f;
         float nextY = top;
 
-        if (s.showAttempts) {
+        if (s.getShowAttempts()) {
             _hudSb.setLength(0);
             _hudSb.append("Attempt  ").append(sessionAttempts);
             font.setColor(0, 0, 0, HUD_ATTEMPT.a * 0.4f);
@@ -826,7 +826,7 @@ public class GameScreen extends AbstractScreen {
             nextY -= 26f;
         }
 
-        if (s.showBest && levelKey != null) {
+        if (s.getShowBest() && levelKey != null) {
             LevelProgress p1 = game.getProgressManager().getOrCreate(levelKey);
             _hudSb.setLength(0);
             _hudSb.append("Best  ").append(p1.bestPercent).append('%');
@@ -837,7 +837,7 @@ public class GameScreen extends AbstractScreen {
             nextY -= 26f;
         }
 
-        if (s.showFps) {
+        if (s.getShowFps()) {
             _hudSb.setLength(0);
             _hudSb.append("FPS  ").append(Gdx.graphics.getFramesPerSecond());
             font.setColor(0, 0, 0, HUD_FPS.a * 0.4f);
@@ -971,7 +971,7 @@ public class GameScreen extends AbstractScreen {
         pauseFont.setColor(COL_LABEL);
         pauseFont.draw(game.getBatch(), _hudSb, x, y);
 
-        float vol = game.getSettingsManager().musicVolume;
+        float vol = game.getSettingsManager().getMusicVolume();
         pauseFont.getData().setScale(0.48f * uiScale);
         _hudSb.setLength(0);
         _hudSb.append(Math.round(vol * 100f)).append('%');
@@ -1007,7 +1007,7 @@ public class GameScreen extends AbstractScreen {
      */
     private void drawPauseSliderShapes() {
         float sliderY = pauseSliderY();
-        float vol = game.getSettingsManager().musicVolume;
+        float vol = game.getSettingsManager().getMusicVolume();
         float tx = pauseSliderTrackX(), tw = pauseSliderTrackW();
         float trackH = 5f * uiScale, thumbR = 10f * uiScale;
         float fillW = tw * vol;
@@ -1128,7 +1128,7 @@ public class GameScreen extends AbstractScreen {
         engine.reset();
         startMusic();
         recordAttempt();
-        if (game.getSettingsManager().lockCursorInGame)
+        if (game.getSettingsManager().getLockCursorInGame())
             Gdx.input.setCursorCatched(true);
     }
 
@@ -1154,7 +1154,7 @@ public class GameScreen extends AbstractScreen {
             if (paused) levelMusic.pause();
             else levelMusic.play();
         }
-        if (game.getSettingsManager().lockCursorInGame)
+        if (game.getSettingsManager().getLockCursorInGame())
             Gdx.input.setCursorCatched(!paused);
     }
 
@@ -1170,7 +1170,7 @@ public class GameScreen extends AbstractScreen {
         if (Gdx.input.isTouched() && pauseSliderDragging) {
             float tx = pauseSliderTrackX(), tw = pauseSliderTrackW();
             float vol = Math.max(0f, Math.min(1f, (t.x - tx) / tw));
-            game.getSettingsManager().musicVolume = vol;
+            game.getSettingsManager().setMusicVolume(vol);
             game.getSoundManager().setMusicVolume(vol);
             if (levelMusic != null) levelMusic.setVolume(vol);
         }
@@ -1240,7 +1240,7 @@ public class GameScreen extends AbstractScreen {
         engine.reset();
         startMusic();
         recordAttempt();
-        hitboxesActive = game.getSettingsManager().showHitboxes;
+        hitboxesActive = game.getSettingsManager().getShowHitboxes();
     }
 
     private void placeCheckpoint() {
@@ -1265,6 +1265,10 @@ public class GameScreen extends AbstractScreen {
 
     private void removeLastCheckpoint() {
         if (checkpoints.size > 0) checkpoints.removeIndex(checkpoints.size - 1);
+
+        if (deathPaused && checkpoints.size > 0) {
+            triggerRespawn();
+        }
     }
 
     private void drawCheckpoints() {
@@ -1333,7 +1337,7 @@ public class GameScreen extends AbstractScreen {
         startMusic(startTime);
 
         recordAttempt();
-        hitboxesActive = game.getSettingsManager().showHitboxes;
+        hitboxesActive = game.getSettingsManager().getShowHitboxes();
     }
 
 
@@ -1416,7 +1420,7 @@ public class GameScreen extends AbstractScreen {
         if (progress <= 0f) return;
 
         SettingsManager s = game.getSettingsManager();
-        if (!s.showPercentage && !s.showProgressBar) return;
+        if (!s.getShowPercentage() && !s.getShowProgressBar()) return;
 
         int pct = Math.round(progress * 100f);
         float screenTop = camTop();
@@ -1428,7 +1432,7 @@ public class GameScreen extends AbstractScreen {
         final float LINE_Y = screenTop - 18f;
 
         float textW = 0f, textH = 0f;
-        if (s.showPercentage) {
+        if (s.getShowPercentage()) {
             _hudSb.setLength(0);
             _hudSb.append(pct).append('%');
             font.getData().setScale(1.2f);
@@ -1438,13 +1442,13 @@ public class GameScreen extends AbstractScreen {
         }
 
         float totalW = 0f;
-        if (s.showPercentage) totalW += textW;
-        if (s.showPercentage && s.showProgressBar) totalW += GAP;
-        if (s.showProgressBar) totalW += BAR_W;
+        if (s.getShowPercentage()) totalW += textW;
+        if (s.getShowPercentage() && s.getShowProgressBar()) totalW += GAP;
+        if (s.getShowProgressBar()) totalW += BAR_W;
 
         float barX = screenCX - totalW / 2f;
 
-        if (s.showPercentage) {
+        if (s.getShowPercentage()) {
             boolean isPB = false;
             if (levelKey != null) {
                 LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
@@ -1456,10 +1460,10 @@ public class GameScreen extends AbstractScreen {
             font.draw(game.getBatch(), _hudSb, barX, LINE_Y + textH / 2f);
             game.getBatch().end();
             font.getData().setScale(1f);
-            barX += textW + (s.showProgressBar ? GAP : 0f);
+            barX += textW + (s.getShowProgressBar() ? GAP : 0f);
         }
 
-        if (s.showProgressBar) {
+        if (s.getShowProgressBar()) {
             float barY = LINE_Y - BAR_H / 2f;
             float r = BAR_H / 2f;
             float fillW = BAR_W * progress;
@@ -1544,7 +1548,7 @@ public class GameScreen extends AbstractScreen {
             nextY -= 26f;
         }
 
-        if (game.getSettingsManager().showFps) {
+        if (game.getSettingsManager().getShowFps()) {
             font.setColor(HUD_FPS);
             _hudSb.setLength(0);
             _hudSb.append("FPS  ").append(Gdx.graphics.getFramesPerSecond());
@@ -1607,7 +1611,7 @@ public class GameScreen extends AbstractScreen {
             if (!fh.exists()) fh = Gdx.files.local("assets/musics/" + levelData.musicFile);
             if (fh.exists()) {
                 levelMusic = Gdx.audio.newMusic(fh);
-                levelMusic.setVolume(game.getSettingsManager().musicVolume);
+                levelMusic.setVolume(game.getSettingsManager().getMusicVolume());
                 levelMusic.setLooping(false);
                 if (startTime > 0) {
                     levelMusic.play();

@@ -309,10 +309,10 @@ public class LevelSelectScreen extends AbstractScreen {
     private void drawPracticeButton() {
         if (btnPractice == null) return;
         float scale = btnPractice.getScale();
-        float bw = btnPractice.w * scale;
-        float bh = btnPractice.h * scale;
-        float bx = btnPractice.x + btnPractice.w / 2f - bw / 2f;
-        float by = btnPractice.y + btnPractice.h / 2f - bh / 2f;
+        float bw = btnPractice.getW() * scale;
+        float bh = btnPractice.getH() * scale;
+        float bx = btnPractice.getX() + btnPractice.getW() / 2f - bw / 2f;
+        float by = btnPractice.getY() + btnPractice.getH() / 2f - bh / 2f;
 
         game.getBatch().end();
         Gdx.gl.glEnable(GL20.GL_BLEND);

@@ -1015,7 +1015,7 @@ public class LevelEditorScreen extends AbstractScreen {
             if (levelMusic == null) {
                 FileHandle fh = Gdx.files.internal("musics/" + levelData.musicFile);
                 if (!fh.exists()) fh = Gdx.files.local("assets/musics/" + levelData.musicFile);
-                if (fh.exists()) { levelMusic = Gdx.audio.newMusic(fh); levelMusic.setVolume(game.getSettingsManager().musicVolume); levelMusic.setLooping(false); }
+                if (fh.exists()) { levelMusic = Gdx.audio.newMusic(fh); levelMusic.setVolume(game.getSettingsManager().getMusicVolume()); levelMusic.setLooping(false); }
             }
             if (levelMusic != null) { if (restart) levelMusic.setPosition(0); else levelMusic.setPosition(Math.max(0, camX / 320f)); levelMusic.play(); }
         } catch (Exception ignored) {}

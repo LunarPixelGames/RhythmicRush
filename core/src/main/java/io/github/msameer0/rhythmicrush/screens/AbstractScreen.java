@@ -91,7 +91,7 @@ public abstract class AbstractScreen implements Screen {
      */
     @Override
     public void show() {
-        if(game.getSettingsManager().menuMusicEnabled)
+        if(game.getSettingsManager().getMenuMusicEnabled())
             game.getSoundManager().playMenuMusic();
     }
 

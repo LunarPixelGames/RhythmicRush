@@ -165,7 +165,7 @@ public class MainMenuScreen extends AbstractScreen {
         btnPlay = new AnimatedButton(startButton, 0, 0, 0, 0, () -> game.setScreen(new LevelSelectScreen(game)));
         btnSettings = new AnimatedButton(settingsButton, 0, 0, 0, 0, () -> settingsOpen = true);
 
-        if (game.getSettingsManager().menuMusicEnabled)
+        if (game.getSettingsManager().getMenuMusicEnabled())
             game.getSoundManager().playMenuMusic();
         else
             game.getSoundManager().stopMenuMusic();
@@ -222,7 +222,7 @@ public class MainMenuScreen extends AbstractScreen {
             rows.add(new SettingRow(RowType.TOGGLE, "Show FPS", "showFps"));
             if (desktop) {
                 rows.add(new SettingRow(RowType.TOGGLE, "Cap FPS", "capFps"));
-                if (s.capFps)
+                if (s.getCapFps())
                     rows.add(new SettingRow(RowType.INT_FIELD, "FPS Limit", "fpsValue"));
             }
             if (desktop)
@@ -606,13 +606,13 @@ public class MainMenuScreen extends AbstractScreen {
                     break;
                 case SLIDER:
                     float val;
-                    if ("uiPadding".equals(row.id)) val = s.uiPadding / 50f;
-                    else if ("practiceOpacity".equals(row.id)) val = s.practiceButtonOpacity;
-                    else val = s.musicVolume;
+                    if ("uiPadding".equals(row.id)) val = s.getUiPadding() / 50f;
+                    else if ("practiceOpacity".equals(row.id)) val = s.getPracticeButtonOpacity();
+                    else val = s.getMusicVolume();
                     drawSliderRow(ry, row.label, val);
                     break;
                 case INT_FIELD:
-                    drawIntFieldRow(ry, row.label, s.fpsCapValue);
+                    drawIntFieldRow(ry, row.label, s.getFpsCapValue());
                     break;
             }
         }
@@ -634,27 +634,27 @@ public class MainMenuScreen extends AbstractScreen {
     private boolean getToggleValue(String id, SettingsManager s) {
         switch (id) {
             case "menuMusic":
-                return s.menuMusicEnabled;
+                return s.getMenuMusicEnabled();
             case "hitboxes":
-                return s.showHitboxes;
+                return s.getShowHitboxes();
             case "hitboxesDeath":
-                return s.showHitboxesOnDeath;
+                return s.getShowHitboxesOnDeath();
             case "lockCursor":
-                return s.lockCursorInGame;
+                return s.getLockCursorInGame();
             case "showFps":
-                return s.showFps;
+                return s.getShowFps();
             case "capFps":
-                return s.capFps;
+                return s.getCapFps();
             case "vsync":
-                return s.enableVsync;
+                return s.getEnableVsync();
             case "showPercentage":
-                return s.showPercentage;
+                return s.getShowPercentage();
             case "showProgressBar":
-                return s.showProgressBar;
+                return s.getShowProgressBar();
             case "showAttempts":
-                return s.showAttempts;
+                return s.getShowAttempts();
             case "showBest":
-                return s.showBest;
+                return s.getShowBest();
             default:
                 return false;
         }
@@ -924,12 +924,12 @@ public class MainMenuScreen extends AbstractScreen {
             if (draggingSliderRow >= 0 && draggingSliderRow < pageRows.size) {
                 SettingRow row = pageRows.get(draggingSliderRow);
                 if ("volume".equals(row.id)) {
-                    s.musicVolume = norm;
-                    game.getSoundManager().setMusicVolume(s.musicVolume);
+                    s.setMusicVolume(norm);
+                    game.getSoundManager().setMusicVolume(s.getMusicVolume());
                 } else if ("uiPadding".equals(row.id)) {
-                    s.uiPadding = norm * 50f;
+                    s.setUiPadding(norm * 50f);
                 } else if ("practiceOpacity".equals(row.id)) {
-                    s.practiceButtonOpacity = norm;
+                    s.setPracticeButtonOpacity(norm);
                 }
             }
         }
@@ -993,9 +993,9 @@ public class MainMenuScreen extends AbstractScreen {
                     break;
                 case SLIDER:
                     float val;
-                    if ("uiPadding".equals(row.id)) val = s.uiPadding / 50f;
-                    else if ("practiceOpacity".equals(row.id)) val = s.practiceButtonOpacity;
-                    else val = s.musicVolume;
+                    if ("uiPadding".equals(row.id)) val = s.getUiPadding() / 50f;
+                    else if ("practiceOpacity".equals(row.id)) val = s.getPracticeButtonOpacity();
+                    else val = s.getMusicVolume();
 
                     if (hitSliderThumb(t, ry, val)) {
                         draggingSlider = true;
@@ -1007,7 +1007,7 @@ public class MainMenuScreen extends AbstractScreen {
                         if (Gdx.app.getType() == com.badlogic.gdx.Application.ApplicationType.Desktop) {
                             fpsInputActive = true;
                             fpsInputBuffer.setLength(0);
-                            fpsInputBuffer.append(s.fpsCapValue);
+                            fpsInputBuffer.append(s.getFpsCapValue());
                         } else {
                             Gdx.input.getTextInput(new com.badlogic.gdx.Input.TextInputListener() {
                                 @Override
@@ -1015,7 +1015,7 @@ public class MainMenuScreen extends AbstractScreen {
                                     try {
                                         int val = Integer.parseInt(text.trim());
                                         if (val > 0) {
-                                            s.fpsCapValue = val;
+                                            s.setFpsCapValue(val);
                                             s.applyFpsCap();
                                             s.save();
                                         }
@@ -1026,7 +1026,7 @@ public class MainMenuScreen extends AbstractScreen {
                                 @Override
                                 public void canceled() {
                                 }
-                            }, "FPS Limit", String.valueOf(s.fpsCapValue), "Enter FPS cap");
+                            }, "FPS Limit", String.valueOf(s.getFpsCapValue()), "Enter FPS cap");
                         }
                     }
                     break;
@@ -1050,52 +1050,52 @@ public class MainMenuScreen extends AbstractScreen {
     private void handleToggle(String id, SettingsManager s) {
         switch (id) {
             case "menuMusic":
-                s.menuMusicEnabled = !s.menuMusicEnabled;
-                if (s.menuMusicEnabled) game.getSoundManager().playMenuMusic();
+                s.setMenuMusicEnabled(!s.getMenuMusicEnabled());
+                if (s.getMenuMusicEnabled()) game.getSoundManager().playMenuMusic();
                 else game.getSoundManager().stopMenuMusic();
                 s.save();
                 break;
             case "hitboxes":
-                s.showHitboxes = !s.showHitboxes;
+                s.setShowHitboxes(!s.getShowHitboxes());
                 s.save();
                 break;
             case "hitboxesDeath":
-                s.showHitboxesOnDeath = !s.showHitboxesOnDeath;
+                s.setShowHitboxesOnDeath(!s.getShowHitboxesOnDeath());
                 s.save();
                 break;
             case "lockCursor":
-                s.lockCursorInGame = !s.lockCursorInGame;
+                s.setLockCursorInGame(!s.getLockCursorInGame());
                 s.save();
                 break;
             case "showFps":
-                s.showFps = !s.showFps;
+                s.setShowFps(!s.getShowFps());
                 s.save();
                 break;
             case "showPercentage":
-                s.showPercentage = !s.showPercentage;
+                s.setShowPercentage(!s.getShowPercentage());
                 s.save();
                 break;
             case "showProgressBar":
-                s.showProgressBar = !s.showProgressBar;
+                s.setShowProgressBar(!s.getShowProgressBar());
                 s.save();
                 break;
             case "showAttempts":
-                s.showAttempts = !s.showAttempts;
+                s.setShowAttempts(!s.getShowAttempts());
                 s.save();
                 break;
             case "showBest":
-                s.showBest = !s.showBest;
+                s.setShowBest(!s.getShowBest());
                 s.save();
                 break;
             case "capFps":
-                s.capFps = !s.capFps;
+                s.setCapFps(!s.getCapFps());
                 s.applyFpsCap();
                 s.save();
-                if (!s.capFps) fpsInputActive = false;
+                if (!s.getCapFps()) fpsInputActive = false;
                 recomputePanelHeight();
                 break;
             case "vsync":
-                s.enableVsync = !s.enableVsync;
+                s.setEnableVsync(!s.getEnableVsync());
                 s.applyVsync();
                 s.save();
                 break;
@@ -1157,7 +1157,7 @@ public class MainMenuScreen extends AbstractScreen {
             try {
                 int val = Integer.parseInt(fpsInputBuffer.toString());
                 if (val > 0) {
-                    s.fpsCapValue = val;
+                    s.setFpsCapValue(val);
                     s.applyFpsCap();
                     s.save();
                 }
