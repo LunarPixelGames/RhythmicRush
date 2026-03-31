@@ -76,7 +76,6 @@ public abstract class AbstractScreen implements Screen {
         WindowController wc = game.getWindowController();
         if (wc == null) return;
         if (Gdx.input.isKeyJustPressed(Input.Keys.F11)) wc.toggleFullscreen();
-        if (Gdx.input.isKeyJustPressed(Input.Keys.F10)) wc.maximizeWindow();
     }
 
     protected abstract void update(float delta);
@@ -106,7 +105,6 @@ public abstract class AbstractScreen implements Screen {
     public void resize(int width, int height) {
         WindowController wc = game.getWindowController();
         if (wc != null) {
-            wc.enforceAspectRatio(width, height);
             width = Gdx.graphics.getWidth();
             height = Gdx.graphics.getHeight();
         }

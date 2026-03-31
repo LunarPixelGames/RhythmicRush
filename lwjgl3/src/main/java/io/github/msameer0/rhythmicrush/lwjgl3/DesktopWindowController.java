@@ -17,20 +17,4 @@ public class DesktopWindowController implements WindowController {
             Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
         }
     }
-
-    @Override
-    public void maximizeWindow() {
-        if (Gdx.graphics instanceof Lwjgl3Graphics) {
-            ((Lwjgl3Graphics) Gdx.graphics).getWindow().maximizeWindow();
-        }
-    }
-
-    @Override
-    public void enforceAspectRatio(int width, int height) {
-        if (Gdx.graphics.isFullscreen()) return; // don't enforce in fullscreen
-        int targetHeight = width * 9 / 16;
-        if (Math.abs(height - targetHeight) > 2) { // small tolerance to avoid loop
-            Gdx.graphics.setWindowedMode(width, targetHeight);
-        }
-    }
 }
