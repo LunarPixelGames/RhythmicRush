@@ -35,6 +35,7 @@ class Registries {
         @JvmField
         val ORBS: GameRegistry<AbstractOrb?> = GameRegistry<AbstractOrb?>()
 
+        @JvmStatic
         fun init() {
             BLOCKS.register(Block::class.java) { Block() }
             BLOCKS.register(Slope::class.java) { Slope() }
