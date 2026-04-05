@@ -79,6 +79,7 @@ public class LevelEditorScreen extends AbstractScreen {
     private TextureRegion   shipPortalRegion;
     private TextureRegion   gravityPortalRegion;
     private TextureRegion   miniPortalRegion;
+    private TextureRegion yellowOrbRegion;
 
     private float   camX = 400f, camY = 200f;
     private float   zoom = 1.0f;
@@ -191,9 +192,9 @@ public class LevelEditorScreen extends AbstractScreen {
         buildTabs();
         scanMusicFiles();
 
-        if (levelData.musicFile != null && !levelData.musicFile.isEmpty()) {
+        if (levelData.getMusicFile() != null && !levelData.getMusicFile().isEmpty()) {
             for (int i = 0; i < musicFiles.size(); i++) {
-                if (musicFiles.get(i).equals(levelData.musicFile)) { musicFileIdx = i; break; }
+                if (musicFiles.get(i).equals(levelData.getMusicFile())) { musicFileIdx = i; break; }
             }
         }
 
@@ -220,6 +221,7 @@ public class LevelEditorScreen extends AbstractScreen {
         tabs.clear();
         tabs.add(buildTab("Blocks",   Registries.BLOCKS,   new Color(0.30f, 0.50f, 0.90f, 1f)));
         tabs.add(buildTab("Hazards",  Registries.HAZARDS,  new Color(0.90f, 0.30f, 0.30f, 1f)));
+        tabs.add(buildTab("Orbs",     Registries.ORBS,     new Color(1.00f, 0.85f, 0.20f, 1f)));  // ← add this
         tabs.add(buildTab("Portals",  Registries.PORTALS,  new Color(0.30f, 0.90f, 0.50f, 1f)));
         tabs.add(buildTab("Triggers", Registries.TRIGGERS, new Color(0.90f, 0.80f, 0.30f, 1f)));
     }
@@ -314,8 +316,8 @@ public class LevelEditorScreen extends AbstractScreen {
 
         font.getData().setScale(0.72f);
         font.setColor(Color.WHITE);
-        layout.setText(font, levelData.name);
-        font.draw(game.getBatch(), levelData.name,
+        layout.setText(font, levelData.getName());
+        font.draw(game.getBatch(), levelData.getName(),
             sw / 2f - layout.width / 2f, y + TOPBAR_H / 2f + layout.height / 2f);
 
         if ("block".equals(placementId)) {
@@ -416,11 +418,11 @@ public class LevelEditorScreen extends AbstractScreen {
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapes.setProjectionMatrix(uiCam.combined);
         shapes.begin(ShapeRenderer.ShapeType.Filled);
-        for (LevelData.ObjectEntry e : levelData.objects) {
+        for (LevelData.ObjectEntry e : levelData.getObjects()) {
             if (regionFor(e) != null) continue;
-            float sx = worldToSX(e.x, canvasW), sy = worldToSY(e.y, canvasH), dim = e.size * zoom;
+            float sx = worldToSX(e.getX(), canvasW), sy = worldToSY(e.getY(), canvasH), dim = e.getSize() * zoom;
             if (sx + dim < 0 || sx > canvasW || sy + dim < 0 || sy > canvasH) continue;
-            Color c = typeColor(e.type);
+            Color c = typeColor(e.getType());
             boolean sel = selection.contains(e, true);
             if (sel) shapes.setColor(Math.min(c.r * 1.5f, 1f), Math.min(c.g * 1.5f, 1f), Math.min(c.b * 1.5f, 1f), c.a);
             else     shapes.setColor(c);
@@ -430,14 +432,14 @@ public class LevelEditorScreen extends AbstractScreen {
 
         game.getBatch().setProjectionMatrix(uiCam.combined);
         game.getBatch().begin();
-        for (LevelData.ObjectEntry e : levelData.objects) {
-            float sx = worldToSX(e.x, canvasW), sy = worldToSY(e.y, canvasH), dim = e.size * zoom;
+        for (LevelData.ObjectEntry e : levelData.getObjects()) {
+            float sx = worldToSX(e.getX(), canvasW), sy = worldToSY(e.getY(), canvasH), dim = e.getSize() * zoom;
             if (sx + dim < 0 || sx > canvasW || sy + dim < 0 || sy > canvasH) continue;
             TextureRegion region = regionFor(e);
             if (region == null) continue;
             boolean sel = selection.contains(e, true);
             game.getBatch().setColor(sel ? 1.3f : 1f, sel ? 1.3f : 1f, sel ? 1.3f : 1f, 1f);
-            game.getBatch().draw(region, sx, sy, dim / 2f, dim / 2f, dim, dim, 1f, 1f, e.rotation);
+            game.getBatch().draw(region, sx, sy, dim / 2f, dim / 2f, dim, dim, 1f, 1f, e.getRotation());
         }
         game.getBatch().setColor(Color.WHITE);
         game.getBatch().end();
@@ -450,8 +452,8 @@ public class LevelEditorScreen extends AbstractScreen {
         shapes.begin(ShapeRenderer.ShapeType.Line);
         shapes.setColor(C_SEL_OUT);
         for (LevelData.ObjectEntry e : selection) {
-            float sx = worldToSX(e.x, canvasW) - 2, sy = worldToSY(e.y, canvasH) - 2;
-            float dim = e.size * zoom + 4;
+            float sx = worldToSX(e.getX(), canvasW) - 2, sy = worldToSY(e.getY(), canvasH) - 2;
+            float dim = e.getSize() * zoom + 4;
             shapes.rect(sx, sy, dim, dim);
         }
         shapes.end();
@@ -562,8 +564,8 @@ public class LevelEditorScreen extends AbstractScreen {
                 }
 
                 LevelData.ObjectEntry tmp = new LevelData.ObjectEntry();
-                tmp.type = id;
-                if (Registries.BLOCKS.has(id)) tmp.blockType = BlockType.values()[selectedBlockTypeIdx].textureName;
+                tmp.setType(id);
+                if (Registries.BLOCKS.has(id)) tmp.setBlockType(BlockType.values()[selectedBlockTypeIdx].textureName);
                 TextureRegion itemReg = regionFor(tmp);
 
                 if (itemReg != null) {
@@ -622,12 +624,12 @@ public class LevelEditorScreen extends AbstractScreen {
         if (Gdx.input.isKeyJustPressed(Input.Keys.TAB) && "block".equals(placementId))
             selectedBlockTypeIdx = (selectedBlockTypeIdx + 1) % BlockType.values().length;
         if (!musicFiles.isEmpty()) {
-            if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET)) { musicFileIdx = (musicFileIdx - 1 + musicFiles.size()) % musicFiles.size(); levelData.musicFile = musicFiles.get(musicFileIdx); }
-            if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT_BRACKET)) { musicFileIdx = (musicFileIdx + 1) % musicFiles.size(); levelData.musicFile = musicFiles.get(musicFileIdx); }
+            if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET)) { musicFileIdx = (musicFileIdx - 1 + musicFiles.size()) % musicFiles.size(); levelData.setMusicFile(musicFiles.get(musicFileIdx)); }
+            if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT_BRACKET)) { musicFileIdx = (musicFileIdx + 1) % musicFiles.size(); levelData.setMusicFile(musicFiles.get(musicFileIdx)); }
         }
         if (!selection.isEmpty()) {
-            if (Gdx.input.isKeyJustPressed(Input.Keys.Q)) for (LevelData.ObjectEntry e : selection) e.rotation = ((e.rotation + 90f) % 360f + 360f) % 360f;
-            if (Gdx.input.isKeyJustPressed(Input.Keys.E)) for (LevelData.ObjectEntry e : selection) e.rotation = ((e.rotation - 90f) % 360f + 360f) % 360f;
+            if (Gdx.input.isKeyJustPressed(Input.Keys.Q)) for (LevelData.ObjectEntry e : selection) e.setRotation(((e.getRotation() + 90f) % 360f + 360f) % 360f);
+            if (Gdx.input.isKeyJustPressed(Input.Keys.E)) for (LevelData.ObjectEntry e : selection) e.setRotation(((e.getRotation() - 90f) % 360f + 360f) % 360f);
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.G)) gridSnapping = !gridSnapping;
 
@@ -645,7 +647,7 @@ public class LevelEditorScreen extends AbstractScreen {
                 else if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT)) step = GRID_SIZE / 10f;
 
                 float dx = wL ? -step : wR ? step : 0, dy = wU ? step : wD ? -step : 0;
-                for (LevelData.ObjectEntry e : selection) { e.x += dx; e.y += dy; }
+                for (LevelData.ObjectEntry e : selection) { e.setX(e.getX() + dx); e.setY(e.getY() + dy); }
             }
         } else {
             wasdDir = 0; wasdHeld = 0f;
@@ -653,12 +655,12 @@ public class LevelEditorScreen extends AbstractScreen {
             if (wL) camX -= spd; if (wR) camX += spd; if (wU) camY += spd; if (wD) camY -= spd;
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.DEL) || Gdx.input.isKeyJustPressed(Input.Keys.BACKSPACE)) {
-            for (LevelData.ObjectEntry e : new Array<>(selection)) levelData.objects.removeValue(e, true);
+            for (LevelData.ObjectEntry e : new Array<>(selection)) levelData.getObjects().removeValue(e, true);
             selection.clear();
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.P) && !selection.isEmpty()) showPropertyEditor(selection.first());
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) { placementId = null; for (Tab t : tabs) t.selectedId = null; selection.clear(); rubberBanding = false; }
-        if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) && Gdx.input.isKeyJustPressed(Input.Keys.A)) { selection.clear(); selection.addAll(levelData.objects); }
+        if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) && Gdx.input.isKeyJustPressed(Input.Keys.A)) { selection.clear(); selection.addAll(levelData.getObjects()); }
         if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) && Gdx.input.isKeyJustPressed(Input.Keys.S)) saveLevel();
         if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) && Gdx.input.isKeyJustPressed(Input.Keys.L)) openLoadDialog();
         if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) && Gdx.input.isKeyJustPressed(Input.Keys.C)) copySelection();
@@ -703,8 +705,8 @@ public class LevelEditorScreen extends AbstractScreen {
     }
 
     private void saveLevel() {
-        if (savePath == null) savePath = "assets/levels/" + levelData.name.replaceAll("\\s+", "_") + ".json";
-        try { LevelSerializer.save(levelData, Gdx.files.local(savePath)); Gdx.app.log("Editor", "Saved: " + savePath); }
+        if (savePath == null) savePath = "assets/levels/" + levelData.getName().replaceAll("\\s+", "_") + ".json";
+        try { LevelSerializer.Companion.save(levelData, Gdx.files.local(savePath)); Gdx.app.log("Editor", "Saved: " + savePath); }
         catch (Exception ex) { Gdx.app.error("Editor", "Save failed: " + ex.getMessage()); }
     }
 
@@ -764,9 +766,9 @@ public class LevelEditorScreen extends AbstractScreen {
 
     private void placeObject(float wx, float wy) {
         LevelData.ObjectEntry e = new LevelData.ObjectEntry();
-        e.type = placementId; e.x = wx; e.y = wy; e.size = GRID_SIZE; e.rotation = 0f;
-        if (Registries.BLOCKS.has(placementId)) e.blockType = BlockType.values()[selectedBlockTypeIdx].textureName;
-        levelData.objects.add(e); selection.clear(); selection.add(e);
+        e.setType(placementId); e.setX(wx); e.setY(wy); e.setSize(GRID_SIZE); e.setRotation(0f);
+        if (Registries.BLOCKS.has(placementId)) e.setBlockType(BlockType.values()[selectedBlockTypeIdx].textureName);
+        levelData.getObjects().add(e); selection.clear(); selection.add(e);
     }
 
     private void copySelection() {
@@ -774,20 +776,20 @@ public class LevelEditorScreen extends AbstractScreen {
         clipboard.clear();
         for (LevelData.ObjectEntry e : selection) {
             LevelData.ObjectEntry copy = new LevelData.ObjectEntry();
-            copy.type              = e.type;
-            copy.x                 = e.x;
-            copy.y                 = e.y;
-            copy.size              = e.size;
-            copy.rotation          = e.rotation;
-            copy.blockType         = e.blockType;
-            copy.triggerBgColor    = e.triggerBgColor;
-            copy.triggerGroundColor= e.triggerGroundColor;
-            copy.fadeDuration      = e.fadeDuration;
-            copy.pulseBgColor      = e.pulseBgColor;
-            copy.pulseGroundColor  = e.pulseGroundColor;
-            copy.fadeInTime        = e.fadeInTime;
-            copy.holdTime          = e.holdTime;
-            copy.fadeOutTime       = e.fadeOutTime;
+            copy.setType(e.getType());
+            copy.setX(e.getX());
+            copy.setY(e.getY());
+            copy.setSize(e.getSize());
+            copy.setRotation(e.getRotation());
+            copy.setBlockType(e.getBlockType());
+            copy.setTriggerBgColor(e.getTriggerBgColor());
+            copy.setTriggerGroundColor(e.getTriggerGroundColor());
+            copy.setFadeDuration(e.getFadeDuration());
+            copy.setPulseBgColor(e.getPulseBgColor());
+            copy.setPulseGroundColor(e.getPulseGroundColor());
+            copy.setFadeInTime(e.getFadeInTime());
+            copy.setHoldTime(e.getHoldTime());
+            copy.setFadeOutTime(e.getFadeOutTime());
             clipboard.add(copy);
         }
     }
@@ -797,21 +799,21 @@ public class LevelEditorScreen extends AbstractScreen {
         selection.clear();
         for (LevelData.ObjectEntry src : clipboard) {
             LevelData.ObjectEntry copy = new LevelData.ObjectEntry();
-            copy.type              = src.type;
-            copy.x                 = src.x + GRID_SIZE;
-            copy.y                 = src.y + GRID_SIZE;
-            copy.size              = src.size;
-            copy.rotation          = src.rotation;
-            copy.blockType         = src.blockType;
-            copy.triggerBgColor    = src.triggerBgColor;
-            copy.triggerGroundColor= src.triggerGroundColor;
-            copy.fadeDuration      = src.fadeDuration;
-            copy.pulseBgColor      = src.pulseBgColor;
-            copy.pulseGroundColor  = src.pulseGroundColor;
-            copy.fadeInTime        = src.fadeInTime;
-            copy.holdTime          = src.holdTime;
-            copy.fadeOutTime       = src.fadeOutTime;
-            levelData.objects.add(copy);
+            copy.setType(src.getType());
+            copy.setX(src.getX() + GRID_SIZE);
+            copy.setY(src.getY() + GRID_SIZE);
+            copy.setSize(src.getSize());
+            copy.setRotation(src.getRotation());
+            copy.setBlockType(src.getBlockType());
+            copy.setTriggerBgColor(src.getTriggerBgColor());
+            copy.setTriggerGroundColor(src.getTriggerGroundColor());
+            copy.setFadeDuration(src.getFadeDuration());
+            copy.setPulseBgColor(src.getPulseBgColor());
+            copy.setPulseGroundColor(src.getPulseGroundColor());
+            copy.setFadeInTime(src.getFadeInTime());
+            copy.setHoldTime(src.getHoldTime());
+            copy.setFadeOutTime(src.getFadeOutTime());
+            levelData.getObjects().add(copy);
             selection.add(copy);
         }
     }
@@ -829,25 +831,29 @@ public class LevelEditorScreen extends AbstractScreen {
     private Vector2 uiMouse() { return new Vector2(Gdx.input.getX(), Gdx.graphics.getHeight() - Gdx.input.getY()); }
 
     private Color typeColor(String id) {
-        if (id == null) return Color.GRAY;
-        if (Registries.BLOCKS.has(id)) return new Color(0.30f, 0.50f, 0.90f, 0.85f);
-        if (Registries.HAZARDS.has(id)) return new Color(0.90f, 0.30f, 0.30f, 0.85f);
-        if (Registries.PORTALS.has(id)) return new Color(0.30f, 0.90f, 0.50f, 0.85f);
+        if (id == null)                    return Color.GRAY;
+        if (Registries.BLOCKS.has(id))    return new Color(0.30f, 0.50f, 0.90f, 0.85f);
+        if (Registries.HAZARDS.has(id))   return new Color(0.90f, 0.30f, 0.30f, 0.85f);
+        if (Registries.ORBS.has(id))      return new Color(1.00f, 0.85f, 0.20f, 0.85f);  // ← add this
+        if (Registries.PORTALS.has(id))   return new Color(0.30f, 0.90f, 0.50f, 0.85f);
         return new Color(0.90f, 0.80f, 0.30f, 0.85f);
     }
 
     private TextureRegion regionFor(LevelData.ObjectEntry e) {
-        if ("slope".equals(e.type)) return slopeRegion;
-        if ("spike".equals(e.type)) return spikeRegion;
-        if ("half_spike".equals(e.type)) return halfSpikeRegion;
-        if ("saw_blade".equals(e.type)) return sawBladeRegion;
-        if ("cube_portal".equals(e.type)) return cubePortalRegion;
-        if ("ship_portal".equals(e.type)) return shipPortalRegion;
-        if ("gravity_portal".equals(e.type)) return gravityPortalRegion;
-        if ("mini_portal".equals(e.type)) return miniPortalRegion;
-        if (Registries.BLOCKS.has(e.type)) {
+        if ("slope".equals(e.getType()))           return slopeRegion;
+        if ("spike".equals(e.getType()))           return spikeRegion;
+        if ("half_spike".equals(e.getType()))      return halfSpikeRegion;
+        if ("saw_blade".equals(e.getType()))       return sawBladeRegion;
+        if ("cube_portal".equals(e.getType()))     return cubePortalRegion;
+        if ("ship_portal".equals(e.getType()))     return shipPortalRegion;
+        if ("gravity_portal".equals(e.getType()))  return gravityPortalRegion;
+        if ("mini_portal".equals(e.getType()))     return miniPortalRegion;
+        if ("yellow_orb".equals(e.getType()))      return yellowOrbRegion;  // ← add this
+        if (Registries.BLOCKS.has(e.getType())) {
             BlockType bt = BlockType.DEFAULT;
-            if (e.blockType != null) for (BlockType t : BlockType.values()) if (t.textureName.equals(e.blockType)) { bt = t; break; }
+            if (e.getBlockType() != null)
+                for (BlockType t : BlockType.values())
+                    if (t.textureName.equals(e.getBlockType())) { bt = t; break; }
             return blockRegions[bt.ordinal()];
         }
         return null;
@@ -855,8 +861,8 @@ public class LevelEditorScreen extends AbstractScreen {
 
     private TextureRegion placementRegion() {
         if (placementId == null) return null;
-        LevelData.ObjectEntry tmp = new LevelData.ObjectEntry(); tmp.type = placementId;
-        if (Registries.BLOCKS.has(placementId)) tmp.blockType = BlockType.values()[selectedBlockTypeIdx].textureName;
+        LevelData.ObjectEntry tmp = new LevelData.ObjectEntry(); tmp.setType(placementId);
+        if (Registries.BLOCKS.has(placementId)) tmp.setBlockType(BlockType.values()[selectedBlockTypeIdx].textureName);
         return regionFor(tmp);
     }
 
@@ -917,7 +923,7 @@ public class LevelEditorScreen extends AbstractScreen {
                     else {
                         boolean shift = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
                         LevelData.ObjectEntry hit = null;
-                        for (int i = levelData.objects.size - 1; i >= 0; i--) { LevelData.ObjectEntry e = levelData.objects.get(i); if (wx >= e.x && wx <= e.x + e.size && wy >= e.y && wy <= e.y + e.size) { hit = e; break; } }
+                        for (int i = levelData.getObjects().size - 1; i >= 0; i--) { LevelData.ObjectEntry e = levelData.getObjects().get(i); if (wx >= e.getX() && wx <= e.getX() + e.getSize() && wy >= e.getY() && wy <= e.getY() + e.getSize()) { hit = e; break; } }
                         if (hit != null) { if (shift) { if (selection.contains(hit, true)) selection.removeValue(hit, true); else selection.add(hit); } else { if (!selection.contains(hit, true)) { selection.clear(); selection.add(hit); } } }
                         else { if (!shift) selection.clear(); rubberBanding = true; rbStartWX = wx; rbStartWY = wy; }
                     }
@@ -937,7 +943,7 @@ public class LevelEditorScreen extends AbstractScreen {
                 float minX = Math.min(rbStartWX, wx), maxX = Math.max(rbStartWX, wx), minY = Math.min(rbStartWY, wy), maxY = Math.max(rbStartWY, wy);
                 boolean shift = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
                 if (!shift) selection.clear();
-                for (LevelData.ObjectEntry e : levelData.objects) if (e.x + e.size > minX && e.x < maxX && e.y + e.size > minY && e.y < maxY) if (!selection.contains(e, true)) selection.add(e);
+                for (LevelData.ObjectEntry e : levelData.getObjects()) if (e.getX() + e.getSize() > minX && e.getX() < maxX && e.getY() + e.getSize() > minY && e.getY() < maxY) if (!selection.contains(e, true)) selection.add(e);
                 return true;
             }
             return false;
@@ -971,14 +977,14 @@ public class LevelEditorScreen extends AbstractScreen {
         try {
             FileHandle fh = Gdx.files.internal("levels/" + filename);
             if (!fh.exists()) fh = Gdx.files.local("assets/levels/" + filename);
-            levelData = LevelSerializer.load(fh);
+            levelData = LevelSerializer.Companion.load(fh);
             savePath = fh.path();
             selection.clear();
             placementId = null;
             trailHasData = false;
             trailWX.clear(); trailWY.clear();
-            if (levelData.musicFile != null && !levelData.musicFile.isEmpty()) {
-                for (int i = 0; i < musicFiles.size(); i++) if (musicFiles.get(i).equals(levelData.musicFile)) { musicFileIdx = i; break; }
+            if (levelData.getMusicFile() != null && !levelData.getMusicFile().isEmpty()) {
+                for (int i = 0; i < musicFiles.size(); i++) if (musicFiles.get(i).equals(levelData.getMusicFile())) { musicFileIdx = i; break; }
             }
             Gdx.app.log("Editor", "Loaded: " + filename);
         } catch (Exception ex) { Gdx.app.error("Editor", "Load failed: " + ex.getMessage()); }
@@ -986,17 +992,17 @@ public class LevelEditorScreen extends AbstractScreen {
 
     private void showPropertyEditor(LevelData.ObjectEntry e) {
         propTarget = e; propField = 0; for (StringBuilder sb : propBuffers) sb.setLength(0);
-        if ("color_trigger".equals(e.type)) { propLabels = new String[]{"BG Color (hex)", "Ground Color (hex)", "Fade Duration (s)"}; propFieldCount = 3; propBuffers[0].append(e.triggerBgColor != null ? e.triggerBgColor : "1a1a2e"); propBuffers[1].append(e.triggerGroundColor != null ? e.triggerGroundColor : "16213e"); propBuffers[2].append(e.fadeDuration); }
-        else if ("pulse_trigger".equals(e.type)) { propLabels = new String[]{"Pulse BG (hex)", "Pulse Ground (hex)", "Fade In (s)", "Hold (s)", "Fade Out (s)"}; propFieldCount = 5; propBuffers[0].append(e.pulseBgColor != null ? e.pulseBgColor : "1a1a2e"); propBuffers[1].append(e.pulseGroundColor != null ? e.pulseGroundColor : "16213e"); propBuffers[2].append(e.fadeInTime); propBuffers[3].append(e.holdTime); propBuffers[4].append(e.fadeOutTime); }
-        else { propLabels = new String[]{"Size", "Rotation (degrees)"}; propFieldCount = 2; propBuffers[0].append(e.size); propBuffers[1].append(e.rotation); }
+        if ("color_trigger".equals(e.getType())) { propLabels = new String[]{"BG Color (hex)", "Ground Color (hex)", "Fade Duration (s)"}; propFieldCount = 3; propBuffers[0].append(e.getTriggerBgColor() != null ? e.getTriggerBgColor() : "1a1a2e"); propBuffers[1].append(e.getTriggerGroundColor() != null ? e.getTriggerGroundColor() : "16213e"); propBuffers[2].append(e.getFadeDuration()); }
+        else if ("pulse_trigger".equals(e.getType())) { propLabels = new String[]{"Pulse BG (hex)", "Pulse Ground (hex)", "Fade In (s)", "Hold (s)", "Fade Out (s)"}; propFieldCount = 5; propBuffers[0].append(e.getPulseBgColor() != null ? e.getPulseBgColor() : "1a1a2e"); propBuffers[1].append(e.getPulseGroundColor() != null ? e.getPulseGroundColor() : "16213e"); propBuffers[2].append(e.getFadeInTime()); propBuffers[3].append(e.getHoldTime()); propBuffers[4].append(e.getFadeOutTime()); }
+        else { propLabels = new String[]{"Size", "Rotation (degrees)"}; propFieldCount = 2; propBuffers[0].append(e.getSize()); propBuffers[1].append(e.getRotation()); }
         propPanelOpen = true;
     }
 
     private void confirmPropertyEdit() {
         if (propTarget == null) { propPanelOpen = false; return; }
-        if ("color_trigger".equals(propTarget.type)) { propTarget.triggerBgColor = propBuffers[0].toString().trim().replace("#",""); propTarget.triggerGroundColor = propBuffers[1].toString().trim().replace("#",""); try { propTarget.fadeDuration = Float.parseFloat(propBuffers[2].toString().trim()); } catch (Exception ignored) {} }
-        else if ("pulse_trigger".equals(propTarget.type)) { propTarget.pulseBgColor = propBuffers[0].toString().trim().replace("#",""); propTarget.pulseGroundColor = propBuffers[1].toString().trim().replace("#",""); try { propTarget.fadeInTime = Float.parseFloat(propBuffers[2].toString().trim()); } catch (Exception ignored) {} try { propTarget.holdTime = Float.parseFloat(propBuffers[3].toString().trim()); } catch (Exception ignored) {} try { propTarget.fadeOutTime = Float.parseFloat(propBuffers[4].toString().trim()); } catch (Exception ignored) {} }
-        else { try { propTarget.size = Float.parseFloat(propBuffers[0].toString().trim()); } catch (Exception ignored) {} try { propTarget.rotation = Float.parseFloat(propBuffers[1].toString().trim()); } catch (Exception ignored) {} }
+        if ("color_trigger".equals(propTarget.getType())) { propTarget.setTriggerBgColor(propBuffers[0].toString().trim().replace("#", "")); propTarget.setTriggerGroundColor(propBuffers[1].toString().trim().replace("#", "")); try { propTarget.setFadeDuration(Float.parseFloat(propBuffers[2].toString().trim())); } catch (Exception ignored) {} }
+        else if ("pulse_trigger".equals(propTarget.getType())) { propTarget.setPulseBgColor(propBuffers[0].toString().trim().replace("#", "")); propTarget.setPulseGroundColor(propBuffers[1].toString().trim().replace("#", "")); try { propTarget.setFadeInTime(Float.parseFloat(propBuffers[2].toString().trim())); } catch (Exception ignored) {} try { propTarget.setHoldTime(Float.parseFloat(propBuffers[3].toString().trim())); } catch (Exception ignored) {} try { propTarget.setFadeOutTime(Float.parseFloat(propBuffers[4].toString().trim())); } catch (Exception ignored) {} }
+        else { try { propTarget.setSize(Float.parseFloat(propBuffers[0].toString().trim())); } catch (Exception ignored) {} try { propTarget.setRotation(Float.parseFloat(propBuffers[1].toString().trim())); } catch (Exception ignored) {} }
         propPanelOpen = false; propTarget = null;
     }
 
@@ -1004,17 +1010,17 @@ public class LevelEditorScreen extends AbstractScreen {
         if (!propPanelOpen || propTarget == null) return;
         int sw = Gdx.graphics.getWidth(), sh = Gdx.graphics.getHeight(); float pw = 520f, ph = 32f + propFieldCount * 36f + 32f, px = sw / 2f - pw / 2f, py = sh / 2f - ph / 2f;
         Gdx.gl.glEnable(GL20.GL_BLEND); shapes.setProjectionMatrix(uiCam.combined); shapes.begin(ShapeRenderer.ShapeType.Filled); shapes.setColor(C_PROP_BG); shapes.rect(px, py, pw, ph); shapes.end(); shapes.begin(ShapeRenderer.ShapeType.Line); shapes.setColor(C_PROP_BORDER); shapes.rect(px, py, pw, ph); shapes.end(); Gdx.gl.glDisable(GL20.GL_BLEND);
-        game.getBatch().setProjectionMatrix(uiCam.combined); game.getBatch().begin(); font.getData().setScale(0.62f); font.setColor(C_PROP_BORDER); font.draw(game.getBatch(), "Properties: " + propTarget.type + "   [TAB next | ENTER confirm | ESC cancel]", px + 12f, py + ph - 10f);
+        game.getBatch().setProjectionMatrix(uiCam.combined); game.getBatch().begin(); font.getData().setScale(0.62f); font.setColor(C_PROP_BORDER); font.draw(game.getBatch(), "Properties: " + propTarget.getType() + "   [TAB next | ENTER confirm | ESC cancel]", px + 12f, py + ph - 10f);
         for (int i = 0; i < propFieldCount; i++) { float fy = py + ph - 36f - i * 36f; boolean active = (i == propField); font.getData().setScale(0.56f); font.setColor(active ? C_PROP_ACTIVE : C_PROP_DIM); String label = propLabels[i] + ":  "; layout.setText(font, label); font.draw(game.getBatch(), label, px + 12f, fy); font.setColor(Color.WHITE); font.draw(game.getBatch(), propBuffers[i].toString() + (active ? "_" : ""), px + 12f + layout.width, fy); }
         font.getData().setScale(1f); game.getBatch().end();
     }
 
     private void startEditorMusic(boolean restart) {
-        if (levelData.musicFile == null || levelData.musicFile.isEmpty()) return;
+        if (levelData.getMusicFile() == null || levelData.getMusicFile().isEmpty()) return;
         try {
             if (levelMusic == null) {
-                FileHandle fh = Gdx.files.internal("musics/" + levelData.musicFile);
-                if (!fh.exists()) fh = Gdx.files.local("assets/musics/" + levelData.musicFile);
+                FileHandle fh = Gdx.files.internal("musics/" + levelData.getMusicFile());
+                if (!fh.exists()) fh = Gdx.files.local("assets/musics/" + levelData.getMusicFile());
                 if (fh.exists()) { levelMusic = Gdx.audio.newMusic(fh); levelMusic.setVolume(game.getSettingsManager().getMusicVolume()); levelMusic.setLooping(false); }
             }
             if (levelMusic != null) { if (restart) levelMusic.setPosition(0); else levelMusic.setPosition(Math.max(0, camX / 320f)); levelMusic.play(); }

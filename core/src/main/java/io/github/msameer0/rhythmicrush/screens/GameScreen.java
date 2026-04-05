@@ -209,7 +209,7 @@ public class GameScreen extends AbstractScreen {
 
         if (levelData != null) {
             world.loadLevel(levelData);
-            levelKey = levelData.fileName != null ? levelData.fileName : levelData.name + ".json";
+            levelKey = levelData.getFileName() != null ? levelData.getFileName() : levelData.getName() + ".json";
             recordAttempt();
         }
 
@@ -779,7 +779,7 @@ public class GameScreen extends AbstractScreen {
         boolean isPB = false;
         if (levelKey != null) {
             LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
-            isPB = pct > p.bestPercent;
+            isPB = pct > p.getBestPercent();
         }
         Color textColor = isPB ? COL_HEADING : Color.WHITE;
 
@@ -829,7 +829,7 @@ public class GameScreen extends AbstractScreen {
         if (s.getShowBest() && levelKey != null) {
             LevelProgress p1 = game.getProgressManager().getOrCreate(levelKey);
             _hudSb.setLength(0);
-            _hudSb.append("Best  ").append(p1.bestPercent).append('%');
+            _hudSb.append("Best  ").append(p1.getBestPercent()).append('%');
             font.setColor(0, 0, 0, HUD_BEST.a * 0.4f);
             font.draw(game.getBatch(), _hudSb, left + shadowOffset, nextY - shadowOffset);
             font.setColor(HUD_BEST);
@@ -921,7 +921,7 @@ public class GameScreen extends AbstractScreen {
 
         game.getBatch().draw(panelTexture, px, py);
 
-        String levelName = (levelData != null && levelData.name != null) ? levelData.name : "Level";
+        String levelName = (levelData != null && levelData.getName() != null) ? levelData.getName() : "Level";
         pauseFont.getData().setScale(1.1f * uiScale);
         glyphLayout.setText(pauseFont, levelName);
         float x = px + panelW / 2f - glyphLayout.width / 2f;
@@ -935,7 +935,7 @@ public class GameScreen extends AbstractScreen {
         if (levelKey != null) {
             LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
             pauseFont.getData().setScale(0.68f * uiScale);
-            String best = "Personal Best: " + p.bestPercent + "%";
+            String best = "Personal Best: " + p.getBestPercent() + "%";
             glyphLayout.setText(pauseFont, best);
             x = px + panelW / 2f - glyphLayout.width / 2f;
             pauseFont.setColor(0, 0, 0, COL_LABEL.a * 0.4f);
@@ -945,7 +945,7 @@ public class GameScreen extends AbstractScreen {
 
             sy -= glyphLayout.height + 14f * uiScale;
             pauseFont.setColor(COL_DIM);
-            String att = "Total: " + p.totalAttempts + "   Session: " + sessionAttempts;
+            String att = "Total: " + p.getTotalAttempts() + "   Session: " + sessionAttempts;
             glyphLayout.setText(pauseFont, att);
             x = px + panelW / 2f - glyphLayout.width / 2f;
             pauseFont.setColor(0, 0, 0, COL_DIM.a * 0.4f);
@@ -1056,7 +1056,7 @@ public class GameScreen extends AbstractScreen {
         if (levelKey != null) {
             LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
             pauseFont.getData().setScale(0.85f * uiScale);
-            String stats = "Total Attempts: " + p.totalAttempts;
+            String stats = "Total Attempts: " + p.getTotalAttempts();
             glyphLayout.setText(pauseFont, stats);
             x = px + panelW / 2f - glyphLayout.width / 2f;
             pauseFont.setColor(0, 0, 0, COL_LABEL.a * 0.4f);
@@ -1354,7 +1354,7 @@ public class GameScreen extends AbstractScreen {
         sessionAttempts++;
         if (levelKey == null) return;
         LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
-        p.totalAttempts++;
+        p.setTotalAttempts(p.getTotalAttempts()+1);
         game.getProgressManager().save();
     }
 
@@ -1371,8 +1371,8 @@ public class GameScreen extends AbstractScreen {
         if (levelKey == null || isPracticeMode) return;
         int pct = Math.round(world.getProgress() * 100f);
         LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
-        if (pct > p.bestPercent) {
-            p.bestPercent = pct;
+        if (pct > p.getBestPercent()) {
+            p.setBestPercent(pct);
             game.getProgressManager().save();
             popupTimer = 0f;
             popupBestPct = pct;
@@ -1392,7 +1392,7 @@ public class GameScreen extends AbstractScreen {
     private void recordComplete() {
         if (levelKey == null || isPracticeMode) return;
         LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
-        p.bestPercent = 100;
+        p.setBestPercent(100);
         game.getProgressManager().save();
     }
 
@@ -1452,7 +1452,7 @@ public class GameScreen extends AbstractScreen {
             boolean isPB = false;
             if (levelKey != null) {
                 LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
-                isPB = pct > p.bestPercent;
+                isPB = pct > p.getBestPercent();
             }
             game.getBatch().setProjectionMatrix(gameCamera.combined);
             game.getBatch().begin();
@@ -1543,7 +1543,7 @@ public class GameScreen extends AbstractScreen {
             LevelProgress p = game.getProgressManager().getOrCreate(levelKey);
             font.setColor(HUD_BEST);
             _hudSb.setLength(0);
-            _hudSb.append("Best  ").append(p.bestPercent).append('%');
+            _hudSb.append("Best  ").append(p.getBestPercent()).append('%');
             font.draw(game.getBatch(), _hudSb, left, nextY);
             nextY -= 26f;
         }
@@ -1604,11 +1604,11 @@ public class GameScreen extends AbstractScreen {
     }
 
     private void startMusic(float startTime) {
-        if (levelData == null || levelData.musicFile == null || levelData.musicFile.isEmpty())
+        if (levelData == null || levelData.getMusicFile() == null || levelData.getMusicFile().isEmpty())
             return;
         try {
-            FileHandle fh = Gdx.files.internal("musics/" + levelData.musicFile);
-            if (!fh.exists()) fh = Gdx.files.local("assets/musics/" + levelData.musicFile);
+            FileHandle fh = Gdx.files.internal("musics/" + levelData.getMusicFile());
+            if (!fh.exists()) fh = Gdx.files.local("assets/musics/" + levelData.getMusicFile());
             if (fh.exists()) {
                 levelMusic = Gdx.audio.newMusic(fh);
                 levelMusic.setVolume(game.getSettingsManager().getMusicVolume());

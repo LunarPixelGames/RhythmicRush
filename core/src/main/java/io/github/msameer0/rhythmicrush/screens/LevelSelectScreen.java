@@ -138,9 +138,9 @@ public class LevelSelectScreen extends AbstractScreen {
 
         if (levels.size == 0) {
             LevelData placeholder = new LevelData();
-            placeholder.name = "No Levels Found";
-            placeholder.difficulty = "normal";
-            placeholder.fileName = "-1.json";
+            placeholder.setName("No Levels Found");
+            placeholder.setDifficulty("normal");
+            placeholder.setFileName("-1.json");
             levels.add(placeholder);
         }
         selectedLevel = Math.max(0, Math.min(selectedLevel, levels.size - 1));
@@ -352,12 +352,12 @@ public class LevelSelectScreen extends AbstractScreen {
         btnLeft.draw(game.getBatch());
         btnRight.draw(game.getBatch());
 
-        TextureRegion diffRegion = difficultyTexture(current.difficulty);
+        TextureRegion diffRegion = difficultyTexture(current.getDifficulty());
         float iconSize = panelH * 0.55f;
         float spacing = panelW * 0.05f;
 
         font.getData().setScale(0.85f);
-        layout.setText(font, current.name);
+        layout.setText(font, current.getName());
         float nameW = layout.width;
         float nameH = layout.height;
 
@@ -369,7 +369,7 @@ public class LevelSelectScreen extends AbstractScreen {
         }
 
         font.getData().setScale(0.85f * scale);
-        layout.setText(font, current.name);
+        layout.setText(font, current.getName());
 
         float iconX = panelX + (panelW - (iconSize + spacing + layout.width)) / 2f;
         float iconY = panelY + panelH / 2f - iconSize / 2f + 10f;
@@ -377,21 +377,21 @@ public class LevelSelectScreen extends AbstractScreen {
         float textY = panelY + panelH / 2f + layout.height / 2f + 10f;
 
         game.getBatch().draw(diffRegion, iconX, iconY, iconSize, iconSize);
-        drawTextWithShadow(font, current.name, textX, textY, Color.WHITE);
+        drawTextWithShadow(font, current.getName(), textX, textY, Color.WHITE);
 
         font.getData().setScale(0.38f * scale); // scale label similarly
-        String diffLabel = current.difficulty != null
-            ? current.difficulty.substring(0, 1).toUpperCase() + current.difficulty.substring(1)
+        String diffLabel = current.getDifficulty() != null
+            ? current.getDifficulty().substring(0, 1).toUpperCase() + current.getDifficulty().substring(1)
             : "Normal";
         layout.setText(font, diffLabel);
         drawTextWithShadow(font, diffLabel, textX, textY - nameH - 4f, new Color(1f, 1f, 1f, 0.55f));
 
-        String levelKey = current.fileName != null ? current.fileName : current.name + ".json";
+        String levelKey = current.getFileName() != null ? current.getFileName() : current.getName() + ".json";
         LevelProgress progress = game.getProgressManager().getOrCreate(levelKey);
 
         font.getData().setScale(0.42f);
-        String bestText = "Best: " + progress.bestPercent + "%";
-        String attemptsText = "Total Attempts: " + progress.totalAttempts;
+        String bestText = "Best: " + progress.getBestPercent() + "%";
+        String attemptsText = "Total Attempts: " + progress.getTotalAttempts();
         float statsX = panelX + panelW / 2f;
 
         layout.setText(font, bestText);
@@ -464,7 +464,7 @@ public class LevelSelectScreen extends AbstractScreen {
 
     private void playPractice() {
         LevelData data = levels.get(selectedLevel);
-        if (!"-1.json".equals(data.fileName))
+        if (!"-1.json".equals(data.getFileName()))
             game.setScreen(new GameScreen(game, data, selectedLevel, true));
     }
 
@@ -506,19 +506,19 @@ public class LevelSelectScreen extends AbstractScreen {
         if (isTransitioning) {
             if (hits(t, panelX, panelY, panelW, panelH)) {
                 LevelData data = levels.get(selectedLevel);
-                if (!"-1.json".equals(data.fileName))
+                if (!"-1.json".equals(data.getFileName()))
                     game.setScreen(new GameScreen(game, data, selectedLevel));
                 return;
             }
             float nextX = panelX + transitionDir * viewport.getWorldWidth();
             if (hits(t, nextX, panelY, panelW, panelH)) {
                 LevelData data = levels.get(nextLevelIndex);
-                if (!"-1.json".equals(data.fileName))
+                if (!"-1.json".equals(data.getFileName()))
                     game.setScreen(new GameScreen(game, data, nextLevelIndex));
             }
         } else {
             LevelData data = levels.get(selectedLevel);
-            if (!"-1.json".equals(data.fileName))
+            if (!"-1.json".equals(data.getFileName()))
                 game.setScreen(new GameScreen(game, data, selectedLevel));
         }
     }

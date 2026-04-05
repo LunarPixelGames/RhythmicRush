@@ -15,6 +15,7 @@ class AtlasManager {
     val spikesAtlas: TextureAtlas
     val gamemodesAtlas: TextureAtlas
     val portalsAtlas: TextureAtlas
+    val orbsAtlas: TextureAtlas
 
     init {
         Gdx.app.log("AtlasManager", "Loading texture atlases...")
@@ -25,6 +26,7 @@ class AtlasManager {
         spikesAtlas = TextureAtlas(Gdx.files.internal("game/objects/spikes.atlas"))
         gamemodesAtlas = TextureAtlas(Gdx.files.internal("game/objects/gamemodes.atlas"))
         portalsAtlas = TextureAtlas(Gdx.files.internal("game/objects/portals.atlas"))
+        orbsAtlas = TextureAtlas(Gdx.files.internal("game/objects/orbs.atlas"))
         Gdx.app.log("AtlasManager", "All texture atlases loaded.")
     }
 

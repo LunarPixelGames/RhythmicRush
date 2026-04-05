@@ -6,6 +6,8 @@ import io.github.msameer0.rhythmicrush.game.gameplay.hazards.AbstractHazard;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.HalfSpike;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.SawBlade;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike;
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.AbstractOrb;
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.YellowOrb;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.AbstractPortal;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.CubePortal;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.GravityPortal;
@@ -29,6 +31,8 @@ public class Registries {
 
     public static final GameRegistry<AbstractTrigger> TRIGGERS = new GameRegistry<>();
 
+    public static final GameRegistry<AbstractOrb> ORBS = new GameRegistry<>();
+
     /**
      * Initializes all registries and registers the default game elements.
      */
@@ -44,6 +48,9 @@ public class Registries {
         PORTALS.register(ShipPortal.class, () -> new ShipPortal(0, 0));
         PORTALS.register(GravityPortal.class, () -> new GravityPortal(0, 0));
         PORTALS.register(MiniPortal.class, ()-> new MiniPortal(0, 0));
+
+        ORBS.register(YellowOrb.class, YellowOrb::new);
+
 
         PLAYERS.register(Cube.class, () -> new Cube(0, 0));
         PLAYERS.register(Ship.class, () -> new Ship(0, 0));
