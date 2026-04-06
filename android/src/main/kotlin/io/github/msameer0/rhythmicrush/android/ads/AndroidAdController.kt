@@ -2,6 +2,7 @@ package io.github.msameer0.rhythmicrush.android.ads
 
 import android.app.Activity
 import android.app.ActivityManager
+import android.os.Build
 import android.view.View
 import android.widget.RelativeLayout
 import com.google.android.gms.ads.*
@@ -35,11 +36,19 @@ class AndroidAdController(private val activity: Activity) : AdController {
         }
         layout.addView(adView, adParams)
 
-        if (!ActivityManager.isRunningInUserTestHarness()) {
+        if (!isRunningInTestHarness()) {
             loadInterstitialAd()
             activity.runOnUiThread {
                 adView?.loadAd(AdRequest.Builder().build())
             }
+        }
+    }
+
+    private fun isRunningInTestHarness(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ActivityManager.isRunningInUserTestHarness()
+        } else {
+            false
         }
     }
 
@@ -52,6 +61,7 @@ class AndroidAdController(private val activity: Activity) : AdController {
                 override fun onAdLoaded(interstitialAd: InterstitialAd) {
                     mInterstitialAd = interstitialAd
                 }
+
                 override fun onAdFailedToLoad(error: LoadAdError) {
                     mInterstitialAd = null
                 }
@@ -65,7 +75,9 @@ class AndroidAdController(private val activity: Activity) : AdController {
                 fullScreenContentCallback = object : FullScreenContentCallback() {
                     override fun onAdDismissedFullScreenContent() {
                         mInterstitialAd = null
-                        if (!ActivityManager.isRunningInUserTestHarness()) loadInterstitialAd()
+                        if (!isRunningInTestHarness()) {
+                            loadInterstitialAd()
+                        }
                     }
                 }
                 show(activity)

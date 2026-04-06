@@ -9,9 +9,7 @@ import io.github.msameer0.rhythmicrush.audio.SoundManager
 import io.github.msameer0.rhythmicrush.font.FontManager
 import io.github.msameer0.rhythmicrush.game.level.LevelManager
 import io.github.msameer0.rhythmicrush.game.level.ProgressManager
-import io.github.msameer0.rhythmicrush.game.registries.Registries
 import io.github.msameer0.rhythmicrush.screens.LoadingScreen
-import io.github.msameer0.rhythmicrush.screens.MainMenuScreen
 import io.github.msameer0.rhythmicrush.settings.SettingsManager
 import io.github.msameer0.rhythmicrush.update.UpdateManager
 import io.github.msameer0.rhythmicrush.window.WindowController

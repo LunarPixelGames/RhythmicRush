@@ -63,6 +63,11 @@ public class LevelSelectScreen extends AbstractScreen {
     private int nextLevelIndex = 0;
     private float panelXStart, panelXTarget;
 
+    // Swipe tracking
+    private boolean isSwiping = false;
+    private float touchStartX, touchStartY;
+    private static final float SWIPE_THRESHOLD = 80f;
+
     /**
      * Constructs a new LevelSelectScreen starting at the first available level.
      *
@@ -445,13 +450,36 @@ public class LevelSelectScreen extends AbstractScreen {
             btnRight.onTouchDown(t.x, t.y);
             btnPanel.onTouchDown(t.x, t.y);
             btnPractice.onTouchDown(t.x, t.y);
+
+            isSwiping = true;
+            touchStartX = t.x;
+            touchStartY = t.y;
         }
+
+        if (Gdx.input.isTouched() && isSwiping) {
+            float dx = t.x - touchStartX;
+            float dy = t.y - touchStartY;
+
+            if (Math.abs(dx) > SWIPE_THRESHOLD && Math.abs(dy) < SWIPE_THRESHOLD * 1.5f) {
+                if (dx > 0) {
+                    navigate(-1); // Swipe Right -> Previous Level
+                } else {
+                    navigate(1);  // Swipe Left -> Next Level
+                }
+                isSwiping = false; // Reset to avoid multiple triggers per swipe
+            }
+        }
+
         if (!Gdx.input.isTouched()) {
-            btnBack.onTouchUp(t.x, t.y);
-            btnLeft.onTouchUp(t.x, t.y);
-            btnRight.onTouchUp(t.x, t.y);
-            btnPanel.onTouchUp(t.x, t.y);
-            btnPractice.onTouchUp(t.x, t.y);
+            // Only trigger clicks if we didn't finish a swipe
+            if (isSwiping) {
+                btnBack.onTouchUp(t.x, t.y);
+                btnLeft.onTouchUp(t.x, t.y);
+                btnRight.onTouchUp(t.x, t.y);
+                btnPanel.onTouchUp(t.x, t.y);
+                btnPractice.onTouchUp(t.x, t.y);
+            }
+            isSwiping = false;
         }
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT)) navigate(-1);

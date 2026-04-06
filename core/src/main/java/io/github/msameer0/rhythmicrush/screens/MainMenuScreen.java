@@ -39,15 +39,17 @@ import io.github.msameer0.rhythmicrush.ui.AnimatedButton;
  */
 public class MainMenuScreen extends AbstractScreen {
 
-    private TextureRegion title, startButton, settingsButton, backArrow;
+    private TextureRegion title, startButton, settingsButton, backArrow, infoButton;
     private Color bgColor;
 
     private float titleX, titleY, titleW, titleH;
 
     private AnimatedButton btnPlay;
     private AnimatedButton btnSettings;
+    private AnimatedButton btnInfo;
 
     private boolean settingsOpen = false;
+    private boolean infoOpen = false;
     private ShapeRenderer shapes;
     private BitmapFont font;
     private GlyphLayout layout;
@@ -57,9 +59,16 @@ public class MainMenuScreen extends AbstractScreen {
     private static final int CAT_COUNT = 2;
     private static final String[] CAT_NAMES = {"Gameplay", "Graphics"};
 
-    private static final int MAX_ROWS_PER_PAGE = 5;
+    private static final int INFO_TAB_HOWTOPLAY = 0;
+    private static final int INFO_TAB_CREDITS = 1;
+    private static final int INFO_TAB_SOCIALS = 2;
+    private static final int INFO_TAB_COUNT = 3;
+    private static final String[] INFO_TAB_NAMES = {"How to Play", "Credits", "Socials"};
+
+    private static final int MAX_ROWS_PER_PAGE = 4; // Reduced from 5 to give more breathing room
 
     private int currentCat = CAT_GAMEPLAY;
+    private int currentInfoTab = INFO_TAB_HOWTOPLAY;
     private int currentSubPage = 0;
 
     private float panelX, panelY, panelW, panelH;
@@ -151,6 +160,7 @@ public class MainMenuScreen extends AbstractScreen {
         startButton = game.getAtlasManager().getMenuAtlas().findRegion("start_button");
         settingsButton = game.getAtlasManager().getMenuAtlas().findRegion("settings_button");
         backArrow = game.getAtlasManager().getLevelSelectAtlas().findRegion("back");
+        infoButton = game.getAtlasManager().getMenuAtlas().findRegion("info");
 
         Random rand = new Random();
         bgColor = new Color(
@@ -164,6 +174,7 @@ public class MainMenuScreen extends AbstractScreen {
 
         btnPlay = new AnimatedButton(startButton, 0, 0, 0, 0, () -> game.setScreen(new LevelSelectScreen(game)));
         btnSettings = new AnimatedButton(settingsButton, 0, 0, 0, 0, () -> settingsOpen = true);
+        btnInfo = new AnimatedButton(infoButton, 0, 0, 0, 0, () -> infoOpen = true);
 
         if (game.getSettingsManager().getMenuMusicEnabled())
             game.getSoundManager().playMenuMusic();
@@ -174,14 +185,16 @@ public class MainMenuScreen extends AbstractScreen {
 
         if (game.getAdController() != null) {
             boolean shouldShowBanner = MathUtils.randomBoolean(0.5f);
-            game.getAdController().showBannerAd(shouldShowBanner);
+            //TODO: ADS
+            //game.getAdController().showBannerAd(shouldShowBanner);
         }
     }
 
     @Override
     public void hide() {
         if (game.getAdController() != null) {
-            game.getAdController().showBannerAd(false);
+            //game.getAdController().showBannerAd(false);
+            //TODO: ADS
         }
         super.hide();
     }
@@ -323,20 +336,26 @@ public class MainMenuScreen extends AbstractScreen {
         float settingsY = 20 - 10f;
         if (btnSettings != null) btnSettings.setBounds(settingsX, settingsY, settingsW, settingsH);
 
-        panelW = Math.min(vw * 0.72f, 740f);
+        float infoW = settingsW;
+        float infoH = settingsH;
+        float infoX = vw - infoW - 20f;
+        float infoY = 20 - 10f;
+        if (btnInfo != null) btnInfo.setBounds(infoX, infoY, infoW, infoH);
+
+        panelW = Math.min(vw * 0.78f, 780f); // Slightly wider panel for better spacing
 
         float targetH = vh * PANEL_HEIGHT_FRACTION;
-        float dotsExtra = targetH * 0.045f;
-        float padT = targetH * 0.20f;
-        float padB = targetH * 0.035f;
+        float dotsExtra = targetH * 0.055f;
+        float padT = targetH * 0.22f;
+        float padB = targetH * 0.045f;
         float rowsH = targetH - padT - padB - dotsExtra;
         rowStep = rowsH / MAX_ROWS_PER_PAGE;
         panelPadT = padT;
         panelPadB = padB;
 
-        float scaleRef = rowStep / 68f;
-        settingsFontScale = 0.65f * scaleRef;
-        settingsHeadingScale = scaleRef;
+        float scaleRef = rowStep / 72f;
+        settingsFontScale = 0.62f * scaleRef; // Slightly smaller fonts feel less crowded
+        settingsHeadingScale = 0.95f * scaleRef;
 
         recomputePanelHeight();
     }
@@ -398,11 +417,13 @@ public class MainMenuScreen extends AbstractScreen {
      */
     @Override
     protected void update(float delta) {
-        if (!settingsOpen) {
+        if (!settingsOpen && !infoOpen) {
             btnPlay.update(delta);
             btnSettings.update(delta);
+            btnInfo.update(delta);
         }
         if (settingsOpen) handleSettingsInput();
+        else if (infoOpen) handleInfoInput();
         else handleMenuInput();
     }
 
@@ -420,10 +441,14 @@ public class MainMenuScreen extends AbstractScreen {
         game.getBatch().draw(title, titleX, titleY, titleW, titleH);
         btnPlay.draw(game.getBatch());
         btnSettings.draw(game.getBatch());
+        btnInfo.draw(game.getBatch());
         game.getBatch().end();
 
-        if (!settingsOpen) return;
+        if (settingsOpen) drawSettingsOverlay();
+        else if (infoOpen) drawInfoOverlay();
+    }
 
+    private void drawSettingsOverlay() {
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapes.setProjectionMatrix(camera.combined);
@@ -597,86 +622,49 @@ public class MainMenuScreen extends AbstractScreen {
      */
     private void drawSettingsRows(Array<SettingRow> rows) {
         SettingsManager s = game.getSettingsManager();
+        float horizontalPadding = 45f; // Padding from panel edges
         for (int i = 0; i < rows.size; i++) {
             SettingRow row = rows.get(i);
             float ry = rowY(i);
             switch (row.type) {
                 case TOGGLE:
-                    drawToggleRow(ry, row.label, getToggleValue(row.id, s));
+                    drawToggleRow(ry, row.label, getToggleValue(row.id, s), horizontalPadding);
                     break;
                 case SLIDER:
                     float val;
                     if ("uiPadding".equals(row.id)) val = s.getUiPadding() / 50f;
                     else if ("practiceOpacity".equals(row.id)) val = s.getPracticeButtonOpacity();
                     else val = s.getMusicVolume();
-                    drawSliderRow(ry, row.label, val);
+                    drawSliderRow(ry, row.label, val, horizontalPadding);
                     break;
                 case INT_FIELD:
-                    drawIntFieldRow(ry, row.label, s.getFpsCapValue());
+                    drawIntFieldRow(ry, row.label, s.getFpsCapValue(), horizontalPadding);
                     break;
             }
         }
     }
 
-    /**
-     * Retrieves the current boolean state of a specific toggle setting based on its identifier.
-     * <p>
-     * This helper method maps the unique string {@code id} of a {@link SettingRow} to the
-     * corresponding field within the {@link SettingsManager}. It is primarily used during
-     * the rendering phase to determine the visual state (ON/OFF) of toggle switches.
-     * </p>
-     *
-     * @param id The unique string identifier for the setting (e.g., "menuMusic", "vsync").
-     * @param s  The {@link SettingsManager} instance containing the current configuration.
-     * @return The current boolean value of the identified setting, or {@code false} if
-     *         the identifier is not recognized.
-     */
     private boolean getToggleValue(String id, SettingsManager s) {
         switch (id) {
-            case "menuMusic":
-                return s.getMenuMusicEnabled();
-            case "hitboxes":
-                return s.getShowHitboxes();
-            case "hitboxesDeath":
-                return s.getShowHitboxesOnDeath();
-            case "lockCursor":
-                return s.getLockCursorInGame();
-            case "showFps":
-                return s.getShowFps();
-            case "capFps":
-                return s.getCapFps();
-            case "vsync":
-                return s.getEnableVsync();
-            case "showPercentage":
-                return s.getShowPercentage();
-            case "showProgressBar":
-                return s.getShowProgressBar();
-            case "showAttempts":
-                return s.getShowAttempts();
-            case "showBest":
-                return s.getShowBest();
-            default:
-                return false;
+            case "menuMusic": return s.getMenuMusicEnabled();
+            case "hitboxes": return s.getShowHitboxes();
+            case "hitboxesDeath": return s.getShowHitboxesOnDeath();
+            case "lockCursor": return s.getLockCursorInGame();
+            case "showFps": return s.getShowFps();
+            case "capFps": return s.getCapFps();
+            case "vsync": return s.getEnableVsync();
+            case "showPercentage": return s.getShowPercentage();
+            case "showProgressBar": return s.getShowProgressBar();
+            case "showAttempts": return s.getShowAttempts();
+            case "showBest": return s.getShowBest();
+            default: return false;
         }
     }
 
-
-    /**
-     * Renders a single row containing a toggle switch (pill-shaped) for boolean settings.
-     *
-     * <p>The row consists of a descriptive label on the left and an interactive toggle
-     * switch on the right. The switch changes color and moves its thumb position based
-     * on the {@code value} (e.g., green for ON, gray for OFF). It also displays a small
-     * text hint (ON/OFF) inside the toggle pill.</p>
-     *
-     * @param ry    The vertical center-line coordinate where the row should be drawn.
-     * @param label The text description of the setting to display.
-     * @param value The current state of the setting; {@code true} for ON, {@code false} for OFF.
-     */
-    private void drawToggleRow(float ry, String label, boolean value) {
-        float rightEdge = panelX + panelW - 28f;
-        float pillH = rowStep * 0.38f;
-        float pillW = pillH * 1.92f;
+    private void drawToggleRow(float ry, String label, boolean value, float horizontalPadding) {
+        float rightEdge = panelX + panelW - horizontalPadding;
+        float pillH = rowStep * 0.35f;
+        float pillW = pillH * 2.1f;
         float pillX = rightEdge - pillW;
         float pillY = ry - pillH / 2f;
         float r = pillH / 2f;
@@ -702,7 +690,7 @@ public class MainMenuScreen extends AbstractScreen {
         drawTextWithShadow(
             font,
             label,
-            panelX + 28f,
+            panelX + horizontalPadding,
             ry + layout.height / 2f,
             COL_LABEL
         );
@@ -710,32 +698,13 @@ public class MainMenuScreen extends AbstractScreen {
         game.getBatch().end();
     }
 
-    /**
-     * Renders a single row containing a slider control, typically used for volume settings.
-     *
-     * <p>The slider consists of:
-     * <ul>
-     *   <li>A descriptive label on the left side of the panel.</li>
-     *   <li>A horizontal track on the right side, with a filled portion representing
-     *       the current value.</li>
-     *   <li>A circular thumb (handle) that indicates the current position.</li>
-     *   <li>A percentage text label positioned to the left of the slider track.</li>
-     * </ul>
-     *
-     * <p>The method uses {@link ShapeRenderer} for the geometry and {@code SpriteBatch}
-     * for the text, incorporating alpha blending for smooth UI transparency.</p>
-     *
-     * @param ry    The vertical center-line coordinate where the row should be drawn.
-     * @param label The text description of the setting to display.
-     * @param value A normalized float between 0.0f and 1.0f representing the slider's position.
-     */
-    private void drawSliderRow(float ry, String label, float value) {
-        float rightEdge = panelX + panelW - 28f;
-        float trackW = panelW * 0.36f;
-        float trackH = rowStep * 0.07f;
+    private void drawSliderRow(float ry, String label, float value, float horizontalPadding) {
+        float rightEdge = panelX + panelW - horizontalPadding;
+        float trackW = panelW * 0.34f;
+        float trackH = rowStep * 0.06f;
         float trackX = rightEdge - trackW;
         float trackY = ry - trackH / 2f;
-        float thumbR = rowStep * 0.16f;
+        float thumbR = rowStep * 0.15f;
         float fillW = trackW * value;
         float thumbCX = trackX + fillW;
 
@@ -757,7 +726,7 @@ public class MainMenuScreen extends AbstractScreen {
         font.getData().setScale(settingsFontScale);
         font.setColor(COL_LABEL);
         layout.setText(font, label);
-        drawTextWithShadow(font, label, panelX + 28f, ry + layout.height / 2f, COL_LABEL);
+        drawTextWithShadow(font, label, panelX + horizontalPadding, ry + layout.height / 2f, COL_LABEL);
         font.getData().setScale(settingsFontScale * 0.77f);
         font.setColor(COL_DIM);
         String pct = Math.round(value * 100f) + "%";
@@ -765,7 +734,7 @@ public class MainMenuScreen extends AbstractScreen {
         drawTextWithShadow(
             font,
             pct,
-            trackX - layout.width - 12f,
+            trackX - layout.width - 15f,
             ry + layout.height / 2f,
             COL_DIM
         );
@@ -773,25 +742,10 @@ public class MainMenuScreen extends AbstractScreen {
         game.getBatch().end();
     }
 
-    /**
-     * Renders a single row containing a numeric input field, specifically used for integer settings
-     * like the FPS limit.
-     *
-     * <p>This method draws a rectangular input box on the right side of the panel. When the field
-     * is active (focused), it displays a blinking cursor and the current contents of the
-     * {@code fpsInputBuffer}. When inactive, it displays the current persisted value.</p>
-     *
-     * <p>The visual state changes based on {@code fpsInputActive} to provide feedback to the user,
-     * dimming the border and text when the field is not being edited.</p>
-     *
-     * @param ry    The vertical center-line coordinate where the row should be drawn.
-     * @param label The text description of the setting to display.
-     * @param value The current integer value to display when the field is not being edited.
-     */
-    private void drawIntFieldRow(float ry, String label, int value) {
-        float rightEdge = panelX + panelW - 28f;
-        float boxH = rowStep * 0.44f;
-        float boxW = boxH * 2.8f;
+    private void drawIntFieldRow(float ry, String label, int value, float horizontalPadding) {
+        float rightEdge = panelX + panelW - horizontalPadding;
+        float boxH = rowStep * 0.40f;
+        float boxW = boxH * 3.0f;
         float boxX = rightEdge - boxW;
         float boxY = ry - boxH / 2f;
 
@@ -819,7 +773,7 @@ public class MainMenuScreen extends AbstractScreen {
         font.getData().setScale(settingsFontScale);
         font.setColor(COL_LABEL);
         layout.setText(font, label);
-        drawTextWithShadow(font, label, panelX + 28f, ry + layout.height / 2f, COL_LABEL);
+        drawTextWithShadow(font, label, panelX + horizontalPadding, ry + layout.height / 2f, COL_LABEL);
         font.getData().setScale(settingsFontScale * 0.95f);
         font.setColor(fpsInputActive ? Color.WHITE : COL_DIM);
         Color valueColor = fpsInputActive ? Color.WHITE : COL_DIM;
@@ -862,10 +816,12 @@ public class MainMenuScreen extends AbstractScreen {
         if (Gdx.input.justTouched()) {
             btnPlay.onTouchDown(t.x, t.y);
             btnSettings.onTouchDown(t.x, t.y);
+            btnInfo.onTouchDown(t.x, t.y);
         }
         if (!Gdx.input.isTouched()) {
             btnPlay.onTouchUp(t.x, t.y);
             btnSettings.onTouchUp(t.x, t.y);
+            btnInfo.onTouchUp(t.x, t.y);
         }
     }
 
@@ -1142,7 +1098,7 @@ public class MainMenuScreen extends AbstractScreen {
      * <p>This method is called when the user presses Enter, clicks outside the input field,
      * or navigates away from the current settings page. It attempts to parse the
      * {@code fpsInputBuffer} into a valid positive integer. If successful, it updates the
-     * {@link SettingsManager#fpsCapValue}, applies the new limit to the game engine,
+     * , applies the new limit to the game engine,
      * and persists the change to the settings file.</p>
      *
      * <p>Regardless of whether the input was valid, the method resets the input buffer
@@ -1188,6 +1144,210 @@ public class MainMenuScreen extends AbstractScreen {
         fpsInputBuffer.setLength(0);
         currentCat = CAT_GAMEPLAY;
         currentSubPage = 0;
+    }
+
+    private static class InfoLine {
+        final String text;
+        final String url;
+        float y; // stored during draw for hit detection
+
+        InfoLine(String text, String url) {
+            this.text = text;
+            this.url = url;
+        }
+    }
+
+    private final InfoLine[] creditLines = {
+        new InfoLine("Euphoria by ForeverBound", "https://www.newgrounds.com/audio/listen/680209"),
+        new InfoLine("Icefield by Waterflame", "https://www.newgrounds.com/audio/listen/1379251"),
+        new InfoLine("Hypercharge by Cobalt039", "https://www.newgrounds.com/audio/listen/1538780"),
+        new InfoLine("Bounce by Waterflame", "https://www.newgrounds.com/audio/listen/654553"),
+        new InfoLine("Rhythm Factory by Waterflame", "https://www.newgrounds.com/audio/listen/1533782"),
+        new InfoLine("Vulg by OcularNebula", "https://www.newgrounds.com/audio/listen/954091")
+    };
+
+    private final InfoLine[] socialLines = {
+        new InfoLine("YouTube: @LunarPixelGames", "https://www.youtube.com/@LunarPixelGames"),
+        new InfoLine("GitHub: LunarPixelGames", "https://github.com/LunarPixelGames")
+    };
+
+    private final InfoLine privacyPolicyLine = new InfoLine("Privacy Policy", "https://lunarpixelgames.github.io/RhythmicRush/PRIVACY");
+
+    private void handleInfoInput() {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            closeInfo();
+            return;
+        }
+
+        if (!Gdx.input.justTouched()) return;
+        Vector2 t = unproject();
+
+        if (hits(t, backX, backY, backW, backH)) {
+            closeInfo();
+            return;
+        }
+
+        for (int i = 0; i < INFO_TAB_COUNT; i++) {
+            float tabW = panelW / INFO_TAB_COUNT;
+            float tabX = panelX + tabW * i;
+            float tabTopY = panelY + panelH - 42f;
+            if (t.x >= tabX && t.x <= tabX + tabW && t.y >= tabTopY - 28f && t.y <= tabTopY + 8f) {
+                if (i != currentInfoTab) {
+                    currentInfoTab = i;
+                }
+                return;
+            }
+        }
+
+        // Handle link clicks
+        InfoLine[] lines = null;
+        if (currentInfoTab == INFO_TAB_CREDITS) lines = creditLines;
+        else if (currentInfoTab == INFO_TAB_SOCIALS) lines = socialLines;
+
+        if (lines != null) {
+            float lineH = 32f * (panelH / 480f);
+            for (InfoLine line : lines) {
+                if (t.x >= panelX + 35f && t.x <= panelX + panelW - 35f &&
+                    t.y >= line.y - lineH && t.y <= line.y) {
+                    Gdx.net.openURI(line.url);
+                    return;
+                }
+            }
+        }
+
+        if (currentInfoTab == INFO_TAB_SOCIALS) {
+            float lineH = 32f * (panelH / 480f);
+            if (t.x >= panelX + panelW/2f - 100f && t.x <= panelX + panelW/2f + 100f &&
+                t.y >= privacyPolicyLine.y - lineH && t.y <= privacyPolicyLine.y) {
+                Gdx.net.openURI(privacyPolicyLine.url);
+            }
+        }
+    }
+
+    private void closeInfo() {
+        infoOpen = false;
+        currentInfoTab = INFO_TAB_HOWTOPLAY;
+    }
+
+    private void drawInfoOverlay() {
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.setProjectionMatrix(camera.combined);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        shapes.setColor(COL_OVERLAY);
+        shapes.rect(0, 0, viewport.getWorldWidth(), viewport.getWorldHeight());
+        shapes.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+
+        int texW = (int) panelW, texH = (int) panelH;
+        if (panelTexture == null || texW != lastPanelW || texH != lastPanelH) {
+            if (panelTexture != null) panelTexture.dispose();
+            panelTexture = createRoundedRect(texW, texH, (int) (26f * (panelW / 740f)), COL_PANEL);
+            lastPanelW = texW;
+            lastPanelH = texH;
+        }
+
+        game.getBatch().setProjectionMatrix(camera.combined);
+        game.getBatch().begin();
+        game.getBatch().draw(panelTexture, panelX, panelY);
+        game.getBatch().draw(backArrow, backX, backY, backW, backH);
+
+        font.getData().setScale(settingsHeadingScale);
+        layout.setText(font, "Information");
+        drawTextWithShadow(
+            font,
+            "Information",
+            (panelX + panelW / 2f) - (layout.width / 2f),
+            panelY + panelH - 16f,
+            COL_HEADING
+        );
+
+        float tabFontScale = settingsFontScale * 0.85f;
+        font.getData().setScale(tabFontScale);
+        float tabY = panelY + panelH - panelPadT * 0.47f;
+        for (int i = 0; i < INFO_TAB_COUNT; i++) {
+            float tabW = panelW / INFO_TAB_COUNT;
+            float tabCX = panelX + tabW * i + tabW / 2f;
+            Color tabColor = (i == currentInfoTab ? COL_TAB_ACT : COL_TAB_INACT);
+            layout.setText(font, INFO_TAB_NAMES[i]);
+
+            drawTextWithShadow(
+                font,
+                INFO_TAB_NAMES[i],
+                tabCX - layout.width / 2f,
+                tabY,
+                tabColor
+            );
+        }
+
+        float tabW = panelW / INFO_TAB_COUNT;
+        float tabCX = panelX + tabW * currentInfoTab;
+        layout.setText(font, INFO_TAB_NAMES[currentInfoTab]);
+        float tabTextH = layout.height;
+        float underlineY = tabY - tabTextH - 3f;
+
+        game.getBatch().end();
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapes.setProjectionMatrix(camera.combined);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        shapes.setColor(COL_TAB_ACT);
+        shapes.rect(tabCX + 8f, underlineY, tabW - 16f, 3f);
+        shapes.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+
+        game.getBatch().begin();
+        float contentX = panelX + 45f;
+        float contentY = panelY + panelH - panelPadT - 15f;
+        float lineSpacing = 42f * (panelH / 480f); // Increased from 32f for better spacing
+        font.getData().setScale(settingsFontScale * 0.82f);
+
+        if (currentInfoTab == INFO_TAB_HOWTOPLAY) {
+            String[] lines = {
+                "Welcome to Rhythmic Rush!",
+                "",
+                "Jump and fly through obstacles in this",
+                "rhythm-based platformer. Timing is key!",
+                "",
+                "Controls:",
+                "- Space / Click: Jump or fly up",
+                "- ESC: Pause or Go Back"
+            };
+            for (int i = 0; i < lines.length; i++) {
+                font.setColor(COL_LABEL);
+                font.draw(game.getBatch(), lines[i], contentX, contentY - i * lineSpacing);
+            }
+        } else if (currentInfoTab == INFO_TAB_CREDITS) {
+            font.setColor(COL_HEADING);
+            font.draw(game.getBatch(), "Music Credits (Click to open):", contentX, contentY);
+            for (int i = 0; i < creditLines.length; i++) {
+                InfoLine line = creditLines[i];
+                line.y = contentY - (i + 1.25f) * lineSpacing;
+                font.setColor(COL_TAB_ACT);
+                font.draw(game.getBatch(), "- " + line.text, contentX, line.y);
+            }
+        } else if (currentInfoTab == INFO_TAB_SOCIALS) {
+            font.setColor(COL_HEADING);
+            font.draw(game.getBatch(), "Follow Us (Click to open):", contentX, contentY);
+            for (int i = 0; i < socialLines.length; i++) {
+                InfoLine line = socialLines[i];
+                line.y = contentY - (i + 1.25f) * lineSpacing;
+                font.setColor(COL_TAB_ACT);
+                font.draw(game.getBatch(), line.text, contentX, line.y);
+            }
+            font.setColor(COL_DIM);
+            font.draw(game.getBatch(), "Thanks for playing Rhythmic Rush!", contentX, contentY - 4.5f * lineSpacing);
+
+            // Draw Privacy Policy centered at bottom with more breathing room
+            font.setColor(COL_TAB_ACT);
+            layout.setText(font, privacyPolicyLine.text);
+            privacyPolicyLine.y = panelY + panelPadB + 15f;
+            font.draw(game.getBatch(), privacyPolicyLine.text, panelX + panelW/2f - layout.width/2f, privacyPolicyLine.y);
+        }
+
+        font.getData().setScale(1f);
+        game.getBatch().end();
     }
 
     /**

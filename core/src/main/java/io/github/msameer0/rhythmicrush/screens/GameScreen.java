@@ -150,6 +150,93 @@ public class GameScreen extends AbstractScreen {
     private final TextureRegion resumeRegion;
     private final TextureRegion backRegion;
 
+    private final com.badlogic.gdx.InputProcessor gameInputProcessor = new com.badlogic.gdx.InputAdapter() {
+        @Override
+        public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+            _unprojectTmp.set(screenX, screenY, 0);
+            gameCamera.unproject(_unprojectTmp);
+            float tx = _unprojectTmp.x;
+            float ty = _unprojectTmp.y;
+
+            if (paused) {
+                if (hits(tx, ty, backX(), backY(), btnSize * 0.9f, btnSize)) {
+                    exitToLevelSelect();
+                    return true;
+                }
+                if (hits(tx, ty, resumeX(), backY(), btnSize * 0.9f, btnSize)) {
+                    setPaused(false);
+                    ignoreInputUntilRelease = true;
+                    return true;
+                }
+                if (hitsPauseSlider(new Vector2(tx, ty))) {
+                    pauseSliderDragging = true;
+                    return true;
+                }
+                return false;
+            }
+
+            if (levelCompletedState) {
+                if (hits(tx, ty, backX(), backY(), btnSize * 0.9f, btnSize)) {
+                    exitToLevelSelect();
+                    return true;
+                }
+                if (hits(tx, ty, resumeX(), backY(), btnSize * 0.9f, btnSize)) {
+                    triggerRestart();
+                    ignoreInputUntilRelease = true;
+                    return true;
+                }
+                return false;
+            }
+
+            // Pause button check
+            float pcx = pauseCircleCX(), pcy = pauseCircleCY(), pr = PAUSE_BTN / 2f + 8f;
+            float pdx = tx - pcx, pdy = ty - pcy;
+            if (pdx * pdx + pdy * pdy <= pr * pr) {
+                setPaused(true);
+                return true;
+            }
+
+            if (isPracticeMode) {
+                updatePracticeBtnCoords();
+                if (hits(tx, ty, practicePlusX, practicePlusY, practiceBtnSize, practiceBtnSize)) {
+                    placeCheckpoint();
+                    return true;
+                }
+                if (hits(tx, ty, practiceMinusX, practiceMinusY, practiceBtnSize, practiceBtnSize)) {
+                    removeLastCheckpoint();
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public boolean touchDragged(int screenX, int screenY, int pointer) {
+            if (paused && pauseSliderDragging) {
+                _unprojectTmp.set(screenX, screenY, 0);
+                gameCamera.unproject(_unprojectTmp);
+                float tx = _unprojectTmp.x;
+                float tsx = pauseSliderTrackX(), tsw = pauseSliderTrackW();
+                float vol = Math.max(0f, Math.min(1f, (tx - tsx) / tsw));
+                game.getSettingsManager().setMusicVolume(vol);
+                game.getSoundManager().setMusicVolume(vol);
+                if (levelMusic != null) levelMusic.setVolume(vol);
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+            if (pauseSliderDragging) {
+                pauseSliderDragging = false;
+                game.getSettingsManager().save();
+                return true;
+            }
+            return false;
+        }
+    };
+
     private static final Color COL_OVERLAY = new Color(0f, 0f, 0f, 0.65f);
     private static final Color COL_PANEL = new Color(0.11f, 0.11f, 0.17f, 1f);
     private static final Color COL_HEADING = new Color(1f, 0.85f, 0.35f, 1f);
@@ -411,6 +498,7 @@ public class GameScreen extends AbstractScreen {
         startMusic();
         if (game.getSettingsManager().getLockCursorInGame())
             Gdx.input.setCursorCatched(true);
+        Gdx.input.setInputProcessor(gameInputProcessor);
     }
 
     /**
@@ -443,6 +531,7 @@ public class GameScreen extends AbstractScreen {
     @Override
     public void hide() {
         Gdx.input.setCursorCatched(false);
+        Gdx.input.setInputProcessor(null);
     }
 
     /**
@@ -461,6 +550,7 @@ public class GameScreen extends AbstractScreen {
         if (panelTexture != null) panelTexture.dispose();
         stopAndDisposeMusic();
         Gdx.input.setCursorCatched(false);
+        Gdx.input.setInputProcessor(null);
     }
 
 
@@ -494,11 +584,9 @@ public class GameScreen extends AbstractScreen {
             return;
         }
         if (paused) {
-            handlePauseTouched();
             return;
         }
         if (levelCompletedState) {
-            handleCompleteTouched();
             return;
         }
 
@@ -539,30 +627,6 @@ public class GameScreen extends AbstractScreen {
         if (isPracticeMode) {
             if (Gdx.input.isKeyJustPressed(Input.Keys.Z)) placeCheckpoint();
             if (Gdx.input.isKeyJustPressed(Input.Keys.X)) removeLastCheckpoint();
-        }
-
-        if (Gdx.input.justTouched()) {
-            Vector2 t = unprojectWorld();
-            float cx = pauseCircleCX(), cy = pauseCircleCY(), r = PAUSE_BTN / 2f + 8f;
-            float dx = t.x - cx, dy = t.y - cy;
-            if (dx * dx + dy * dy <= r * r) {
-                setPaused(true);
-                return;
-            }
-
-            if (isPracticeMode) {
-                updatePracticeBtnCoords();
-                if (hits(t, practicePlusX, practicePlusY, practiceBtnSize, practiceBtnSize)) {
-                    placeCheckpoint();
-                    ignoreInputUntilRelease = true;
-                    return;
-                }
-                if (hits(t, practiceMinusX, practiceMinusY, practiceBtnSize, practiceBtnSize)) {
-                    removeLastCheckpoint();
-                    ignoreInputUntilRelease = true;
-                    return;
-                }
-            }
         }
 
         handleInput();
@@ -1099,21 +1163,6 @@ public class GameScreen extends AbstractScreen {
     }
 
     /**
-     * Processes input for the level completion screen.
-     */
-    private void handleCompleteTouched() {
-        Vector2 t = unprojectWorld();
-        if (!Gdx.input.justTouched()) return;
-
-        if (hits(t, backX(), backY(), btnSize * 0.9f, btnSize)) {
-            exitToLevelSelect();
-        } else if (hits(t, resumeX(), backY(), btnSize * 0.9f, btnSize)) {
-            triggerRestart();
-            ignoreInputUntilRelease = true;
-        }
-    }
-
-    /**
      * Restarts the level from the completion screen.
      */
     private void triggerRestart() {
@@ -1156,43 +1205,6 @@ public class GameScreen extends AbstractScreen {
         }
         if (game.getSettingsManager().getLockCursorInGame())
             Gdx.input.setCursorCatched(!paused);
-    }
-
-    /**
-     * Processes touch and mouse input specifically for the pause menu interface.
-     * <p>
-     * This method handles three primary interaction states:
-     * <ul>
-     */
-    private void handlePauseTouched() {
-        Vector2 t = unprojectWorld();
-
-        if (Gdx.input.isTouched() && pauseSliderDragging) {
-            float tx = pauseSliderTrackX(), tw = pauseSliderTrackW();
-            float vol = Math.max(0f, Math.min(1f, (t.x - tx) / tw));
-            game.getSettingsManager().setMusicVolume(vol);
-            game.getSoundManager().setMusicVolume(vol);
-            if (levelMusic != null) levelMusic.setVolume(vol);
-        }
-        if (!Gdx.input.isTouched() && pauseSliderDragging) {
-            pauseSliderDragging = false;
-            game.getSettingsManager().save();
-        }
-        if (!Gdx.input.isTouched()) pauseSliderDragging = false;
-
-        if (!Gdx.input.justTouched()) return;
-        if (hitsPauseSlider(t)) {
-            pauseSliderDragging = true;
-            return;
-        }
-        if (hits(t, backX(), backY(), btnSize * 0.9f, btnSize)) {
-            exitToLevelSelect();
-            return;
-        }
-        if (hits(t, resumeX(), backY(), btnSize * 0.9f, btnSize)) {
-            setPaused(false);
-            ignoreInputUntilRelease = true;
-        }
     }
 
     /**
@@ -1737,7 +1749,8 @@ public class GameScreen extends AbstractScreen {
         boolean shouldShowAd = MathUtils.randomBoolean(adChance);
 
         if (shouldShowAd && game.getAdController() != null) {
-            game.getAdController().showInterstitialAd();
+            //game.getAdController().showInterstitialAd();
+            //TODO: ADS
             lastAdTimeMillis = TimeUtils.millis();
         }
     }

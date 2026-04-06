@@ -4,7 +4,7 @@ size: 2048, 2048
 format: RGBA8888
 filter: Nearest, Nearest
 repeat: none
-settings_button
+info
   rotate: false
   xy: 1083, 324
   size: 845, 757
@@ -23,5 +23,18 @@ title
   xy: 1, 1083
   size: 1640, 664
   orig: 1640, 664
+  offset: 0, 0
+  index: -1
+
+menu2.png
+size: 1024, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+settings_button
+  rotate: false
+  xy: 1, 1
+  size: 845, 757
+  orig: 845, 757
   offset: 0, 0
   index: -1
