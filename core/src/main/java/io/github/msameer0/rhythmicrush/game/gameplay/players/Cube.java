@@ -15,7 +15,6 @@ import io.github.msameer0.rhythmicrush.game.registries.Registry;
 public class Cube extends AbstractPlayer {
     public float jumpVelocity =   600f;
 
-    private boolean jumpHeld   = false;
     private boolean isGrounded = false;
 
     // ── Coyote time ───────────────────────────────────────────────────────────
@@ -45,6 +44,7 @@ public class Cube extends AbstractPlayer {
         this.velocityY      = velocityY;
         isGrounded          = false;
         this.jumpHeld       = jumpHeld;
+        this.jumpConsumed   = false;
         this.gravityFlipped = false;
         setMini(false);
         coyoteTimer         = 0f;
@@ -102,6 +102,7 @@ public class Cube extends AbstractPlayer {
             velocityY   = gravityFlipped ? -v : v;
             isGrounded  = false;
             coyoteTimer = 0f;
+            jumpConsumed = true;
         }
     }
 
@@ -109,12 +110,6 @@ public class Cube extends AbstractPlayer {
     public void tryJump() {
         if (jumpHeld && canJump()) jump();
     }
-
-    @Override
-    public void setJumpHeld(boolean held) { this.jumpHeld = held; }
-
-    @Override
-    public boolean isJumpHeld() { return jumpHeld; }
 
     @Override
     public void setGrounded(boolean g) { this.isGrounded = g; }
@@ -129,6 +124,7 @@ public class Cube extends AbstractPlayer {
         this.velocityY      = other.velocityY;
         this.isGrounded     = other.isGrounded();
         this.jumpHeld       = other.isJumpHeld();
+        this.jumpConsumed   = other.isJumpConsumed();
         this.gravityFlipped = other.isGravityFlipped();
         this.currentSlopeRotation = other.getCurrentSlopeRotation();
         setMini(other.isMini());

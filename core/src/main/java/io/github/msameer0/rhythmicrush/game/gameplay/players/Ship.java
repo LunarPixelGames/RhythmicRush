@@ -13,8 +13,6 @@ import io.github.msameer0.rhythmicrush.game.registries.Registry;
 @Registry(id = "ship")
 public class Ship extends AbstractPlayer {
 
-    private boolean flyHeld = false;
-
     public float maxUpSpeed = 400f;
     public float maxDownSpeed = -500f;
     public float accel = 1000f;
@@ -41,13 +39,14 @@ public class Ship extends AbstractPlayer {
      * Reinitialise this Ship for reuse from the pool.
      */
     @Override
-    public Ship init(float startX, float startY, float velocityY, boolean flyHeld) {
+    public Ship init(float startX, float startY, float velocityY, boolean jumpHeld) {
         this.type = PlayerType.SHIP;
         x = startX;
         y = startY;
         this.gravity = -1800f;
         this.velocityY = velocityY;
-        this.flyHeld = flyHeld;
+        this.jumpHeld = jumpHeld;
+        this.jumpConsumed = false;
         this.gravityFlipped = false;
         setMini(false);
         world = null;
@@ -71,17 +70,19 @@ public class Ship extends AbstractPlayer {
         float effectiveDecel = mini ? decel * 1.3f : decel;
 
         if (!gravityFlipped) {
-            if (flyHeld) {
+            if (jumpHeld) {
                 velocityY += effectiveAccel * delta;
                 if (velocityY > maxUpSpeed) velocityY = maxUpSpeed;
+                if (!justPressed) jumpConsumed = true;
             } else {
                 velocityY -= effectiveDecel * delta;
                 if (velocityY < maxDownSpeed) velocityY = maxDownSpeed;
             }
         } else {
-            if (flyHeld) {
+            if (jumpHeld) {
                 velocityY -= effectiveAccel * delta;
                 if (velocityY < -maxUpSpeed) velocityY = -maxUpSpeed;
+                if (!justPressed) jumpConsumed = true;
             } else {
                 velocityY += effectiveDecel * delta;
                 if (velocityY > -maxDownSpeed) velocityY = -maxDownSpeed;
@@ -103,16 +104,6 @@ public class Ship extends AbstractPlayer {
     public void jump() {}
 
     @Override
-    public void setJumpHeld(boolean held) {
-        flyHeld = held;
-    }
-
-    @Override
-    public boolean isJumpHeld() {
-        return flyHeld;
-    }
-
-    @Override
     public boolean isSafeFromBelow() {
         return true;
     }
@@ -131,7 +122,8 @@ public class Ship extends AbstractPlayer {
         this.y = other.y;
         this.velocityY = other.velocityY;
         this.gravityFlipped = other.isGravityFlipped();
-        this.flyHeld = other.isJumpHeld();
+        this.jumpHeld = other.isJumpHeld();
+        this.jumpConsumed = other.isJumpConsumed();
         this.currentSlopeRotation = other.getCurrentSlopeRotation();
         setMini(other.isMini());
     }

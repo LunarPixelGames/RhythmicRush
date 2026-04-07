@@ -255,7 +255,7 @@ public class GameRenderer {
         for (int i = cullStart; i < world.getOrbs().size; i++) {
             AbstractOrb orb = world.getOrbs().get(i);
 
-            float alpha = orb.isUsed() ? 0.35f : 1f;
+            float alpha = 1f;
 
             if (yellowOrbRegion != null && orb.getType() == AbstractOrb.OrbType.YELLOW) {
                 batch.setColor(1f, 1f, 1f, alpha);

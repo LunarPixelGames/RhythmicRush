@@ -556,7 +556,7 @@ public class GameWorld implements Tickable {
             AbstractOrb orb = orbs.get(i);
             if (orb.getX() > rangeMax) break;
             if (orb.getBounds().overlaps(player.getBounds())) {
-                if (player.isJumpHeld()) {
+                if (player.isJumpHeld() && !player.isJumpConsumed()) {
                     orb.tryActivate(player);
                 }
             } else {
@@ -578,6 +578,27 @@ public class GameWorld implements Tickable {
             t.fire(this);
             triggerIdx++;
         }
+
+        player.postUpdate();
+
+        // Level end
+        if (levelEndX > 0 && worldScrolled >= levelEndX) {
+            if (postEndTimer < 0) postEndTimer = 0f;
+        }
+        if (postEndTimer >= 0) {
+            postEndTimer += delta;
+            if (postEndTimer >= POST_END_DELAY && !levelComplete) {
+                Gdx.app.log("GameWorld", "Level completed!");
+                levelComplete = true;
+            }
+        }
+    }
+
+    // ── Culling ──────────────────────────────────────────────────────────────
+
+    public void cull() {
+        final float px = player.x;
+        final float cullX = px - 500f;
 
         // Culling — blocks
         while (blockCull < blocks.size) {
@@ -612,18 +633,6 @@ public class GameWorld implements Tickable {
             if (o.getX() + o.getWidth() >= cullX) break;
             if (o instanceof YellowOrb) yellowOrbPool.free((YellowOrb) o);
             orbCull++;
-        }
-
-        // Level end
-        if (levelEndX > 0 && worldScrolled >= levelEndX) {
-            if (postEndTimer < 0) postEndTimer = 0f;
-        }
-        if (postEndTimer >= 0) {
-            postEndTimer += delta;
-            if (postEndTimer >= POST_END_DELAY && !levelComplete) {
-                Gdx.app.log("GameWorld", "Level completed!");
-                levelComplete = true;
-            }
         }
     }
 

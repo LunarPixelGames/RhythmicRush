@@ -27,6 +27,10 @@ public abstract class AbstractPlayer {
     protected boolean mini = false;
     protected float currentSlopeRotation = 0f;
 
+    protected boolean jumpHeld = false;
+    protected boolean jumpConsumed = false;
+    protected boolean justPressed = false;
+
     protected GameWorld world;
 
     public AbstractPlayer(float startX, float startY) {
@@ -71,7 +75,7 @@ public abstract class AbstractPlayer {
         return gravity;
     }
 
-    public abstract AbstractPlayer init(float startX, float startY, float velocityY, boolean flyHeld);
+    public abstract AbstractPlayer init(float startX, float startY, float velocityY, boolean jumpHeld);
     public abstract AbstractPlayer init(float startX, float startY);
 
     public abstract void update(float delta, float groundY);
@@ -81,14 +85,38 @@ public abstract class AbstractPlayer {
     /**
      * Handle continuous jump input (holding)
      */
-    public abstract void setJumpHeld(boolean held);
+    public void setJumpHeld(boolean held) {
+        if (held && !this.jumpHeld) {
+            this.jumpConsumed = false;
+            this.justPressed = true;
+        }
+        this.jumpHeld = held;
+    }
+
+    public void postUpdate() {
+        this.justPressed = false;
+    }
+
+    public boolean isJustPressed() {
+        return justPressed;
+    }
 
     /**
      * Checks if the jump/fly input is currently being held.
      *
      * @return true if held, false otherwise
      */
-    public abstract boolean isJumpHeld();
+    public boolean isJumpHeld() {
+        return jumpHeld;
+    }
+
+    public boolean isJumpConsumed() {
+        return jumpConsumed;
+    }
+
+    public void setJumpConsumed(boolean consumed) {
+        this.jumpConsumed = consumed;
+    }
 
     public Rectangle getBounds() {
         return bounds;
