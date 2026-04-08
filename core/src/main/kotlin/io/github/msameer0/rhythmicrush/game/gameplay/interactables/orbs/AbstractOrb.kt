@@ -7,7 +7,8 @@ abstract class AbstractOrb {
 
     enum class OrbType {
         YELLOW,
-        BLUE
+        BLUE,
+        PINK
     }
 
     var type: OrbType = OrbType.YELLOW

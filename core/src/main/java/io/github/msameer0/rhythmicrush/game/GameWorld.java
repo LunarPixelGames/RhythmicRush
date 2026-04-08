@@ -14,6 +14,7 @@ import io.github.msameer0.rhythmicrush.game.gameplay.hazards.SawBlade;
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.AbstractOrb;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.BlueOrb;
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.PinkOrb;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.YellowOrb;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.AbstractPortal;
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.CubePortal;
@@ -113,6 +114,10 @@ public class GameWorld implements Tickable {
     private final ObjectPool<BlueOrb> blueOrbPool = new ObjectPool<BlueOrb>() {
         @Override protected BlueOrb create() { return new BlueOrb(); }
         @Override protected void reset(BlueOrb o) {o.reset();}
+    };
+    private final ObjectPool<PinkOrb> pinkOrbPool = new ObjectPool<PinkOrb>() {
+        @Override protected PinkOrb create() { return new PinkOrb(); }
+        @Override protected void reset(PinkOrb o) { o.reset(); }
     };
 
     // ── Active-object arrays (typed subsets for fast typed access) ───────────
@@ -355,11 +360,14 @@ public class GameWorld implements Tickable {
                     YellowOrb yo = yellowOrbPool.obtain();
                     yo.init(rx, e.getY());
                     orb = yo;
-                }
-                if ("blue_orb".equals(e.getType())) {
+                } else if ("blue_orb".equals(e.getType())) {
                     BlueOrb bo = blueOrbPool.obtain();
                     bo.init(rx, e.getY());
                     orb = bo;
+                } else if ("pink_orb".equals(e.getType())) {
+                    PinkOrb po = pinkOrbPool.obtain();
+                    po.init(rx, e.getY());
+                    orb = po;
                 }
                 if (orb != null) orbs.add(orb);
 
@@ -471,6 +479,7 @@ public class GameWorld implements Tickable {
             AbstractOrb o = orbs.get(i);
             if (o instanceof YellowOrb) yellowOrbPool.free((YellowOrb) o);
             if (o instanceof BlueOrb) blueOrbPool.free((BlueOrb) o);
+            if (o instanceof PinkOrb) pinkOrbPool.free((PinkOrb) o);
         }
         orbs.clear();
 
@@ -644,6 +653,7 @@ public class GameWorld implements Tickable {
             if (o.getX() + o.getWidth() >= cullX) break;
             if (o instanceof YellowOrb) yellowOrbPool.free((YellowOrb) o);
             if (o instanceof BlueOrb) blueOrbPool.free((BlueOrb) o);
+            if (o instanceof PinkOrb) pinkOrbPool.free((PinkOrb) o);
             orbCull++;
         }
     }
