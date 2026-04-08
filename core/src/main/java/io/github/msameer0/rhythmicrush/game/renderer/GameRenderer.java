@@ -45,6 +45,11 @@ public class GameRenderer {
     private final TextureRegion gravityPortalRegion;
     private final TextureRegion miniPortalRegion;
     private final TextureRegion yellowOrbRegion;
+    private final TextureRegion pinkOrbRegion;
+    private final TextureRegion blueOrbRegion;
+    private final TextureRegion greenOrbRegion;
+    private final TextureRegion blackOrbRegion;
+    private final TextureRegion redOrbRegion;
 
     private static final Color FALLBACK_CUBE_PORTAL  = new Color(0f,    0.8f, 0f,   1f);
     private static final Color FALLBACK_SHIP_PORTAL  = new Color(0f,    0.5f, 1f,   1f);
@@ -98,8 +103,12 @@ public class GameRenderer {
         gravityPortalRegion = atlasManager.getPortalsAtlas().findRegion("gravity_portal");
         miniPortalRegion    = atlasManager.getPortalsAtlas().findRegion("mini_portal");
 
-        // Orb texture — adjust atlas / region name to match your project
         yellowOrbRegion = atlasManager.getOrbsAtlas().findRegion("yellow_orb");
+        blueOrbRegion = atlasManager.getOrbsAtlas().findRegion("blue_orb");
+        pinkOrbRegion = atlasManager.getOrbsAtlas().findRegion("pink_orb");
+        blackOrbRegion = atlasManager.getOrbsAtlas().findRegion("black_orb");
+        greenOrbRegion = atlasManager.getOrbsAtlas().findRegion("green_orb");
+        redOrbRegion = atlasManager.getOrbsAtlas().findRegion("red_orb");
     }
 
     /**
@@ -260,6 +269,18 @@ public class GameRenderer {
             if (yellowOrbRegion != null && orb.getType() == AbstractOrb.OrbType.YELLOW) {
                 batch.setColor(1f, 1f, 1f, alpha);
                 batch.draw(yellowOrbRegion,
+                    orb.getX(), orb.getY(),
+                    orb.getWidth(), orb.getHeight());
+                batch.setColor(Color.WHITE);
+            } else if (pinkOrbRegion != null && orb.getType() == AbstractOrb.OrbType.PINK) {
+                batch.setColor(1f, 1f, 1f, alpha);
+                batch.draw(pinkOrbRegion,
+                    orb.getX(), orb.getY(),
+                    orb.getWidth(), orb.getHeight());
+                batch.setColor(Color.WHITE);
+            } else if (blueOrbRegion != null && orb.getType() == AbstractOrb.OrbType.BLUE) {
+                batch.setColor(1f, 1f, 1f, alpha);
+                batch.draw(blueOrbRegion,
                     orb.getX(), orb.getY(),
                     orb.getWidth(), orb.getHeight());
                 batch.setColor(Color.WHITE);
