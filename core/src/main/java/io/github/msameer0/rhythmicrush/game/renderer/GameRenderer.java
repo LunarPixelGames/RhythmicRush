@@ -7,7 +7,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.utils.Array;
 
 import io.github.msameer0.rhythmicrush.atlas.AtlasManager;
 import io.github.msameer0.rhythmicrush.game.GameWorld;
@@ -22,19 +22,39 @@ import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.Abstract
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.AbstractPortal;
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer;
 
+import java.util.EnumMap;
+
 /**
- * Responsible for rendering the visual representation of the game world.
+ * Renders the visual representation of the game world.
+ *
+ * <p>Delegates hitbox debug drawing to {@link HitboxRenderer}. All other
+ * sub-systems (color transitions, pooling) live in their own classes;
+ * this class only owns rendering concerns.</p>
  */
 public class GameRenderer {
 
+    // ── Camera / player constants ─────────────────────────────────────────────
+    private static final float CAMERA_X_OFFSET = 425f;
+    private static final float CUBE_SPIN_FACTOR = 0.5f;
+    private static final float SHIP_TILT_FACTOR = 0.18f;
+    private static final float SHIP_MAX_TILT    = 50f;
+    private static final float SHIP_TILT_LERP   = 8f;
+
+    // ── Fallback colours (used when atlas region is missing) ──────────────────
+    private static final Color FALLBACK_CUBE_PORTAL = new Color(0f,   0.8f, 0f,   1f);
+    private static final Color FALLBACK_SHIP_PORTAL = new Color(0f,   0.5f, 1f,   1f);
+    private static final Color FALLBACK_YELLOW_ORB  = new Color(1f,   0.9f, 0.1f, 1f);
+
+    // ── Core rendering objects ─────────────────────────────────────────────────
     private final GameWorld world;
     private final OrthographicCamera camera;
     private final SpriteBatch batch;
     private final ShapeRenderer shape;
+    private final HitboxRenderer hitboxRenderer;
 
+    // ── Texture regions ───────────────────────────────────────────────────────
     private final TextureRegion[] blockRegionsByOrdinal;
     private final TextureRegion slopeRegion;
-
     private final TextureRegion spikeRegion;
     private final TextureRegion halfSpikeRegion;
     private final TextureRegion sawBladeRegion;
@@ -44,48 +64,25 @@ public class GameRenderer {
     private final TextureRegion shipPortalRegion;
     private final TextureRegion gravityPortalRegion;
     private final TextureRegion miniPortalRegion;
-    private final TextureRegion yellowOrbRegion;
-    private final TextureRegion pinkOrbRegion;
-    private final TextureRegion blueOrbRegion;
-    private final TextureRegion greenOrbRegion;
-    private final TextureRegion blackOrbRegion;
-    private final TextureRegion redOrbRegion;
 
-    private static final Color FALLBACK_CUBE_PORTAL  = new Color(0f,    0.8f, 0f,   1f);
-    private static final Color FALLBACK_SHIP_PORTAL  = new Color(0f,    0.5f, 1f,   1f);
-    private static final Color FALLBACK_YELLOW_ORB   = new Color(1f,    0.9f, 0.1f, 1f);
+    // Orb regions keyed by type for O(1) lookup — replaces the old if/else chain
+    private final EnumMap<AbstractOrb.OrbType, TextureRegion> orbRegions =
+        new EnumMap<>(AbstractOrb.OrbType.class);
 
+    // ── Player visual state ───────────────────────────────────────────────────
     private float playerVisualRotation = 0f;
 
-    private static final float CAMERA_X_OFFSET  = 425f;
-    private static final float CUBE_SPIN_FACTOR  = 0.5f;
-    private static final float SHIP_TILT_FACTOR  = 0.18f;
-    private static final float SHIP_MAX_TILT     = 50f;
-    private static final float SHIP_TILT_LERP    = 8f;
+    // ── Constructor ───────────────────────────────────────────────────────────
 
-    // Hitbox colours
-    private static final Color HB_PLAYER_FILL = new Color(1.0f, 0.9f, 0.0f, 0.75f);
-    private static final Color HB_HAZARD_FILL = new Color(1.0f, 0.2f, 0.2f, 0.75f);
-    private static final Color HB_BLOCK_FILL  = new Color(0.2f, 0.5f, 1.0f, 0.75f);
-    private static final Color HB_PORTAL_FILL = new Color(0.2f, 1.0f, 0.4f, 0.75f);
-    private static final Color HB_ORB_FILL    = new Color(1.0f, 0.9f, 0.1f, 0.55f);
-
-    private static final Color HB_PLAYER_LINE = new Color(1.0f, 0.9f, 0.0f, 1.0f);
-    private static final Color HB_HAZARD_LINE = new Color(1.0f, 0.2f, 0.2f, 1.0f);
-    private static final Color HB_BLOCK_LINE  = new Color(0.2f, 0.5f, 1.0f, 1.0f);
-    private static final Color HB_PORTAL_LINE = new Color(0.2f, 1.0f, 0.4f, 1.0f);
-    private static final Color HB_ORB_LINE    = new Color(1.0f, 0.9f, 0.1f, 1.0f);
-
-    /**
-     * Constructs a new GameRenderer and initialises texture regions from the provided atlases.
-     */
     public GameRenderer(GameWorld world, OrthographicCamera camera,
                         SpriteBatch batch, AtlasManager atlasManager) {
         this.world  = world;
         this.camera = camera;
         this.batch  = batch;
         this.shape  = new ShapeRenderer();
+        this.hitboxRenderer = new HitboxRenderer(world, shape);
 
+        // Block regions
         BlockType[] types = BlockType.values();
         blockRegionsByOrdinal = new TextureRegion[types.length];
         for (BlockType type : types)
@@ -103,87 +100,120 @@ public class GameRenderer {
         gravityPortalRegion = atlasManager.getPortalsAtlas().findRegion("gravity_portal");
         miniPortalRegion    = atlasManager.getPortalsAtlas().findRegion("mini_portal");
 
-        yellowOrbRegion = atlasManager.getOrbsAtlas().findRegion("yellow_orb");
-        blueOrbRegion = atlasManager.getOrbsAtlas().findRegion("blue_orb");
-        pinkOrbRegion = atlasManager.getOrbsAtlas().findRegion("pink_orb");
-        blackOrbRegion = atlasManager.getOrbsAtlas().findRegion("black_orb");
-        greenOrbRegion = atlasManager.getOrbsAtlas().findRegion("green_orb");
-        redOrbRegion = atlasManager.getOrbsAtlas().findRegion("red_orb");
+        // Orb region map
+        orbRegions.put(AbstractOrb.OrbType.YELLOW, atlasManager.getOrbsAtlas().findRegion("yellow_orb"));
+        orbRegions.put(AbstractOrb.OrbType.BLUE,   atlasManager.getOrbsAtlas().findRegion("blue_orb"));
+        orbRegions.put(AbstractOrb.OrbType.PINK,   atlasManager.getOrbsAtlas().findRegion("pink_orb"));
+        orbRegions.put(AbstractOrb.OrbType.BLACK,  atlasManager.getOrbsAtlas().findRegion("black_orb"));
+        orbRegions.put(AbstractOrb.OrbType.GREEN,  atlasManager.getOrbsAtlas().findRegion("green_orb"));
+        orbRegions.put(AbstractOrb.OrbType.RED,    atlasManager.getOrbsAtlas().findRegion("red_orb"));
     }
+
+    // ── Public render entry point ─────────────────────────────────────────────
 
     /**
      * Renders the current state of the game world.
      *
-     * @param delta        Time elapsed since the last frame in seconds.
-     * @param paused       Whether the game is paused.
+     * @param delta        Seconds since the last frame.
+     * @param paused       Whether the game is currently paused.
      * @param showHitboxes Whether to draw debug hitbox overlays.
      */
     public void render(float delta, boolean paused, boolean showHitboxes) {
+        _lastDelta = delta;
         world.updateVisuals(delta);
         AbstractPlayer player = world.getPlayer();
 
-        camera.position.x = player.x + CAMERA_X_OFFSET;
-        if (player.isMini()) camera.position.x -= 12.5f;
-        camera.update();
-
-        final float worldWidth = camera.viewportWidth;
-        final float worldLeft  = camera.position.x - worldWidth / 2f;
-        world.setCullX(worldLeft);
+        updateCamera(player);
 
         shape.setProjectionMatrix(camera.combined);
         batch.setProjectionMatrix(camera.combined);
 
-        // ── Saw blades (separate pass — need rotation each tick) ─────────────
+        drawSawBlades(paused);
+        drawPortalFallbacks();
+        drawMainPass(player, delta, paused);
+        drawGround();
+
+        if (showHitboxes) hitboxRenderer.draw(camera, player);
+    }
+
+    // ── Camera ────────────────────────────────────────────────────────────────
+
+    private void updateCamera(AbstractPlayer player) {
+        camera.position.x = player.x + CAMERA_X_OFFSET;
+        if (player.isMini()) camera.position.x -= 12.5f;
+        camera.update();
+
+        final float worldLeft = camera.position.x - camera.viewportWidth / 2f;
+        world.setCullX(worldLeft);
+    }
+
+    // ── Saw blades (separate pre-pass for rotation) ───────────────────────────
+
+    private void drawSawBlades(boolean paused) {
         batch.begin();
         for (AbstractHazard hazard : world.getHazards()) {
-            if (hazard.getType() == AbstractHazard.HazardType.SAW_BLADE) {
-                SawBlade saw = (SawBlade) hazard;
-                if (sawBladeRegion != null) {
-                    float d = saw.getDiameter();
-                    if (!paused) saw.tickVisualRotation(delta);
-                    batch.draw(sawBladeRegion,
-                        saw.getX(), saw.getY(),
-                        d / 2f, d / 2f,
-                        d, d, 1f, 1f,
-                        saw.getVisualRotation());
-                }
-            }
+            if (hazard.getType() != AbstractHazard.HazardType.SAW_BLADE) continue;
+            if (sawBladeRegion == null) continue;
+            SawBlade saw = (SawBlade) hazard;
+            float d = saw.getDiameter();
+            if (!paused) saw.tickVisualRotation(delta());
+            batch.draw(sawBladeRegion,
+                saw.getX(), saw.getY(),
+                d / 2f, d / 2f, d, d, 1f, 1f,
+                saw.getVisualRotation());
         }
         batch.end();
+    }
 
-        // ── Portal fallback shapes (only when no texture) ────────────────────
+    // ── Portal fallbacks (shapes when no texture is loaded) ───────────────────
+
+    private void drawPortalFallbacks() {
+        boolean anyFallback = false;
         for (AbstractPortal portal : world.getPortals()) {
             AbstractPortal.PortalType pType = portal.getType();
-            TextureRegion region = (pType == AbstractPortal.PortalType.CUBE)
-                ? cubePortalRegion : shipPortalRegion;
+            TextureRegion region = portalRegion(pType);
             if (region == null) {
+                if (!anyFallback) {
+                    Gdx.gl.glEnable(GL20.GL_BLEND);
+                    Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+                    shape.begin(ShapeRenderer.ShapeType.Filled);
+                    anyFallback = true;
+                }
                 shape.setColor(pType == AbstractPortal.PortalType.CUBE
                     ? FALLBACK_CUBE_PORTAL : FALLBACK_SHIP_PORTAL);
                 shape.rect(portal.getX(), portal.getY(),
                     portal.getWidth(), portal.getHeight());
             }
         }
-        shape.end();
+        if (anyFallback) {
+            shape.end();
+            Gdx.gl.glDisable(GL20.GL_BLEND);
+        }
+    }
 
-        // ── Main batch pass ──────────────────────────────────────────────────
+    // ── Main batch pass ───────────────────────────────────────────────────────
+
+    private void drawMainPass(AbstractPlayer player, float delta, boolean paused) {
         batch.begin();
+        drawPortals();
+        drawHazards();
+        drawBlocks();
+        drawOrbs();
+        updatePlayerRotation(player, delta, paused);
+        drawPlayer(player);
+        batch.end();
+    }
 
-        // Portals
+    private void drawPortals() {
         for (AbstractPortal portal : world.getPortals()) {
-            AbstractPortal.PortalType pType = portal.getType();
-            TextureRegion region = null;
-            switch (pType) {
-                case CUBE:    region = cubePortalRegion;    break;
-                case SHIP:    region = shipPortalRegion;    break;
-                case GRAVITY: region = gravityPortalRegion; break;
-                case MINI:    region = miniPortalRegion;    break;
-            }
+            TextureRegion region = portalRegion(portal.getType());
             if (region != null)
                 batch.draw(region, portal.getX(), portal.getY(),
                     portal.getWidth(), portal.getHeight());
         }
+    }
 
-        // Hazards (spikes / half-spikes — saw blades already drawn above)
+    private void drawHazards() {
         for (AbstractHazard hazard : world.getHazards()) {
             switch (hazard.getType()) {
                 case SPIKE:
@@ -207,15 +237,16 @@ public class GameRenderer {
                     }
                     break;
                 case SAW_BLADE:
-                    break; // handled in separate pass above
+                    break; // handled in pre-pass
             }
         }
+    }
 
-        // Blocks
+    private void drawBlocks() {
         for (Block block : world.getBlocks()) {
             if (block instanceof Slope) {
                 Slope slope = (Slope) block;
-                TextureRegion region = (slopeRegion != null)
+                TextureRegion region = slopeRegion != null
                     ? slopeRegion : blockRegionsByOrdinal[block.getType().ordinal()];
                 if (region != null)
                     batch.draw(region,
@@ -230,100 +261,42 @@ public class GameRenderer {
                         block.getWidth(), block.getHeight());
             }
         }
-
-        // Orbs
-        drawOrbs();
-
-        // Player
-        updatePlayerRotation(player, delta, paused);
-        drawPlayerInBatch(player);
-
-        batch.end();
-
-        // ── Ground ───────────────────────────────────────────────────────────
-        Gdx.gl.glEnable(GL20.GL_BLEND);
-        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-        shape.begin(ShapeRenderer.ShapeType.Filled);
-        shape.setColor(world.getGroundColor());
-        shape.rect(worldLeft, 0, worldWidth, world.getGroundY());
-        shape.end();
-        Gdx.gl.glDisable(GL20.GL_BLEND);
-
-        if (showHitboxes) drawHitboxes(player);
     }
 
-    // ── Orb rendering ────────────────────────────────────────────────────────
-
-    /**
-     * Draws all active orbs. Called inside an open batch block.
-     * Orbs that are already used are rendered at reduced opacity so the
-     * player can see they have been consumed.
-     */
     private void drawOrbs() {
+        Array<AbstractOrb> orbs = world.getOrbs();
         int cullStart = world.getOrbCull();
-        for (int i = cullStart; i < world.getOrbs().size; i++) {
-            AbstractOrb orb = world.getOrbs().get(i);
-
-            float alpha = 1f;
-
-            if (yellowOrbRegion != null && orb.getType() == AbstractOrb.OrbType.YELLOW) {
-                batch.setColor(1f, 1f, 1f, alpha);
-                batch.draw(yellowOrbRegion,
-                    orb.getX(), orb.getY(),
+        for (int i = cullStart; i < orbs.size; i++) {
+            AbstractOrb orb = orbs.get(i);
+            TextureRegion region = orbRegions.get(orb.getType());
+            if (region != null) {
+                batch.draw(region, orb.getX(), orb.getY(),
                     orb.getWidth(), orb.getHeight());
-                batch.setColor(Color.WHITE);
-            } else if (pinkOrbRegion != null && orb.getType() == AbstractOrb.OrbType.PINK) {
-                batch.setColor(1f, 1f, 1f, alpha);
-                batch.draw(pinkOrbRegion,
-                    orb.getX(), orb.getY(),
-                    orb.getWidth(), orb.getHeight());
-                batch.setColor(Color.WHITE);
-            } else if (blueOrbRegion != null && orb.getType() == AbstractOrb.OrbType.BLUE) {
-                batch.setColor(1f, 1f, 1f, alpha);
-                batch.draw(blueOrbRegion,
-                    orb.getX(), orb.getY(),
-                    orb.getWidth(), orb.getHeight());
-                batch.setColor(Color.WHITE);
-            } else if (redOrbRegion != null && orb.getType() == AbstractOrb.OrbType.RED) {
-                batch.setColor(1f, 1f, 1f, alpha);
-                batch.draw(redOrbRegion,
-                    orb.getX(), orb.getY(),
-                    orb.getWidth(), orb.getHeight());
-                batch.setColor(Color.WHITE);
-            } else if (blackOrbRegion != null && orb.getType() == AbstractOrb.OrbType.BLACK) {
-                batch.setColor(1f, 1f, 1f, alpha);
-                batch.draw(blackOrbRegion,
-                    orb.getX(), orb.getY(),
-                    orb.getWidth(), orb.getHeight());
-                batch.setColor(Color.WHITE);
-            } else if (greenOrbRegion != null && orb.getType() == AbstractOrb.OrbType.GREEN) {
-                batch.setColor(1f, 1f, 1f, alpha);
-                batch.draw(greenOrbRegion,
-                    orb.getX(), orb.getY(),
-                    orb.getWidth(), orb.getHeight());
-                batch.setColor(Color.WHITE);
             } else {
-                // Fallback: coloured rectangle when no texture is available
-                batch.end();
-                Gdx.gl.glEnable(GL20.GL_BLEND);
-                Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-                shape.begin(ShapeRenderer.ShapeType.Filled);
-                shape.setColor(FALLBACK_YELLOW_ORB.r, FALLBACK_YELLOW_ORB.g,
-                    FALLBACK_YELLOW_ORB.b, alpha);
-                shape.circle(
-                    orb.getX() + orb.getWidth()  / 2f,
-                    orb.getY() + orb.getHeight() / 2f,
-                    orb.getWidth() / 2f, 24);
-                shape.end();
-                Gdx.gl.glDisable(GL20.GL_BLEND);
-                batch.begin();
+                drawOrbFallback(orb);
             }
         }
     }
 
-    // ── Player rendering ─────────────────────────────────────────────────────
+    /** Fallback circle for orbs whose texture atlas region is missing. */
+    private void drawOrbFallback(AbstractOrb orb) {
+        batch.end();
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shape.begin(ShapeRenderer.ShapeType.Filled);
+        shape.setColor(FALLBACK_YELLOW_ORB);
+        shape.circle(
+            orb.getX() + orb.getWidth()  / 2f,
+            orb.getY() + orb.getHeight() / 2f,
+            orb.getWidth() / 2f, 24);
+        shape.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+        batch.begin();
+    }
 
-    private void drawPlayerInBatch(AbstractPlayer player) {
+    // ── Player ────────────────────────────────────────────────────────────────
+
+    private void drawPlayer(AbstractPlayer player) {
         AbstractPlayer.PlayerType pType = player.getType();
         TextureRegion region = (pType == AbstractPlayer.PlayerType.SHIP) ? shipRegion : cubeRegion;
 
@@ -337,144 +310,34 @@ public class GameRenderer {
             return;
         }
 
+        // Sync Y-flip with gravity state
         if (player.isGravityFlipped()) {
             if (!region.isFlipY()) region.flip(false, true);
         } else {
-            if (region.isFlipY()) region.flip(false, true);
+            if (region.isFlipY())  region.flip(false, true);
         }
 
         float scaleX = (pType == AbstractPlayer.PlayerType.SHIP) ? 1.35f : 1f;
-        float scaleY = (pType == AbstractPlayer.PlayerType.SHIP) ? 1.35f : 1f;
+        float scaleY = scaleX;
 
         batch.draw(region,
             player.x, player.y,
             player.width / 2f, player.height / 2f,
             player.width, player.height,
-            scaleX, scaleY,
-            playerVisualRotation);
+            scaleX, scaleY, playerVisualRotation);
     }
 
-    // ── Hitbox debug rendering ────────────────────────────────────────────────
+    // ── Ground ────────────────────────────────────────────────────────────────
 
-    private void drawHitboxes(AbstractPlayer player) {
+    private void drawGround() {
+        final float worldWidth = camera.viewportWidth;
+        final float worldLeft  = camera.position.x - worldWidth / 2f;
+
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-        shape.setProjectionMatrix(camera.combined);
-
-        // ── Filled pass ──────────────────────────────────────────────────────
         shape.begin(ShapeRenderer.ShapeType.Filled);
-
-        shape.setColor(HB_BLOCK_FILL);
-        for (Block b : world.getBlocks()) {
-            if (b instanceof Slope) {
-                Slope s = (Slope) b;
-                float rot = ((int) s.getRotation() % 360 + 360) % 360;
-                float x = s.getX(), y = s.getY(), w = s.getWidth(), h = s.getHeight();
-                if      (rot == 0)   shape.triangle(x,     y,     x + w, y,     x + w, y + h);
-                else if (rot == 90)  shape.triangle(x,     y + h, x + w, y + h, x + w, y    );
-                else if (rot == 180) shape.triangle(x,     y,     x,     y + h, x + w, y + h);
-                else if (rot == 270) shape.triangle(x,     y,     x,     y + h, x + w, y    );
-                else                 shape.rect(x, y, w, h);
-            } else {
-                shape.rect(b.getX(), b.getY(), b.getWidth(), b.getHeight());
-            }
-        }
-
-        shape.setColor(HB_PORTAL_FILL);
-        for (AbstractPortal p : world.getPortals()) {
-            Rectangle r = p.getBounds();
-            shape.rect(r.x, r.y, r.width, r.height);
-        }
-
-        shape.setColor(HB_HAZARD_FILL);
-        for (AbstractHazard h : world.getHazards()) {
-            if (h.getType() == AbstractHazard.HazardType.SPIKE) {
-                Rectangle r = ((Spike) h).getHitbox();
-                shape.rect(r.x, r.y, r.width, r.height);
-            } else if (h.getType() == AbstractHazard.HazardType.HALF_SPIKE) {
-                Rectangle r = ((HalfSpike) h).getHitbox();
-                shape.rect(r.x, r.y, r.width, r.height);
-            } else {
-                shape.rect(h.getX(), h.getY(), h.getWidth(), h.getHeight());
-            }
-        }
-
-        // Orb hitboxes
-        shape.setColor(HB_ORB_FILL);
-        int cullStart = world.getOrbCull();
-        for (int i = cullStart; i < world.getOrbs().size; i++) {
-            AbstractOrb orb = world.getOrbs().get(i);
-            Rectangle r = orb.getBounds();
-            shape.circle(r.x + r.width / 2f, r.y + r.height / 2f, r.width / 2f, 24);
-        }
-
-        shape.setColor(HB_PLAYER_FILL);
-        Rectangle pb = player.getBounds();
-        shape.rect(pb.x, pb.y, pb.width, pb.height);
-
-        shape.setColor(1.0f, 1.0f, 1.0f, 0.5f);
-        float radius = player.width * 0.5f * Slope.CIRCLE_RATIO;
-        shape.circle(pb.x + pb.width * 0.5f, pb.y + pb.height * 0.5f, radius);
-
-        shape.end();
-
-        // ── Line pass ────────────────────────────────────────────────────────
-        shape.begin(ShapeRenderer.ShapeType.Line);
-
-        shape.setColor(HB_BLOCK_LINE);
-        for (Block b : world.getBlocks()) {
-            if (b instanceof Slope) {
-                Slope s = (Slope) b;
-                float rot = ((int) s.getRotation() % 360 + 360) % 360;
-                float x = s.getX(), y = s.getY(), w = s.getWidth(), h = s.getHeight();
-                float[] line = s.getSlopeLine();
-                float solidCX, solidCY;
-                if      (rot == 0)   { solidCX = x + w; solidCY = y;     }
-                else if (rot == 90)  { solidCX = x + w; solidCY = y + h; }
-                else if (rot == 180) { solidCX = x;     solidCY = y + h; }
-                else                 { solidCX = x;     solidCY = y;     }
-                shape.triangle(line[0], line[1], line[2], line[3], solidCX, solidCY);
-            } else {
-                shape.rect(b.getX(), b.getY(), b.getWidth(), b.getHeight());
-            }
-        }
-
-        shape.setColor(HB_PORTAL_LINE);
-        for (AbstractPortal p : world.getPortals()) {
-            Rectangle r = p.getBounds();
-            shape.rect(r.x, r.y, r.width, r.height);
-        }
-
-        shape.setColor(HB_HAZARD_LINE);
-        for (AbstractHazard h : world.getHazards()) {
-            if (h.getType() == AbstractHazard.HazardType.SPIKE) {
-                Rectangle r = ((Spike) h).getHitbox();
-                shape.rect(r.x, r.y, r.width, r.height);
-            } else if (h.getType() == AbstractHazard.HazardType.HALF_SPIKE) {
-                Rectangle r = ((HalfSpike) h).getHitbox();
-                shape.rect(r.x, r.y, r.width, r.height);
-            } else if (h.getType() == AbstractHazard.HazardType.SAW_BLADE) {
-                SawBlade saw = (SawBlade) h;
-                shape.circle(saw.getX() + saw.getDiameter() / 2f,
-                    saw.getY() + saw.getDiameter() / 2f,
-                    saw.getDiameter() / 2f, 32);
-            }
-        }
-
-        // Orb hitbox outlines
-        shape.setColor(HB_ORB_LINE);
-        for (int i = cullStart; i < world.getOrbs().size; i++) {
-            AbstractOrb orb = world.getOrbs().get(i);
-            Rectangle r = orb.getBounds();
-            shape.circle(r.x + r.width / 2f, r.y + r.height / 2f, r.width / 2f, 24);
-        }
-
-        shape.setColor(HB_PLAYER_LINE);
-        shape.rect(pb.x, pb.y, pb.width, pb.height);
-
-        shape.setColor(1.0f, 1.0f, 1.0f, 0.8f);
-        shape.circle(pb.x + pb.width * 0.5f, pb.y + pb.height * 0.5f, radius);
-
+        shape.setColor(world.getGroundColor());
+        shape.rect(worldLeft, 0, worldWidth, world.getGroundY());
         shape.end();
         Gdx.gl.glDisable(GL20.GL_BLEND);
     }
@@ -482,15 +345,14 @@ public class GameRenderer {
     // ── Player rotation ───────────────────────────────────────────────────────
 
     private void updatePlayerRotation(AbstractPlayer player, float delta, boolean paused) {
-        float vy    = player.getVelocityY();
-        AbstractPlayer.PlayerType pType = player.getType();
+        float vy       = player.getVelocityY();
         float slopeRot = player.getCurrentSlopeRotation();
+        AbstractPlayer.PlayerType pType = player.getType();
 
         if (pType == AbstractPlayer.PlayerType.CUBE) {
             if (player.isGrounded()) {
                 float nearest90  = Math.round((playerVisualRotation - slopeRot) / 90f) * 90f;
-                float targetRotation = nearest90 + slopeRot;
-                playerVisualRotation = lerp(playerVisualRotation, targetRotation, delta * 15f);
+                playerVisualRotation = lerp(playerVisualRotation, nearest90 + slopeRot, delta * 15f);
             } else if (!world.isPlayerDead() && !paused) {
                 float t        = delta * 60f;
                 float rotation = (Math.abs(vy) * CUBE_SPIN_FACTOR / 60f + 5f / 60f) * t + 300f * delta;
@@ -507,11 +369,26 @@ public class GameRenderer {
         }
     }
 
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private TextureRegion portalRegion(AbstractPortal.PortalType type) {
+        switch (type) {
+            case CUBE:    return cubePortalRegion;
+            case SHIP:    return shipPortalRegion;
+            case GRAVITY: return gravityPortalRegion;
+            case MINI:    return miniPortalRegion;
+            default:      return null;
+        }
+    }
+
+    /** Tiny shim so the saw-blade pre-pass can read delta without threading it through. */
+    private float _lastDelta = 0f;
+    private float delta() { return _lastDelta; }
+
     private static float lerp(float a, float b, float t) {
         return a + (b - a) * Math.min(t, 1f);
     }
 
-    /** Releases all resources used by this renderer. */
     public void dispose() {
         shape.dispose();
     }
