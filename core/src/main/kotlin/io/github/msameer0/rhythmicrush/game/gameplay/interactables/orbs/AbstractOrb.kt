@@ -6,7 +6,8 @@ import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 abstract class AbstractOrb {
 
     enum class OrbType {
-        YELLOW
+        YELLOW,
+        BLUE
     }
 
     var type: OrbType = OrbType.YELLOW
