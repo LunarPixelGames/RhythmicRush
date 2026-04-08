@@ -177,12 +177,12 @@ public class GameWorld implements Tickable {
         hazards.sort((a, b2)  -> Float.compare(a.getX(), b2.getX()));
         portals.sort((a, b2)  -> Float.compare(a.getX(), b2.getX()));
         orbs.sort((a, b2)     -> Float.compare(a.getX(), b2.getX()));
-        triggers.sort((a, b2) -> Float.compare(a.worldX,  b2.worldX));
+        triggers.sort((a, b2) -> Float.compare(a.getWorldX(), b2.getWorldX()));
 
         // Fast-forward trigger index past already-passed triggers
         triggerIdx = 0;
         float playerWorldX = 100f + startScrolled;
-        while (triggerIdx < triggers.size && triggers.get(triggerIdx).worldX <= playerWorldX)
+        while (triggerIdx < triggers.size && triggers.get(triggerIdx).getWorldX() <= playerWorldX)
             triggerIdx++;
 
         if (resetPlayer) {
@@ -382,8 +382,8 @@ public class GameWorld implements Tickable {
         // Fire triggers
         while (triggerIdx < triggers.size) {
             AbstractTrigger t = triggers.get(triggerIdx);
-            if (player.worldX < t.worldX) break;
-            t.fired = true;
+            if (player.worldX < t.getWorldX()) break;
+            t.setFired(true);
             t.fire(this);
             triggerIdx++;
         }
