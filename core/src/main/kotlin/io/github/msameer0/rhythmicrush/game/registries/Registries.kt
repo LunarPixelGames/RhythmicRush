@@ -7,7 +7,9 @@ import io.github.msameer0.rhythmicrush.game.gameplay.hazards.HalfSpike
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.SawBlade
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.AbstractOrb
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.BlackOrb
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.BlueOrb
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.GreenOrb
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.PinkOrb
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.RedOrb
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.YellowOrb
@@ -56,6 +58,8 @@ class Registries {
             ORBS.register(BlueOrb::class.java) { BlueOrb() }
             ORBS.register(PinkOrb::class.java) { PinkOrb() }
             ORBS.register(RedOrb::class.java) { RedOrb() }
+            ORBS.register(BlackOrb::class.java) { BlackOrb() }
+            ORBS.register(GreenOrb::class.java) { GreenOrb() }
 
             PLAYERS.register(Cube::class.java) { Cube(0f, 0f) }
             PLAYERS.register(Ship::class.java) { Ship(0f, 0f) }

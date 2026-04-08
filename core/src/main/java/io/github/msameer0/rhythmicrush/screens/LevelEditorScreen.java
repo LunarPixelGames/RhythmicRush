@@ -80,6 +80,11 @@ public class LevelEditorScreen extends AbstractScreen {
     private TextureRegion   gravityPortalRegion;
     private TextureRegion   miniPortalRegion;
     private TextureRegion yellowOrbRegion;
+    private TextureRegion blueOrbRegion;
+    private TextureRegion pinkOrbRegion;
+    private TextureRegion redOrbRegion;
+    private TextureRegion blackOrbRegion;
+    private TextureRegion greenOrbRegion;
 
     private float   camX = 400f, camY = 200f;
     private float   zoom = 1.0f;
@@ -188,6 +193,13 @@ public class LevelEditorScreen extends AbstractScreen {
         shipPortalRegion = game.getAtlasManager().getPortalsAtlas().findRegion("ship_portal");
         gravityPortalRegion = game.getAtlasManager().getPortalsAtlas().findRegion("gravity_portal");
         miniPortalRegion    = game.getAtlasManager().getPortalsAtlas().findRegion("mini_portal");
+
+        yellowOrbRegion = game.getAtlasManager().getOrbsAtlas().findRegion("yellow_orb");
+        blueOrbRegion   = game.getAtlasManager().getOrbsAtlas().findRegion("blue_orb");
+        pinkOrbRegion   = game.getAtlasManager().getOrbsAtlas().findRegion("pink_orb");
+        redOrbRegion    = game.getAtlasManager().getOrbsAtlas().findRegion("red_orb");
+        blackOrbRegion  = game.getAtlasManager().getOrbsAtlas().findRegion("black_orb");
+        greenOrbRegion  = game.getAtlasManager().getOrbsAtlas().findRegion("green_orb");
 
         buildTabs();
         scanMusicFiles();
@@ -848,7 +860,12 @@ public class LevelEditorScreen extends AbstractScreen {
         if ("ship_portal".equals(e.getType()))     return shipPortalRegion;
         if ("gravity_portal".equals(e.getType()))  return gravityPortalRegion;
         if ("mini_portal".equals(e.getType()))     return miniPortalRegion;
-        if ("yellow_orb".equals(e.getType()))      return yellowOrbRegion;  // ← add this
+        if ("yellow_orb".equals(e.getType()))      return yellowOrbRegion;
+        if ("blue_orb".equals(e.getType()))        return blueOrbRegion;
+        if ("pink_orb".equals(e.getType()))        return pinkOrbRegion;
+        if ("red_orb".equals(e.getType()))         return redOrbRegion;
+        if ("black_orb".equals(e.getType()))       return blackOrbRegion;
+        if ("green_orb".equals(e.getType()))       return greenOrbRegion;
         if (Registries.BLOCKS.has(e.getType())) {
             BlockType bt = BlockType.DEFAULT;
             if (e.getBlockType() != null)

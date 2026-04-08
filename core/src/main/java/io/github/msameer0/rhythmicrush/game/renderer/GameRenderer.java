@@ -290,6 +290,18 @@ public class GameRenderer {
                     orb.getX(), orb.getY(),
                     orb.getWidth(), orb.getHeight());
                 batch.setColor(Color.WHITE);
+            } else if (blackOrbRegion != null && orb.getType() == AbstractOrb.OrbType.BLACK) {
+                batch.setColor(1f, 1f, 1f, alpha);
+                batch.draw(blackOrbRegion,
+                    orb.getX(), orb.getY(),
+                    orb.getWidth(), orb.getHeight());
+                batch.setColor(Color.WHITE);
+            } else if (greenOrbRegion != null && orb.getType() == AbstractOrb.OrbType.GREEN) {
+                batch.setColor(1f, 1f, 1f, alpha);
+                batch.draw(greenOrbRegion,
+                    orb.getX(), orb.getY(),
+                    orb.getWidth(), orb.getHeight());
+                batch.setColor(Color.WHITE);
             } else {
                 // Fallback: coloured rectangle when no texture is available
                 batch.end();
