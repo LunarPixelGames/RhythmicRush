@@ -169,7 +169,7 @@ public class LevelEditorScreen extends AbstractScreen {
 
     @Override
     public void show() {
-        game.getSoundManager().stopMenuMusic();
+        getGame().getSoundManager().stopMenuMusic();
 
         uiCam      = new OrthographicCamera();
         uiViewport = new ScreenViewport(uiCam);
@@ -178,28 +178,28 @@ public class LevelEditorScreen extends AbstractScreen {
         uiCam.update();
 
         shapes = new ShapeRenderer();
-        font   = game.getFontManager().get(FontManager.SIZE_SMALL);
+        font   = getGame().getFontManager().get(FontManager.SIZE_SMALL);
         layout = new GlyphLayout();
 
         BlockType[] btypes = BlockType.values();
         blockRegions = new TextureRegion[btypes.length];
         for (BlockType bt : btypes)
-            blockRegions[bt.ordinal()] = game.getAtlasManager().getBlocksAtlas().findRegion(bt.getTextureName());
-        slopeRegion      = game.getAtlasManager().getBlocksAtlas().findRegion("slope");
-        spikeRegion      = game.getAtlasManager().getSpikesAtlas().findRegion("spike");
-        halfSpikeRegion  = game.getAtlasManager().getSpikesAtlas().findRegion("half_spike");
-        sawBladeRegion   = game.getAtlasManager().getSpikesAtlas().findRegion("saw_blade");
-        cubePortalRegion = game.getAtlasManager().getPortalsAtlas().findRegion("cube_portal");
-        shipPortalRegion = game.getAtlasManager().getPortalsAtlas().findRegion("ship_portal");
-        gravityPortalRegion = game.getAtlasManager().getPortalsAtlas().findRegion("gravity_portal");
-        miniPortalRegion    = game.getAtlasManager().getPortalsAtlas().findRegion("mini_portal");
+            blockRegions[bt.ordinal()] = getGame().getAtlasManager().getBlocksAtlas().findRegion(bt.getTextureName());
+        slopeRegion      = getGame().getAtlasManager().getBlocksAtlas().findRegion("slope");
+        spikeRegion      = getGame().getAtlasManager().getSpikesAtlas().findRegion("spike");
+        halfSpikeRegion  = getGame().getAtlasManager().getSpikesAtlas().findRegion("half_spike");
+        sawBladeRegion   = getGame().getAtlasManager().getSpikesAtlas().findRegion("saw_blade");
+        cubePortalRegion = getGame().getAtlasManager().getPortalsAtlas().findRegion("cube_portal");
+        shipPortalRegion = getGame().getAtlasManager().getPortalsAtlas().findRegion("ship_portal");
+        gravityPortalRegion = getGame().getAtlasManager().getPortalsAtlas().findRegion("gravity_portal");
+        miniPortalRegion    = getGame().getAtlasManager().getPortalsAtlas().findRegion("mini_portal");
 
-        yellowOrbRegion = game.getAtlasManager().getOrbsAtlas().findRegion("yellow_orb");
-        blueOrbRegion   = game.getAtlasManager().getOrbsAtlas().findRegion("blue_orb");
-        pinkOrbRegion   = game.getAtlasManager().getOrbsAtlas().findRegion("pink_orb");
-        redOrbRegion    = game.getAtlasManager().getOrbsAtlas().findRegion("red_orb");
-        blackOrbRegion  = game.getAtlasManager().getOrbsAtlas().findRegion("black_orb");
-        greenOrbRegion  = game.getAtlasManager().getOrbsAtlas().findRegion("green_orb");
+        yellowOrbRegion = getGame().getAtlasManager().getOrbsAtlas().findRegion("yellow_orb");
+        blueOrbRegion   = getGame().getAtlasManager().getOrbsAtlas().findRegion("blue_orb");
+        pinkOrbRegion   = getGame().getAtlasManager().getOrbsAtlas().findRegion("pink_orb");
+        redOrbRegion    = getGame().getAtlasManager().getOrbsAtlas().findRegion("red_orb");
+        blackOrbRegion  = getGame().getAtlasManager().getOrbsAtlas().findRegion("black_orb");
+        greenOrbRegion  = getGame().getAtlasManager().getOrbsAtlas().findRegion("green_orb");
 
         buildTabs();
         scanMusicFiles();
@@ -323,13 +323,13 @@ public class LevelEditorScreen extends AbstractScreen {
         drawBtn(canvasW - zbw * 2 - 16f, by, zbw, bh, "-", false);
         drawBtn(canvasW - zbw - 8f,      by, zbw, bh, "+", false);
 
-        game.getBatch().setProjectionMatrix(uiCam.combined);
-        game.getBatch().begin();
+        getGame().getBatch().setProjectionMatrix(uiCam.combined);
+        getGame().getBatch().begin();
 
         font.getData().setScale(0.72f);
         font.setColor(Color.WHITE);
         layout.setText(font, levelData.getName());
-        font.draw(game.getBatch(), levelData.getName(),
+        font.draw(getGame().getBatch(), levelData.getName(),
             sw / 2f - layout.width / 2f, y + TOPBAR_H / 2f + layout.height / 2f);
 
         if ("block".equals(placementId)) {
@@ -337,7 +337,7 @@ public class LevelEditorScreen extends AbstractScreen {
             font.getData().setScale(0.48f);
             font.setColor(0.7f, 0.9f, 1f, 1f);
             layout.setText(font, btLabel);
-            font.draw(game.getBatch(), btLabel, sw / 2f - layout.width / 2f, y + 10f);
+            font.draw(getGame().getBatch(), btLabel, sw / 2f - layout.width / 2f, y + 10f);
         }
 
         String musicLabel = musicFiles.isEmpty() ? "No music"
@@ -346,22 +346,22 @@ public class LevelEditorScreen extends AbstractScreen {
         font.setColor(0.8f, 0.75f, 1f, 1f);
         layout.setText(font, musicLabel);
         float musicX = canvasW - zbw * 2 - 24f - layout.width;
-        font.draw(game.getBatch(), musicLabel, musicX, y + TOPBAR_H / 2f + layout.height / 2f);
+        font.draw(getGame().getBatch(), musicLabel, musicX, y + TOPBAR_H / 2f + layout.height / 2f);
 
         String gridStatus = "Grid: " + (gridSnapping ? "ON" : "OFF") + " [G]";
         font.getData().setScale(0.40f);
         font.setColor(gridSnapping ? Color.CYAN : Color.GRAY);
         layout.setText(font, gridStatus);
-        font.draw(game.getBatch(), gridStatus, 8f, y + 10f);
+        font.draw(getGame().getBatch(), gridStatus, 8f, y + 10f);
 
         font.getData().setScale(0.40f);
         font.setColor(0.5f, 0.5f, 0.6f, 1f);
         String hint = "[ ]";
         layout.setText(font, hint);
-        font.draw(game.getBatch(), hint, musicX - layout.width - 6f, y + TOPBAR_H / 2f + layout.height / 2f);
+        font.draw(getGame().getBatch(), hint, musicX - layout.width - 6f, y + TOPBAR_H / 2f + layout.height / 2f);
 
         font.getData().setScale(1f);
-        game.getBatch().end();
+        getGame().getBatch().end();
     }
 
     private void drawBtn(float x, float y, float w, float h, String label, boolean active) {
@@ -378,15 +378,15 @@ public class LevelEditorScreen extends AbstractScreen {
         shapes.rect(x, y, w, h);
         shapes.end();
 
-        game.getBatch().setProjectionMatrix(uiCam.combined);
-        game.getBatch().begin();
+        getGame().getBatch().setProjectionMatrix(uiCam.combined);
+        getGame().getBatch().begin();
         font.getData().setScale(0.58f);
         font.setColor(Color.WHITE);
         layout.setText(font, label);
-        font.draw(game.getBatch(), label,
+        font.draw(getGame().getBatch(), label,
             x + w / 2f - layout.width / 2f, y + h / 2f + layout.height / 2f);
         font.getData().setScale(1f);
-        game.getBatch().end();
+        getGame().getBatch().end();
     }
 
     private void drawCanvas(float canvasW, float canvasH) {
@@ -442,19 +442,19 @@ public class LevelEditorScreen extends AbstractScreen {
         }
         shapes.end();
 
-        game.getBatch().setProjectionMatrix(uiCam.combined);
-        game.getBatch().begin();
+        getGame().getBatch().setProjectionMatrix(uiCam.combined);
+        getGame().getBatch().begin();
         for (LevelData.ObjectEntry e : levelData.getObjects()) {
             float sx = worldToSX(e.getX(), canvasW), sy = worldToSY(e.getY(), canvasH), dim = e.getSize() * zoom;
             if (sx + dim < 0 || sx > canvasW || sy + dim < 0 || sy > canvasH) continue;
             TextureRegion region = regionFor(e);
             if (region == null) continue;
             boolean sel = selection.contains(e, true);
-            game.getBatch().setColor(sel ? 1.3f : 1f, sel ? 1.3f : 1f, sel ? 1.3f : 1f, 1f);
-            game.getBatch().draw(region, sx, sy, dim / 2f, dim / 2f, dim, dim, 1f, 1f, e.getRotation());
+            getGame().getBatch().setColor(sel ? 1.3f : 1f, sel ? 1.3f : 1f, sel ? 1.3f : 1f, 1f);
+            getGame().getBatch().draw(region, sx, sy, dim / 2f, dim / 2f, dim, dim, 1f, 1f, e.getRotation());
         }
-        game.getBatch().setColor(Color.WHITE);
-        game.getBatch().end();
+        getGame().getBatch().setColor(Color.WHITE);
+        getGame().getBatch().end();
         Gdx.gl.glDisable(GL20.GL_BLEND);
     }
 
@@ -496,12 +496,12 @@ public class LevelEditorScreen extends AbstractScreen {
         Gdx.gl.glEnable(GL20.GL_BLEND);
         TextureRegion ghostRegion = placementRegion();
         if (ghostRegion != null) {
-            game.getBatch().setProjectionMatrix(uiCam.combined);
-            game.getBatch().begin();
-            game.getBatch().setColor(1f, 1f, 1f, 0.45f);
-            game.getBatch().draw(ghostRegion, sx, sy, dim / 2f, dim / 2f, dim, dim, 1f, 1f, 0);
-            game.getBatch().setColor(Color.WHITE);
-            game.getBatch().end();
+            getGame().getBatch().setProjectionMatrix(uiCam.combined);
+            getGame().getBatch().begin();
+            getGame().getBatch().setColor(1f, 1f, 1f, 0.45f);
+            getGame().getBatch().draw(ghostRegion, sx, sy, dim / 2f, dim / 2f, dim, dim, 1f, 1f, 0);
+            getGame().getBatch().setColor(Color.WHITE);
+            getGame().getBatch().end();
         } else {
             Color c = typeColor(placementId);
             shapes.setProjectionMatrix(uiCam.combined);
@@ -541,14 +541,14 @@ public class LevelEditorScreen extends AbstractScreen {
         shapes.setColor(hov ? C_TAB_ON : C_TAB_OFF);
         shapes.rect(sideX, hBot, SIDEBAR_W, TAB_H);
         shapes.end();
-        game.getBatch().setProjectionMatrix(uiCam.combined);
-        game.getBatch().begin();
+        getGame().getBatch().setProjectionMatrix(uiCam.combined);
+        getGame().getBatch().begin();
         font.getData().setScale(0.62f);
         font.setColor(Color.WHITE);
         String lbl = (tab.collapsed ? "▶  " : "▼  ") + tab.label;
         layout.setText(font, lbl);
-        font.draw(game.getBatch(), lbl, sideX + 10f, hBot + TAB_H / 2f + layout.height / 2f);
-        game.getBatch().end();
+        font.draw(getGame().getBatch(), lbl, sideX + 10f, hBot + TAB_H / 2f + layout.height / 2f);
+        getGame().getBatch().end();
         curY = hBot;
         if (tab.collapsed) return curY;
         int cols = Math.max(1, (int) ((SIDEBAR_W - ITEM_PAD) / (ITEM_SIZE + ITEM_PAD)));
@@ -581,16 +581,16 @@ public class LevelEditorScreen extends AbstractScreen {
                 TextureRegion itemReg = regionFor(tmp);
 
                 if (itemReg != null) {
-                    game.getBatch().begin();
-                    game.getBatch().draw(itemReg, ix + ITEM_PAD, iy + ITEM_PAD, cell - ITEM_PAD * 2, cell - ITEM_PAD * 2);
-                    game.getBatch().end();
+                    getGame().getBatch().begin();
+                    getGame().getBatch().draw(itemReg, ix + ITEM_PAD, iy + ITEM_PAD, cell - ITEM_PAD * 2, cell - ITEM_PAD * 2);
+                    getGame().getBatch().end();
                 } else {
-                    game.getBatch().begin();
+                    getGame().getBatch().begin();
                     font.getData().setScale(MathUtils.clamp(0.40f * (cell / ITEM_SIZE), 0.28f, 0.48f));
                     String display = id.length() > 10 ? id.substring(0, 9) + "…" : id;
                     layout.setText(font, display);
-                    font.draw(game.getBatch(), display, ix + cell / 2f - layout.width / 2f, iy + cell / 2f + layout.height / 2f);
-                    game.getBatch().end();
+                    font.draw(getGame().getBatch(), display, ix + cell / 2f - layout.width / 2f, iy + cell / 2f + layout.height / 2f);
+                    getGame().getBatch().end();
                 }
             }
             col++;
@@ -681,12 +681,12 @@ public class LevelEditorScreen extends AbstractScreen {
 
     private void startPlaytest() {
         if (playtesting) return;
-        game.getSoundManager().stopMenuMusic();
+        getGame().getSoundManager().stopMenuMusic();
         stopAndDisposeMusic();
         playtesting = true; trailWX.clear(); trailWY.clear(); trailTick = 0; trailHasData = false;
         float canvasW = Gdx.graphics.getWidth() - SIDEBAR_W, canvasH = Gdx.graphics.getHeight() - TOPBAR_H;
         ptCam = new OrthographicCamera(); ptCam.setToOrtho(false, canvasW, canvasH); ptCam.update();
-        ptWorld = new GameWorld(); ptRenderer = new GameRenderer(ptWorld, ptCam, game.getBatch(), game.getAtlasManager());
+        ptWorld = new GameWorld(); ptRenderer = new GameRenderer(ptWorld, ptCam, getGame().getBatch(), getGame().getAtlasManager());
         ptEngine = new FixedTickEngine(ptWorld); ptWorld.loadLevel(levelData);
         startEditorMusic(true);
     }
@@ -745,19 +745,19 @@ public class LevelEditorScreen extends AbstractScreen {
         shapes.begin(ShapeRenderer.ShapeType.Line);
         shapes.setColor(C_PROP_BORDER); shapes.rect(px, py, pw, ph);
         shapes.end();
-        game.getBatch().setProjectionMatrix(uiCam.combined);
-        game.getBatch().begin();
+        getGame().getBatch().setProjectionMatrix(uiCam.combined);
+        getGame().getBatch().begin();
         font.getData().setScale(0.7f);
-        font.draw(game.getBatch(), "Load Level", px + 12, py + ph - 12);
+        font.draw(getGame().getBatch(), "Load Level", px + 12, py + ph - 12);
         float itemH = 36f, startY = py + ph - 60f - loadScroll;
         for (String file : levelFiles) {
             if (startY > py && startY < py + ph - 60) {
                 font.getData().setScale(0.5f);
-                font.draw(game.getBatch(), file, px + 20, startY);
+                font.draw(getGame().getBatch(), file, px + 20, startY);
             }
             startY -= itemH;
         }
-        game.getBatch().end();
+        getGame().getBatch().end();
         Gdx.gl.glDisable(GL20.GL_BLEND);
     }
 
@@ -1027,9 +1027,9 @@ public class LevelEditorScreen extends AbstractScreen {
         if (!propPanelOpen || propTarget == null) return;
         int sw = Gdx.graphics.getWidth(), sh = Gdx.graphics.getHeight(); float pw = 520f, ph = 32f + propFieldCount * 36f + 32f, px = sw / 2f - pw / 2f, py = sh / 2f - ph / 2f;
         Gdx.gl.glEnable(GL20.GL_BLEND); shapes.setProjectionMatrix(uiCam.combined); shapes.begin(ShapeRenderer.ShapeType.Filled); shapes.setColor(C_PROP_BG); shapes.rect(px, py, pw, ph); shapes.end(); shapes.begin(ShapeRenderer.ShapeType.Line); shapes.setColor(C_PROP_BORDER); shapes.rect(px, py, pw, ph); shapes.end(); Gdx.gl.glDisable(GL20.GL_BLEND);
-        game.getBatch().setProjectionMatrix(uiCam.combined); game.getBatch().begin(); font.getData().setScale(0.62f); font.setColor(C_PROP_BORDER); font.draw(game.getBatch(), "Properties: " + propTarget.getType() + "   [TAB next | ENTER confirm | ESC cancel]", px + 12f, py + ph - 10f);
-        for (int i = 0; i < propFieldCount; i++) { float fy = py + ph - 36f - i * 36f; boolean active = (i == propField); font.getData().setScale(0.56f); font.setColor(active ? C_PROP_ACTIVE : C_PROP_DIM); String label = propLabels[i] + ":  "; layout.setText(font, label); font.draw(game.getBatch(), label, px + 12f, fy); font.setColor(Color.WHITE); font.draw(game.getBatch(), propBuffers[i].toString() + (active ? "_" : ""), px + 12f + layout.width, fy); }
-        font.getData().setScale(1f); game.getBatch().end();
+        getGame().getBatch().setProjectionMatrix(uiCam.combined); getGame().getBatch().begin(); font.getData().setScale(0.62f); font.setColor(C_PROP_BORDER); font.draw(getGame().getBatch(), "Properties: " + propTarget.getType() + "   [TAB next | ENTER confirm | ESC cancel]", px + 12f, py + ph - 10f);
+        for (int i = 0; i < propFieldCount; i++) { float fy = py + ph - 36f - i * 36f; boolean active = (i == propField); font.getData().setScale(0.56f); font.setColor(active ? C_PROP_ACTIVE : C_PROP_DIM); String label = propLabels[i] + ":  "; layout.setText(font, label); font.draw(getGame().getBatch(), label, px + 12f, fy); font.setColor(Color.WHITE); font.draw(getGame().getBatch(), propBuffers[i].toString() + (active ? "_" : ""), px + 12f + layout.width, fy); }
+        font.getData().setScale(1f); getGame().getBatch().end();
     }
 
     private void startEditorMusic(boolean restart) {
@@ -1038,7 +1038,7 @@ public class LevelEditorScreen extends AbstractScreen {
             if (levelMusic == null) {
                 FileHandle fh = Gdx.files.internal("musics/" + levelData.getMusicFile());
                 if (!fh.exists()) fh = Gdx.files.local("assets/musics/" + levelData.getMusicFile());
-                if (fh.exists()) { levelMusic = Gdx.audio.newMusic(fh); levelMusic.setVolume(game.getSettingsManager().getMusicVolume()); levelMusic.setLooping(false); }
+                if (fh.exists()) { levelMusic = Gdx.audio.newMusic(fh); levelMusic.setVolume(getGame().getSettingsManager().getMusicVolume()); levelMusic.setLooping(false); }
             }
             if (levelMusic != null) { if (restart) levelMusic.setPosition(0); else levelMusic.setPosition(Math.max(0, camX / 320f)); levelMusic.play(); }
         } catch (Exception ignored) {}
