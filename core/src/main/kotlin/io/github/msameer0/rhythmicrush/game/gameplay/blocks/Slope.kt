@@ -1,16 +1,20 @@
 package io.github.msameer0.rhythmicrush.game.gameplay.blocks
 
+import com.badlogic.gdx.math.MathUtils
+import com.badlogic.gdx.math.Vector2
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.game.registries.Registry
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.math.roundToInt
-import kotlin.math.sqrt
 
 @Registry(id = "slope")
 class Slope : Block {
     companion object {
         const val CIRCLE_RATIO = 0.8f
+
+        // Vector2 pool to avoid allocations in the hot path
+        private val tmpEdge = Vector2()
+        private val tmpNormal = Vector2()
+        private val tmpCenter = Vector2()
+        private val tmpOrigin = Vector2()
     }
 
     var rotation: Float = 0f
@@ -33,7 +37,8 @@ class Slope : Block {
     }
 
     private fun normaliseRot(): Int {
-        return ((rotation / 90f).roundToInt() * 90 % 360 + 360) % 360
+        // MathUtils.round instead of kotlin roundToInt — stays in libGDX land
+        return (MathUtils.round(rotation / 90f) * 90 % 360 + 360) % 360
     }
 
     fun getSlopeLine(): FloatArray {
@@ -45,32 +50,32 @@ class Slope : Block {
         }
     }
 
-    public override fun tryTouch(player: AbstractPlayer) {
+    override fun tryTouch(player: AbstractPlayer) {
         val pr = player.getBounds()
 
-        val r = (pr.width * 0.5f) * CIRCLE_RATIO
-        val cx = pr.x + pr.width * 0.5f
-        val cy = pr.y + pr.height * 0.5f
+        val r   = pr.width * 0.5f * CIRCLE_RATIO
+        val cx  = pr.x + pr.width  * 0.5f
+        val cy  = pr.y + pr.height * 0.5f
 
-        val bL = bounds.x
-        val bR = bounds.x + bounds.width
-        val bB = bounds.y
-        val bT = bounds.y + bounds.height
-        val bW = bounds.width
-        val bH = bounds.height
+        val bL  = bounds.x
+        val bR  = bounds.x + bounds.width
+        val bB  = bounds.y
+        val bT  = bounds.y + bounds.height
+        val bW  = bounds.width
+        val bH  = bounds.height
 
-        val margin = r * 2.0f
-        if (cx + r < bL - margin || cx - r > bR + margin || cy + r < bB - margin || cy - r > bT + margin) return
+        val margin = r * 2f
+        if (cx + r < bL - margin || cx - r > bR + margin ||
+            cy + r < bB - margin || cy - r > bT + margin) return
 
-        val flipped = player.isGravityFlipped()
-        val rot = normaliseRot()
-        val scrollSpeed =
-            if (player.getWorld() != null) player.getWorld()!!.scrollSpeed else 320f
+        val flipped     = player.isGravityFlipped()
+        val rot         = normaliseRot()
+        val scrollSpeed = player.getWorld()?.scrollSpeed ?: 320f
 
-        val isFloor = (rot == 0 || rot == 270)
-        val isCeiling = (rot == 90 || rot == 180)
+        val isFloor   = rot == 0   || rot == 270
+        val isCeiling = rot == 90  || rot == 180
 
-        val isClimbing = (!flipped && rot == 0) || (flipped && rot == 90)
+        val isClimbing   = (!flipped && rot == 0)   || (flipped && rot == 90)
         val isDescending = (!flipped && rot == 270) || (flipped && rot == 180)
 
         val isShip = player.getType() == AbstractPlayer.PlayerType.SHIP
@@ -79,112 +84,66 @@ class Slope : Block {
             if ((!flipped && !isFloor) || (flipped && !isCeiling)) return
         }
 
-        val lx1: Float
-        val ly1: Float
-        val lx2: Float
-        val ly2: Float
-        var nx: Float
-        var ny: Float
-        val edgeLen = sqrt((bW * bW + bH * bH).toDouble()).toFloat()
+        val lx1: Float; val ly1: Float
+        val lx2: Float; val ly2: Float
 
         when (rot) {
-            0 -> {
-                lx1 = bL
-                ly1 = bB
-                lx2 = bR
-                ly2 = bT
-                nx = -bH / edgeLen
-                ny = bW / edgeLen
-            }
-            90 -> {
-                lx1 = bR
-                ly1 = bB
-                lx2 = bL
-                ly2 = bT
-                nx = bH / edgeLen
-                ny = bW / edgeLen
-            }
-            180 -> {
-                lx1 = bR
-                ly1 = bT
-                lx2 = bL
-                ly2 = bB
-                nx = bH / edgeLen
-                ny = -bW / edgeLen
-            }
-            else -> {
-                lx1 = bL
-                ly1 = bT
-                lx2 = bR
-                ly2 = bB
-                nx = -bH / edgeLen
-                ny = -bW / edgeLen
-            }
+            0   -> { lx1 = bL; ly1 = bB; lx2 = bR; ly2 = bT }
+            90  -> { lx1 = bR; ly1 = bB; lx2 = bL; ly2 = bT }
+            180 -> { lx1 = bR; ly1 = bT; lx2 = bL; ly2 = bB }
+            else -> { lx1 = bL; ly1 = bT; lx2 = bR; ly2 = bB }
         }
 
-        if (isCeiling && ny > 0) {
-            nx = -nx
-            ny = -ny
-        } else if (isFloor && ny < 0) {
-            nx = -nx
-            ny = -ny
-        }
+        tmpEdge.set(lx2 - lx1, ly2 - ly1)
+        val edgeLen = tmpEdge.len()
 
-        val dist = (cx - lx1) * nx + (cy - ly1) * ny
+        tmpNormal.set(tmpEdge).nor()
+        tmpNormal.rotate90(1)
 
-        var snapTolerance = 0f
+        var nx = tmpNormal.x
+        var ny = tmpNormal.y
 
-        if (isDescending) {
-            snapTolerance = r * 0.5f
-        } else if (isClimbing) {
-            if (player.getCurrentSlopeRotation() != 0f) {
-                snapTolerance = r * 0.5f
-            }
+        if (isCeiling && ny > 0) { nx = -nx; ny = -ny }
+        else if (isFloor && ny < 0) { nx = -nx; ny = -ny }
+
+        tmpCenter.set(cx, cy)
+        tmpOrigin.set(lx1, ly1)
+        val dist = tmpCenter.sub(tmpOrigin).dot(tmpNormal.set(nx, ny))
+
+        val snapTolerance = when {
+            isDescending -> r * 0.5f
+            isClimbing && player.getCurrentSlopeRotation() != 0f -> r * 0.5f
+            else -> 0f
         }
 
         if (dist >= r + snapTolerance) return
         if (dist < -r) return
 
-        val edgeDx = lx2 - lx1
-        val edgeDy = ly2 - ly1
-        val t = ((cx - lx1) * edgeDx + (cy - ly1) * edgeDy) / (edgeLen * edgeLen)
+        tmpCenter.set(cx - lx1, cy - ly1)
+        val t = tmpCenter.dot(tmpEdge) / (edgeLen * edgeLen)
         if (t < -0.01f || t > 1.01f) return
 
-        val targetVy = -(scrollSpeed * nx) / ny
-
-        var isJumpingOff = false
-
+        val targetVy    = -(scrollSpeed * nx) / ny
         val isFloorForPlayer = (!flipped && isFloor) || (flipped && isCeiling)
 
         if (isFloorForPlayer) {
-            if (!flipped && player.getVelocityY() > max(0f, targetVy) + 1.5f) isJumpingOff = true
-            if (flipped && player.getVelocityY() < min(0f, targetVy) - 1.5f) isJumpingOff = true
+            val jumpingOff = (!flipped && player.getVelocityY() > maxOf(0f, targetVy) + 1.5f) ||
+                ( flipped && player.getVelocityY() < minOf(0f, targetVy) - 1.5f)
+            if (jumpingOff) return
         }
 
-        if (isJumpingOff) return
+        val pushOutY = (r - dist) / ny
+        val offsetY  = cy - player.y
+        player.setY(cy + pushOutY - offsetY)
 
-        val penetration = r - dist
-
-        val pushOutY = penetration / ny
-
-        val newCy = cy + pushOutY
-        val offsetY = cy - player.y
-        player.setY(newCy - offsetY)
-
-        if (isFloorForPlayer) {
-            player.setGrounded(true)
-        }
+        if (isFloorForPlayer) player.setGrounded(true)
 
         player.setCurrentSlopeRotation(if (isClimbing) 45f else -45f)
 
-        if (isDescending) {
-            player.setVelocityY(targetVy)
-        } else if (isClimbing) {
-            if (!flipped && player.getVelocityY() <= targetVy) {
-                player.setVelocityY(targetVy)
-            } else if (flipped && player.getVelocityY() >= targetVy) {
-                player.setVelocityY(targetVy)
-            }
+        when {
+            isDescending -> player.setVelocityY(targetVy)
+            isClimbing && !flipped && player.getVelocityY() <= targetVy -> player.setVelocityY(targetVy)
+            isClimbing &&  flipped && player.getVelocityY() >= targetVy -> player.setVelocityY(targetVy)
         }
     }
 }
