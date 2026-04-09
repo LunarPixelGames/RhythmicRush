@@ -31,14 +31,14 @@ class WorldPoolManager {
         override fun reset(obj: Slope) = obj.reset()
     }
 
-    private val spikePool = object : ObjectPool<Spike>() { override fun create() = Spike(); override fun reset(obj: Spike) {} }
-    private val halfSpikePool = object : ObjectPool<HalfSpike>() { override fun create() = HalfSpike(); override fun reset(obj: HalfSpike) {} }
-    private val sawBladePool = object : ObjectPool<SawBlade>() { override fun create() = SawBlade(); override fun reset(obj: SawBlade) {} }
+    private val spikePool = object : ObjectPool<Spike>() { override fun create() = Spike(); override fun reset(obj: Spike) = obj.reset() }
+    private val halfSpikePool = object : ObjectPool<HalfSpike>() { override fun create() = HalfSpike(); override fun reset(obj: HalfSpike) = obj.reset() }
+    private val sawBladePool = object : ObjectPool<SawBlade>() { override fun create() = SawBlade(); override fun reset(obj: SawBlade) = obj.reset() }
 
-    private val cubePortalPool = object : ObjectPool<CubePortal>() { override fun create() = CubePortal(); override fun reset(obj: CubePortal) {} }
-    private val shipPortalPool = object : ObjectPool<ShipPortal>() { override fun create() = ShipPortal(); override fun reset(obj: ShipPortal) {} }
-    private val gravityPortalPool = object : ObjectPool<GravityPortal>() { override fun create() = GravityPortal(); override fun reset(obj: GravityPortal) {} }
-    private val miniPortalPool = object : ObjectPool<MiniPortal>() { override fun create() = MiniPortal(); override fun reset(obj: MiniPortal) {} }
+    private val cubePortalPool = object : ObjectPool<CubePortal>() { override fun create() = CubePortal(); override fun reset(obj: CubePortal) = obj.reset() }
+    private val shipPortalPool = object : ObjectPool<ShipPortal>() { override fun create() = ShipPortal(); override fun reset(obj: ShipPortal) = obj.reset() }
+    private val gravityPortalPool = object : ObjectPool<GravityPortal>() { override fun create() = GravityPortal(); override fun reset(obj: GravityPortal) = obj.reset() }
+    private val miniPortalPool = object : ObjectPool<MiniPortal>() { override fun create() = MiniPortal(); override fun reset(obj: MiniPortal) = obj.reset() }
 
     private val cubePool = object : ObjectPool<Cube>() { override fun create() = Cube(); override fun reset(obj: Cube) {} }
     private val shipPool = object : ObjectPool<Ship>() { override fun create() = Ship(); override fun reset(obj: Ship) {} }

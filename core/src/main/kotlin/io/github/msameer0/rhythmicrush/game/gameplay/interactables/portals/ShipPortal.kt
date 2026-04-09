@@ -12,9 +12,13 @@ class ShipPortal : AbstractPortal {
         this.type = PortalType.SHIP
     }
 
-    override fun init(x: Float, y: Float): ShipPortal {
-        super.init(x, y)
+    override fun init(x: Float, y: Float, rotation: Float): ShipPortal {
+        super.init(x, y, rotation)
         this.type = PortalType.SHIP
         return this
+    }
+
+    override fun init(x: Float, y: Float): ShipPortal {
+        return init(x, y, 0f)
     }
 }

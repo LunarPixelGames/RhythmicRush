@@ -27,6 +27,12 @@ abstract class AbstractHazard(
         bounds.setPosition(x, y)
     }
 
+    open fun reset() {
+        this.x = 0f
+        this.y = 0f
+        this.bounds.set(0f, 0f, 0f, 0f)
+    }
+
     open fun tryTouch(player: AbstractPlayer) {
         if (player.getBounds().overlaps(bounds)) {
             onTouch(player)

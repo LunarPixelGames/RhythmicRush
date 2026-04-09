@@ -1,9 +1,11 @@
 package io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals
 
 import com.badlogic.gdx.math.Rectangle
+import io.github.msameer0.rhythmicrush.game.engine.Rotatable
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 
-abstract class AbstractPortal {
+abstract class AbstractPortal : Rotatable {
+    override var rotation: Float = 0f
     enum class PortalType {
         CUBE,
         SHIP,
@@ -29,12 +31,25 @@ abstract class AbstractPortal {
         bounds = Rectangle()
     }
 
-    open fun init(x: Float, y: Float): AbstractPortal? {
+    open fun reset() {
+        this.x = 0f
+        this.y = 0f
+        this.rotation = 0f
+        this.isUsed = false
+        this.bounds.set(0f, 0f, 0f, 0f)
+    }
+
+    open fun init(x: Float, y: Float, rotation: Float): AbstractPortal? {
         this.x = x
         this.y = y
+        this.rotation = rotation
         this.isUsed = false
-        bounds.set(x, y, width, height)
+        updateBounds()
         return this
+    }
+
+    open fun init(x: Float, y: Float): AbstractPortal? {
+        return init(x, y, 0f)
     }
 
     fun updatePosition(scrollSpeed: Float, delta: Float) {
@@ -51,6 +66,14 @@ abstract class AbstractPortal {
     }
 
     fun updateBounds() {
-        bounds.setPosition(x, y)
+        val rotSnapped = (Math.round(rotation / 90f) * 90 % 360 + 360) % 360
+        if (rotSnapped == 90 || rotSnapped == 270) {
+            val cx = x + width / 2f
+            val cy = y + height / 2f
+            // Swap width and height and offset by center
+            bounds.set(cx - height / 2f, cy - width / 2f, height, width)
+        } else {
+            bounds.set(x, y, width, height)
+        }
     }
 }

@@ -16,7 +16,6 @@ class Slope : Block {
         private val tmpOrigin = Vector2()
     }
 
-    var rotation: Float = 0f
 
     constructor() : super()
 
@@ -24,15 +23,13 @@ class Slope : Block {
         this.rotation = rotation
     }
 
-    fun init(x: Float, y: Float, size: Float, type: BlockType, rotation: Float): Slope {
-        super.init(x, y, size, type)
-        this.rotation = rotation
+    override fun init(x: Float, y: Float, size: Float, type: BlockType, rotation: Float): Slope {
+        super.init(x, y, size, type, rotation)
         return this
     }
 
     override fun reset() {
         super.reset()
-        this.rotation = 0f
     }
 
     private fun normaliseRot(): Int {

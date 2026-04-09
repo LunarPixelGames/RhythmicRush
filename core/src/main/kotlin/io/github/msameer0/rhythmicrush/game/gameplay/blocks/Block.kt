@@ -1,11 +1,13 @@
 package io.github.msameer0.rhythmicrush.game.gameplay.blocks
 
 import com.badlogic.gdx.math.Rectangle
+import io.github.msameer0.rhythmicrush.game.engine.Rotatable
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.game.registries.Registry
 
 @Registry(id = "block")
-open class Block {
+open class Block : Rotatable {
+    override var rotation: Float = 0f
     var x: Float = 0f
     var y: Float = 0f
     var width: Float = 0f
@@ -28,14 +30,19 @@ open class Block {
         bounds = Rectangle(x, y, width, height)
     }
 
-    fun init(x: Float, y: Float, size: Float, type: BlockType): Block {
+    open fun init(x: Float, y: Float, size: Float, type: BlockType, rotation: Float): Block {
         this.x = x
         this.y = y
         this.width = size
         this.height = size
         this.type = type
+        this.rotation = rotation
         bounds.set(x, y, width, height)
         return this
+    }
+
+    open fun init(x: Float, y: Float, size: Float, type: BlockType): Block {
+        return init(x, y, size, type, 0f)
     }
 
     fun updatePosition(scrollSpeed: Float, delta: Float) {
@@ -53,6 +60,7 @@ open class Block {
         this.width = 0f
         this.height = 0f
         this.type = BlockType.DEFAULT
+        this.rotation = 0f
         this.bounds.set(0f, 0f, 0f, 0f)
     }
 

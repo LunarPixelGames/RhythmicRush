@@ -221,7 +221,7 @@ class GameWorld : Tickable {
             if ("slope" == e.type) {
                 blocks.add(pools.obtainSlope().init(rx, e.y, e.size, bt, e.rotation))
             } else {
-                blocks.add(pools.obtainBlock().init(rx, e.y, e.size, bt))
+                blocks.add(pools.obtainBlock().init(rx, e.y, e.size, bt, e.rotation))
             }
         } else if (Registries.HAZARDS.has(e.type)) {
             val hW = if ("saw_blade" == e.type) e.size else 50f
@@ -267,7 +267,7 @@ class GameWorld : Tickable {
             "mini_portal" -> { p = pools.obtainMiniPortal(); activeMiniPortals.add(p) }
         }
         if (p != null) {
-            p.init(rx, e.y)
+            p.init(rx, e.y, e.rotation)
             portals.add(p)
         }
     }

@@ -12,9 +12,13 @@ class CubePortal : AbstractPortal {
         this.type = PortalType.CUBE
     }
 
-    override fun init(x: Float, y: Float): CubePortal {
-        super.init(x, y)
+    override fun init(x: Float, y: Float, rotation: Float): CubePortal {
+        super.init(x, y, rotation)
         this.type = PortalType.CUBE
         return this
+    }
+
+    override fun init(x: Float, y: Float): CubePortal {
+        return init(x, y, 0f)
     }
 }

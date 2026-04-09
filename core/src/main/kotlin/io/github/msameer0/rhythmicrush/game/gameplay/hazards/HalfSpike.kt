@@ -1,13 +1,14 @@
 package io.github.msameer0.rhythmicrush.game.gameplay.hazards
 
 import com.badlogic.gdx.math.Rectangle
+import io.github.msameer0.rhythmicrush.game.engine.Rotatable
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.game.registries.Registry
 import kotlin.math.roundToInt
 
 @Registry(id = "half_spike")
-class HalfSpike : AbstractHazard {
-    var rotation: Float = 0f
+class HalfSpike : AbstractHazard, Rotatable {
+    override var rotation: Float = 0f
     val hitbox: Rectangle
 
     constructor() : super(0f, 0f, TEXTURE_SIZE, TEXTURE_SIZE) {
@@ -29,9 +30,11 @@ class HalfSpike : AbstractHazard {
     fun init(x: Float, y: Float, rotation: Float): HalfSpike {
         this.x = x
         this.y = y
+        this.width = TEXTURE_SIZE
+        this.height = TEXTURE_SIZE
         this.rotation = rotation
         this.type = HazardType.HALF_SPIKE
-        bounds.setPosition(x, y)
+        bounds.set(x, y, width, height)
         updateHitbox()
         return this
     }
@@ -43,6 +46,11 @@ class HalfSpike : AbstractHazard {
             270 -> hitbox.set(x, y + HITBOX_CENTER_X, HITBOX_H, HITBOX_W)
             else -> hitbox.set(x + HITBOX_CENTER_X, y, HITBOX_W, HITBOX_H)
         }
+    }
+
+    override fun reset() {
+        super.reset()
+        this.rotation = 0f
     }
 
     override fun updatePosition(scrollSpeed: Float, delta: Float) {

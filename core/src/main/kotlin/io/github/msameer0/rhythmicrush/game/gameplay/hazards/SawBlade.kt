@@ -38,6 +38,7 @@ class SawBlade : AbstractHazard {
         this.height = diameter
         this.degreesPerSecond = degreesPerSec
         this.visualRotation = 0f
+        this.type = HazardType.SAW_BLADE
         bounds.set(x, y, diameter, diameter)
         return this
     }

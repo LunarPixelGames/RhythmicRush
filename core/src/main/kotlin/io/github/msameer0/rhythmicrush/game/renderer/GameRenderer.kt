@@ -197,7 +197,13 @@ class GameRenderer(
         for (portal in world.portals) {
             val region = portalRegion(portal.type)
             if (region != null) {
-                batch.draw(region, portal.x, portal.y, portal.width, portal.height)
+                batch.draw(
+                    region,
+                    portal.x, portal.y,
+                    portal.width / 2f, portal.height / 2f,
+                    portal.width, portal.height,
+                    1f, 1f, portal.rotation
+                )
             }
         }
     }
@@ -239,22 +245,15 @@ class GameRenderer(
 
     private fun drawBlocks() {
         for (block in world.blocks) {
-            if (block is Slope) {
-                val region = slopeRegion ?: blockRegionsByOrdinal[block.type.ordinal]
-                if (region != null) {
-                    batch.draw(
-                        region,
-                        block.x, block.y,
-                        block.width / 2f, block.height / 2f,
-                        block.width, block.height,
-                        1f, 1f, block.rotation
-                    )
-                }
-            } else {
-                val region = blockRegionsByOrdinal[block.type.ordinal]
-                if (region != null) {
-                    batch.draw(region, block.x, block.y, block.width, block.height)
-                }
+            val region = (if (block is Slope) slopeRegion else null) ?: blockRegionsByOrdinal[block.type.ordinal]
+            if (region != null) {
+                batch.draw(
+                    region,
+                    block.x, block.y,
+                    block.width / 2f, block.height / 2f,
+                    block.width, block.height,
+                    1f, 1f, block.rotation
+                )
             }
         }
     }

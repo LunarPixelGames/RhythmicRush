@@ -12,8 +12,13 @@ class MiniPortal : AbstractPortal {
         this.type = PortalType.MINI
     }
 
-    override fun init(x: Float, y: Float): MiniPortal {
-        super.init(x, y)
+    override fun init(x: Float, y: Float, rotation: Float): MiniPortal {
+        super.init(x, y, rotation)
+        this.type = PortalType.MINI
         return this
+    }
+
+    override fun init(x: Float, y: Float): MiniPortal {
+        return init(x, y, 0f)
     }
 }
