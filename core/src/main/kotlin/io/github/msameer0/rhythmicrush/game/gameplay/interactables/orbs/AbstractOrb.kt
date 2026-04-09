@@ -58,7 +58,7 @@ abstract class AbstractOrb {
     fun tryActivate(player: AbstractPlayer) {
         if (multiActivate || !used) {
             used = true
-            player.isJumpConsumed = true
+            player.setJumpConsumed(true)
             onClick(player)
         }
     }

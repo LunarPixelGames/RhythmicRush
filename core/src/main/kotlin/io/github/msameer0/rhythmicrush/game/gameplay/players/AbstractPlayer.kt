@@ -1,0 +1,126 @@
+package io.github.msameer0.rhythmicrush.game.gameplay.players
+
+import com.badlogic.gdx.math.Rectangle
+import io.github.msameer0.rhythmicrush.game.GameWorld
+
+/**
+ * Base abstract class for all player entities.
+ */
+abstract class AbstractPlayer(startX: Float, startY: Float) {
+
+    enum class PlayerType { CUBE, SHIP }
+
+    @JvmField var gravity: Float = 0f
+    @JvmField protected var type: PlayerType? = null
+
+    @JvmField var x: Float = startX
+    @JvmField var y: Float = startY
+    @JvmField var worldX: Float = 0f
+    @JvmField var width: Float = 50f
+    @JvmField var height: Float = 50f
+    @JvmField var velocityY: Float = 0f
+    @JvmField var bounds: Rectangle = Rectangle(x, y, width, height)
+
+    @JvmField protected var gravityFlipped: Boolean = false
+    @JvmField protected var mini: Boolean = false
+    @JvmField protected var currentSlopeRotation: Float = 0f
+    @JvmField protected var jumpHeld: Boolean = false
+    @JvmField protected var jumpConsumed: Boolean = false
+    @JvmField protected var justPressed: Boolean = false
+    @JvmField protected var world: GameWorld? = null
+
+    // ── Mini ──────────────────────────────────────────────────────────────────
+
+    fun isMini(): Boolean = mini
+
+    fun setMini(mini: Boolean) {
+        val oldWidth = this.width
+        val oldHeight = this.height
+
+        if (mini && !this.mini) {
+            this.mini = true
+            this.width = 25f
+            this.height = 25f
+            this.x += (oldWidth - this.width) / 2f
+            // y setter calls updateBounds, so assign via backing field here
+            // to avoid a double-update; then call once at the end
+            this.y += (oldHeight - this.height) / 2f
+        } else if (!mini && this.mini) {
+            this.mini = false
+            this.width = 50f
+            this.height = 50f
+            this.x -= (this.width - oldWidth) / 2f
+            if (gravityFlipped) {
+                this.y -= (this.height - oldHeight)
+            }
+        }
+
+        bounds.setSize(width, height)
+        updateBounds()
+    }
+
+    fun getGravity(): Float = gravity
+
+    // ── Abstract API ──────────────────────────────────────────────────────────
+
+    abstract fun init(startX: Float, startY: Float, velocityY: Float, jumpHeld: Boolean): AbstractPlayer
+    abstract fun init(startX: Float, startY: Float): AbstractPlayer
+    abstract fun update(delta: Float, groundY: Float)
+    abstract fun jump()
+    abstract fun copyState(other: AbstractPlayer)
+
+    // ── Jump input ────────────────────────────────────────────────────────────
+
+    fun setJumpHeld(held: Boolean) {
+        if (held && !this.jumpHeld) {
+            this.jumpConsumed = false
+            this.justPressed = true
+        }
+        this.jumpHeld = held
+    }
+
+    fun setY (y : Float) {
+        this.y = y
+        updateBounds()
+    }
+
+
+    fun postUpdate() { justPressed = false }
+    fun isJustPressed(): Boolean = justPressed
+    fun isJumpHeld(): Boolean = jumpHeld
+    fun isJumpConsumed(): Boolean = jumpConsumed
+    fun setJumpConsumed(consumed: Boolean) { jumpConsumed = consumed }
+
+    // ── Bounds ────────────────────────────────────────────────────────────────
+
+    fun getBounds(): Rectangle = bounds
+
+    protected fun updateBounds() { bounds.setPosition(x, y) }
+
+    // ── Accessors (kept for Java interop) ─────────────────────────────────────
+
+    fun getX(): Float = x
+    fun getWorldX(): Float = worldX
+    fun setWorldX(worldX: Float) { this.worldX = worldX }
+    fun getY(): Float = y
+    // setY is handled by the property setter above
+
+    fun setWorld(world: GameWorld) { this.world = world }
+    fun getWorld(): GameWorld? = world
+
+    fun setVelocityY(vel: Float) { velocityY = vel }
+    fun getVelocityY(): Float = velocityY
+
+    open fun setGrounded(grounded: Boolean) {}
+    open fun tryJump() {}
+    open fun isGrounded(): Boolean = false
+    open fun isSafeFromBelow(): Boolean = false
+
+    fun getType(): PlayerType? = type
+
+    fun isGravityFlipped(): Boolean = gravityFlipped
+    fun setGravityFlipped(gravityFlipped: Boolean) { this.gravityFlipped = gravityFlipped }
+
+    fun getCurrentSlopeRotation(): Float = currentSlopeRotation
+    fun setCurrentSlopeRotation(rot: Float) { currentSlopeRotation = rot }
+}

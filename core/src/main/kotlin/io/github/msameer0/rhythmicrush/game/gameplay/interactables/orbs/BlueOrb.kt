@@ -21,11 +21,11 @@ class BlueOrb : AbstractOrb {
     }
 
     override fun onClick(player: AbstractPlayer) {
-        if (player.isGravityFlipped) {
+        if (player.isGravityFlipped()) {
             player.setVelocityY(-300f)
         } else {
             player.setVelocityY(300f)
         }
-        player.isGravityFlipped = !player.isGravityFlipped
+        player.setGravityFlipped(!player.isGravityFlipped())
     }
 }

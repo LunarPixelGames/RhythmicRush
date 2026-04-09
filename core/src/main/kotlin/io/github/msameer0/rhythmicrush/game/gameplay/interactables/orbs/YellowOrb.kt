@@ -21,7 +21,7 @@ class YellowOrb : AbstractOrb {
     }
 
     override fun onClick(player: AbstractPlayer) {
-        if (player.isGravityFlipped) {
+        if (player.isGravityFlipped()) {
             player.setVelocityY(-600f)
         } else {
             player.setVelocityY(600f)
