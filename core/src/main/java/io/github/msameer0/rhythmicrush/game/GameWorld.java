@@ -489,8 +489,8 @@ public class GameWorld implements Tickable {
 
     private static BlockType resolveBlockType(String textureName) {
         if (textureName != null)
-            for (BlockType t : BlockType.values())
-                if (t.textureName.equals(textureName)) return t;
+            for (BlockType t : BlockType.getEntries())
+                if (t.getTextureName().equals(textureName)) return t;
         return BlockType.DEFAULT;
     }
 

@@ -184,7 +184,7 @@ public class LevelEditorScreen extends AbstractScreen {
         BlockType[] btypes = BlockType.values();
         blockRegions = new TextureRegion[btypes.length];
         for (BlockType bt : btypes)
-            blockRegions[bt.ordinal()] = game.getAtlasManager().getBlocksAtlas().findRegion(bt.textureName);
+            blockRegions[bt.ordinal()] = game.getAtlasManager().getBlocksAtlas().findRegion(bt.getTextureName());
         slopeRegion      = game.getAtlasManager().getBlocksAtlas().findRegion("slope");
         spikeRegion      = game.getAtlasManager().getSpikesAtlas().findRegion("spike");
         halfSpikeRegion  = game.getAtlasManager().getSpikesAtlas().findRegion("half_spike");
@@ -333,7 +333,7 @@ public class LevelEditorScreen extends AbstractScreen {
             sw / 2f - layout.width / 2f, y + TOPBAR_H / 2f + layout.height / 2f);
 
         if ("block".equals(placementId)) {
-            String btLabel = "Block: " + BlockType.values()[selectedBlockTypeIdx].textureName + "  [TAB]";
+            String btLabel = "Block: " + BlockType.values()[selectedBlockTypeIdx].getTextureName() + "  [TAB]";
             font.getData().setScale(0.48f);
             font.setColor(0.7f, 0.9f, 1f, 1f);
             layout.setText(font, btLabel);
@@ -577,7 +577,7 @@ public class LevelEditorScreen extends AbstractScreen {
 
                 LevelData.ObjectEntry tmp = new LevelData.ObjectEntry();
                 tmp.setType(id);
-                if (Registries.BLOCKS.has(id)) tmp.setBlockType(BlockType.values()[selectedBlockTypeIdx].textureName);
+                if (Registries.BLOCKS.has(id)) tmp.setBlockType(BlockType.values()[selectedBlockTypeIdx].getTextureName());
                 TextureRegion itemReg = regionFor(tmp);
 
                 if (itemReg != null) {
@@ -779,7 +779,7 @@ public class LevelEditorScreen extends AbstractScreen {
     private void placeObject(float wx, float wy) {
         LevelData.ObjectEntry e = new LevelData.ObjectEntry();
         e.setType(placementId); e.setX(wx); e.setY(wy); e.setSize(GRID_SIZE); e.setRotation(0f);
-        if (Registries.BLOCKS.has(placementId)) e.setBlockType(BlockType.values()[selectedBlockTypeIdx].textureName);
+        if (Registries.BLOCKS.has(placementId)) e.setBlockType(BlockType.values()[selectedBlockTypeIdx].getTextureName());
         levelData.getObjects().add(e); selection.clear(); selection.add(e);
     }
 
@@ -870,7 +870,7 @@ public class LevelEditorScreen extends AbstractScreen {
             BlockType bt = BlockType.DEFAULT;
             if (e.getBlockType() != null)
                 for (BlockType t : BlockType.values())
-                    if (t.textureName.equals(e.getBlockType())) { bt = t; break; }
+                    if (t.getTextureName().equals(e.getBlockType())) { bt = t; break; }
             return blockRegions[bt.ordinal()];
         }
         return null;
@@ -879,7 +879,7 @@ public class LevelEditorScreen extends AbstractScreen {
     private TextureRegion placementRegion() {
         if (placementId == null) return null;
         LevelData.ObjectEntry tmp = new LevelData.ObjectEntry(); tmp.setType(placementId);
-        if (Registries.BLOCKS.has(placementId)) tmp.setBlockType(BlockType.values()[selectedBlockTypeIdx].textureName);
+        if (Registries.BLOCKS.has(placementId)) tmp.setBlockType(BlockType.values()[selectedBlockTypeIdx].getTextureName());
         return regionFor(tmp);
     }
 

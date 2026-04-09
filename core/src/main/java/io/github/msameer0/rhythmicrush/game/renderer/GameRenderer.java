@@ -87,7 +87,7 @@ public class GameRenderer {
         blockRegionsByOrdinal = new TextureRegion[types.length];
         for (BlockType type : types)
             blockRegionsByOrdinal[type.ordinal()] =
-                atlasManager.getBlocksAtlas().findRegion(type.textureName);
+                atlasManager.getBlocksAtlas().findRegion(type.getTextureName());
 
         slopeRegion         = atlasManager.getBlocksAtlas().findRegion("slope");
         spikeRegion         = atlasManager.getSpikesAtlas().findRegion("spike");
