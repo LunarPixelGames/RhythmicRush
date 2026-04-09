@@ -1,0 +1,65 @@
+package io.github.msameer0.rhythmicrush.game.gameplay.hazards
+
+import com.badlogic.gdx.math.Rectangle
+import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
+import io.github.msameer0.rhythmicrush.game.registries.Registry
+
+@Registry(id = "spike")
+class Spike : AbstractHazard {
+    var rotation: Float = 0f
+    val hitbox: Rectangle
+
+    constructor() : super(0f, 0f, TEXTURE_SIZE, TEXTURE_SIZE) {
+        this.type = HazardType.SPIKE
+        this.hitbox = Rectangle()
+    }
+
+    constructor(x: Float, y: Float) : this(x, y, 0f) {
+        this.type = HazardType.SPIKE
+    }
+
+    constructor(x: Float, y: Float, rotation: Float) : super(x, y, TEXTURE_SIZE, TEXTURE_SIZE) {
+        this.type = HazardType.SPIKE
+        this.rotation = rotation
+        this.hitbox = Rectangle()
+        updateHitbox()
+    }
+
+    fun init(x: Float, y: Float, rotation: Float): Spike {
+        this.x = x
+        this.y = y
+        this.rotation = rotation
+        this.type = HazardType.SPIKE
+        bounds.setPosition(x, y)
+        updateHitbox()
+        return this
+    }
+
+    private fun updateHitbox() {
+        when ((Math.round(rotation / 90f) * 90 % 360 + 360) % 360) {
+            90 -> hitbox.set(x + TEXTURE_SIZE - HITBOX_H, y + HITBOX_CENTER_X, HITBOX_H, HITBOX_W)
+            180 -> hitbox.set(x + HITBOX_CENTER_X, y + TEXTURE_SIZE - HITBOX_H, HITBOX_W, HITBOX_H)
+            270 -> hitbox.set(x, y + HITBOX_CENTER_X, HITBOX_H, HITBOX_W)
+            else -> hitbox.set(x + HITBOX_CENTER_X, y, HITBOX_W, HITBOX_H)
+        }
+    }
+
+    override fun updatePosition(scrollSpeed: Float, delta: Float) {
+        super.updatePosition(scrollSpeed, delta)
+        updateHitbox()
+    }
+
+    public override fun onTouch(player: AbstractPlayer?) {
+        if (hitbox.overlaps(player?.getBounds())) {
+            player?.getWorld()!!.playerDied()
+        }
+    }
+
+    companion object {
+        private const val PLAYER_SIZE = 50f
+        private const val TEXTURE_SIZE = 50f
+        private const val HITBOX_W: Float = PLAYER_SIZE * 0.25f
+        private const val HITBOX_H: Float = PLAYER_SIZE * 0.5f
+        private const val HITBOX_CENTER_X: Float = (TEXTURE_SIZE - HITBOX_W) / 2f
+    }
+}
