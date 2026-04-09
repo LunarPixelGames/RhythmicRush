@@ -42,7 +42,7 @@ class PulseTrigger : AbstractTrigger {
         return this
     }
 
-    public override fun fire(world: GameWorld) {
+    override fun fire(world: GameWorld) {
         world.startBgPulse(pulseBg, fadeInTime, holdTime, fadeOutTime)
         world.startGroundPulse(
             pulseGround,

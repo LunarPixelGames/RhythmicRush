@@ -2,9 +2,6 @@ package io.github.msameer0.rhythmicrush.game.gameplay.players
 
 import io.github.msameer0.rhythmicrush.game.registries.Registry
 
-/**
- * Cube player — gravity-driven, single jump with coyote time.
- */
 @Registry(id = "cube")
 class Cube : AbstractPlayer {
 
@@ -23,13 +20,10 @@ class Cube : AbstractPlayer {
         type = PlayerType.CUBE
     }
 
-    /** No-arg constructor for pooling — call init() before use. */
     constructor() : super(0f, 0f) {
         gravity = -1800f
         type = PlayerType.CUBE
     }
-
-    // ── Init ──────────────────────────────────────────────────────────────────
 
     override fun init(startX: Float, startY: Float, velocityY: Float, jumpHeld: Boolean): Cube {
         type = PlayerType.CUBE
@@ -49,8 +43,6 @@ class Cube : AbstractPlayer {
     }
 
     override fun init(startX: Float, startY: Float): Cube = init(startX, startY, 0f, false)
-
-    // ── Update ────────────────────────────────────────────────────────────────
 
     override fun update(delta: Float, groundY: Float) {
         val wasGrounded = isGrounded
@@ -83,8 +75,6 @@ class Cube : AbstractPlayer {
 
     private fun canJump(): Boolean = isGrounded || coyoteTimer > 0f
 
-    // ── Jump ──────────────────────────────────────────────────────────────────
-
     override fun jump() {
         if (canJump()) {
             val v = if (mini) jumpVelocity * 0.75f else jumpVelocity
@@ -101,8 +91,6 @@ class Cube : AbstractPlayer {
 
     override fun setGrounded(g: Boolean) { isGrounded = g }
     override fun isGrounded(): Boolean = isGrounded
-
-    // ── Copy state ────────────────────────────────────────────────────────────
 
     override fun copyState(other: AbstractPlayer) {
         x = other.x

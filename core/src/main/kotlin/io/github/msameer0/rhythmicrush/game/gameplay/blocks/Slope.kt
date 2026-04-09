@@ -10,7 +10,6 @@ class Slope : Block {
     companion object {
         const val CIRCLE_RATIO = 0.8f
 
-        // Vector2 pool to avoid allocations in the hot path
         private val tmpEdge = Vector2()
         private val tmpNormal = Vector2()
         private val tmpCenter = Vector2()
@@ -37,7 +36,6 @@ class Slope : Block {
     }
 
     private fun normaliseRot(): Int {
-        // MathUtils.round instead of kotlin roundToInt — stays in libGDX land
         return (MathUtils.round(rotation / 90f) * 90 % 360 + 360) % 360
     }
 

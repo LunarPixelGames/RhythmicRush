@@ -7,27 +7,9 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter
 import kotlin.math.abs
 
-/**
- * Generates and owns all BitmapFonts used across the game.
- * Created once in [RhythmicRushGame.create] so no screen ever
- * blocks the main thread waiting for FreeType to rasterize a font.
- *
- *
- * Screens should call [.get] with one of the SIZE_* constants.
- * Do NOT dispose fonts obtained from here — FontManager owns their lifecycle.
- */
 class FontManager {
     private val fonts: Array<BitmapFont?>
 
-    /**
-     * Constructs a new FontManager and initializes all predefined font sizes.
-     *
-     *
-     * This constructor loads the "zendots-regular.ttf" font file and generates
-     * [BitmapFont] instances for each size defined in `SIZES`.
-     * It applies linear filtering and generates mipmaps for better scaling quality.
-     * If the font file cannot be loaded, it falls back to the default LibGDX [BitmapFont].
-     */
     init {
         Gdx.app.log("FontManager", "Initializing fonts...")
         fonts = arrayOfNulls<BitmapFont>(SIZES.size)
@@ -52,13 +34,13 @@ class FontManager {
                 i++
             }
         } finally {
-            if (gen != null) gen.dispose()
+            gen?.dispose()
         }
     }
 
     fun dispose() {
         Gdx.app.log("FontManager", "Disposing fonts...")
-        for (f in fonts) if (f != null) f.dispose()
+        for (f in fonts) f?.dispose()
         Gdx.app.log("FontManager", "Fonts disposed.")
     }
 

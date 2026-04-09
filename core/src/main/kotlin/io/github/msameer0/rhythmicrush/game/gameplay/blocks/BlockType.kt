@@ -1,11 +1,6 @@
 package io.github.msameer0.rhythmicrush.game.gameplay.blocks
 
 enum class BlockType(
-    /**
-     * Represents the different types of blocks available in the game.
-     * Each type is associated with a unique identifier and a specific texture name
-     * used for rendering the block's visual appearance.
-     */
     val id: Int, val textureName: String
 ) {
     DEFAULT(0, "default"),

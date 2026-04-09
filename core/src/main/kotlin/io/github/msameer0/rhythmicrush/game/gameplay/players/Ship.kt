@@ -2,9 +2,6 @@ package io.github.msameer0.rhythmicrush.game.gameplay.players
 
 import io.github.msameer0.rhythmicrush.game.registries.Registry
 
-/**
- * Ship player — fly by holding jump, fall when released.
- */
 @Registry(id = "ship")
 class Ship : AbstractPlayer {
 
@@ -20,13 +17,10 @@ class Ship : AbstractPlayer {
         type = PlayerType.SHIP
     }
 
-    /** No-arg constructor for pooling — call init() before use. */
     constructor() : super(0f, 0f) {
         gravity = -1800f
         type = PlayerType.SHIP
     }
-
-    // ── Init ──────────────────────────────────────────────────────────────────
 
     override fun init(startX: Float, startY: Float, velocityY: Float, jumpHeld: Boolean): Ship {
         type = PlayerType.SHIP
@@ -44,8 +38,6 @@ class Ship : AbstractPlayer {
     }
 
     override fun init(startX: Float, startY: Float): Ship = init(startX, startY, 0f, false)
-
-    // ── Update ────────────────────────────────────────────────────────────────
 
     override fun update(delta: Float, groundY: Float) {
         this.groundY = groundY
@@ -84,14 +76,14 @@ class Ship : AbstractPlayer {
         updateBounds()
     }
 
-    override fun jump() { /* Ship doesn't use discrete jumps */ }
+    override fun jump() {
+
+    }
 
     override fun isSafeFromBelow(): Boolean = true
 
     fun getGroundY(): Float = groundY
     fun setGroundY(groundY: Float) { this.groundY = groundY }
-
-    // ── Copy state ────────────────────────────────────────────────────────────
 
     override fun copyState(other: AbstractPlayer) {
         x = other.x

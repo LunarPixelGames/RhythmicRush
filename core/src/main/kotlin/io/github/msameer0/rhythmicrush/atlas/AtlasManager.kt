@@ -3,11 +3,6 @@ package io.github.msameer0.rhythmicrush.atlas
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
 
-/**
- * Manages the loading, access, and disposal of all [TextureAtlas] resources used throughout the game.
- *
- *
- */
 class AtlasManager {
     val menuAtlas: TextureAtlas
     val levelSelectAtlas: TextureAtlas

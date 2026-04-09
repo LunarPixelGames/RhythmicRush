@@ -3,9 +3,6 @@ package io.github.msameer0.rhythmicrush.game.gameplay.players
 import com.badlogic.gdx.math.Rectangle
 import io.github.msameer0.rhythmicrush.game.GameWorld
 
-/**
- * Base abstract class for all player entities.
- */
 abstract class AbstractPlayer(startX: Float, startY: Float) {
 
     enum class PlayerType { CUBE, SHIP }
@@ -29,8 +26,6 @@ abstract class AbstractPlayer(startX: Float, startY: Float) {
     @JvmField protected var justPressed: Boolean = false
     @JvmField protected var world: GameWorld? = null
 
-    // ── Mini ──────────────────────────────────────────────────────────────────
-
     fun isMini(): Boolean = mini
 
     fun setMini(mini: Boolean) {
@@ -42,8 +37,6 @@ abstract class AbstractPlayer(startX: Float, startY: Float) {
             this.width = 25f
             this.height = 25f
             this.x += (oldWidth - this.width) / 2f
-            // y setter calls updateBounds, so assign via backing field here
-            // to avoid a double-update; then call once at the end
             this.y += (oldHeight - this.height) / 2f
         } else if (!mini && this.mini) {
             this.mini = false
@@ -61,15 +54,11 @@ abstract class AbstractPlayer(startX: Float, startY: Float) {
 
     fun getGravity(): Float = gravity
 
-    // ── Abstract API ──────────────────────────────────────────────────────────
-
     abstract fun init(startX: Float, startY: Float, velocityY: Float, jumpHeld: Boolean): AbstractPlayer
     abstract fun init(startX: Float, startY: Float): AbstractPlayer
     abstract fun update(delta: Float, groundY: Float)
     abstract fun jump()
     abstract fun copyState(other: AbstractPlayer)
-
-    // ── Jump input ────────────────────────────────────────────────────────────
 
     fun setJumpHeld(held: Boolean) {
         if (held && !this.jumpHeld) {
@@ -91,19 +80,14 @@ abstract class AbstractPlayer(startX: Float, startY: Float) {
     fun isJumpConsumed(): Boolean = jumpConsumed
     fun setJumpConsumed(consumed: Boolean) { jumpConsumed = consumed }
 
-    // ── Bounds ────────────────────────────────────────────────────────────────
-
     fun getBounds(): Rectangle = bounds
 
     protected fun updateBounds() { bounds.setPosition(x, y) }
-
-    // ── Accessors (kept for Java interop) ─────────────────────────────────────
 
     fun getX(): Float = x
     fun getWorldX(): Float = worldX
     fun setWorldX(worldX: Float) { this.worldX = worldX }
     fun getY(): Float = y
-    // setY is handled by the property setter above
 
     fun setWorld(world: GameWorld) { this.world = world }
     fun getWorld(): GameWorld? = world
