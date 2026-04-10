@@ -27,6 +27,7 @@ import io.github.msameer0.rhythmicrush.game.level.LevelData;
 import io.github.msameer0.rhythmicrush.game.level.LevelSerializer;
 import io.github.msameer0.rhythmicrush.game.renderer.GameRenderer;
 import io.github.msameer0.rhythmicrush.game.registries.Registries;
+import io.github.msameer0.rhythmicrush.screens.MainMenuScreen;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -287,7 +288,8 @@ public class LevelEditorScreen extends AbstractScreen {
 
     @Override
     protected void draw() {
-        Gdx.gl.glClearColor(C_BG.r, C_BG.g, C_BG.b, 1f);
+        Color bgCol = (playtesting && ptWorld != null) ? ptWorld.getBackgroundColor() : C_BG;
+        Gdx.gl.glClearColor(bgCol.r, bgCol.g, bgCol.b, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         uiViewport.apply();
@@ -334,6 +336,7 @@ public class LevelEditorScreen extends AbstractScreen {
         drawBtn(offX + 160f, by, bw, bh, "Save", false);
         drawBtn(offX + 236f, by, bw, bh, playtesting ? "Stop" : "Play", playtesting);
         drawBtn(offX + 312f, by, bw, bh, "Props", false);
+        drawBtn(offX + 388f, by, bw, bh, "Menu", false);
 
         float zbw = 36f;
         float canvasW = sw - SIDEBAR_W;
@@ -748,10 +751,14 @@ public class LevelEditorScreen extends AbstractScreen {
         if (Gdx.input.isKeyJustPressed(Input.Keys.P) && !selection.isEmpty())
             showPropertyEditor(selection.first());
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            placementId = null;
-            for (Tab t : tabs) t.selectedId = null;
-            selection.clear();
-            rubberBanding = false;
+            if (placementId != null || !selection.isEmpty() || rubberBanding) {
+                placementId = null;
+                for (Tab t : tabs) t.selectedId = null;
+                selection.clear();
+                rubberBanding = false;
+            } else {
+                getGame().setScreen(new MainMenuScreen(getGame()));
+            }
         }
         if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT) && Gdx.input.isKeyJustPressed(Input.Keys.A)) {
             selection.clear();
@@ -789,6 +796,7 @@ public class LevelEditorScreen extends AbstractScreen {
 
     private void tickPlaytest(float delta) {
         ptEngine.update(delta);
+        ptWorld.updateVisuals(delta);
         trailTick++;
         if (trailTick >= TRAIL_SAMPLE && ptWorld.getPlayer() != null) {
             trailTick = 0;
@@ -1120,6 +1128,10 @@ public class LevelEditorScreen extends AbstractScreen {
                 }
                 if (ui.x >= offX + 312f && ui.x <= offX + 312f + bw) {
                     if (!selection.isEmpty()) showPropertyEditor(selection.first());
+                    return true;
+                }
+                if (ui.x >= offX + 388f && ui.x <= offX + 388f + bw) {
+                    getGame().setScreen(new MainMenuScreen(getGame()));
                     return true;
                 }
                 float zbw = 36f;
