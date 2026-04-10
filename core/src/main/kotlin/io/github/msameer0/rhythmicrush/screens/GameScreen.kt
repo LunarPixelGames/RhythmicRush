@@ -429,7 +429,7 @@ class GameScreen @JvmOverloads constructor(
         levelEndTimer = 0f
         paused = false
         lastJumpHeld = false
-        hud.showNewBestPopup(-1) // reset popup
+        hud.hideNewBestPopup()
         music.stopAndDispose()
         world.reset()
         engine.reset()
@@ -460,6 +460,7 @@ class GameScreen @JvmOverloads constructor(
         music.start()
         recordAttempt()
         hitboxesActive = game.settingsManager.showHitboxes
+        hud.hideNewBestPopup()
     }
 
     private fun respawnAtCheckpoint() {
@@ -480,6 +481,7 @@ class GameScreen @JvmOverloads constructor(
         music.start(musicOffset)
         recordAttempt()
         hitboxesActive = game.settingsManager.showHitboxes
+        hud.hideNewBestPopup()
     }
 
     private fun placeCheckpoint() {

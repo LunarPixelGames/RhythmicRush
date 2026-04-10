@@ -72,6 +72,11 @@ class HudRenderer(
         popupBestPct = bestPct
     }
 
+    /** Immediately hides the "New Best" popup and stops its animation. */
+    fun hideNewBestPopup() {
+        popupTimer = -1f
+    }
+
     // ── Shape draws (call inside a ShapeRenderer.Filled block) ───────────────
 
     fun drawProgressBarShapes(camera: OrthographicCamera, viewport: Viewport) {
