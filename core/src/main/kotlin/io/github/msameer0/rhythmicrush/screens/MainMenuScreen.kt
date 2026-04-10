@@ -88,9 +88,8 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         }
     }
 
-    private var currentCat = CAT_GAMEPLAY
-    private var currentInfoTab = INFO_TAB_HOWTOPLAY
-    private var currentSubPage = 0
+    private var currentSettingsPage = 0
+    private var currentInfoPage = 0
 
     private var panelX = 0f
     private var panelY = 0f
@@ -208,14 +207,31 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         return rows
     }
 
-    private fun getPageRows(cat: Int, subPage: Int): Array<SettingRow> {
+    private fun getPageRows(page: Int): Array<SettingRow> {
+        val (cat, sub) = settingsPageToCatSub(page)
         val all = buildAllRows(cat)
-        val start = subPage * MAX_ROWS_PER_PAGE
+        val start = sub * MAX_ROWS_PER_PAGE
         val end = min(start + MAX_ROWS_PER_PAGE, all.size)
         if (start >= all.size) return Array()
         val pageRows = Array<SettingRow>()
         for (i in start until end) pageRows.add(all.get(i))
         return pageRows
+    }
+
+    private fun totalSettingsPages(): Int {
+        var total = 0
+        for (i in 0 until CAT_COUNT) total += subPageCount(i)
+        return total
+    }
+
+    private fun settingsPageToCatSub(page: Int): Pair<Int, Int> {
+        var remaining = page
+        for (i in 0 until CAT_COUNT) {
+            val count = subPageCount(i)
+            if (remaining < count) return Pair(i, remaining)
+            remaining -= count
+        }
+        return Pair(CAT_COUNT - 1, 0)
     }
 
     private fun subPageCount(cat: Int): Int {
@@ -270,19 +286,20 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
     private fun recomputePanelHeight() {
         val vw = viewport.worldWidth
         val vh = viewport.worldHeight
-        currentSubPage = MathUtils.clamp(currentSubPage, 0, subPageCount(currentCat) - 1)
         panelH = MAX_ROWS_PER_PAGE * rowStep + panelPadT + panelPadB + rowStep * 0.5f
         panelX = vw / 2f - panelW / 2f
         panelY = vh / 2f - panelH / 2f
-        backW = panelH * 0.075f
-        backH = backW
-        backX = panelX + 12f
-        backY = panelY + panelH - backH - 12f
+        
+        backW = 56f
+        backH = 56f
+        backX = 25f
+        backY = vh - backH - 25f
+        
         rowStartY = panelY + panelH - panelPadT
-        arrowSize = backH
-        arrowY = panelY + panelH - arrowSize - 12f
-        arrowLeftX = panelX + backW + 20f
-        arrowRightX = panelX + panelW - arrowSize - 12f
+        arrowSize = 48f
+        arrowY = panelY + panelH / 2f - arrowSize / 2f
+        arrowLeftX = panelX - arrowSize - 10f
+        arrowRightX = panelX + panelW + 10f
         lastPanelW = -1
     }
 
@@ -333,56 +350,45 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         panelTexture?.let { game.batch.draw(it, panelX, panelY) }
         game.batch.draw(backArrow, backX, backY, backW, backH)
         game.batch.end()
-        drawHeadingAndTabs()
-        drawSettingsRows(getPageRows(currentCat, currentSubPage))
-        drawSubPageDots()
+        drawSettingsHeading()
+        drawSettingsRows(getPageRows(currentSettingsPage))
+        drawSettingsDots()
     }
 
-    private fun drawHeadingAndTabs() {
+    private fun drawSettingsHeading() {
         game.batch.begin()
         font.data.setScale(settingsHeadingScale)
-        layout.setText(font, "Settings")
-        drawTextWithShadow(font, "Settings", (panelX + panelW / 2f) - (layout.width / 2f), panelY + panelH - 16f, COL_HEADING)
-        font.data.setScale(settingsFontScale * 0.92f)
-        val tabY = panelY + panelH - panelPadT * 0.47f
-        for (i in 0 until CAT_COUNT) {
-            val tabW = panelW / CAT_COUNT
-            val tabCX = panelX + tabW * i + tabW / 2f
-            layout.setText(font, CAT_NAMES[i])
-            drawTextWithShadow(font, CAT_NAMES[i], tabCX - layout.width / 2f, tabY, if (i == currentCat) COL_TAB_ACT else COL_TAB_INACT)
-        }
+        val (cat, _) = settingsPageToCatSub(currentSettingsPage)
+        val titleText = CAT_NAMES[cat]
+        layout.setText(font, titleText)
+        drawTextWithShadow(font, titleText, (panelX + panelW / 2f) - (layout.width / 2f), panelY + panelH - 45f, COL_HEADING)
         game.batch.end()
-        shapes.begin(ShapeRenderer.ShapeType.Filled)
-        shapes.color = COL_TAB_ACT
-        shapes.rect(panelX + (panelW / CAT_COUNT) * currentCat + 8f, tabY - 20f, (panelW / CAT_COUNT) - 16f, 3f)
-        shapes.end()
         drawArrow(arrowLeftX, arrowY, arrowSize, true)
         drawArrow(arrowRightX, arrowY, arrowSize, false)
     }
 
+    private fun drawSettingsDots() {
+        val total = totalSettingsPages()
+        if (total <= 1) return
+        val dotR = 6f
+        val dotGap = 20f
+        val startX = panelX + panelW / 2f - (total * dotGap - (dotGap - dotR * 2f)) / 2f + dotR
+        val dotY = panelY + 25f
+        shapes.begin(ShapeRenderer.ShapeType.Filled)
+        for (i in 0 until total) {
+            shapes.color = if (i == currentSettingsPage) COL_DOT_ACT else COL_DOT_INACT
+            shapes.circle(startX + i * dotGap, dotY, dotR, 16)
+        }
+        shapes.end()
+    }
     private fun drawArrow(x: Float, y: Float, size: Float, pointLeft: Boolean) {
         val cx = x + size / 2f
         val cy = y + size / 2f
-        val hs = size * 0.28f
+        val hs = size * 0.35f
         shapes.begin(ShapeRenderer.ShapeType.Filled)
         shapes.color = COL_DIM
         if (pointLeft) shapes.triangle(cx + hs, cy + hs, cx + hs, cy - hs, cx - hs, cy)
         else shapes.triangle(cx - hs, cy + hs, cx - hs, cy - hs, cx + hs, cy)
-        shapes.end()
-    }
-
-    private fun drawSubPageDots() {
-        val total = subPageCount(currentCat)
-        if (total <= 1) return
-        val dotR = 5f
-        val dotGap = 16f
-        val startX = panelX + panelW / 2f - (total * dotGap - 6f) / 2f + dotR
-        val dotY = panelY + panelPadB / 2f + dotR
-        shapes.begin(ShapeRenderer.ShapeType.Filled)
-        for (i in 0 until total) {
-            shapes.color = if (i == currentSubPage) COL_DOT_ACT else COL_DOT_INACT
-            shapes.circle(startX + i * dotGap, dotY, dotR, 16)
-        }
         shapes.end()
     }
 
@@ -444,7 +450,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
     }
 
     private fun drawSliderRow(ry: Float, label: String, value: Float, hp: Float) {
-        val trackW = panelW * 0.34f
+        val trackW = panelW * 0.25f
         val trackH = rowStep * 0.06f
         val trackX = panelX + panelW - hp - trackW
         val thumbR = rowStep * 0.15f
@@ -519,7 +525,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) { if (fpsInputActive) confirmFpsInput(s) else closeSettings() }
         if (Gdx.input.isTouched && draggingSlider) {
             val norm = MathUtils.clamp((unproject().x - (panelX + panelW - 45f - panelW * 0.34f)) / (panelW * 0.34f), 0f, 1f)
-            val rows = getPageRows(currentCat, currentSubPage)
+            val rows = getPageRows(currentSettingsPage)
             if (draggingSliderRow in 0 until rows.size) {
                 val r = rows.get(draggingSliderRow)
                 if (r.id == "volume") { s.musicVolume = norm; game.soundManager.setMusicVolume(norm) }
@@ -531,15 +537,10 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         if (!Gdx.input.justTouched()) return
         val t = unproject()
         if (hits(t, backX, backY, backW, backH)) { closeSettings(); return }
-        if (hits(t, arrowLeftX, arrowY, arrowSize, arrowSize)) { navigate(-1, s); return }
-        if (hits(t, arrowRightX, arrowY, arrowSize, arrowSize)) { navigate(1, s); return }
-        for (i in 0 until CAT_COUNT) {
-            val tw = panelW / CAT_COUNT
-            if (t.x in (panelX + tw * i)..(panelX + tw * (i+1)) && t.y > panelY + panelH - 80f) {
-                currentCat = i; currentSubPage = 0; recomputePanelHeight(); return
-            }
-        }
-        val pRows = getPageRows(currentCat, currentSubPage)
+        if (hits(t, arrowLeftX, arrowY, arrowSize, arrowSize)) { navigateSettings(-1); return }
+        if (hits(t, arrowRightX, arrowY, arrowSize, arrowSize)) { navigateSettings(1); return }
+        
+        val pRows = getPageRows(currentSettingsPage)
         for (i in 0 until pRows.size) {
             val ry = rowY(i)
             val r = pRows.get(i)
@@ -565,9 +566,9 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         s.save()
     }
 
-    private fun navigate(dir: Int, s: SettingsManager) {
-        val total = subPageCount(currentCat)
-        currentSubPage = (currentSubPage + dir + total) % total
+    private fun navigateSettings(dir: Int) {
+        val total = totalSettingsPages()
+        currentSettingsPage = (currentSettingsPage + dir + total) % total
     }
 
     private fun closeSettings() { settingsOpen = false; game.settingsManager.save() }
@@ -605,44 +606,22 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         panelTexture?.let { game.batch.draw(it, panelX, panelY) }
         game.batch.draw(backArrow, backX, backY, backW, backH)
 
+        val titleText = INFO_TAB_NAMES[currentInfoPage]
         font.data.setScale(settingsHeadingScale)
-        layout.setText(font, "Information")
-        drawTextWithShadow(font, "Information", (panelX + panelW / 2f) - (layout.width / 2f), panelY + panelH - 16f, COL_HEADING)
-
-        val tabFontScale = settingsFontScale * 0.85f
-        font.data.setScale(tabFontScale)
-        val tabY = panelY + panelH - panelPadT * 0.47f
-        for (i in 0 until INFO_TAB_COUNT) {
-            val tw = panelW / INFO_TAB_COUNT
-            val tabCX = panelX + tw * i + tw / 2f
-            val tabColor = if (i == currentInfoTab) COL_TAB_ACT else COL_TAB_INACT
-            layout.setText(font, INFO_TAB_NAMES[i])
-            drawTextWithShadow(font, INFO_TAB_NAMES[i], tabCX - layout.width / 2f, tabY, tabColor)
-        }
-
-        val tw = panelW / INFO_TAB_COUNT
-        val tabCX = panelX + tw * currentInfoTab
-        layout.setText(font, INFO_TAB_NAMES[currentInfoTab])
-        val tabTextH = layout.height
-        val underlineY = tabY - tabTextH - 3f
-
+        layout.setText(font, titleText)
+        drawTextWithShadow(font, titleText, (panelX + panelW / 2f) - (layout.width / 2f), panelY + panelH - 45f, COL_HEADING)
         game.batch.end()
 
-        Gdx.gl.glEnable(GL20.GL_BLEND)
-        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-        shapes.begin(ShapeRenderer.ShapeType.Filled)
-        shapes.color = COL_TAB_ACT
-        shapes.rect(tabCX + 8f, underlineY, tw - 16f, 3f)
-        shapes.end()
-        Gdx.gl.glDisable(GL20.GL_BLEND)
+        drawArrow(arrowLeftX, arrowY, arrowSize, true)
+        drawArrow(arrowRightX, arrowY, arrowSize, false)
 
         game.batch.begin()
-        val contentX = panelX + 45f
-        val contentY = panelY + panelH - panelPadT - 15f
+        val contentX = panelX + 55f
+        val contentY = panelY + panelH - panelPadT - 5f
         val lineSpacing = 42f * (panelH / 480f)
-        font.data.setScale(settingsFontScale * 0.82f)
+        font.data.setScale(settingsFontScale * 0.85f)
 
-        if (currentInfoTab == INFO_TAB_HOWTOPLAY) {
+        if (currentInfoPage == INFO_TAB_HOWTOPLAY) {
             val lines = arrayOf(
                 "Welcome to Rhythmic Rush!",
                 "",
@@ -657,7 +636,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
                 font.color = COL_LABEL
                 font.draw(game.batch, lines[i], contentX, contentY - i * lineSpacing)
             }
-        } else if (currentInfoTab == INFO_TAB_CREDITS) {
+        } else if (currentInfoPage == INFO_TAB_CREDITS) {
             font.color = COL_HEADING
             font.draw(game.batch, "Music Credits (Click to open):", contentX, contentY)
             for (i in creditLines.indices) {
@@ -666,7 +645,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
                 font.color = COL_TAB_ACT
                 font.draw(game.batch, "- " + line.text, contentX, line.y)
             }
-        } else if (currentInfoTab == INFO_TAB_SOCIALS) {
+        } else if (currentInfoPage == INFO_TAB_SOCIALS) {
             font.color = COL_HEADING
             font.draw(game.batch, "Follow Us (Click to open):", contentX, contentY)
             for (i in socialLines.indices) {
@@ -680,13 +659,29 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
             font.color = COL_TAB_ACT
             layout.setText(font, privacyPolicyLine.text)
-            privacyPolicyLine.y = panelY + panelPadB + 15f
+            privacyPolicyLine.y = panelY + 65f
             font.draw(game.batch, privacyPolicyLine.text, panelX + panelW / 2f - layout.width / 2f, privacyPolicyLine.y)
         }
 
         font.data.setScale(1f)
         game.batch.end()
+        drawInfoDots()
     }
+
+    private fun drawInfoDots() {
+        val total = INFO_TAB_COUNT
+        val dotR = 6f
+        val dotGap = 20f
+        val startX = panelX + panelW / 2f - (total * dotGap - (dotGap - dotR * 2f)) / 2f + dotR
+        val dotY = panelY + 25f
+        shapes.begin(ShapeRenderer.ShapeType.Filled)
+        for (i in 0 until total) {
+            shapes.color = if (i == currentInfoPage) COL_DOT_ACT else COL_DOT_INACT
+            shapes.circle(startX + i * dotGap, dotY, dotR, 16)
+        }
+        shapes.end()
+    }
+
 
     private fun handleInfoInput() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
@@ -702,20 +697,11 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             return
         }
 
-        for (i in 0 until INFO_TAB_COUNT) {
-            val tw = panelW / INFO_TAB_COUNT
-            val tabX = panelX + tw * i
-            val tabTopY = panelY + panelH - 42f
-            if (t.x >= tabX && t.x <= tabX + tw && t.y >= tabTopY - 28f && t.y <= tabTopY + 8f) {
-                if (i != currentInfoTab) {
-                    currentInfoTab = i
-                }
-                return
-            }
-        }
+        if (hits(t, arrowLeftX, arrowY, arrowSize, arrowSize)) { navigateInfo(-1); return }
+        if (hits(t, arrowRightX, arrowY, arrowSize, arrowSize)) { navigateInfo(1); return }
 
         // Handle link clicks
-        val lines: Array<InfoLine>? = when (currentInfoTab) {
+        val lines: Array<InfoLine>? = when (currentInfoPage) {
             INFO_TAB_CREDITS -> Array(creditLines)
             INFO_TAB_SOCIALS -> Array(socialLines)
             else -> null
@@ -734,7 +720,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             }
         }
 
-        if (currentInfoTab == INFO_TAB_SOCIALS) {
+        if (currentInfoPage == INFO_TAB_SOCIALS) {
             val lineH = 32f * (panelH / 480f)
             if (t.x >= panelX + panelW / 2f - 100f && t.x <= panelX + panelW / 2f + 100f &&
                 t.y >= privacyPolicyLine.y - lineH && t.y <= privacyPolicyLine.y
@@ -744,9 +730,13 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         }
     }
 
+    private fun navigateInfo(dir: Int) {
+        currentInfoPage = (currentInfoPage + dir + INFO_TAB_COUNT) % INFO_TAB_COUNT
+    }
+
     private fun closeInfo() {
         infoOpen = false
-        currentInfoTab = INFO_TAB_HOWTOPLAY
+        currentInfoPage = 0
     }
 
     private fun drawRoundedRect(x: Float, y: Float, w: Float, h: Float, r: Float) {
