@@ -37,14 +37,21 @@ class FixedTickEngine(private val tickable: Tickable) {
 
     fun update(frameDelta: Float) {
         accumulator = min(accumulator + frameDelta, MAX_ACCUMULATOR)
-        frameStart = accumulator
-
-        var elapsed = 0f
 
         while (accumulator >= TICK_DELTA) {
-            val tickEnd = frameStart + elapsed + TICK_DELTA
+            var tickRemaining = TICK_DELTA
+            var timeConsumedInTick = 0f
 
-            while (eventCount > 0 && eventOffset[eventHead] <= tickEnd) {
+            while (eventCount > 0 && eventOffset[eventHead] <= TICK_DELTA) {
+                val offset = eventOffset[eventHead]
+                val subDelta = offset - timeConsumedInTick
+
+                if (subDelta > 0f) {
+                    tickable.tick(subDelta)
+                    tickRemaining -= subDelta
+                    timeConsumedInTick = offset
+                }
+
                 val held = eventHeld[eventHead]
                 eventHead = (eventHead + 1) % QUEUE_CAPACITY
                 eventCount--
@@ -73,9 +80,17 @@ class FixedTickEngine(private val tickable: Tickable) {
                 }
             }
 
-            tickable.tick(TICK_DELTA)
+            if (tickRemaining > 0f) {
+                tickable.tick(tickRemaining)
+            }
+
             accumulator -= TICK_DELTA
-            elapsed += TICK_DELTA
+
+            var ptr = eventHead
+            for (i in 0 until eventCount) {
+                eventOffset[ptr] -= TICK_DELTA
+                ptr = (ptr + 1) % QUEUE_CAPACITY
+            }
         }
     }
 
