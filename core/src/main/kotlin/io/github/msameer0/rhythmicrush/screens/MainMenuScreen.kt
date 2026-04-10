@@ -555,7 +555,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         }
         if (Gdx.input.isTouched && draggingSlider) {
             val norm = MathUtils.clamp(
-                (unproject().x - (panelX + panelW - 45f - panelW * 0.34f)) / (panelW * 0.34f),
+                (unproject().x - (panelX + panelW - 45f - panelW * 0.25f)) / (panelW * 0.25f),
                 0f,
                 1f
             )
