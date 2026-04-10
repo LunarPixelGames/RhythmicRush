@@ -3,8 +3,10 @@ package io.github.msameer0.rhythmicrush.screens
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputAdapter
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
+import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.math.Vector2
@@ -50,6 +52,7 @@ class GameScreen @JvmOverloads constructor(
 
     private val shapes = ShapeRenderer()
 
+    private var bgTexture: Texture? = null
     private var levelKey: String? = null
 
     private var sessionAttempts = 0
@@ -170,6 +173,7 @@ class GameScreen @JvmOverloads constructor(
             world.loadLevel(levelData)
             levelKey = levelData.fileName
             recordAttempt()
+            updateBgTexture()
         }
 
         hitboxesActive = game.settingsManager.showHitboxes
@@ -198,11 +202,10 @@ class GameScreen @JvmOverloads constructor(
     override fun dispose() {
         super.dispose()
         renderer.dispose()
+        bgTexture?.dispose()
         shapes.dispose()
         overlay.dispose()
         music.stopAndDispose()
-        Gdx.input.isCursorCatched = false
-        Gdx.input.inputProcessor = null
     }
 
     override fun update(delta: Float) {
@@ -283,6 +286,10 @@ class GameScreen @JvmOverloads constructor(
                 Gdx.input.isCursorCatched = false
             }
         }
+
+        // Keep visuals and camera in sync before drawing
+        world.updateVisuals(delta)
+        world.player?.let { renderer.updateCamera(it) }
     }
 
     override fun draw() {
@@ -298,8 +305,39 @@ class GameScreen @JvmOverloads constructor(
         }
 
         val bg = world.backgroundColor
-        Gdx.gl.glClearColor(bg.r, bg.g, bg.b, 1f)
+        if (bgTexture == null) {
+            Gdx.gl.glClearColor(bg.r, bg.g, bg.b, 1f)
+        } else {
+            Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
+        }
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
+
+        bgTexture?.let {
+            game.batch.projectionMatrix = gameCamera.combined
+            game.batch.begin()
+            
+            // Additive blending for a high-quality "glow" pulse effect
+            game.batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE)
+            game.batch.setColor(bg.r, bg.g, bg.b, 1f)
+            
+            val viewW = gameViewport.worldWidth
+            val viewH = gameViewport.worldHeight
+            val camX = gameCamera.position.x
+            val camY = gameCamera.position.y
+            
+            game.batch.draw(
+                it,
+                camX - viewW / 2f,
+                camY - viewH / 2f,
+                viewW,
+                viewH
+            )
+            
+            // Restore default blending
+            game.batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+            game.batch.setColor(Color.WHITE)
+            game.batch.end()
+        }
 
         renderer.render(lastDelta, paused, hitboxesActive)
 
@@ -394,6 +432,24 @@ class GameScreen @JvmOverloads constructor(
         recordAttempt()
         if (game.settingsManager.lockCursorInGame) {
             Gdx.input.isCursorCatched = true
+        }
+    }
+
+    private fun updateBgTexture() {
+        bgTexture?.dispose()
+        bgTexture = null
+        if (world.bgImage.isNotEmpty()) {
+            val fh = Gdx.files.internal("game/bg/${world.bgImage}")
+            if (fh.exists()) {
+                bgTexture = Texture(fh)
+                bgTexture?.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear)
+            } else {
+                val localFh = Gdx.files.local("assets/game/bg/${world.bgImage}")
+                if (localFh.exists()) {
+                    bgTexture = Texture(localFh)
+                    bgTexture?.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear)
+                }
+            }
         }
     }
 

@@ -92,10 +92,9 @@ class GameRenderer(
 
     fun render(delta: Float, paused: Boolean, showHitboxes: Boolean) {
         _lastDelta = delta
-        world.updateVisuals(delta)
         val player = world.player ?: return
 
-        updateCamera(player)
+        // Camera update is now handled by GameScreen to keep everything in sync
 
         val rightEdge = camera.position.x + camera.viewportWidth / 2f + 100f
 
@@ -110,7 +109,7 @@ class GameRenderer(
         if (showHitboxes) hitboxRenderer.draw(camera, player, rightEdge)
     }
 
-    private fun updateCamera(player: AbstractPlayer) {
+    fun updateCamera(player: AbstractPlayer) {
         camera.position.x = player.x + CAMERA_X_OFFSET
         if (player.isMini()) camera.position.x -= 12.5f
         camera.update()

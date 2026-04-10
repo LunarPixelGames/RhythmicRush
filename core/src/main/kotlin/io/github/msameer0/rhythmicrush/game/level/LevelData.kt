@@ -6,6 +6,7 @@ class LevelData {
     var name = "Unnamed Level"
     var fileName = ""
     var musicFile = ""
+    var bgImage = ""
     var bgColor = "1a1a2e"
     var groundColor = "16213e"
     var difficulty = "normal"

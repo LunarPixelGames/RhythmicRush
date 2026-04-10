@@ -2,6 +2,7 @@
 "name": "Event Horizon",
 "fileName": "5.json",
 "musicFile": "809594_Event-Horizon.mp3",
+"bgImage": "event_horizon.jpg",
 "bgColor": "000000",
 "groundColor": "000000",
 "difficulty": "insane",

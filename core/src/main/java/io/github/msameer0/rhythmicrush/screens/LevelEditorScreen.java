@@ -104,6 +104,8 @@ public class LevelEditorScreen extends AbstractScreen {
 
     private final List<String> musicFiles = new ArrayList<>();
     private int musicFileIdx = -1;
+    private final List<String> bgFiles = new ArrayList<>();
+    private int bgFileIdx = -1;
     private Music levelMusic = null;
 
     private float wasdHeld = 0f;
@@ -203,11 +205,20 @@ public class LevelEditorScreen extends AbstractScreen {
 
         buildTabs();
         scanMusicFiles();
+        scanBgFiles();
 
         if (levelData.getMusicFile() != null && !levelData.getMusicFile().isEmpty()) {
             for (int i = 0; i < musicFiles.size(); i++) {
                 if (musicFiles.get(i).equals(levelData.getMusicFile())) {
                     musicFileIdx = i;
+                    break;
+                }
+            }
+        }
+        if (levelData.getBgImage() != null && !levelData.getBgImage().isEmpty()) {
+            for (int i = 0; i < bgFiles.size(); i++) {
+                if (bgFiles.get(i).equals(levelData.getBgImage())) {
+                    bgFileIdx = i;
                     break;
                 }
             }
@@ -353,6 +364,21 @@ public class LevelEditorScreen extends AbstractScreen {
         layout.setText(font, musicLabel);
         float musicX = canvasW - zbw * 2 - 24f - layout.width;
         font.draw(getGame().getBatch(), musicLabel, musicX, y + TOPBAR_H / 2f + layout.height / 2f);
+
+        String bgLabel = bgFiles.isEmpty() ? "No BG"
+            : (bgFileIdx < 0 ? "BG: None" : "BG: " + bgFiles.get(bgFileIdx));
+        font.getData().setScale(0.50f);
+        font.setColor(0.75f, 0.85f, 1f, 1f);
+        layout.setText(font, bgLabel);
+        float bgX = musicX - 60f - layout.width;
+        font.draw(getGame().getBatch(), bgLabel, bgX, y + TOPBAR_H / 2f + layout.height / 2f);
+
+        String bgHint = "S+[ ]";
+        font.getData().setScale(0.40f);
+        font.setColor(0.5f, 0.5f, 0.6f, 1f);
+        float bgLX = bgX;
+        layout.setText(font, bgHint);
+        font.draw(getGame().getBatch(), bgHint, bgLX - layout.width - 6f, y + TOPBAR_H / 2f + layout.height / 2f);
 
         String gridStatus = "Grid: " + (gridSnapping ? "ON" : "OFF") + " [G]";
         font.getData().setScale(0.40f);
@@ -647,12 +673,28 @@ public class LevelEditorScreen extends AbstractScreen {
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.TAB) && "block".equals(placementId))
             selectedBlockTypeIdx = (selectedBlockTypeIdx + 1) % BlockType.values().length;
-        if (!musicFiles.isEmpty()) {
-            if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET)) {
+
+        boolean shift = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
+        if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET)) {
+            if (shift) {
+                if (!bgFiles.isEmpty()) {
+                    bgFileIdx--;
+                    if (bgFileIdx < -1) bgFileIdx = bgFiles.size() - 1;
+                    levelData.setBgImage(bgFileIdx < 0 ? "" : bgFiles.get(bgFileIdx));
+                }
+            } else if (!musicFiles.isEmpty()) {
                 musicFileIdx = (musicFileIdx - 1 + musicFiles.size()) % musicFiles.size();
                 levelData.setMusicFile(musicFiles.get(musicFileIdx));
             }
-            if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT_BRACKET)) {
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT_BRACKET)) {
+            if (shift) {
+                if (!bgFiles.isEmpty()) {
+                    bgFileIdx++;
+                    if (bgFileIdx >= bgFiles.size()) bgFileIdx = -1;
+                    levelData.setBgImage(bgFileIdx < 0 ? "" : bgFiles.get(bgFileIdx));
+                }
+            } else if (!musicFiles.isEmpty()) {
                 musicFileIdx = (musicFileIdx + 1) % musicFiles.size();
                 levelData.setMusicFile(musicFiles.get(musicFileIdx));
             }
@@ -771,6 +813,8 @@ public class LevelEditorScreen extends AbstractScreen {
         stopPlaytest();
         stopAndDisposeMusic();
         levelData = new LevelData();
+        musicFileIdx = -1;
+        bgFileIdx = -1;
         selection.clear();
         savePath = null;
         placementId = null;
@@ -832,6 +876,23 @@ public class LevelEditorScreen extends AbstractScreen {
         }
         getGame().getBatch().end();
         Gdx.gl.glDisable(GL20.GL_BLEND);
+    }
+
+    private void scanBgFiles() {
+        bgFiles.clear();
+        try {
+            FileHandle dir = Gdx.files.internal("game/bg");
+            if (!dir.exists()) dir = Gdx.files.local("assets/game/bg");
+            if (dir.exists()) {
+                for (FileHandle f : dir.list()) {
+                    String n = f.name();
+                    if (n.endsWith(".png") || n.endsWith(".jpg") || n.endsWith(".jpeg") || n.endsWith(".webp"))
+                        bgFiles.add(n);
+                }
+                Collections.sort(bgFiles);
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     private void scanMusicFiles() {
@@ -1225,10 +1286,19 @@ public class LevelEditorScreen extends AbstractScreen {
             trailHasData = false;
             trailWX.clear();
             trailWY.clear();
+            musicFileIdx = -1;
             if (levelData.getMusicFile() != null && !levelData.getMusicFile().isEmpty()) {
                 for (int i = 0; i < musicFiles.size(); i++)
                     if (musicFiles.get(i).equals(levelData.getMusicFile())) {
                         musicFileIdx = i;
+                        break;
+                    }
+            }
+            bgFileIdx = -1;
+            if (levelData.getBgImage() != null && !levelData.getBgImage().isEmpty()) {
+                for (int i = 0; i < bgFiles.size(); i++)
+                    if (bgFiles.get(i).equals(levelData.getBgImage())) {
+                        bgFileIdx = i;
                         break;
                     }
             }

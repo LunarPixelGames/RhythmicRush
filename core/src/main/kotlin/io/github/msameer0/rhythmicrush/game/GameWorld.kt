@@ -59,6 +59,7 @@ class GameWorld : Tickable {
     private val pools = WorldPoolManager()
     private val colors = ColorStateManager()
 
+    var bgImage: String = ""
     var player: AbstractPlayer? = null
         private set
     val groundY = 50f
@@ -155,6 +156,7 @@ class GameWorld : Tickable {
         isLevelComplete = false
         worldScrolled = startScrolled
         postEndTimer = -1f
+        bgImage = data.bgImage ?: ""
 
         val bg = if (!data.bgColor.isNullOrEmpty()) data.bgColor else "1a1a2e"
         val gnd = if (!data.groundColor.isNullOrEmpty()) data.groundColor else "16213e"
