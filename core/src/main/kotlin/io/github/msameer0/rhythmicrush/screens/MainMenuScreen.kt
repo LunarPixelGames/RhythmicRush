@@ -57,7 +57,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
     private var settingsOpen = false
     private var infoOpen = false
-    private var shapes: ShapeRenderer? = null
+    private lateinit var shapes: ShapeRenderer
     private lateinit var font: BitmapFont
     private val layout = GlyphLayout()
 
@@ -161,7 +161,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         )
 
         shapes = ShapeRenderer()
-        font = game.fontManager.get(FontManager.SIZE_LARGE)!!
+        font = game.fontManager.get(FontManager.SIZE_LARGE)
 
         btnPlay = AnimatedButton(startButton, 0f, 0f, 0f, 0f) { game.screen = LevelSelectScreen(game) }
         btnSettings = AnimatedButton(settingsButton, 0f, 0f, 0f, 0f) { settingsOpen = true }
@@ -354,11 +354,11 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
     private fun drawSettingsOverlay() {
         Gdx.gl.glEnable(GL20.GL_BLEND)
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-        shapes!!.projectionMatrix = camera.combined
-        shapes!!.begin(ShapeRenderer.ShapeType.Filled)
-        shapes!!.color = COL_OVERLAY
-        shapes!!.rect(0f, 0f, viewport.worldWidth, viewport.worldHeight)
-        shapes!!.end()
+        shapes.projectionMatrix = camera.combined
+        shapes.begin(ShapeRenderer.ShapeType.Filled)
+        shapes.color = COL_OVERLAY
+        shapes.rect(0f, 0f, viewport.worldWidth, viewport.worldHeight)
+        shapes.end()
         Gdx.gl.glDisable(GL20.GL_BLEND)
 
         val texW = panelW.toInt()
@@ -414,11 +414,11 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         val underlineY = tabY - tabTextH - 3f
         Gdx.gl.glEnable(GL20.GL_BLEND)
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-        shapes!!.projectionMatrix = camera.combined
-        shapes!!.begin(ShapeRenderer.ShapeType.Filled)
-        shapes!!.color = COL_TAB_ACT
-        shapes!!.rect(tabCX + 8f, underlineY, tabW - 16f, 3f)
-        shapes!!.end()
+        shapes.projectionMatrix = camera.combined
+        shapes.begin(ShapeRenderer.ShapeType.Filled)
+        shapes.color = COL_TAB_ACT
+        shapes.rect(tabCX + 8f, underlineY, tabW - 16f, 3f)
+        shapes.end()
         Gdx.gl.glDisable(GL20.GL_BLEND)
 
         drawArrow(arrowLeftX, arrowY, arrowSize, true)
@@ -431,12 +431,12 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         val hs = size * 0.28f
         Gdx.gl.glEnable(GL20.GL_BLEND)
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-        shapes!!.projectionMatrix = camera.combined
-        shapes!!.begin(ShapeRenderer.ShapeType.Filled)
-        shapes!!.color = COL_DIM
-        if (pointLeft) shapes!!.triangle(cx + hs, cy + hs, cx + hs, cy - hs, cx - hs, cy)
-        else shapes!!.triangle(cx - hs, cy + hs, cx - hs, cy - hs, cx + hs, cy)
-        shapes!!.end()
+        shapes.projectionMatrix = camera.combined
+        shapes.begin(ShapeRenderer.ShapeType.Filled)
+        shapes.color = COL_DIM
+        if (pointLeft) shapes.triangle(cx + hs, cy + hs, cx + hs, cy - hs, cx - hs, cy)
+        else shapes.triangle(cx - hs, cy + hs, cx - hs, cy - hs, cx + hs, cy)
+        shapes.end()
         Gdx.gl.glDisable(GL20.GL_BLEND)
     }
 
@@ -451,13 +451,13 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
         Gdx.gl.glEnable(GL20.GL_BLEND)
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-        shapes!!.projectionMatrix = camera.combined
-        shapes!!.begin(ShapeRenderer.ShapeType.Filled)
+        shapes.projectionMatrix = camera.combined
+        shapes.begin(ShapeRenderer.ShapeType.Filled)
         for (i in 0 until total) {
-            shapes!!.color = if (i == currentSubPage) COL_DOT_ACT else COL_DOT_INACT
-            shapes!!.circle(startX + i * dotGap, dotY, dotR, 16)
+            shapes.color = if (i == currentSubPage) COL_DOT_ACT else COL_DOT_INACT
+            shapes.circle(startX + i * dotGap, dotY, dotR, 16)
         }
-        shapes!!.end()
+        shapes.end()
         Gdx.gl.glDisable(GL20.GL_BLEND)
     }
 
@@ -509,16 +509,16 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
         Gdx.gl.glEnable(GL20.GL_BLEND)
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-        shapes!!.projectionMatrix = camera.combined
-        shapes!!.begin(ShapeRenderer.ShapeType.Filled)
-        shapes!!.color = if (value) COL_ON else COL_OFF
-        shapes!!.circle(pillX + r, pillY + r, r, 24)
-        shapes!!.circle(pillX + pillW - r, pillY + r, r, 24)
-        shapes!!.rect(pillX + r, pillY, pillW - pillH, pillH)
-        shapes!!.color = COL_THUMB
+        shapes.projectionMatrix = camera.combined
+        shapes.begin(ShapeRenderer.ShapeType.Filled)
+        shapes.color = if (value) COL_ON else COL_OFF
+        shapes.circle(pillX + r, pillY + r, r, 24)
+        shapes.circle(pillX + pillW - r, pillY + r, r, 24)
+        shapes.rect(pillX + r, pillY, pillW - pillH, pillH)
+        shapes.color = COL_THUMB
         val thumbCX = if (value) (pillX + pillW - r) else (pillX + r)
-        shapes!!.circle(thumbCX, pillY + r, r - r * 0.3f, 24)
-        shapes!!.end()
+        shapes.circle(thumbCX, pillY + r, r - r * 0.3f, 24)
+        shapes.end()
         Gdx.gl.glDisable(GL20.GL_BLEND)
 
         game.batch.projectionMatrix = camera.combined
@@ -542,15 +542,15 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
         Gdx.gl.glEnable(GL20.GL_BLEND)
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-        shapes!!.projectionMatrix = camera.combined
-        shapes!!.begin(ShapeRenderer.ShapeType.Filled)
-        shapes!!.color = COL_TRACK
-        shapes!!.rect(trackX, trackY, trackW, trackH)
-        shapes!!.color = COL_FILL
-        if (fillW > 0) shapes!!.rect(trackX, trackY, fillW, trackH)
-        shapes!!.color = COL_THUMB
-        shapes!!.circle(thumbCX, ry, thumbR, 24)
-        shapes!!.end()
+        shapes.projectionMatrix = camera.combined
+        shapes.begin(ShapeRenderer.ShapeType.Filled)
+        shapes.color = COL_TRACK
+        shapes.rect(trackX, trackY, trackW, trackH)
+        shapes.color = COL_FILL
+        if (fillW > 0) shapes.rect(trackX, trackY, fillW, trackH)
+        shapes.color = COL_THUMB
+        shapes.circle(thumbCX, ry, thumbR, 24)
+        shapes.end()
         Gdx.gl.glDisable(GL20.GL_BLEND)
 
         game.batch.projectionMatrix = camera.combined
@@ -577,15 +577,15 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
         Gdx.gl.glEnable(GL20.GL_BLEND)
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-        shapes!!.projectionMatrix = camera.combined
-        shapes!!.begin(ShapeRenderer.ShapeType.Filled)
-        shapes!!.color = COL_INPUT_BG
-        shapes!!.rect(boxX, boxY, boxW, boxH)
-        shapes!!.end()
-        shapes!!.begin(ShapeRenderer.ShapeType.Line)
-        shapes!!.color = if (fpsInputActive) COL_INPUT_BD else Color(COL_INPUT_BD.r, COL_INPUT_BD.g, COL_INPUT_BD.b, 0.4f)
-        shapes!!.rect(boxX, boxY, boxW, boxH)
-        shapes!!.end()
+        shapes.projectionMatrix = camera.combined
+        shapes.begin(ShapeRenderer.ShapeType.Filled)
+        shapes.color = COL_INPUT_BG
+        shapes.rect(boxX, boxY, boxW, boxH)
+        shapes.end()
+        shapes.begin(ShapeRenderer.ShapeType.Line)
+        shapes.color = if (fpsInputActive) COL_INPUT_BD else Color(COL_INPUT_BD.r, COL_INPUT_BD.g, COL_INPUT_BD.b, 0.4f)
+        shapes.rect(boxX, boxY, boxW, boxH)
+        shapes.end()
         Gdx.gl.glDisable(GL20.GL_BLEND)
 
         val display = if (fpsInputActive) {
@@ -955,11 +955,11 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
     private fun drawInfoOverlay() {
         Gdx.gl.glEnable(GL20.GL_BLEND)
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-        shapes!!.projectionMatrix = camera.combined
-        shapes!!.begin(ShapeRenderer.ShapeType.Filled)
-        shapes!!.color = COL_OVERLAY
-        shapes!!.rect(0f, 0f, viewport.worldWidth, viewport.worldHeight)
-        shapes!!.end()
+        shapes.projectionMatrix = camera.combined
+        shapes.begin(ShapeRenderer.ShapeType.Filled)
+        shapes.color = COL_OVERLAY
+        shapes.rect(0f, 0f, viewport.worldWidth, viewport.worldHeight)
+        shapes.end()
         Gdx.gl.glDisable(GL20.GL_BLEND)
 
         val texW = panelW.toInt()
@@ -1007,11 +1007,11 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
         Gdx.gl.glEnable(GL20.GL_BLEND)
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-        shapes!!.projectionMatrix = camera.combined
-        shapes!!.begin(ShapeRenderer.ShapeType.Filled)
-        shapes!!.color = COL_TAB_ACT
-        shapes!!.rect(tabCX + 8f, underlineY, tabW - 16f, 3f)
-        shapes!!.end()
+        shapes.projectionMatrix = camera.combined
+        shapes.begin(ShapeRenderer.ShapeType.Filled)
+        shapes.color = COL_TAB_ACT
+        shapes.rect(tabCX + 8f, underlineY, tabW - 16f, 3f)
+        shapes.end()
         Gdx.gl.glDisable(GL20.GL_BLEND)
 
         game.batch.begin()
@@ -1124,7 +1124,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
     }
 
     override fun dispose() {
-        shapes?.dispose()
+        if (::shapes.isInitialized) shapes.dispose()
         panelTexture?.dispose()
         super.dispose()
     }

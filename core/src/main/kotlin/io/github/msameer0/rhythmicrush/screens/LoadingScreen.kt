@@ -114,11 +114,11 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
         var titleW = 0f
         var titleH = 0f
-        if (titleRegion != null) {
+        titleRegion?.let { region ->
             val maxTitleW = width * 0.7f
-            val titleScale = maxTitleW / titleRegion!!.regionWidth
-            titleW = titleRegion!!.regionWidth * titleScale
-            titleH = titleRegion!!.regionHeight * titleScale
+            val titleScale = maxTitleW / region.regionWidth
+            titleW = region.regionWidth * titleScale
+            titleH = region.regionHeight * titleScale
         }
 
         val textPadding = 22f
@@ -134,11 +134,11 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         val textY = barY - 10f // A bit below the bar
 
         // 2. Draw Title Image
-        if (titleRegion != null) {
+        titleRegion?.let { region ->
             game.batch.projectionMatrix = camera.combined
             game.batch.begin()
             val titleX = (width - titleW) / 2f
-            game.batch.draw(titleRegion, titleX, titleY, titleW, titleH)
+            game.batch.draw(region, titleX, titleY, titleW, titleH)
             game.batch.end()
         }
 
@@ -153,13 +153,13 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         shapeRenderer.end()
 
         // 4. Draw Status Text
-        if (statusFont != null) {
+        statusFont?.let { font ->
             game.batch.begin()
-            statusFont!!.data.setScale(0.6f)
-            layout.setText(statusFont, statusText)
-            statusFont!!.color = Color.LIGHT_GRAY
-            statusFont!!.draw(game.batch, statusText, (width - layout.width) / 2f, textY)
-            statusFont!!.data.setScale(1f)
+            font.data.setScale(0.6f)
+            layout.setText(font, statusText)
+            font.color = Color.LIGHT_GRAY
+            font.draw(game.batch, statusText, (width - layout.width) / 2f, textY)
+            font.data.setScale(1f)
             game.batch.end()
         }
     }

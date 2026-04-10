@@ -84,7 +84,7 @@ class LevelSelectScreen @JvmOverloads constructor(
     override fun show() {
         super.show()
 
-        font = game.fontManager.get(FontManager.SIZE_XLARGE)!!
+        font = game.fontManager.get(FontManager.SIZE_XLARGE)
 
         val atlas = game.atlasManager.levelSelectAtlas
         backButton = atlas.findRegion("back")
@@ -135,7 +135,7 @@ class LevelSelectScreen @JvmOverloads constructor(
 
     private fun difficultyTexture(difficulty: String?): TextureRegion {
         val idx = difficultyIndex(difficulty)
-        return difficultyTextures[idx] ?: difficultyTextures[1]!!
+        return difficultyTextures[idx] ?: difficultyTextures[1] ?: throw IllegalStateException("Default difficulty texture not found")
     }
 
     private fun updateScaledSizes() {
@@ -288,20 +288,17 @@ class LevelSelectScreen @JvmOverloads constructor(
         drawTextWithShadow(font, name, textX, textY, Color.WHITE)
 
         font.data.setScale(0.38f * scale) // scale label similarly
-        val diffLabel = if (current.difficulty != null) {
-            current.difficulty!!.substring(0, 1).uppercase() + current.difficulty!!.substring(1)
-        } else {
-            "Normal"
-        }
+        val diff = current.difficulty ?: "Normal"
+        val diffLabel = diff.substring(0, 1).uppercase() + diff.substring(1)
         layout.setText(font, diffLabel)
         drawTextWithShadow(font, diffLabel, textX, textY - nameH - 4f, Color(1f, 1f, 1f, 0.55f))
 
-        val levelKey = current.fileName ?: "$name.json"
+        val levelKey = current.fileName ?: "${current.name}.json"
         val progress = game.progressManager.getOrCreate(levelKey)
 
         font.data.setScale(0.42f)
-        val bestText = "Best: ${progress?.bestPercent}%"
-        val attemptsText = "Total Attempts: ${progress?.totalAttempts}"
+        val bestText = "Best: ${progress.bestPercent}%"
+        val attemptsText = "Total Attempts: ${progress.totalAttempts}"
         val statsX = pX + panelW / 2f
 
         layout.setText(font, bestText)

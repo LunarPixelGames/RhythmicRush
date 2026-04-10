@@ -60,7 +60,7 @@ class HalfSpike : AbstractHazard, Rotatable {
 
     override fun onTouch(player: AbstractPlayer?) {
         if (hitbox.overlaps(player?.getBounds())) {
-            player?.getWorld()!!.playerDied()
+            player?.getWorld()?.playerDied()
         }
     }
 

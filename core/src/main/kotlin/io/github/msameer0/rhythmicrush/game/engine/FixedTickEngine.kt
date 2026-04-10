@@ -51,9 +51,9 @@ class FixedTickEngine(private val tickable: Tickable) {
                 if (!held) {
                     bufferedPress = false
                     bufferStepsLeft = 0
-                    tickable!!.onInput(false)
+                    tickable.onInput(false)
                 } else {
-                    val consumed = tickable!!.onInput(true)
+                    val consumed = tickable.onInput(true)
                     if (!consumed) {
                         bufferedPress = true
                         bufferStepsLeft = BUFFER_STEPS
@@ -62,7 +62,7 @@ class FixedTickEngine(private val tickable: Tickable) {
             }
 
             if (bufferedPress && bufferStepsLeft > 0) {
-                val consumed = tickable!!.onInput(true)
+                val consumed = tickable.onInput(true)
                 if (consumed) {
                     bufferedPress = false
                     bufferStepsLeft = 0

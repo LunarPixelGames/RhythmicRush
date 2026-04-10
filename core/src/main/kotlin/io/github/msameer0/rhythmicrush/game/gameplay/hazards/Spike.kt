@@ -59,7 +59,7 @@ class Spike : AbstractHazard, Rotatable {
 
     public override fun onTouch(player: AbstractPlayer?) {
         if (hitbox.overlaps(player?.getBounds())) {
-            player?.getWorld()!!.playerDied()
+            player?.getWorld()?.playerDied()
         }
     }
 

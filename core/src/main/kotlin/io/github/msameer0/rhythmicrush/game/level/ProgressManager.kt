@@ -11,7 +11,7 @@ class ProgressManager {
         const val SAVE_PATH: String = "saves/progress.json"
     }
 
-    val map = ObjectMap<String?, LevelProgress?>()
+    val map = ObjectMap<String, LevelProgress>()
     var json: Json = Json()
 
     constructor() {
@@ -20,7 +20,7 @@ class ProgressManager {
         load()
     }
 
-    fun getOrCreate(levelKey: String?): LevelProgress? {
+    fun getOrCreate(levelKey: String): LevelProgress {
         if (!map.containsKey(levelKey)) {
             map.put(levelKey, LevelProgress())
         }

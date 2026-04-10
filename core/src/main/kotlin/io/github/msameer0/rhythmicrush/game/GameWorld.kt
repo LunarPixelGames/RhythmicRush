@@ -302,8 +302,9 @@ class GameWorld : Tickable {
     // ── Reset ─────────────────────────────────────────────────────────────────
 
     fun reset() {
-        if (currentLevelData != null) {
-            loadLevel(currentLevelData!!)
+        val data = currentLevelData
+        if (data != null) {
+            loadLevel(data)
         } else {
             freeAllActiveObjects()
             triggers.clear()

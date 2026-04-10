@@ -11,7 +11,7 @@ abstract class ObjectPool<T : Any> {
     fun obtain(): T {
         if (free.size == 0) return create()
         val obj = free.pop()
-        reset(obj!!)
+        reset(obj)
         return obj
     }
 

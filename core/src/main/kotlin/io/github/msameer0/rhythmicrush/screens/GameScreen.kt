@@ -183,11 +183,11 @@ class GameScreen @JvmOverloads constructor(
         val font = game.fontManager.get(FontManager.SIZE_SMALL)
         val pauseFont = game.fontManager.get(FontManager.SIZE_SMALL)
 
-        hud = HudRenderer(game, world, font!!, shapes, game.batch)
+        hud = HudRenderer(game, world, font, shapes, game.batch)
 
         val resumeRegion = game.atlasManager.menuAtlas.findRegion("start_button")
         val backRegion = game.atlasManager.levelSelectAtlas.findRegion("back")
-        overlay = OverlayUI(game, levelData, pauseFont!!, shapes, game.batch, resumeRegion, backRegion)
+        overlay = OverlayUI(game, levelData, pauseFont, shapes, game.batch, resumeRegion, backRegion)
 
         if (levelData != null) {
             world.loadLevel(levelData)
@@ -502,18 +502,19 @@ class GameScreen @JvmOverloads constructor(
 
     private fun recordAttempt() {
         sessionAttempts++
-        if (levelKey == null) return
-        val p = game.progressManager.getOrCreate(levelKey!!)
-        p?.totalAttempts = p.totalAttempts + 1
+        val key = levelKey ?: return
+        val p = game.progressManager.getOrCreate(key)
+        p.totalAttempts = p.totalAttempts + 1
         game.progressManager.save()
     }
 
     private fun recordDeath() {
-        if (levelKey == null || isPracticeMode) return
+        val key = levelKey
+        if (key == null || isPracticeMode) return
         val pct = round(world.progress * 100f).toInt()
-        val p = game.progressManager.getOrCreate(levelKey!!)
-        if (pct > (p?.bestPercent ?: 0)) {
-            p?.bestPercent = pct
+        val p = game.progressManager.getOrCreate(key)
+        if (pct > p.bestPercent) {
+            p.bestPercent = pct
             game.progressManager.save()
             hud.showNewBestPopup(pct)
             checkAndShowAd(pct / 100f)
@@ -521,9 +522,10 @@ class GameScreen @JvmOverloads constructor(
     }
 
     private fun recordComplete() {
-        if (levelKey == null || isPracticeMode) return
-        val p = game.progressManager.getOrCreate(levelKey!!)
-        p?.bestPercent = 100
+        val key = levelKey
+        if (key == null || isPracticeMode) return
+        val p = game.progressManager.getOrCreate(key)
+        p.bestPercent = 100
         game.progressManager.save()
     }
 

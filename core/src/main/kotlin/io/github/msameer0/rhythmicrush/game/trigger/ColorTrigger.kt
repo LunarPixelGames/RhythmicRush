@@ -29,8 +29,8 @@ class ColorTrigger : AbstractTrigger {
         fadeDuration: Float
     ): ColorTrigger {
         this.worldX = worldX
-        this.targetBg = targetBg!!
-        this.targetGround = targetGround!!
+        this.targetBg = targetBg ?: Color(0f, 0f, 0f, 0f)
+        this.targetGround = targetGround ?: Color(0f, 0f, 0f, 0f)
         this.fadeDuration = fadeDuration
         this.fired = false
         return this

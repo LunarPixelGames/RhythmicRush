@@ -8,11 +8,11 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFont
 import kotlin.math.abs
 
 class FontManager {
-    private val fonts: Array<BitmapFont?>
+    private val fonts: Array<BitmapFont>
 
     init {
         Gdx.app.log("FontManager", "Initializing fonts...")
-        fonts = arrayOfNulls<BitmapFont>(SIZES.size)
+        val tempFonts = arrayOfNulls<BitmapFont>(SIZES.size)
         var gen: FreeTypeFontGenerator? = null
         try {
             gen = FreeTypeFontGenerator(Gdx.files.internal("fonts/zendots-regular.ttf"))
@@ -23,28 +23,28 @@ class FontManager {
             p.genMipMaps = true
             for (i in SIZES.indices) {
                 p.size = SIZES[i]
-                fonts[i] = gen.generateFont(p)
+                tempFonts[i] = gen.generateFont(p)
             }
             Gdx.app.log("FontManager", "Fonts initialized successfully.")
         } catch (e: Exception) {
             Gdx.app.error("FontManager", "Could not load font: " + e.message)
-            var i = 0
-            while (i < SIZES.size) {
-                if (fonts[i] == null) fonts[i] = BitmapFont()
-                i++
+            for (i in SIZES.indices) {
+                if (tempFonts[i] == null) tempFonts[i] = BitmapFont()
             }
         } finally {
             gen?.dispose()
         }
+        @Suppress("UNCHECKED_CAST")
+        fonts = tempFonts as Array<BitmapFont>
     }
 
     fun dispose() {
         Gdx.app.log("FontManager", "Disposing fonts...")
-        for (f in fonts) f?.dispose()
+        for (f in fonts) f.dispose()
         Gdx.app.log("FontManager", "Fonts disposed.")
     }
 
-    fun get(size: Int): BitmapFont? {
+    fun get(size: Int): BitmapFont {
         var best = 0
         var bestDiff: Int = abs(SIZES[0] - size)
         for (i in 1..<SIZES.size) {

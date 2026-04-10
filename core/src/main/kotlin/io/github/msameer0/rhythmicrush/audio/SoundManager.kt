@@ -18,27 +18,26 @@ class SoundManager {
     fun playMenuMusic() {
         if (menuMusic == null) {
             Gdx.app.log("SoundManager", "Loading menu music...")
-            menuMusic = Gdx.audio.newMusic(Gdx.files.internal("musics/954091_vulg.mp3"))
-            menuMusic!!.isLooping = true
-            menuMusic!!.volume = musicVolume
+            menuMusic = Gdx.audio.newMusic(Gdx.files.internal("musics/954091_vulg.mp3"))?.apply {
+                isLooping = true
+                volume = musicVolume
+            }
             Gdx.app.log("SoundManager", "Menu music loaded.")
         }
 
-        if (!menuMusic!!.isPlaying) {
-            menuMusic!!.play()
+        menuMusic?.let {
+            if (!it.isPlaying) it.play()
         }
     }
 
     fun pauseMenuMusic() {
-        if (menuMusic != null && menuMusic!!.isPlaying) {
-            menuMusic!!.pause()
+        menuMusic?.let {
+            if (it.isPlaying) it.pause()
         }
     }
 
     fun stopMenuMusic() {
-        if (menuMusic != null) {
-            menuMusic!!.stop()
-        }
+        menuMusic?.stop()
     }
 
     fun getMusicVolume(): Float {
@@ -47,14 +46,14 @@ class SoundManager {
 
     fun setMusicVolume(volume: Float) {
         musicVolume = max(0f, min(1f, volume))
-        if (menuMusic != null) menuMusic!!.volume = musicVolume
+        menuMusic?.volume = musicVolume
     }
 
     fun dispose() {
-        if (menuMusic != null) {
+        menuMusic?.let {
             Gdx.app.log("SoundManager", "Disposing menu music...")
-            menuMusic!!.stop()
-            menuMusic!!.dispose()
+            it.stop()
+            it.dispose()
             menuMusic = null
             Gdx.app.log("SoundManager", "Menu music disposed.")
         }

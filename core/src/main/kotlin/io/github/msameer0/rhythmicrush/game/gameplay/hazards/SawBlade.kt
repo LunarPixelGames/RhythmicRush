@@ -72,7 +72,7 @@ class SawBlade : AbstractHazard {
 
     public override fun onTouch(player: AbstractPlayer?) {
         if (player?.getWorld() != null) {
-            player.getWorld()!!.playerDied()
+            player.getWorld()?.playerDied()
         }
     }
 

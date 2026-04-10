@@ -33,8 +33,8 @@ class PulseTrigger : AbstractTrigger {
         fadeInTime: Float, holdTime: Float, fadeOutTime: Float
     ): PulseTrigger {
         this.worldX = worldX
-        this.pulseBg = pulseBg!!
-        this.pulseGround = pulseGround!!
+        this.pulseBg = pulseBg ?: Color(0f, 0f, 0f, 0f)
+        this.pulseGround = pulseGround ?: Color(0f, 0f, 0f, 0f)
         this.fadeInTime = fadeInTime
         this.holdTime = holdTime
         this.fadeOutTime = fadeOutTime

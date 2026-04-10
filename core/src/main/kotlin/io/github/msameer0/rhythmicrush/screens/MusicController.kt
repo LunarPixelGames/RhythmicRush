@@ -40,12 +40,13 @@ class MusicController(
      * @param startTime Seconds into the track to begin playback from.
      */
     fun start(startTime: Float) {
-        if (levelData?.musicFile.isNullOrEmpty()) return
+        val musicFile = levelData?.musicFile ?: return
+        if (musicFile.isEmpty()) return
 
         try {
-            var fh = Gdx.files.internal("musics/${levelData!!.musicFile}")
+            var fh = Gdx.files.internal("musics/$musicFile")
             if (!fh.exists()) {
-                fh = Gdx.files.local("assets/musics/${levelData.musicFile}")
+                fh = Gdx.files.local("assets/musics/$musicFile")
             }
             if (fh.exists()) {
                 levelMusic = Gdx.audio.newMusic(fh)?.apply {
