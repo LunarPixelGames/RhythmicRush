@@ -492,7 +492,9 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
     private fun handleMenuInput() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) game.screen = LevelSelectScreen(game)
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) Gdx.app.exit()
-        if (Gdx.input.isKeyJustPressed(Input.Keys.E)) game.screen = LevelEditorScreen(game)
+        if (Gdx.input.isKeyJustPressed(Input.Keys.P) && System.getProperty("devMode") != null) {
+            game.screen = LevelEditorScreen(game)
+        }
         val t = unproject()
         if (Gdx.input.justTouched()) {
             btnPlay.onTouchDown(t.x, t.y)
