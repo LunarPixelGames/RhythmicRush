@@ -17,8 +17,8 @@ abstract class AbstractOrb {
     var type: OrbType = OrbType.YELLOW
     var x: Float = 0f
     var y: Float = 0f
-    var width: Float = 50f
-    var height: Float = 50f
+    var width: Float = 55f
+    var height: Float = 55f
     protected var multiActivate: Boolean = false
     var bounds: Rectangle
     private var used: Boolean = false

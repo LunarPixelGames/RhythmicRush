@@ -95,7 +95,7 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
         for (i in cullStart until world.orbs.size) {
             val orb = world.orbs.get(i)
             val r = orb.bounds
-            shape.circle(r.x + r.width / 2f, r.y + r.height / 2f, r.width / 2f, 24)
+            shape.rect(r.x, r.y, r.width, r.height)
         }
 
         shape.color = HB_PLAYER_FILL
@@ -169,7 +169,7 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
         for (i in cullStart until world.orbs.size) {
             val orb = world.orbs.get(i)
             val r = orb.bounds
-            shape.circle(r.x + r.width / 2f, r.y + r.height / 2f, r.width / 2f, 24)
+            shape.rect(r.x, r.y, r.width, r.height)
         }
 
         shape.color = HB_PLAYER_LINE
