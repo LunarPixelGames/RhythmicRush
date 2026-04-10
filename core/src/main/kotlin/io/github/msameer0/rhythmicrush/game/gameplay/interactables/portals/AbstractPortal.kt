@@ -6,6 +6,7 @@ import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 
 abstract class AbstractPortal : Rotatable {
     override var rotation: Float = 0f
+
     enum class PortalType {
         CUBE,
         SHIP,

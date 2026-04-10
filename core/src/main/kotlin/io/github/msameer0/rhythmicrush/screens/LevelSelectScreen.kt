@@ -13,12 +13,10 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.Interpolation
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.Array
-
 import io.github.msameer0.rhythmicrush.RhythmicRushGame
 import io.github.msameer0.rhythmicrush.font.FontManager
 import io.github.msameer0.rhythmicrush.game.level.LevelData
 import io.github.msameer0.rhythmicrush.ui.AnimatedButton
-import com.badlogic.gdx.math.MathUtils
 
 class LevelSelectScreen @JvmOverloads constructor(
     game: RhythmicRushGame,
@@ -123,7 +121,8 @@ class LevelSelectScreen @JvmOverloads constructor(
 
     private fun difficultyTexture(difficulty: String?): TextureRegion {
         val idx = difficultyIndex(difficulty)
-        return difficultyTextures[idx] ?: difficultyTextures[1] ?: throw IllegalStateException("Default difficulty texture not found")
+        return difficultyTextures[idx] ?: difficultyTextures[1]
+        ?: throw IllegalStateException("Default difficulty texture not found")
     }
 
     private fun updateScaledSizes() {
@@ -136,7 +135,12 @@ class LevelSelectScreen @JvmOverloads constructor(
 
         if (::btnBack.isInitialized) btnBack.setBounds(10f, vh - backW - 10f, backW, backW)
         if (::btnLeft.isInitialized) btnLeft.setBounds(10f, vh / 2f - leftW / 2f, leftW, leftW)
-        if (::btnRight.isInitialized) btnRight.setBounds(vw - rightW - 10f, vh / 2f - rightW / 2f, rightW, rightW)
+        if (::btnRight.isInitialized) btnRight.setBounds(
+            vw - rightW - 10f,
+            vh / 2f - rightW / 2f,
+            rightW,
+            rightW
+        )
 
         panelW = vw * 0.6f
         panelH = vh * 0.28f
@@ -146,7 +150,12 @@ class LevelSelectScreen @JvmOverloads constructor(
 
         val practiceW = vw * 0.28f
         val practiceH = vh * 0.07f
-        if (::btnPractice.isInitialized) btnPractice.setBounds(vw - practiceW - 20f, vh - practiceH - 20f, practiceW, practiceH)
+        if (::btnPractice.isInitialized) btnPractice.setBounds(
+            vw - practiceW - 20f,
+            vh - practiceH - 20f,
+            practiceW,
+            practiceH
+        )
     }
 
     override fun update(delta: Float) {
@@ -220,7 +229,13 @@ class LevelSelectScreen @JvmOverloads constructor(
         font.data.setScale(0.35f * scale)
         val text = "Enter Practice Mode"
         layout.setText(font, text)
-        drawTextWithShadow(font, text, bx + bw / 2f - layout.width / 2f, by + bh / 2f + layout.height / 2f, Color.WHITE)
+        drawTextWithShadow(
+            font,
+            text,
+            bx + bw / 2f - layout.width / 2f,
+            by + bh / 2f + layout.height / 2f,
+            Color.WHITE
+        )
     }
 
     private fun drawLevelPanel(current: LevelData, pX: Float, pY: Float) {
@@ -288,10 +303,22 @@ class LevelSelectScreen @JvmOverloads constructor(
         val statsX = pX + panelW / 2f
 
         layout.setText(font, bestText)
-        drawTextWithShadow(font, bestText, statsX - layout.width / 2f, pY - 18f, Color(1f, 1f, 1f, 0.8f))
+        drawTextWithShadow(
+            font,
+            bestText,
+            statsX - layout.width / 2f,
+            pY - 18f,
+            Color(1f, 1f, 1f, 0.8f)
+        )
 
         layout.setText(font, attemptsText)
-        drawTextWithShadow(font, attemptsText, statsX - layout.width / 2f, pY - 44f, Color(1f, 1f, 1f, 0.55f))
+        drawTextWithShadow(
+            font,
+            attemptsText,
+            statsX - layout.width / 2f,
+            pY - 44f,
+            Color(1f, 1f, 1f, 0.55f)
+        )
 
         var currentLevelNum = -1
         for (i in 0 until levels.size) {
@@ -304,7 +331,13 @@ class LevelSelectScreen @JvmOverloads constructor(
         font.data.setScale(0.35f)
         val counter = "${if (currentLevelNum > 0) currentLevelNum else "?"} / ${levels.size}"
         layout.setText(font, counter)
-        drawTextWithShadow(font, counter, viewport.worldWidth / 2f - layout.width / 2f, 22f, Color(1f, 1f, 1f, 0.4f))
+        drawTextWithShadow(
+            font,
+            counter,
+            viewport.worldWidth / 2f - layout.width / 2f,
+            22f,
+            Color(1f, 1f, 1f, 0.4f)
+        )
 
         font.data.setScale(1f)
         font.color = Color.WHITE
@@ -413,7 +446,14 @@ class LevelSelectScreen @JvmOverloads constructor(
         return t.x >= x && t.x <= x + w && t.y >= y && t.y <= y + h
     }
 
-    private fun drawRoundedRect(shapes: ShapeRenderer, x: Float, y: Float, w: Float, h: Float, r: Float) {
+    private fun drawRoundedRect(
+        shapes: ShapeRenderer,
+        x: Float,
+        y: Float,
+        w: Float,
+        h: Float,
+        r: Float
+    ) {
         shapes.rect(x, y + r, w, h - 2 * r)
         shapes.rect(x + r, y, w - 2 * r, r)
         shapes.rect(x + r, y + h - r, w - 2 * r, r)

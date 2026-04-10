@@ -6,9 +6,9 @@ import io.github.msameer0.rhythmicrush.game.registries.Registry
 
 @Registry(id = "color_trigger")
 class ColorTrigger : AbstractTrigger {
-    var targetBg : Color
-    var targetGround : Color
-    var fadeDuration : Float
+    var targetBg: Color
+    var targetGround: Color
+    var fadeDuration: Float
 
     constructor() : super() {
         this.targetBg = Color(0f, 0f, 0f, 0f)
@@ -16,7 +16,9 @@ class ColorTrigger : AbstractTrigger {
         this.fadeDuration = 0f
     }
 
-    constructor(worldX : Float, targetBg : Color, targetGround : Color, fadeDuration : Float) : super(worldX) {
+    constructor(worldX: Float, targetBg: Color, targetGround: Color, fadeDuration: Float) : super(
+        worldX
+    ) {
         this.targetBg = targetBg
         this.targetGround = targetGround
         this.fadeDuration = fadeDuration

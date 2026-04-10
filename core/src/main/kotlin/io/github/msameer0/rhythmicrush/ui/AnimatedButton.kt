@@ -2,8 +2,6 @@ package io.github.msameer0.rhythmicrush.ui
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
-import com.badlogic.gdx.math.MathUtils
-import kotlin.math.abs
 import kotlin.math.min
 
 class AnimatedButton(
@@ -39,7 +37,10 @@ class AnimatedButton(
             remaining -= dt
         }
 
-        if (pendingFire && !this.isPressed && kotlin.math.abs(scale - 1f) < 0.02f && kotlin.math.abs(velocity) < 0.5f) {
+        if (pendingFire && !this.isPressed && kotlin.math.abs(scale - 1f) < 0.02f && kotlin.math.abs(
+                velocity
+            ) < 0.5f
+        ) {
             pendingFire = false
             scale = 1f
             velocity = 0f

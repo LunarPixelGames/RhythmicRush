@@ -17,8 +17,7 @@ class FontManager {
         var gen: FreeTypeFontGenerator? = null
         try {
             gen = FreeTypeFontGenerator(Gdx.files.internal("fonts/zendots-regular.ttf"))
-            val p =
-                FreeTypeFontParameter()
+            val p = FreeTypeFontParameter()
             p.magFilter = Texture.TextureFilter.Linear
             p.minFilter = Texture.TextureFilter.MipMapLinearLinear
             p.genMipMaps = true
@@ -35,8 +34,7 @@ class FontManager {
         } finally {
             gen?.dispose()
         }
-        @Suppress("UNCHECKED_CAST")
-        fonts = tempFonts as Array<BitmapFont>
+        @Suppress("UNCHECKED_CAST") fonts = tempFonts as Array<BitmapFont>
     }
 
     fun dispose() {

@@ -5,10 +5,14 @@ import io.github.msameer0.rhythmicrush.game.registries.Registry
 @Registry(id = "ship")
 class Ship : AbstractPlayer {
 
-    @JvmField var maxUpSpeed: Float = 400f
-    @JvmField var maxDownSpeed: Float = -500f
-    @JvmField var accel: Float = 1000f
-    @JvmField var decel: Float = 800f
+    @JvmField
+    var maxUpSpeed: Float = 400f
+    @JvmField
+    var maxDownSpeed: Float = -500f
+    @JvmField
+    var accel: Float = 1000f
+    @JvmField
+    var decel: Float = 800f
 
     private var groundY: Float = 50f
 
@@ -83,7 +87,9 @@ class Ship : AbstractPlayer {
     override fun isSafeFromBelow(): Boolean = true
 
     fun getGroundY(): Float = groundY
-    fun setGroundY(groundY: Float) { this.groundY = groundY }
+    fun setGroundY(groundY: Float) {
+        this.groundY = groundY
+    }
 
     override fun copyState(other: AbstractPlayer) {
         x = other.x

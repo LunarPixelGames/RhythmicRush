@@ -122,7 +122,8 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         InfoLine("GitHub: LunarPixelGames", "https://github.com/LunarPixelGames")
     )
 
-    private val privacyPolicyLine = InfoLine("Privacy Policy", "https://lunarpixelgames.github.io/RhythmicRush/PRIVACY")
+    private val privacyPolicyLine =
+        InfoLine("Privacy Policy", "https://lunarpixelgames.github.io/RhythmicRush/PRIVACY")
 
     private var draggingSlider = false
     private var draggingSliderRow = -1
@@ -161,7 +162,8 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         shapes = ShapeRenderer()
         font = game.fontManager.get(FontManager.SIZE_LARGE)
 
-        btnPlay = AnimatedButton(startButton, 0f, 0f, 0f, 0f) { game.screen = LevelSelectScreen(game) }
+        btnPlay =
+            AnimatedButton(startButton, 0f, 0f, 0f, 0f) { game.screen = LevelSelectScreen(game) }
         btnSettings = AnimatedButton(settingsButton, 0f, 0f, 0f, 0f) { settingsOpen = true }
         btnInfo = AnimatedButton(infoButton, 0f, 0f, 0f, 0f) { infoOpen = true }
 
@@ -265,7 +267,12 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         val settingsH = settingsButton.regionHeight * settingsScale
         if (::btnSettings.isInitialized) btnSettings.setBounds(20f, 10f, settingsW, settingsH)
 
-        if (::btnInfo.isInitialized) btnInfo.setBounds(vw - settingsW - 20f, 10f, settingsW, settingsH)
+        if (::btnInfo.isInitialized) btnInfo.setBounds(
+            vw - settingsW - 20f,
+            10f,
+            settingsW,
+            settingsH
+        )
 
         panelW = min(vw * 0.78f, 780f)
         val targetH = vh * PANEL_HEIGHT_FRACTION
@@ -284,12 +291,12 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         panelH = MAX_ROWS_PER_PAGE * rowStep + panelPadT + panelPadB + rowStep * 0.5f
         panelX = vw / 2f - panelW / 2f
         panelY = vh / 2f - panelH / 2f
-        
+
         backW = 56f
         backH = 56f
         backX = 25f
         backY = vh - backH - 25f
-        
+
         rowStartY = panelY + panelH - panelPadT
         arrowSize = 48f
         arrowY = panelY + panelH / 2f - arrowSize / 2f
@@ -356,7 +363,13 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         val (cat, _) = settingsPageToCatSub(currentSettingsPage)
         val titleText = CAT_NAMES[cat]
         layout.setText(font, titleText)
-        drawTextWithShadow(font, titleText, (panelX + panelW / 2f) - (layout.width / 2f), panelY + panelH - 45f, COL_HEADING)
+        drawTextWithShadow(
+            font,
+            titleText,
+            (panelX + panelW / 2f) - (layout.width / 2f),
+            panelY + panelH - 45f,
+            COL_HEADING
+        )
         game.batch.end()
         drawArrow(arrowLeftX, arrowY, arrowSize, true)
         drawArrow(arrowRightX, arrowY, arrowSize, false)
@@ -376,6 +389,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         }
         shapes.end()
     }
+
     private fun drawArrow(x: Float, y: Float, size: Float, pointLeft: Boolean) {
         val cx = x + size / 2f
         val cy = y + size / 2f
@@ -402,6 +416,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
                     }
                     drawSliderRow(ry, row.label, v, 45f)
                 }
+
                 RowType.INT_FIELD -> drawIntFieldRow(ry, row.label, s.fpsCapValue, 45f)
             }
         }
@@ -477,16 +492,28 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         shapes.rect(boxX, ry - boxH / 2f, boxW, boxH)
         shapes.end()
         shapes.begin(ShapeRenderer.ShapeType.Line)
-        shapes.color = if (fpsInputActive) COL_INPUT_BD else Color(COL_INPUT_BD.r, COL_INPUT_BD.g, COL_INPUT_BD.b, 0.4f)
+        shapes.color = if (fpsInputActive) COL_INPUT_BD else Color(
+            COL_INPUT_BD.r,
+            COL_INPUT_BD.g,
+            COL_INPUT_BD.b,
+            0.4f
+        )
         shapes.rect(boxX, ry - boxH / 2f, boxW, boxH)
         shapes.end()
-        val display = if (fpsInputActive) fpsInputBuffer.toString() + (if (System.currentTimeMillis() / 500 % 2 == 0L) "|" else " ") else value.toString()
+        val display =
+            if (fpsInputActive) fpsInputBuffer.toString() + (if (System.currentTimeMillis() / 500 % 2 == 0L) "|" else " ") else value.toString()
         game.batch.begin()
         font.data.setScale(settingsFontScale)
         drawTextWithShadow(font, label, panelX + hp, ry + layout.height / 2f, COL_LABEL)
         font.data.setScale(settingsFontScale * 0.95f)
         layout.setText(font, display)
-        drawTextWithShadow(font, display, boxX + boxW / 2f - layout.width / 2f, ry + layout.height / 2f, if (fpsInputActive) Color.WHITE else COL_DIM)
+        drawTextWithShadow(
+            font,
+            display,
+            boxX + boxW / 2f - layout.width / 2f,
+            ry + layout.height / 2f,
+            if (fpsInputActive) Color.WHITE else COL_DIM
+        )
         game.batch.end()
     }
 
@@ -512,47 +539,82 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
     private fun handleSettingsInput() {
         val s = game.settingsManager
         if (fpsInputActive) {
-            for (k in Input.Keys.NUM_0..Input.Keys.NUM_9) if (Gdx.input.isKeyJustPressed(k)) fpsInputBuffer.append((k - Input.Keys.NUM_0).toString())
-            for (k in Input.Keys.NUMPAD_0..Input.Keys.NUMPAD_9) if (Gdx.input.isKeyJustPressed(k)) fpsInputBuffer.append((k - Input.Keys.NUM_0).toString())
-            if (Gdx.input.isKeyJustPressed(Input.Keys.BACKSPACE) && fpsInputBuffer.isNotEmpty()) fpsInputBuffer.deleteCharAt(fpsInputBuffer.length - 1)
+            for (k in Input.Keys.NUM_0..Input.Keys.NUM_9) if (Gdx.input.isKeyJustPressed(k)) fpsInputBuffer.append(
+                (k - Input.Keys.NUM_0).toString()
+            )
+            for (k in Input.Keys.NUMPAD_0..Input.Keys.NUMPAD_9) if (Gdx.input.isKeyJustPressed(k)) fpsInputBuffer.append(
+                (k - Input.Keys.NUM_0).toString()
+            )
+            if (Gdx.input.isKeyJustPressed(Input.Keys.BACKSPACE) && fpsInputBuffer.isNotEmpty()) fpsInputBuffer.deleteCharAt(
+                fpsInputBuffer.length - 1
+            )
             if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) confirmFpsInput(s)
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) { if (fpsInputActive) confirmFpsInput(s) else closeSettings() }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            if (fpsInputActive) confirmFpsInput(s) else closeSettings()
+        }
         if (Gdx.input.isTouched && draggingSlider) {
-            val norm = MathUtils.clamp((unproject().x - (panelX + panelW - 45f - panelW * 0.34f)) / (panelW * 0.34f), 0f, 1f)
+            val norm = MathUtils.clamp(
+                (unproject().x - (panelX + panelW - 45f - panelW * 0.34f)) / (panelW * 0.34f),
+                0f,
+                1f
+            )
             val rows = getPageRows(currentSettingsPage)
             if (draggingSliderRow in 0 until rows.size) {
                 val r = rows.get(draggingSliderRow)
-                if (r.id == "volume") { s.musicVolume = norm; game.soundManager.setMusicVolume(norm) }
-                else if (r.id == "uiPadding") s.uiPadding = norm * 50f
+                if (r.id == "volume") {
+                    s.musicVolume = norm; game.soundManager.setMusicVolume(norm)
+                } else if (r.id == "uiPadding") s.uiPadding = norm * 50f
                 else if (r.id == "practiceOpacity") s.practiceButtonOpacity = norm
             }
         }
-        if (!Gdx.input.isTouched) { if (draggingSlider) s.save(); draggingSlider = false; draggingSliderRow = -1 }
+        if (!Gdx.input.isTouched) {
+            if (draggingSlider) s.save(); draggingSlider = false; draggingSliderRow = -1
+        }
         if (!Gdx.input.justTouched()) return
         val t = unproject()
-        if (hits(t, backX, backY, backW, backH)) { closeSettings(); return }
-        if (hits(t, arrowLeftX, arrowY, arrowSize, arrowSize)) { navigateSettings(-1); return }
-        if (hits(t, arrowRightX, arrowY, arrowSize, arrowSize)) { navigateSettings(1); return }
-        
+        if (hits(t, backX, backY, backW, backH)) {
+            closeSettings(); return
+        }
+        if (hits(t, arrowLeftX, arrowY, arrowSize, arrowSize)) {
+            navigateSettings(-1); return
+        }
+        if (hits(t, arrowRightX, arrowY, arrowSize, arrowSize)) {
+            navigateSettings(1); return
+        }
+
         val pRows = getPageRows(currentSettingsPage)
         for (i in 0 until pRows.size) {
             val ry = rowY(i)
             val r = pRows.get(i)
             if (r.type == RowType.TOGGLE && hitPill(t, ry)) handleToggle(r.id, s)
-            else if (r.type == RowType.SLIDER && hitSliderThumb(t, ry, 0.5f)) { draggingSlider = true; draggingSliderRow = i }
-            else if (r.type == RowType.INT_FIELD && hitIntBox(t, ry)) { fpsInputActive = true; fpsInputBuffer.setLength(0); fpsInputBuffer.append(s.fpsCapValue) }
+            else if (r.type == RowType.SLIDER && hitSliderThumb(t, ry, 0.5f)) {
+                draggingSlider = true; draggingSliderRow = i
+            } else if (r.type == RowType.INT_FIELD && hitIntBox(t, ry)) {
+                fpsInputActive =
+                    true; fpsInputBuffer.setLength(0); fpsInputBuffer.append(s.fpsCapValue)
+            }
         }
     }
 
     private fun handleToggle(id: String, s: SettingsManager) {
         when (id) {
-            "menuMusic" -> { s.menuMusicEnabled = !s.menuMusicEnabled; if (s.menuMusicEnabled) game.soundManager.playMenuMusic() else game.soundManager.stopMenuMusic() }
+            "menuMusic" -> {
+                s.menuMusicEnabled =
+                    !s.menuMusicEnabled; if (s.menuMusicEnabled) game.soundManager.playMenuMusic() else game.soundManager.stopMenuMusic()
+            }
+
             "hitboxes" -> s.showHitboxes = !s.showHitboxes
             "hitboxesDeath" -> s.showHitboxesOnDeath = !s.showHitboxesOnDeath
             "showFps" -> s.showFps = !s.showFps
-            "capFps" -> { s.capFps = !s.capFps; s.applyFpsCap() }
-            "vsync" -> { s.enableVsync = !s.enableVsync; s.applyVsync() }
+            "capFps" -> {
+                s.capFps = !s.capFps; s.applyFpsCap()
+            }
+
+            "vsync" -> {
+                s.enableVsync = !s.enableVsync; s.applyVsync()
+            }
+
             "showPercentage" -> s.showPercentage = !s.showPercentage
             "showProgressBar" -> s.showProgressBar = !s.showProgressBar
             "showAttempts" -> s.showAttempts = !s.showAttempts
@@ -566,16 +628,29 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         currentSettingsPage = (currentSettingsPage + dir + total) % total
     }
 
-    private fun closeSettings() { settingsOpen = false; game.settingsManager.save() }
+    private fun closeSettings() {
+        settingsOpen = false; game.settingsManager.save()
+    }
+
     private fun confirmFpsInput(s: SettingsManager) {
-        try { val v = fpsInputBuffer.toString().toInt(); if (v > 0) { s.fpsCapValue = v; s.applyFpsCap(); s.save() } } catch (e: Exception) {}
+        try {
+            val v = fpsInputBuffer.toString().toInt(); if (v > 0) {
+                s.fpsCapValue = v; s.applyFpsCap(); s.save()
+            }
+        } catch (e: Exception) {
+        }
         fpsInputActive = false
     }
 
     private fun rowY(i: Int): Float = rowStartY - i * rowStep - rowStep / 2f
-    private fun hitPill(t: Vector2, ry: Float): Boolean = t.x > panelX + panelW - 140f && t.y in (ry - 20f)..(ry + 20f)
-    private fun hitSliderThumb(t: Vector2, ry: Float, v: Float): Boolean = t.y in (ry - 25f)..(ry + 25f) && t.x > panelX + panelW * 0.5f
-    private fun hitIntBox(t: Vector2, ry: Float): Boolean = t.x > panelX + panelW - 140f && t.y in (ry - 20f)..(ry + 20f)
+    private fun hitPill(t: Vector2, ry: Float): Boolean =
+        t.x > panelX + panelW - 140f && t.y in (ry - 20f)..(ry + 20f)
+
+    private fun hitSliderThumb(t: Vector2, ry: Float, v: Float): Boolean =
+        t.y in (ry - 25f)..(ry + 25f) && t.x > panelX + panelW * 0.5f
+
+    private fun hitIntBox(t: Vector2, ry: Float): Boolean =
+        t.x > panelX + panelW - 140f && t.y in (ry - 20f)..(ry + 20f)
 
     private fun drawInfoOverlay() {
         Gdx.gl.glEnable(GL20.GL_BLEND)
@@ -604,7 +679,13 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         val titleText = INFO_TAB_NAMES[currentInfoPage]
         font.data.setScale(settingsHeadingScale)
         layout.setText(font, titleText)
-        drawTextWithShadow(font, titleText, (panelX + panelW / 2f) - (layout.width / 2f), panelY + panelH - 45f, COL_HEADING)
+        drawTextWithShadow(
+            font,
+            titleText,
+            (panelX + panelW / 2f) - (layout.width / 2f),
+            panelY + panelH - 45f,
+            COL_HEADING
+        )
         game.batch.end()
 
         drawArrow(arrowLeftX, arrowY, arrowSize, true)
@@ -650,12 +731,22 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
                 font.draw(game.batch, line.text, contentX, line.y)
             }
             font.color = COL_DIM
-            font.draw(game.batch, "Thanks for playing Rhythmic Rush!", contentX, contentY - 4.5f * lineSpacing)
+            font.draw(
+                game.batch,
+                "Thanks for playing Rhythmic Rush!",
+                contentX,
+                contentY - 4.5f * lineSpacing
+            )
 
             font.color = COL_TAB_ACT
             layout.setText(font, privacyPolicyLine.text)
             privacyPolicyLine.y = panelY + 65f
-            font.draw(game.batch, privacyPolicyLine.text, panelX + panelW / 2f - layout.width / 2f, privacyPolicyLine.y)
+            font.draw(
+                game.batch,
+                privacyPolicyLine.text,
+                panelX + panelW / 2f - layout.width / 2f,
+                privacyPolicyLine.y
+            )
         }
 
         font.data.setScale(1f)
@@ -692,8 +783,12 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             return
         }
 
-        if (hits(t, arrowLeftX, arrowY, arrowSize, arrowSize)) { navigateInfo(-1); return }
-        if (hits(t, arrowRightX, arrowY, arrowSize, arrowSize)) { navigateInfo(1); return }
+        if (hits(t, arrowLeftX, arrowY, arrowSize, arrowSize)) {
+            navigateInfo(-1); return
+        }
+        if (hits(t, arrowRightX, arrowY, arrowSize, arrowSize)) {
+            navigateInfo(1); return
+        }
 
         val lines: Array<InfoLine>? = when (currentInfoPage) {
             INFO_TAB_CREDITS -> Array(creditLines)
@@ -749,8 +844,13 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         return Vector2(touch.x, touch.y)
     }
 
-    override fun resize(width: Int, height: Int) { super.resize(width, height); updateScaledSizes() }
-    override fun dispose() { shapes.dispose(); panelTexture?.dispose(); super.dispose() }
+    override fun resize(width: Int, height: Int) {
+        super.resize(width, height); updateScaledSizes()
+    }
+
+    override fun dispose() {
+        shapes.dispose(); panelTexture?.dispose(); super.dispose()
+    }
 
     private fun drawShadowText(f: BitmapFont, text: String, x: Float, y: Float, color: Color) {
         val oldColor = f.color.cpy()
@@ -773,7 +873,11 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         pm.setColor(color)
         pm.fillRectangle(r, 0, w - 2 * r, h)
         pm.fillRectangle(0, r, w, h - 2 * r)
-        pm.fillCircle(r, r, r); pm.fillCircle(w - r, r, r); pm.fillCircle(r, h - r, r); pm.fillCircle(w - r, h - r, r)
+        pm.fillCircle(r, r, r); pm.fillCircle(w - r, r, r); pm.fillCircle(
+            r,
+            h - r,
+            r
+        ); pm.fillCircle(w - r, h - r, r)
         val t = Texture(pm); pm.dispose(); return t
     }
 }

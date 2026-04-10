@@ -4,15 +4,10 @@ import com.badlogic.gdx.math.Rectangle
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 
 abstract class AbstractHazard(
-    var x: Float,
-    var y: Float,
-    var width: Float,
-    var height: Float
+    var x: Float, var y: Float, var width: Float, var height: Float
 ) {
     enum class HazardType {
-        SPIKE,
-        HALF_SPIKE,
-        SAW_BLADE
+        SPIKE, HALF_SPIKE, SAW_BLADE
     }
 
     var type: HazardType? = null

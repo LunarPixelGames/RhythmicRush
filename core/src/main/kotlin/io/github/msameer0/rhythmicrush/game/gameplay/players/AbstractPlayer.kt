@@ -7,24 +7,40 @@ abstract class AbstractPlayer(startX: Float, startY: Float) {
 
     enum class PlayerType { CUBE, SHIP }
 
-    @JvmField var gravity: Float = 0f
-    @JvmField protected var type: PlayerType? = null
+    @JvmField
+    var gravity: Float = 0f
+    @JvmField
+    protected var type: PlayerType? = null
 
-    @JvmField var x: Float = startX
-    @JvmField var y: Float = startY
-    @JvmField var worldX: Float = 0f
-    @JvmField var width: Float = 50f
-    @JvmField var height: Float = 50f
-    @JvmField var velocityY: Float = 0f
-    @JvmField var bounds: Rectangle = Rectangle(x, y, width, height)
+    @JvmField
+    var x: Float = startX
+    @JvmField
+    var y: Float = startY
+    @JvmField
+    var worldX: Float = 0f
+    @JvmField
+    var width: Float = 50f
+    @JvmField
+    var height: Float = 50f
+    @JvmField
+    var velocityY: Float = 0f
+    @JvmField
+    var bounds: Rectangle = Rectangle(x, y, width, height)
 
-    @JvmField protected var gravityFlipped: Boolean = false
-    @JvmField protected var mini: Boolean = false
-    @JvmField protected var currentSlopeRotation: Float = 0f
-    @JvmField protected var jumpHeld: Boolean = false
-    @JvmField protected var jumpConsumed: Boolean = false
-    @JvmField protected var justPressed: Boolean = false
-    @JvmField protected var world: GameWorld? = null
+    @JvmField
+    protected var gravityFlipped: Boolean = false
+    @JvmField
+    protected var mini: Boolean = false
+    @JvmField
+    protected var currentSlopeRotation: Float = 0f
+    @JvmField
+    protected var jumpHeld: Boolean = false
+    @JvmField
+    protected var jumpConsumed: Boolean = false
+    @JvmField
+    protected var justPressed: Boolean = false
+    @JvmField
+    protected var world: GameWorld? = null
 
     fun isMini(): Boolean = mini
 
@@ -54,7 +70,13 @@ abstract class AbstractPlayer(startX: Float, startY: Float) {
 
     fun getGravity(): Float = gravity
 
-    abstract fun init(startX: Float, startY: Float, velocityY: Float, jumpHeld: Boolean): AbstractPlayer
+    abstract fun init(
+        startX: Float,
+        startY: Float,
+        velocityY: Float,
+        jumpHeld: Boolean
+    ): AbstractPlayer
+
     abstract fun init(startX: Float, startY: Float): AbstractPlayer
     abstract fun update(delta: Float, groundY: Float)
     abstract fun jump()
@@ -68,31 +90,47 @@ abstract class AbstractPlayer(startX: Float, startY: Float) {
         this.jumpHeld = held
     }
 
-    fun setY (y : Float) {
+    fun setY(y: Float) {
         this.y = y
         updateBounds()
     }
 
 
-    fun postUpdate() { justPressed = false }
+    fun postUpdate() {
+        justPressed = false
+    }
+
     fun isJustPressed(): Boolean = justPressed
     fun isJumpHeld(): Boolean = jumpHeld
     fun isJumpConsumed(): Boolean = jumpConsumed
-    fun setJumpConsumed(consumed: Boolean) { jumpConsumed = consumed }
+    fun setJumpConsumed(consumed: Boolean) {
+        jumpConsumed = consumed
+    }
 
     fun getBounds(): Rectangle = bounds
 
-    protected fun updateBounds() { bounds.setPosition(x, y) }
+    protected fun updateBounds() {
+        bounds.setPosition(x, y)
+    }
 
     fun getX(): Float = x
     fun getWorldX(): Float = worldX
-    fun setWorldX(worldX: Float) { this.worldX = worldX }
+    fun setWorldX(worldX: Float) {
+        this.worldX = worldX
+    }
+
     fun getY(): Float = y
 
-    fun setWorld(world: GameWorld) { this.world = world }
+    fun setWorld(world: GameWorld) {
+        this.world = world
+    }
+
     fun getWorld(): GameWorld? = world
 
-    fun setVelocityY(vel: Float) { velocityY = vel }
+    fun setVelocityY(vel: Float) {
+        velocityY = vel
+    }
+
     fun getVelocityY(): Float = velocityY
 
     open fun setGrounded(grounded: Boolean) {}
@@ -103,8 +141,12 @@ abstract class AbstractPlayer(startX: Float, startY: Float) {
     fun getType(): PlayerType? = type
 
     fun isGravityFlipped(): Boolean = gravityFlipped
-    fun setGravityFlipped(gravityFlipped: Boolean) { this.gravityFlipped = gravityFlipped }
+    fun setGravityFlipped(gravityFlipped: Boolean) {
+        this.gravityFlipped = gravityFlipped
+    }
 
     fun getCurrentSlopeRotation(): Float = currentSlopeRotation
-    fun setCurrentSlopeRotation(rot: Float) { currentSlopeRotation = rot }
+    fun setCurrentSlopeRotation(rot: Float) {
+        currentSlopeRotation = rot
+    }
 }

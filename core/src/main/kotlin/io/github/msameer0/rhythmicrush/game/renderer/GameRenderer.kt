@@ -7,9 +7,10 @@ import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
+import com.badlogic.gdx.math.MathUtils
+import com.badlogic.gdx.utils.ObjectMap
 import io.github.msameer0.rhythmicrush.atlas.AtlasManager
 import io.github.msameer0.rhythmicrush.game.GameWorld
-import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Block
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.BlockType
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Slope
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.AbstractHazard
@@ -19,9 +20,7 @@ import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.AbstractOrb
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.AbstractPortal
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
-import com.badlogic.gdx.math.MathUtils
 import kotlin.math.min
-import com.badlogic.gdx.utils.ObjectMap
 
 class GameRenderer(
     private val world: GameWorld,
@@ -39,7 +38,7 @@ class GameRenderer(
 
         private val FALLBACK_CUBE_PORTAL = Color(0f, 0.8f, 0f, 1f)
         private val FALLBACK_SHIP_PORTAL = Color(0f, 0.5f, 1f, 1f)
-        private val FALLBACK_YELLOW_ORB  = Color(1f, 0.9f, 0.1f, 1f)
+        private val FALLBACK_YELLOW_ORB = Color(1f, 0.9f, 0.1f, 1f)
     }
 
     private val shape = ShapeRenderer()
@@ -68,7 +67,8 @@ class GameRenderer(
         val types = BlockType.entries.toTypedArray()
         blockRegionsByOrdinal = arrayOfNulls(types.size)
         for (type in types) {
-            blockRegionsByOrdinal[type.ordinal] = atlasManager.blocksAtlas.findRegion(type.textureName)
+            blockRegionsByOrdinal[type.ordinal] =
+                atlasManager.blocksAtlas.findRegion(type.textureName)
         }
 
         slopeRegion = atlasManager.blocksAtlas.findRegion("slope")
@@ -147,7 +147,8 @@ class GameRenderer(
                     shape.begin(ShapeRenderer.ShapeType.Filled)
                     anyFallback = true
                 }
-                shape.color = if (pType == AbstractPortal.PortalType.CUBE) FALLBACK_CUBE_PORTAL else FALLBACK_SHIP_PORTAL
+                shape.color =
+                    if (pType == AbstractPortal.PortalType.CUBE) FALLBACK_CUBE_PORTAL else FALLBACK_SHIP_PORTAL
                 shape.rect(portal.x, portal.y, portal.width, portal.height)
             }
         }
@@ -198,6 +199,7 @@ class GameRenderer(
                         )
                     }
                 }
+
                 AbstractHazard.HazardType.HALF_SPIKE -> {
                     if (halfSpikeRegion != null) {
                         val hSpike = hazard as HalfSpike
@@ -210,8 +212,10 @@ class GameRenderer(
                         )
                     }
                 }
+
                 AbstractHazard.HazardType.SAW_BLADE -> {
                 }
+
                 else -> {}
             }
         }
@@ -219,7 +223,8 @@ class GameRenderer(
 
     private fun drawBlocks() {
         for (block in world.blocks) {
-            val region = (if (block is Slope) slopeRegion else null) ?: blockRegionsByOrdinal[block.type.ordinal]
+            val region = (if (block is Slope) slopeRegion else null)
+                ?: blockRegionsByOrdinal[block.type.ordinal]
             if (region != null) {
                 batch.draw(
                     region,
@@ -315,17 +320,20 @@ class GameRenderer(
         if (pType == AbstractPlayer.PlayerType.CUBE) {
             if (player.isGrounded()) {
                 val nearest90 = MathUtils.round((playerVisualRotation - slopeRot) / 90f) * 90f
-                playerVisualRotation = MathUtils.lerp(playerVisualRotation, nearest90 + slopeRot, min(delta * 15f, 1f))
+                playerVisualRotation =
+                    MathUtils.lerp(playerVisualRotation, nearest90 + slopeRot, min(delta * 15f, 1f))
             } else if (!world.isPlayerDead && !paused) {
                 val t = delta * 60f
-                val rotation = (kotlin.math.abs(vy) * CUBE_SPIN_FACTOR / 60f + 5f / 60f) * t + 300f * delta
+                val rotation =
+                    (kotlin.math.abs(vy) * CUBE_SPIN_FACTOR / 60f + 5f / 60f) * t + 300f * delta
                 if (player.isGravityFlipped()) playerVisualRotation += rotation
                 else playerVisualRotation -= rotation
             }
         } else if (pType == AbstractPlayer.PlayerType.SHIP) {
             var targetAngle = MathUtils.clamp(vy * SHIP_TILT_FACTOR, -SHIP_MAX_TILT, SHIP_MAX_TILT)
             if (player.isGrounded()) targetAngle += slopeRot
-            playerVisualRotation = MathUtils.lerp(playerVisualRotation, targetAngle, min(SHIP_TILT_LERP * delta, 1f))
+            playerVisualRotation =
+                MathUtils.lerp(playerVisualRotation, targetAngle, min(SHIP_TILT_LERP * delta, 1f))
         } else {
             playerVisualRotation = 0f
         }

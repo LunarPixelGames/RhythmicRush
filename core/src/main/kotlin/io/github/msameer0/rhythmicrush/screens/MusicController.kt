@@ -2,9 +2,9 @@ package io.github.msameer0.rhythmicrush.screens
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.audio.Music
-import kotlin.math.min
 import io.github.msameer0.rhythmicrush.RhythmicRushGame
 import io.github.msameer0.rhythmicrush.game.level.LevelData
+import kotlin.math.min
 
 class MusicController(
     private val game: RhythmicRushGame,

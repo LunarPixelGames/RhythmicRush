@@ -6,20 +6,22 @@ import com.badlogic.gdx.utils.Array
 import io.github.msameer0.rhythmicrush.game.engine.Tickable
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Block
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.BlockType
-import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Slope
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.AbstractHazard
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.HalfSpike
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.SawBlade
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike
-import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.*
-import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.*
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.AbstractOrb
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.AbstractPortal
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.CubePortal
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.GravityPortal
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.MiniPortal
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.ShipPortal
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.game.level.LevelData
 import io.github.msameer0.rhythmicrush.game.registries.Registries
 import io.github.msameer0.rhythmicrush.game.trigger.AbstractTrigger
 import io.github.msameer0.rhythmicrush.game.trigger.ColorTrigger
 import io.github.msameer0.rhythmicrush.game.trigger.PulseTrigger
-import com.badlogic.gdx.math.MathUtils
 import kotlin.math.min
 
 class GameWorld : Tickable {
@@ -118,8 +120,13 @@ class GameWorld : Tickable {
         player = null
     }
 
-    fun startBgFade(target: Color, duration: Float) { colors.startBgFade(target, duration) }
-    fun startGroundFade(target: Color, duration: Float) { colors.startGroundFade(target, duration) }
+    fun startBgFade(target: Color, duration: Float) {
+        colors.startBgFade(target, duration)
+    }
+
+    fun startGroundFade(target: Color, duration: Float) {
+        colors.startGroundFade(target, duration)
+    }
 
     fun startBgPulse(target: Color, fadeIn: Float, hold: Float, fadeOut: Float) {
         colors.startBgPulse(target, fadeIn, hold, fadeOut)
@@ -220,11 +227,13 @@ class GameWorld : Tickable {
                 hazards.add(s)
                 activeSpikes.add(s)
             }
+
             "half_spike" -> {
                 val hs = pools.obtainHalfSpike().init(rx, e.y, e.rotation)
                 hazards.add(hs)
                 activeHalfSpikes.add(hs)
             }
+
             "saw_blade" -> {
                 val sb = pools.obtainSawBlade().init(rx, e.y, e.size, e.rotation)
                 hazards.add(sb)
@@ -236,10 +245,21 @@ class GameWorld : Tickable {
     private fun spawnPortal(e: LevelData.ObjectEntry, rx: Float) {
         var p: AbstractPortal? = null
         when (e.type) {
-            "cube_portal" -> { p = pools.obtainCubePortal(); activeCubePortals.add(p) }
-            "ship_portal" -> { p = pools.obtainShipPortal(); activeShipPortals.add(p) }
-            "gravity_portal" -> { p = pools.obtainGravityPortal(); activeGravityPortals.add(p) }
-            "mini_portal" -> { p = pools.obtainMiniPortal(); activeMiniPortals.add(p) }
+            "cube_portal" -> {
+                p = pools.obtainCubePortal(); activeCubePortals.add(p)
+            }
+
+            "ship_portal" -> {
+                p = pools.obtainShipPortal(); activeShipPortals.add(p)
+            }
+
+            "gravity_portal" -> {
+                p = pools.obtainGravityPortal(); activeGravityPortals.add(p)
+            }
+
+            "mini_portal" -> {
+                p = pools.obtainMiniPortal(); activeMiniPortals.add(p)
+            }
         }
         if (p != null) {
             p.init(rx, e.y, e.rotation)
@@ -250,12 +270,29 @@ class GameWorld : Tickable {
     private fun spawnOrb(e: LevelData.ObjectEntry, rx: Float) {
         var orb: AbstractOrb? = null
         when (e.type) {
-            "yellow_orb" -> { val o = pools.obtainYellowOrb(); o.init(rx, e.y); orb = o }
-            "blue_orb" -> { val o = pools.obtainBlueOrb(); o.init(rx, e.y); orb = o }
-            "pink_orb" -> { val o = pools.obtainPinkOrb(); o.init(rx, e.y); orb = o }
-            "red_orb" -> { val o = pools.obtainRedOrb(); o.init(rx, e.y); orb = o }
-            "black_orb" -> { val o = pools.obtainBlackOrb(); o.init(rx, e.y); orb = o }
-            "green_orb" -> { val o = pools.obtainGreenOrb(); o.init(rx, e.y); orb = o }
+            "yellow_orb" -> {
+                val o = pools.obtainYellowOrb(); o.init(rx, e.y); orb = o
+            }
+
+            "blue_orb" -> {
+                val o = pools.obtainBlueOrb(); o.init(rx, e.y); orb = o
+            }
+
+            "pink_orb" -> {
+                val o = pools.obtainPinkOrb(); o.init(rx, e.y); orb = o
+            }
+
+            "red_orb" -> {
+                val o = pools.obtainRedOrb(); o.init(rx, e.y); orb = o
+            }
+
+            "black_orb" -> {
+                val o = pools.obtainBlackOrb(); o.init(rx, e.y); orb = o
+            }
+
+            "green_orb" -> {
+                val o = pools.obtainGreenOrb(); o.init(rx, e.y); orb = o
+            }
         }
         if (orb != null) orbs.add(orb)
     }
@@ -475,21 +512,37 @@ class GameWorld : Tickable {
 
     var backgroundColor: Color
         get() = colors.backgroundColor
-        set(value) { colors.setBackgroundColor(value) }
+        set(value) {
+            colors.setBackgroundColor(value)
+        }
 
     var groundColor: Color
         get() = colors.groundColor
-        set(value) { colors.setGroundColor(value) }
+        set(value) {
+            colors.setGroundColor(value)
+        }
 
     var baseBgColor: Color
         get() = colors.baseBgColor
-        set(value) { colors.setBaseBgColor(value) }
+        set(value) {
+            colors.setBaseBgColor(value)
+        }
 
     var baseGroundColor: Color
         get() = colors.baseGroundColor
-        set(value) { colors.setBaseGroundColor(value) }
+        set(value) {
+            colors.setBaseGroundColor(value)
+        }
 
-    fun addPortal(p: AbstractPortal) { portals.add(p) }
-    fun addHazard(h: AbstractHazard) { hazards.add(h) }
-    fun addBlock(b: Block) { blocks.add(b) }
+    fun addPortal(p: AbstractPortal) {
+        portals.add(p)
+    }
+
+    fun addHazard(h: AbstractHazard) {
+        hazards.add(h)
+    }
+
+    fun addBlock(b: Block) {
+        blocks.add(b)
+    }
 }

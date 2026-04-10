@@ -13,10 +13,7 @@ class SawBlade : AbstractHazard {
 
 
     constructor(x: Float, y: Float, diameter: Float, degreesPerSecond: Float) : super(
-        x,
-        y,
-        diameter,
-        diameter
+        x, y, diameter, diameter
     ) {
         this.type = HazardType.SAW_BLADE
         this.degreesPerSecond = degreesPerSecond
@@ -28,10 +25,7 @@ class SawBlade : AbstractHazard {
 
     @JvmOverloads
     fun init(
-        x: Float,
-        y: Float,
-        diameter: Float,
-        degreesPerSec: Float = degreesPerSecond
+        x: Float, y: Float, diameter: Float, degreesPerSec: Float = degreesPerSecond
     ): SawBlade {
         this.x = x
         this.y = y

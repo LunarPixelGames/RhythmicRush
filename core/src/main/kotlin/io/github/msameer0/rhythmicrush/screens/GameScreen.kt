@@ -3,19 +3,14 @@ package io.github.msameer0.rhythmicrush.screens
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.InputAdapter
-import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
-import com.badlogic.gdx.graphics.g2d.BitmapFont
-import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.math.Vector3
-import kotlin.math.min
 import com.badlogic.gdx.utils.TimeUtils
 import com.badlogic.gdx.utils.viewport.ExtendViewport
-import com.badlogic.gdx.utils.viewport.Viewport
 import io.github.msameer0.rhythmicrush.RhythmicRushGame
 import io.github.msameer0.rhythmicrush.font.FontManager
 import io.github.msameer0.rhythmicrush.game.GameWorld
@@ -24,6 +19,7 @@ import io.github.msameer0.rhythmicrush.game.level.LevelData
 import io.github.msameer0.rhythmicrush.game.renderer.GameRenderer
 import io.github.msameer0.rhythmicrush.screens.ui.HudRenderer
 import io.github.msameer0.rhythmicrush.screens.ui.OverlayUI
+import kotlin.math.min
 
 class GameScreen @JvmOverloads constructor(
     game: RhythmicRushGame,
@@ -167,7 +163,8 @@ class GameScreen @JvmOverloads constructor(
 
         val resumeRegion = game.atlasManager.menuAtlas.findRegion("start_button")
         val backRegion = game.atlasManager.levelSelectAtlas.findRegion("back")
-        overlay = OverlayUI(game, levelData, pauseFont, shapes, game.batch, resumeRegion, backRegion)
+        overlay =
+            OverlayUI(game, levelData, pauseFont, shapes, game.batch, resumeRegion, backRegion)
 
         if (levelData != null) {
             world.loadLevel(levelData)
@@ -494,9 +491,9 @@ class GameScreen @JvmOverloads constructor(
             return
         }
         val jump = Gdx.input.isKeyPressed(Input.Keys.SPACE) ||
-                Gdx.input.isKeyPressed(Input.Keys.W) ||
-                Gdx.input.isKeyPressed(Input.Keys.UP) ||
-                Gdx.input.isTouched
+            Gdx.input.isKeyPressed(Input.Keys.W) ||
+            Gdx.input.isKeyPressed(Input.Keys.UP) ||
+            Gdx.input.isTouched
 
         if (jump != lastJumpHeld) {
             engine.queueInput(jump, engine.accumulator)

@@ -5,8 +5,8 @@ import com.badlogic.gdx.utils.Array
 abstract class ObjectPool<T : Any> {
     val free = Array<T>()
 
-    protected abstract fun create() : T
-    protected abstract fun reset(obj : T)
+    protected abstract fun create(): T
+    protected abstract fun reset(obj: T)
 
     fun obtain(): T {
         if (free.size == 0) return create()

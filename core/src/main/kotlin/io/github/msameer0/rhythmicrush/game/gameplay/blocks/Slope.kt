@@ -19,7 +19,9 @@ class Slope : Block {
 
     constructor() : super()
 
-    constructor(x: Float, y: Float, size: Float, rotation: Float) : super(x, y, size, BlockType.DEFAULT) {
+    constructor(x: Float, y: Float, size: Float, rotation: Float) : super(
+        x, y, size, BlockType.DEFAULT
+    ) {
         this.rotation = rotation
     }
 
@@ -48,29 +50,28 @@ class Slope : Block {
     override fun tryTouch(player: AbstractPlayer) {
         val pr = player.getBounds()
 
-        val r   = pr.width * 0.5f * CIRCLE_RATIO
-        val cx  = pr.x + pr.width  * 0.5f
-        val cy  = pr.y + pr.height * 0.5f
+        val r = pr.width * 0.5f * CIRCLE_RATIO
+        val cx = pr.x + pr.width * 0.5f
+        val cy = pr.y + pr.height * 0.5f
 
-        val bL  = bounds.x
-        val bR  = bounds.x + bounds.width
-        val bB  = bounds.y
-        val bT  = bounds.y + bounds.height
-        val bW  = bounds.width
-        val bH  = bounds.height
+        val bL = bounds.x
+        val bR = bounds.x + bounds.width
+        val bB = bounds.y
+        val bT = bounds.y + bounds.height
+        val bW = bounds.width
+        val bH = bounds.height
 
         val margin = r * 2f
-        if (cx + r < bL - margin || cx - r > bR + margin ||
-            cy + r < bB - margin || cy - r > bT + margin) return
+        if (cx + r < bL - margin || cx - r > bR + margin || cy + r < bB - margin || cy - r > bT + margin) return
 
-        val flipped     = player.isGravityFlipped()
-        val rot         = normaliseRot()
+        val flipped = player.isGravityFlipped()
+        val rot = normaliseRot()
         val scrollSpeed = player.getWorld()?.scrollSpeed ?: 320f
 
-        val isFloor   = rot == 0   || rot == 270
-        val isCeiling = rot == 90  || rot == 180
+        val isFloor = rot == 0 || rot == 270
+        val isCeiling = rot == 90 || rot == 180
 
-        val isClimbing   = (!flipped && rot == 0)   || (flipped && rot == 90)
+        val isClimbing = (!flipped && rot == 0) || (flipped && rot == 90)
         val isDescending = (!flipped && rot == 270) || (flipped && rot == 180)
 
         val isShip = player.getType() == AbstractPlayer.PlayerType.SHIP
@@ -79,14 +80,27 @@ class Slope : Block {
             if ((!flipped && !isFloor) || (flipped && !isCeiling)) return
         }
 
-        val lx1: Float; val ly1: Float
-        val lx2: Float; val ly2: Float
+        val lx1: Float;
+        val ly1: Float
+        val lx2: Float;
+        val ly2: Float
 
         when (rot) {
-            0   -> { lx1 = bL; ly1 = bB; lx2 = bR; ly2 = bT }
-            90  -> { lx1 = bR; ly1 = bB; lx2 = bL; ly2 = bT }
-            180 -> { lx1 = bR; ly1 = bT; lx2 = bL; ly2 = bB }
-            else -> { lx1 = bL; ly1 = bT; lx2 = bR; ly2 = bB }
+            0 -> {
+                lx1 = bL; ly1 = bB; lx2 = bR; ly2 = bT
+            }
+
+            90 -> {
+                lx1 = bR; ly1 = bB; lx2 = bL; ly2 = bT
+            }
+
+            180 -> {
+                lx1 = bR; ly1 = bT; lx2 = bL; ly2 = bB
+            }
+
+            else -> {
+                lx1 = bL; ly1 = bT; lx2 = bR; ly2 = bB
+            }
         }
 
         tmpEdge.set(lx2 - lx1, ly2 - ly1)
@@ -98,8 +112,11 @@ class Slope : Block {
         var nx = tmpNormal.x
         var ny = tmpNormal.y
 
-        if (isCeiling && ny > 0) { nx = -nx; ny = -ny }
-        else if (isFloor && ny < 0) { nx = -nx; ny = -ny }
+        if (isCeiling && ny > 0) {
+            nx = -nx; ny = -ny
+        } else if (isFloor && ny < 0) {
+            nx = -nx; ny = -ny
+        }
 
         tmpCenter.set(cx, cy)
         tmpOrigin.set(lx1, ly1)
@@ -118,17 +135,19 @@ class Slope : Block {
         val t = tmpCenter.dot(tmpEdge) / (edgeLen * edgeLen)
         if (t < -0.01f || t > 1.01f) return
 
-        val targetVy    = -(scrollSpeed * nx) / ny
+        val targetVy = -(scrollSpeed * nx) / ny
         val isFloorForPlayer = (!flipped && isFloor) || (flipped && isCeiling)
 
         if (isFloorForPlayer) {
-            val jumpingOff = (!flipped && player.getVelocityY() > maxOf(0f, targetVy) + 1.5f) ||
-                ( flipped && player.getVelocityY() < minOf(0f, targetVy) - 1.5f)
+            val jumpingOff = (!flipped && player.getVelocityY() > maxOf(
+                0f,
+                targetVy
+            ) + 1.5f) || (flipped && player.getVelocityY() < minOf(0f, targetVy) - 1.5f)
             if (jumpingOff) return
         }
 
         val pushOutY = (r - dist) / ny
-        val offsetY  = cy - player.y
+        val offsetY = cy - player.y
         player.setY(cy + pushOutY - offsetY)
 
         if (isFloorForPlayer) player.setGrounded(true)
@@ -137,8 +156,13 @@ class Slope : Block {
 
         when {
             isDescending -> player.setVelocityY(targetVy)
-            isClimbing && !flipped && player.getVelocityY() <= targetVy -> player.setVelocityY(targetVy)
-            isClimbing &&  flipped && player.getVelocityY() >= targetVy -> player.setVelocityY(targetVy)
+            isClimbing && !flipped && player.getVelocityY() <= targetVy -> player.setVelocityY(
+                targetVy
+            )
+
+            isClimbing && flipped && player.getVelocityY() >= targetVy -> player.setVelocityY(
+                targetVy
+            )
         }
     }
 }

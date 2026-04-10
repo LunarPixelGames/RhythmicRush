@@ -15,7 +15,7 @@ class LevelSerializer {
             return j
         }
 
-        fun save(data : LevelData, file : FileHandle) {
+        fun save(data: LevelData, file: FileHandle) {
             val out = json.prettyPrint(data)
             file.writeString(out, false)
         }

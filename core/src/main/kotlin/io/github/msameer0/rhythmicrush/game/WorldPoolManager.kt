@@ -4,9 +4,22 @@ import com.badlogic.gdx.utils.Array
 import io.github.msameer0.rhythmicrush.game.engine.ObjectPool
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Block
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Slope
-import io.github.msameer0.rhythmicrush.game.gameplay.hazards.*
-import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.*
-import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.*
+import io.github.msameer0.rhythmicrush.game.gameplay.hazards.AbstractHazard
+import io.github.msameer0.rhythmicrush.game.gameplay.hazards.HalfSpike
+import io.github.msameer0.rhythmicrush.game.gameplay.hazards.SawBlade
+import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.AbstractOrb
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.BlackOrb
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.BlueOrb
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.GreenOrb
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.PinkOrb
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.RedOrb
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.YellowOrb
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.AbstractPortal
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.CubePortal
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.GravityPortal
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.MiniPortal
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.ShipPortal
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.game.gameplay.players.Cube
 import io.github.msameer0.rhythmicrush.game.gameplay.players.Ship
@@ -22,24 +35,69 @@ class WorldPoolManager {
         override fun reset(obj: Slope) = obj.reset()
     }
 
-    private val spikePool = object : ObjectPool<Spike>() { override fun create() = Spike(); override fun reset(obj: Spike) = obj.reset() }
-    private val halfSpikePool = object : ObjectPool<HalfSpike>() { override fun create() = HalfSpike(); override fun reset(obj: HalfSpike) = obj.reset() }
-    private val sawBladePool = object : ObjectPool<SawBlade>() { override fun create() = SawBlade(); override fun reset(obj: SawBlade) = obj.reset() }
+    private val spikePool = object : ObjectPool<Spike>() {
+        override fun create() = Spike()
+        override fun reset(obj: Spike) = obj.reset()
+    }
+    private val halfSpikePool = object : ObjectPool<HalfSpike>() {
+        override fun create() = HalfSpike()
+        override fun reset(obj: HalfSpike) = obj.reset()
+    }
+    private val sawBladePool = object : ObjectPool<SawBlade>() {
+        override fun create() = SawBlade()
+        override fun reset(obj: SawBlade) = obj.reset()
+    }
 
-    private val cubePortalPool = object : ObjectPool<CubePortal>() { override fun create() = CubePortal(); override fun reset(obj: CubePortal) = obj.reset() }
-    private val shipPortalPool = object : ObjectPool<ShipPortal>() { override fun create() = ShipPortal(); override fun reset(obj: ShipPortal) = obj.reset() }
-    private val gravityPortalPool = object : ObjectPool<GravityPortal>() { override fun create() = GravityPortal(); override fun reset(obj: GravityPortal) = obj.reset() }
-    private val miniPortalPool = object : ObjectPool<MiniPortal>() { override fun create() = MiniPortal(); override fun reset(obj: MiniPortal) = obj.reset() }
+    private val cubePortalPool = object : ObjectPool<CubePortal>() {
+        override fun create() = CubePortal()
+        override fun reset(obj: CubePortal) = obj.reset()
+    }
+    private val shipPortalPool = object : ObjectPool<ShipPortal>() {
+        override fun create() = ShipPortal()
+        override fun reset(obj: ShipPortal) = obj.reset()
+    }
+    private val gravityPortalPool = object : ObjectPool<GravityPortal>() {
+        override fun create() = GravityPortal()
+        override fun reset(obj: GravityPortal) = obj.reset()
+    }
+    private val miniPortalPool = object : ObjectPool<MiniPortal>() {
+        override fun create() = MiniPortal()
+        override fun reset(obj: MiniPortal) = obj.reset()
+    }
 
-    private val cubePool = object : ObjectPool<Cube>() { override fun create() = Cube(); override fun reset(obj: Cube) {} }
-    private val shipPool = object : ObjectPool<Ship>() { override fun create() = Ship(); override fun reset(obj: Ship) {} }
+    private val cubePool = object : ObjectPool<Cube>() {
+        override fun create() = Cube()
+        override fun reset(obj: Cube) {}
+    }
+    private val shipPool = object : ObjectPool<Ship>() {
+        override fun create() = Ship()
+        override fun reset(obj: Ship) {}
+    }
 
-    private val yellowOrbPool = object : ObjectPool<YellowOrb>() { override fun create() = YellowOrb(); override fun reset(obj: YellowOrb) = obj.reset() }
-    private val blueOrbPool = object : ObjectPool<BlueOrb>() { override fun create() = BlueOrb(); override fun reset(obj: BlueOrb) = obj.reset() }
-    private val pinkOrbPool = object : ObjectPool<PinkOrb>() { override fun create() = PinkOrb(); override fun reset(obj: PinkOrb) = obj.reset() }
-    private val redOrbPool = object : ObjectPool<RedOrb>() { override fun create() = RedOrb(); override fun reset(obj: RedOrb) = obj.reset() }
-    private val blackOrbPool = object : ObjectPool<BlackOrb>() { override fun create() = BlackOrb(); override fun reset(obj: BlackOrb) = obj.reset() }
-    private val greenOrbPool = object : ObjectPool<GreenOrb>() { override fun create() = GreenOrb(); override fun reset(obj: GreenOrb) = obj.reset() }
+    private val yellowOrbPool = object : ObjectPool<YellowOrb>() {
+        override fun create() = YellowOrb()
+        override fun reset(obj: YellowOrb) = obj.reset()
+    }
+    private val blueOrbPool = object : ObjectPool<BlueOrb>() {
+        override fun create() = BlueOrb()
+        override fun reset(obj: BlueOrb) = obj.reset()
+    }
+    private val pinkOrbPool = object : ObjectPool<PinkOrb>() {
+        override fun create() = PinkOrb()
+        override fun reset(obj: PinkOrb) = obj.reset()
+    }
+    private val redOrbPool = object : ObjectPool<RedOrb>() {
+        override fun create() = RedOrb()
+        override fun reset(obj: RedOrb) = obj.reset()
+    }
+    private val blackOrbPool = object : ObjectPool<BlackOrb>() {
+        override fun create() = BlackOrb()
+        override fun reset(obj: BlackOrb) = obj.reset()
+    }
+    private val greenOrbPool = object : ObjectPool<GreenOrb>() {
+        override fun create() = GreenOrb()
+        override fun reset(obj: GreenOrb) = obj.reset()
+    }
 
     fun obtainBlock(): Block = blockPool.obtain()
     fun obtainSlope(): Slope = slopePool.obtain()
@@ -105,12 +163,21 @@ class WorldPoolManager {
     }
 
     fun freeAll(
-        blocks: Array<Block>, hazards: Array<AbstractHazard>,
-        portals: Array<AbstractPortal>, orbs: Array<AbstractOrb>,
-        activeSpikes: Array<Spike>, activeHalfSpikes: Array<HalfSpike>, activeSawBlades: Array<SawBlade>,
-        activeCubePortals: Array<CubePortal>, activeShipPortals: Array<ShipPortal>,
-        activeGravityPortals: Array<GravityPortal>, activeMiniPortals: Array<MiniPortal>,
-        blockCull: Int, hazardCull: Int, portalCull: Int, orbCull: Int
+        blocks: Array<Block>,
+        hazards: Array<AbstractHazard>,
+        portals: Array<AbstractPortal>,
+        orbs: Array<AbstractOrb>,
+        activeSpikes: Array<Spike>,
+        activeHalfSpikes: Array<HalfSpike>,
+        activeSawBlades: Array<SawBlade>,
+        activeCubePortals: Array<CubePortal>,
+        activeShipPortals: Array<ShipPortal>,
+        activeGravityPortals: Array<GravityPortal>,
+        activeMiniPortals: Array<MiniPortal>,
+        blockCull: Int,
+        hazardCull: Int,
+        portalCull: Int,
+        orbCull: Int
     ) {
         for (i in blockCull until blocks.size) freeBlock(blocks.get(i))
         blocks.clear()

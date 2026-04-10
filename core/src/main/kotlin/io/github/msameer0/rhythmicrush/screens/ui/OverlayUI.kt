@@ -11,11 +11,11 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
+import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.viewport.Viewport
 import io.github.msameer0.rhythmicrush.RhythmicRushGame
 import io.github.msameer0.rhythmicrush.game.level.LevelData
-import com.badlogic.gdx.math.MathUtils
 
 class OverlayUI(
     private val game: RhythmicRushGame,
@@ -83,7 +83,7 @@ class OverlayUI(
 
     fun updateScale() {
         val mobile = Gdx.app.type == com.badlogic.gdx.Application.ApplicationType.Android ||
-                Gdx.app.type == com.badlogic.gdx.Application.ApplicationType.iOS
+            Gdx.app.type == com.badlogic.gdx.Application.ApplicationType.iOS
         if (mobile) {
             panelW = 740f
             panelH = 480f
@@ -100,8 +100,10 @@ class OverlayUI(
 
     fun drawDimOverlay(camera: OrthographicCamera, viewport: Viewport) {
         shapes.color = COL_OVERLAY
-        shapes.rect(camLeft(camera, viewport), camBot(camera, viewport),
-            viewport.worldWidth, viewport.worldHeight)
+        shapes.rect(
+            camLeft(camera, viewport), camBot(camera, viewport),
+            viewport.worldWidth, viewport.worldHeight
+        )
     }
 
     fun drawPauseOverlay(camera: OrthographicCamera, sessionAttempts: Int, levelKey: String?) {
@@ -136,8 +138,20 @@ class OverlayUI(
             drawShadowText(att, x, sy, COL_DIM, shadow)
         }
 
-        if (backRegion != null) batch.draw(backRegion, backX(camera), backY(camera), btnSize * 0.9f, btnSize * 0.9f)
-        if (resumeRegion != null) batch.draw(resumeRegion, resumeX(camera), backY(camera), btnSize * 0.9f, btnSize * 0.9f)
+        if (backRegion != null) batch.draw(
+            backRegion,
+            backX(camera),
+            backY(camera),
+            btnSize * 0.9f,
+            btnSize * 0.9f
+        )
+        if (resumeRegion != null) batch.draw(
+            resumeRegion,
+            resumeX(camera),
+            backY(camera),
+            btnSize * 0.9f,
+            btnSize * 0.9f
+        )
 
         val sliderY = sliderY(camera)
         pauseFont.data.setScale(0.58f * uiScale)
@@ -220,8 +234,20 @@ class OverlayUI(
             drawShadowText(session, x, sy, COL_DIM, shadow)
         }
 
-        if (backRegion != null) batch.draw(backRegion, backX(camera), backY(camera), btnSize * 0.9f, btnSize * 0.9f)
-        if (resumeRegion != null) batch.draw(resumeRegion, resumeX(camera), backY(camera), btnSize * 0.9f, btnSize * 0.9f)
+        if (backRegion != null) batch.draw(
+            backRegion,
+            backX(camera),
+            backY(camera),
+            btnSize * 0.9f,
+            btnSize * 0.9f
+        )
+        if (resumeRegion != null) batch.draw(
+            resumeRegion,
+            resumeX(camera),
+            backY(camera),
+            btnSize * 0.9f,
+            btnSize * 0.9f
+        )
 
         pauseFont.data.setScale(0.52f * uiScale)
         val labelY = backY(camera) - 6f * uiScale
@@ -251,8 +277,13 @@ class OverlayUI(
         return t.x in (tx - 16f)..(tx + tw + 16f) && t.y in (ty - 16f)..(ty + 16f)
     }
 
-    fun beginSliderDrag() { isSliderDragging = true }
-    fun endSliderDrag() { isSliderDragging = false }
+    fun beginSliderDrag() {
+        isSliderDragging = true
+    }
+
+    fun endSliderDrag() {
+        isSliderDragging = false
+    }
 
     fun updateSliderFromDrag(worldX: Float, camera: OrthographicCamera) {
         val tsx = sliderTrackX(camera)
@@ -262,16 +293,45 @@ class OverlayUI(
         game.soundManager.setMusicVolume(vol)
     }
 
-    private fun panelX(c: OrthographicCamera): Float { return c.position.x - panelW / 2f }
-    private fun panelY(c: OrthographicCamera): Float { return c.position.y - panelH / 2f }
-    private fun resumeX(c: OrthographicCamera): Float { return c.position.x + 16f }
-    private fun backX(c: OrthographicCamera): Float { return c.position.x - btnSize - 16f }
-    private fun backY(c: OrthographicCamera): Float { return panelY(c) + 20f }
-    fun getSliderTrackX(c: OrthographicCamera): Float { return panelX(c) + panelW * 0.18f }
-    private fun sliderTrackX(c: OrthographicCamera): Float { return getSliderTrackX(c) }
-    fun getSliderTrackW(): Float { return panelW * 0.64f }
-    private fun sliderTrackW(): Float { return getSliderTrackW() }
-    private fun sliderY(c: OrthographicCamera): Float { return panelY(c) + btnSize + 38f }
+    private fun panelX(c: OrthographicCamera): Float {
+        return c.position.x - panelW / 2f
+    }
+
+    private fun panelY(c: OrthographicCamera): Float {
+        return c.position.y - panelH / 2f
+    }
+
+    private fun resumeX(c: OrthographicCamera): Float {
+        return c.position.x + 16f
+    }
+
+    private fun backX(c: OrthographicCamera): Float {
+        return c.position.x - btnSize - 16f
+    }
+
+    private fun backY(c: OrthographicCamera): Float {
+        return panelY(c) + 20f
+    }
+
+    fun getSliderTrackX(c: OrthographicCamera): Float {
+        return panelX(c) + panelW * 0.18f
+    }
+
+    private fun sliderTrackX(c: OrthographicCamera): Float {
+        return getSliderTrackX(c)
+    }
+
+    fun getSliderTrackW(): Float {
+        return panelW * 0.64f
+    }
+
+    private fun sliderTrackW(): Float {
+        return getSliderTrackW()
+    }
+
+    private fun sliderY(c: OrthographicCamera): Float {
+        return panelY(c) + btnSize + 38f
+    }
 
     private fun ensurePanel() {
         val tw = panelW.toInt()

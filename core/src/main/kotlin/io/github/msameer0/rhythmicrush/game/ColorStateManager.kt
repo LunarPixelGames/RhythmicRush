@@ -1,7 +1,6 @@
 package io.github.msameer0.rhythmicrush.game
 
 import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.math.MathUtils
 import kotlin.math.min
 
 class ColorStateManager {
@@ -132,10 +131,21 @@ class ColorStateManager {
         groundPulse.active = false
     }
 
-    fun setBaseBgColor(c: Color) { baseBgColor.set(c) }
-    fun setBaseGroundColor(c: Color) { baseGroundColor.set(c) }
-    fun setBackgroundColor(c: Color) { backgroundColor.set(c) }
-    fun setGroundColor(c: Color) { groundColor.set(c) }
+    fun setBaseBgColor(c: Color) {
+        baseBgColor.set(c)
+    }
+
+    fun setBaseGroundColor(c: Color) {
+        baseGroundColor.set(c)
+    }
+
+    fun setBackgroundColor(c: Color) {
+        backgroundColor.set(c)
+    }
+
+    fun setGroundColor(c: Color) {
+        groundColor.set(c)
+    }
 
     private fun lerp(a: Float, b: Float, t: Float): Float {
         return a + (b - a) * t

@@ -43,32 +43,39 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
                 statusText = "Initializing Registries..."
                 Registries.init()
             }
+
             1 -> {
                 statusText = "Loading Settings..."
                 game.settingsManager = SettingsManager()
             }
+
             2 -> {
                 statusText = "Loading Textures..."
                 game.atlasManager = AtlasManager()
                 titleRegion = game.atlasManager.menuAtlas.findRegion("title")
             }
+
             3 -> {
                 statusText = "Loading Fonts..."
                 game.fontManager = FontManager()
                 statusFont = game.fontManager.get(FontManager.SIZE_SMALL)
             }
+
             4 -> {
                 statusText = "Loading Audio..."
                 game.soundManager = SoundManager()
             }
+
             5 -> {
                 statusText = "Loading Progress..."
                 game.progressManager = ProgressManager()
             }
+
             6 -> {
                 statusText = "Scanning Levels..."
                 game.levelManager = LevelManager()
             }
+
             7 -> {
                 statusText = "Finalizing..."
                 finalizeLoading()

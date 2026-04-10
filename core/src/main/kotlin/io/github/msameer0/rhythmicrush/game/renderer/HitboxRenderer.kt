@@ -6,7 +6,6 @@ import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import io.github.msameer0.rhythmicrush.game.GameWorld
-import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Block
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Slope
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.AbstractHazard
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.HalfSpike
@@ -63,10 +62,12 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
                     val r = (h as Spike).hitbox
                     shape.rect(r.x, r.y, r.width, r.height)
                 }
+
                 AbstractHazard.HazardType.HALF_SPIKE -> {
                     val r = (h as HalfSpike).hitbox
                     shape.rect(r.x, r.y, r.width, r.height)
                 }
+
                 else -> shape.rect(h.x, h.y, h.width, h.height)
             }
         }
@@ -127,10 +128,12 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
                     val r = (h as Spike).hitbox
                     shape.rect(r.x, r.y, r.width, r.height)
                 }
+
                 AbstractHazard.HazardType.HALF_SPIKE -> {
                     val r = (h as HalfSpike).hitbox
                     shape.rect(r.x, r.y, r.width, r.height)
                 }
+
                 AbstractHazard.HazardType.SAW_BLADE -> {
                     val saw = h as SawBlade
                     shape.circle(
@@ -139,6 +142,7 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
                         saw.diameter / 2f, 32
                     )
                 }
+
                 else -> {}
             }
         }
@@ -176,14 +180,17 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
                 solidCX = x + w
                 solidCY = y
             }
+
             90 -> {
                 solidCX = x + w
                 solidCY = y + h
             }
+
             180 -> {
                 solidCX = x
                 solidCY = y + h
             }
+
             else -> {
                 solidCX = x
                 solidCY = y

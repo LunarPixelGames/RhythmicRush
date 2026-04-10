@@ -112,7 +112,7 @@ class SettingsManager {
     }
 
     fun applyVsync() {
-        val vsync = (Gdx.app.getType() != Application.ApplicationType.Desktop)
+        val vsync = (Gdx.app.type != Application.ApplicationType.Desktop)
             || enableVsync
         Gdx.graphics.setVSync(vsync)
     }

@@ -7,11 +7,11 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
+import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.utils.Align
 import com.badlogic.gdx.utils.viewport.Viewport
 import io.github.msameer0.rhythmicrush.RhythmicRushGame
 import io.github.msameer0.rhythmicrush.game.GameWorld
-import com.badlogic.gdx.math.MathUtils
 
 class HudRenderer(
     private val game: RhythmicRushGame,
@@ -240,7 +240,12 @@ class HudRenderer(
         font.color = Color.WHITE
     }
 
-    fun hitsPauseButton(tx: Float, ty: Float, camera: OrthographicCamera, viewport: Viewport): Boolean {
+    fun hitsPauseButton(
+        tx: Float,
+        ty: Float,
+        camera: OrthographicCamera,
+        viewport: Viewport
+    ): Boolean {
         val cx = pauseCircleCX(camera, viewport)
         val cy = pauseCircleCY(camera, viewport)
         val r = PAUSE_BTN / 2f + 8f

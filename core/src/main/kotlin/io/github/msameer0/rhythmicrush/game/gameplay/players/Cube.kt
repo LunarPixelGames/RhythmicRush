@@ -5,7 +5,8 @@ import io.github.msameer0.rhythmicrush.game.registries.Registry
 @Registry(id = "cube")
 class Cube : AbstractPlayer {
 
-    @JvmField var jumpVelocity: Float = 600f
+    @JvmField
+    var jumpVelocity: Float = 600f
 
     private var isGrounded: Boolean = false
 
@@ -89,7 +90,10 @@ class Cube : AbstractPlayer {
         if (jumpHeld && canJump()) jump()
     }
 
-    override fun setGrounded(g: Boolean) { isGrounded = g }
+    override fun setGrounded(g: Boolean) {
+        isGrounded = g
+    }
+
     override fun isGrounded(): Boolean = isGrounded
 
     override fun copyState(other: AbstractPlayer) {
