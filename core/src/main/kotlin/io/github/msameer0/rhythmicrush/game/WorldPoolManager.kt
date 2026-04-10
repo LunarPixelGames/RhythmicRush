@@ -167,13 +167,6 @@ class WorldPoolManager {
         hazards: Array<AbstractHazard>,
         portals: Array<AbstractPortal>,
         orbs: Array<AbstractOrb>,
-        activeSpikes: Array<Spike>,
-        activeHalfSpikes: Array<HalfSpike>,
-        activeSawBlades: Array<SawBlade>,
-        activeCubePortals: Array<CubePortal>,
-        activeShipPortals: Array<ShipPortal>,
-        activeGravityPortals: Array<GravityPortal>,
-        activeMiniPortals: Array<MiniPortal>,
         blockCull: Int,
         hazardCull: Int,
         portalCull: Int,
@@ -184,16 +177,9 @@ class WorldPoolManager {
 
         for (i in hazardCull until hazards.size) freeHazard(hazards.get(i))
         hazards.clear()
-        activeSpikes.clear()
-        activeHalfSpikes.clear()
-        activeSawBlades.clear()
 
         for (i in portalCull until portals.size) freePortal(portals.get(i))
         portals.clear()
-        activeCubePortals.clear()
-        activeShipPortals.clear()
-        activeGravityPortals.clear()
-        activeMiniPortals.clear()
 
         for (i in orbCull until orbs.size) freeOrb(orbs.get(i))
         orbs.clear()

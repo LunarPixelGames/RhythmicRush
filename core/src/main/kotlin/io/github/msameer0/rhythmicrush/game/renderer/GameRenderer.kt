@@ -97,15 +97,17 @@ class GameRenderer(
 
         updateCamera(player)
 
+        val rightEdge = camera.position.x + camera.viewportWidth / 2f + 100f
+
         shape.projectionMatrix = camera.combined
         batch.projectionMatrix = camera.combined
 
-        drawSawBlades(paused)
-        drawPortalFallbacks()
-        drawMainPass(player, delta, paused)
+        drawSawBlades(paused, rightEdge)
+        drawPortalFallbacks(rightEdge)
+        drawMainPass(player, delta, paused, rightEdge)
         drawGround()
 
-        if (showHitboxes) hitboxRenderer.draw(camera, player)
+        if (showHitboxes) hitboxRenderer.draw(camera, player, rightEdge)
     }
 
     private fun updateCamera(player: AbstractPlayer) {
@@ -117,9 +119,12 @@ class GameRenderer(
         world.cullX = worldLeft
     }
 
-    private fun drawSawBlades(paused: Boolean) {
+    private fun drawSawBlades(paused: Boolean, rightEdge: Float) {
         batch.begin()
-        for (hazard in world.hazards) {
+        val cullStart = world.hazardCull
+        for (i in cullStart until world.hazards.size) {
+            val hazard = world.hazards.get(i)
+            if (hazard.x > rightEdge) break
             if (hazard.type != AbstractHazard.HazardType.SAW_BLADE) continue
             if (sawBladeRegion == null) continue
             val saw = hazard as SawBlade
@@ -135,9 +140,12 @@ class GameRenderer(
         batch.end()
     }
 
-    private fun drawPortalFallbacks() {
+    private fun drawPortalFallbacks(rightEdge: Float) {
         var anyFallback = false
-        for (portal in world.portals) {
+        val cullStart = world.portalCull
+        for (i in cullStart until world.portals.size) {
+            val portal = world.portals.get(i)
+            if (portal.x > rightEdge) break
             val pType = portal.type
             val region = portalRegion(pType)
             if (region == null) {
@@ -158,19 +166,22 @@ class GameRenderer(
         }
     }
 
-    private fun drawMainPass(player: AbstractPlayer, delta: Float, paused: Boolean) {
+    private fun drawMainPass(player: AbstractPlayer, delta: Float, paused: Boolean, rightEdge: Float) {
         batch.begin()
-        drawPortals()
-        drawHazards()
-        drawBlocks()
-        drawOrbs()
+        drawPortals(rightEdge)
+        drawHazards(rightEdge)
+        drawBlocks(rightEdge)
+        drawOrbs(rightEdge)
         updatePlayerRotation(player, delta, paused)
         drawPlayer(player)
         batch.end()
     }
 
-    private fun drawPortals() {
-        for (portal in world.portals) {
+    private fun drawPortals(rightEdge: Float) {
+        val cullStart = world.portalCull
+        for (i in cullStart until world.portals.size) {
+            val portal = world.portals.get(i)
+            if (portal.x > rightEdge) break
             val region = portalRegion(portal.type)
             if (region != null) {
                 batch.draw(
@@ -184,8 +195,11 @@ class GameRenderer(
         }
     }
 
-    private fun drawHazards() {
-        for (hazard in world.hazards) {
+    private fun drawHazards(rightEdge: Float) {
+        val cullStart = world.hazardCull
+        for (i in cullStart until world.hazards.size) {
+            val hazard = world.hazards.get(i)
+            if (hazard.x > rightEdge) break
             when (hazard.type) {
                 AbstractHazard.HazardType.SPIKE -> {
                     if (spikeRegion != null) {
@@ -221,8 +235,11 @@ class GameRenderer(
         }
     }
 
-    private fun drawBlocks() {
-        for (block in world.blocks) {
+    private fun drawBlocks(rightEdge: Float) {
+        val cullStart = world.blockCull
+        for (i in cullStart until world.blocks.size) {
+            val block = world.blocks.get(i)
+            if (block.x > rightEdge) break
             val region = (if (block is Slope) slopeRegion else null)
                 ?: blockRegionsByOrdinal[block.type.ordinal]
             if (region != null) {
@@ -237,11 +254,12 @@ class GameRenderer(
         }
     }
 
-    private fun drawOrbs() {
+    private fun drawOrbs(rightEdge: Float) {
         val orbs = world.orbs
         val cullStart = world.orbCull
         for (i in cullStart until orbs.size) {
             val orb = orbs.get(i)
+            if (orb.x > rightEdge) break
             val region = orbRegions[orb.type]
             if (region != null) {
                 batch.draw(region, orb.x, orb.y, orb.width, orb.height)

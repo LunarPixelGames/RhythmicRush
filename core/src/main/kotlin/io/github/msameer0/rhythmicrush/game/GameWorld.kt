@@ -71,11 +71,11 @@ class GameWorld : Tickable {
     private var postEndTimer = -1f
     var cullX = 0f
 
-    private var blockCull = 0
+    var blockCull = 0
     private var blockStart = 0
-    private var hazardCull = 0
+    var hazardCull = 0
     private var hazardStart = 0
-    private var portalCull = 0
+    var portalCull = 0
     private var portalStart = 0
     var orbCull = 0
     private var orbStart = 0
@@ -86,13 +86,7 @@ class GameWorld : Tickable {
     val blocks = Array<Block>()
     val orbs = Array<AbstractOrb>()
 
-    private val activeSpikes = Array<Spike>()
-    private val activeHalfSpikes = Array<HalfSpike>()
-    private val activeSawBlades = Array<SawBlade>()
-    private val activeCubePortals = Array<CubePortal>()
-    private val activeShipPortals = Array<ShipPortal>()
-    private val activeGravityPortals = Array<GravityPortal>()
-    private val activeMiniPortals = Array<MiniPortal>()
+
 
     private val triggers = Array<AbstractTrigger>()
     private var currentLevelData: LevelData? = null
@@ -225,19 +219,16 @@ class GameWorld : Tickable {
             "spike" -> {
                 val s = pools.obtainSpike().init(rx, e.y, e.rotation)
                 hazards.add(s)
-                activeSpikes.add(s)
             }
 
             "half_spike" -> {
                 val hs = pools.obtainHalfSpike().init(rx, e.y, e.rotation)
                 hazards.add(hs)
-                activeHalfSpikes.add(hs)
             }
 
             "saw_blade" -> {
                 val sb = pools.obtainSawBlade().init(rx, e.y, e.size, e.rotation)
                 hazards.add(sb)
-                activeSawBlades.add(sb)
             }
         }
     }
@@ -246,19 +237,19 @@ class GameWorld : Tickable {
         var p: AbstractPortal? = null
         when (e.type) {
             "cube_portal" -> {
-                p = pools.obtainCubePortal(); activeCubePortals.add(p)
+                p = pools.obtainCubePortal()
             }
 
             "ship_portal" -> {
-                p = pools.obtainShipPortal(); activeShipPortals.add(p)
+                p = pools.obtainShipPortal()
             }
 
             "gravity_portal" -> {
-                p = pools.obtainGravityPortal(); activeGravityPortals.add(p)
+                p = pools.obtainGravityPortal()
             }
 
             "mini_portal" -> {
-                p = pools.obtainMiniPortal(); activeMiniPortals.add(p)
+                p = pools.obtainMiniPortal()
             }
         }
         if (p != null) {
@@ -458,9 +449,6 @@ class GameWorld : Tickable {
         while (hazardCull < hazards.size) {
             val h = hazards.get(hazardCull)
             if (h.x + h.width >= threshold) break
-            if (h is Spike) activeSpikes.removeValue(h, true)
-            else if (h is HalfSpike) activeHalfSpikes.removeValue(h, true)
-            else if (h is SawBlade) activeSawBlades.removeValue(h, true)
             pools.freeHazard(h)
             hazardCull++
         }
@@ -468,10 +456,6 @@ class GameWorld : Tickable {
         while (portalCull < portals.size) {
             val pObj = portals.get(portalCull)
             if (pObj.x + pObj.width >= threshold) break
-            if (pObj is CubePortal) activeCubePortals.removeValue(pObj, true)
-            else if (pObj is ShipPortal) activeShipPortals.removeValue(pObj, true)
-            else if (pObj is GravityPortal) activeGravityPortals.removeValue(pObj, true)
-            else if (pObj is MiniPortal) activeMiniPortals.removeValue(pObj, true)
             pools.freePortal(pObj)
             portalCull++
         }
@@ -494,8 +478,6 @@ class GameWorld : Tickable {
     private fun freeAllActiveObjects() {
         pools.freeAll(
             blocks, hazards, portals, orbs,
-            activeSpikes, activeHalfSpikes, activeSawBlades,
-            activeCubePortals, activeShipPortals, activeGravityPortals, activeMiniPortals,
             blockCull, hazardCull, portalCull, orbCull
         )
         blockCull = 0; blockStart = 0

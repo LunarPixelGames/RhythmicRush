@@ -29,34 +29,40 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
         private val HB_ORB_LINE = Color(1.0f, 0.9f, 0.1f, 1.0f)
     }
 
-    fun draw(camera: OrthographicCamera, player: AbstractPlayer) {
+    fun draw(camera: OrthographicCamera, player: AbstractPlayer, rightEdge: Float) {
         Gdx.gl.glEnable(GL20.GL_BLEND)
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
         shape.projectionMatrix = camera.combined
 
-        drawFilled(player)
-        drawOutlines(player)
+        drawFilled(player, rightEdge)
+        drawOutlines(player, rightEdge)
 
         Gdx.gl.glDisable(GL20.GL_BLEND)
     }
 
-    private fun drawFilled(player: AbstractPlayer) {
+    private fun drawFilled(player: AbstractPlayer, rightEdge: Float) {
         shape.begin(ShapeRenderer.ShapeType.Filled)
 
         shape.color = HB_BLOCK_FILL
-        for (b in world.blocks) {
+        for (i in world.blockCull until world.blocks.size) {
+            val b = world.blocks.get(i)
+            if (b.x > rightEdge) break
             if (b is Slope) drawFilledSlope(b)
             else shape.rect(b.x, b.y, b.width, b.height)
         }
 
         shape.color = HB_PORTAL_FILL
-        for (p in world.portals) {
+        for (i in world.portalCull until world.portals.size) {
+            val p = world.portals.get(i)
+            if (p.x > rightEdge) break
             val r = p.bounds
             shape.rect(r.x, r.y, r.width, r.height)
         }
 
         shape.color = HB_HAZARD_FILL
-        for (h in world.hazards) {
+        for (i in world.hazardCull until world.hazards.size) {
+            val h = world.hazards.get(i)
+            if (h.x > rightEdge) break
             when (h.type) {
                 AbstractHazard.HazardType.SPIKE -> {
                     val r = (h as Spike).hitbox
@@ -76,6 +82,7 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
         val cullStart = world.orbCull
         for (i in cullStart until world.orbs.size) {
             val orb = world.orbs.get(i)
+            if (orb.x > rightEdge) break
             val r = orb.bounds
             shape.rect(r.x, r.y, r.width, r.height)
         }
@@ -106,23 +113,29 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
         }
     }
 
-    private fun drawOutlines(player: AbstractPlayer) {
+    private fun drawOutlines(player: AbstractPlayer, rightEdge: Float) {
         shape.begin(ShapeRenderer.ShapeType.Line)
 
         shape.color = HB_BLOCK_LINE
-        for (b in world.blocks) {
+        for (i in world.blockCull until world.blocks.size) {
+            val b = world.blocks.get(i)
+            if (b.x > rightEdge) break
             if (b is Slope) drawOutlineSlope(b)
             else shape.rect(b.x, b.y, b.width, b.height)
         }
 
         shape.color = HB_PORTAL_LINE
-        for (p in world.portals) {
+        for (i in world.portalCull until world.portals.size) {
+            val p = world.portals.get(i)
+            if (p.x > rightEdge) break
             val r = p.bounds
             shape.rect(r.x, r.y, r.width, r.height)
         }
 
         shape.color = HB_HAZARD_LINE
-        for (h in world.hazards) {
+        for (i in world.hazardCull until world.hazards.size) {
+            val h = world.hazards.get(i)
+            if (h.x > rightEdge) break
             when (h.type) {
                 AbstractHazard.HazardType.SPIKE -> {
                     val r = (h as Spike).hitbox
@@ -151,6 +164,7 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
         val cullStart = world.orbCull
         for (i in cullStart until world.orbs.size) {
             val orb = world.orbs.get(i)
+            if (orb.x > rightEdge) break
             val r = orb.bounds
             shape.rect(r.x, r.y, r.width, r.height)
         }
