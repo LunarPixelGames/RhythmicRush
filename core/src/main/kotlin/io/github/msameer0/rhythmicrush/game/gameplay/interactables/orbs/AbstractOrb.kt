@@ -34,13 +34,11 @@ abstract class AbstractOrb {
         this.bounds = Rectangle(x, y, width, height)
     }
 
-    /** Called by GameWorld each tick to scroll the orb left with the world. */
     fun updatePosition(scrollSpeed: Float, delta: Float) {
         x -= scrollSpeed * delta
         bounds.setPosition(x, y)
     }
 
-    /** Initialises (or re-initialises) this orb at the given position. Used by object pools. */
     open fun init(x: Float, y: Float): AbstractOrb {
         this.x = x
         this.y = y
@@ -51,10 +49,6 @@ abstract class AbstractOrb {
 
     fun isUsed(): Boolean = used
 
-    /**
-     * Called by GameWorld when the player overlaps this orb and jump is held.
-     * Single-use orbs fire only once; multiActivate orbs fire every entry.
-     */
     fun tryActivate(player: AbstractPlayer) {
         if (multiActivate || !used) {
             used = true
@@ -63,16 +57,10 @@ abstract class AbstractOrb {
         }
     }
 
-    /**
-     * Called by GameWorld each tick when the player is NOT overlapping this orb.
-     * Allows multiActivate orbs to fire again on the next entry.
-     * Single-use orbs are unaffected.
-     */
     fun resetOverlap() {
         if (multiActivate) used = false
     }
 
-    /** Resets the used flag entirely — call this on level reset / respawn. */
     fun reset() {
         used = false
     }

@@ -20,15 +20,6 @@ import io.github.msameer0.rhythmicrush.game.level.LevelData
 import io.github.msameer0.rhythmicrush.ui.AnimatedButton
 import com.badlogic.gdx.math.MathUtils
 
-/**
- * The Screen that allows players to browse, view stats for, and select levels to play.
- *
- * This screen handles:
- * - Loading level data from internal JSON files.
- * - Displaying level metadata such as name, difficulty, and high scores.
- * - Navigation between levels via on-screen buttons or keyboard arrows.
- * - Scaling UI elements dynamically based on viewport dimensions.
- */
 class LevelSelectScreen @JvmOverloads constructor(
     game: RhythmicRushGame,
     initialIndex: Int = 0
@@ -74,7 +65,6 @@ class LevelSelectScreen @JvmOverloads constructor(
     private var panelXStart = 0f
     private var panelXTarget = 0f
 
-    // Swipe tracking
     private var isSwiping = false
     private var touchStartX = 0f
     private var touchStartY = 0f
@@ -172,15 +162,13 @@ class LevelSelectScreen @JvmOverloads constructor(
             val alpha = kotlin.math.min(transitionTime / TRANSITION_DURATION, 1f)
             val interp = Interpolation.swing.apply(alpha)
 
-            // slide panel
             panelX = panelXStart + (panelXTarget - panelXStart) * interp
 
             if (transitionTime >= TRANSITION_DURATION) {
-                // finish transition
                 selectedLevel = nextLevelIndex
                 panelXTarget = viewport.worldWidth / 2f - panelW / 2f
                 panelXStart = panelXTarget
-                panelX = panelXStart // reset to center
+                panelX = panelXStart
                 isTransitioning = false
             }
         }
@@ -285,7 +273,7 @@ class LevelSelectScreen @JvmOverloads constructor(
         game.batch.draw(diffRegion, iconX, iconY, iconSize, iconSize)
         drawTextWithShadow(font, name, textX, textY, Color.WHITE)
 
-        font.data.setScale(0.38f * scale) // scale label similarly
+        font.data.setScale(0.38f * scale)
         val diff = current.difficulty ?: "Normal"
         val diffLabel = diff.substring(0, 1).uppercase() + diff.substring(1)
         layout.setText(font, diffLabel)
@@ -344,16 +332,15 @@ class LevelSelectScreen @JvmOverloads constructor(
 
             if (kotlin.math.abs(dx) > SWIPE_THRESHOLD && kotlin.math.abs(dy) < SWIPE_THRESHOLD * 1.5f) {
                 if (dx > 0) {
-                    navigate(-1) // Swipe Right -> Previous Level
+                    navigate(-1)
                 } else {
-                    navigate(1)  // Swipe Left -> Next Level
+                    navigate(1)
                 }
-                isSwiping = false // Reset to avoid multiple triggers per swipe
+                isSwiping = false
             }
         }
 
         if (!Gdx.input.isTouched) {
-            // Only trigger clicks if we didn't finish a swipe
             if (isSwiping) {
                 btnBack.onTouchUp(t.x, t.y)
                 btnLeft.onTouchUp(t.x, t.y)
@@ -427,14 +414,9 @@ class LevelSelectScreen @JvmOverloads constructor(
     }
 
     private fun drawRoundedRect(shapes: ShapeRenderer, x: Float, y: Float, w: Float, h: Float, r: Float) {
-        // Draw the middle horizontal bar
         shapes.rect(x, y + r, w, h - 2 * r)
-        // Draw the bottom horizontal bar (between corners)
         shapes.rect(x + r, y, w - 2 * r, r)
-        // Draw the top horizontal bar (between corners)
         shapes.rect(x + r, y + h - r, w - 2 * r, r)
-
-        // Draw the four corner circles
         shapes.circle(x + r, y + r, r, 20)
         shapes.circle(x + w - r, y + r, r, 20)
         shapes.circle(x + r, y + h - r, r, 20)

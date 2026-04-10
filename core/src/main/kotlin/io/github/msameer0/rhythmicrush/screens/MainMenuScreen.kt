@@ -21,12 +21,7 @@ import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.round
-import io.github.msameer0.rhythmicrush.screens.LevelEditorScreen
 
-/**
- * The primary entry point screen for the game, providing access to the main gameplay
- * and a comprehensive settings menu.
- */
 class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
     private lateinit var title: TextureRegion
@@ -518,7 +513,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         val s = game.settingsManager
         if (fpsInputActive) {
             for (k in Input.Keys.NUM_0..Input.Keys.NUM_9) if (Gdx.input.isKeyJustPressed(k)) fpsInputBuffer.append((k - Input.Keys.NUM_0).toString())
-            for (k in Input.Keys.NUMPAD_0..Input.Keys.NUMPAD_9) if (Gdx.input.isKeyJustPressed(k)) fpsInputBuffer.append((k - Input.Keys.NUMPAD_0).toString())
+            for (k in Input.Keys.NUMPAD_0..Input.Keys.NUMPAD_9) if (Gdx.input.isKeyJustPressed(k)) fpsInputBuffer.append((k - Input.Keys.NUM_0).toString())
             if (Gdx.input.isKeyJustPressed(Input.Keys.BACKSPACE) && fpsInputBuffer.isNotEmpty()) fpsInputBuffer.deleteCharAt(fpsInputBuffer.length - 1)
             if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) confirmFpsInput(s)
         }
@@ -700,7 +695,6 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         if (hits(t, arrowLeftX, arrowY, arrowSize, arrowSize)) { navigateInfo(-1); return }
         if (hits(t, arrowRightX, arrowY, arrowSize, arrowSize)) { navigateInfo(1); return }
 
-        // Handle link clicks
         val lines: Array<InfoLine>? = when (currentInfoPage) {
             INFO_TAB_CREDITS -> Array(creditLines)
             INFO_TAB_SOCIALS -> Array(socialLines)

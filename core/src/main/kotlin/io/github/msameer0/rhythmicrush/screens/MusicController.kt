@@ -6,12 +6,6 @@ import kotlin.math.min
 import io.github.msameer0.rhythmicrush.RhythmicRushGame
 import io.github.msameer0.rhythmicrush.game.level.LevelData
 
-/**
- * Handles all music playback, volume control, and fade logic for a gameplay session.
- *
- * Owns the lifecycle of the [Music] instance: loading, playing,
- * pausing, fading, and disposal. GameScreen delegates all audio concerns here.
- */
 class MusicController(
     private val game: RhythmicRushGame,
     private val levelData: LevelData?
@@ -29,16 +23,10 @@ class MusicController(
 
     private var fadeTimer = 0f
 
-    /** Starts music from the beginning. */
     fun start() {
         start(0f)
     }
 
-    /**
-     * Starts music at a given time offset (used for practice checkpoint respawns).
-     *
-     * @param startTime Seconds into the track to begin playback from.
-     */
     fun start(startTime: Float) {
         val musicFile = levelData?.musicFile ?: return
         if (musicFile.isEmpty()) return
@@ -61,17 +49,14 @@ class MusicController(
         }
     }
 
-    /** Pauses playback without disposing the track. */
     fun pause() {
         levelMusic?.takeIf { it.isPlaying }?.pause()
     }
 
-    /** Resumes a paused track. */
     fun resume() {
         levelMusic?.takeIf { !it.isPlaying }?.play()
     }
 
-    /** Stops and disposes the active track immediately. */
     fun stopAndDispose() {
         levelMusic?.let {
             if (it.isPlaying) it.stop()
@@ -82,17 +67,10 @@ class MusicController(
         fadeTimer = 0f
     }
 
-    /** Applies a new volume level directly (e.g. from the pause slider). */
     fun setVolume(volume: Float) {
         levelMusic?.volume = volume
     }
 
-    /**
-     * Applies a partial fade toward silence based on external progress (0–1).
-     * Used by the level-end sequence where GameScreen controls timing.
-     *
-     * @param fadeProgress 0 = full volume, 1 = silent.
-     */
     fun applyFadeProgress(fadeProgress: Float) {
         levelMusic?.let {
             val baseVol = game.settingsManager.musicVolume
@@ -100,10 +78,6 @@ class MusicController(
         }
     }
 
-    /**
-     * Begins the full music-fade-then-stop sequence (used for music-fading on
-     * death / exit). Call [updateFade] each frame while active.
-     */
     fun beginFade() {
         if (levelMusic != null) {
             isFading = true
@@ -111,13 +85,6 @@ class MusicController(
         }
     }
 
-    /**
-     * Updates the fade timer. Returns `true` when the fade has finished
-     * and the music has been stopped and disposed automatically.
-     *
-     * @param delta Seconds since last frame.
-     * @return true if the fade just completed this frame.
-     */
     fun updateFade(delta: Float): Boolean {
         if (!isFading || levelMusic == null) return false
         fadeTimer += delta

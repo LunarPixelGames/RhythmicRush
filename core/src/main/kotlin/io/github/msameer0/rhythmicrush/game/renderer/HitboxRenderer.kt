@@ -14,26 +14,15 @@ import io.github.msameer0.rhythmicrush.game.gameplay.hazards.SawBlade
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 
-/**
- * Draws debug hitbox overlays for all active game entities.
- *
- * Extracted from [GameRenderer] so the main render path stays clean and
- * this debug-only code can be stripped easily for release builds if needed.
- *
- * Requires an open GL blend state before [draw] is called; it manages
- * its own [ShapeRenderer] begin/end calls internally.
- */
 class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRenderer) {
 
     companion object {
-        // Filled colours
         private val HB_PLAYER_FILL = Color(1.0f, 0.9f, 0.0f, 0.75f)
         private val HB_HAZARD_FILL = Color(1.0f, 0.2f, 0.2f, 0.75f)
         private val HB_BLOCK_FILL = Color(0.2f, 0.5f, 1.0f, 0.75f)
         private val HB_PORTAL_FILL = Color(0.2f, 1.0f, 0.4f, 0.75f)
         private val HB_ORB_FILL = Color(1.0f, 0.9f, 0.1f, 0.55f)
 
-        // Outline colours
         private val HB_PLAYER_LINE = Color(1.0f, 0.9f, 0.0f, 1.0f)
         private val HB_HAZARD_LINE = Color(1.0f, 0.2f, 0.2f, 1.0f)
         private val HB_BLOCK_LINE = Color(0.2f, 0.5f, 1.0f, 1.0f)
@@ -41,12 +30,6 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
         private val HB_ORB_LINE = Color(1.0f, 0.9f, 0.1f, 1.0f)
     }
 
-    /**
-     * Draws filled and outlined hitboxes for all entities in the world.
-     *
-     * @param camera The projection camera to use.
-     * @param player The current player instance.
-     */
     fun draw(camera: OrthographicCamera, player: AbstractPlayer) {
         Gdx.gl.glEnable(GL20.GL_BLEND)
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
@@ -57,8 +40,6 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
 
         Gdx.gl.glDisable(GL20.GL_BLEND)
     }
-
-    // ── Filled pass ───────────────────────────────────────────────────────────
 
     private fun drawFilled(player: AbstractPlayer) {
         shape.begin(ShapeRenderer.ShapeType.Filled)
@@ -123,8 +104,6 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
             else -> shape.rect(x, y, w, h)
         }
     }
-
-    // ── Outline pass ──────────────────────────────────────────────────────────
 
     private fun drawOutlines(player: AbstractPlayer) {
         shape.begin(ShapeRenderer.ShapeType.Line)

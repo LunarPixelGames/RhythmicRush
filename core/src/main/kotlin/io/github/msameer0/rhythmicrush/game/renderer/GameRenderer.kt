@@ -23,13 +23,6 @@ import com.badlogic.gdx.math.MathUtils
 import kotlin.math.min
 import com.badlogic.gdx.utils.ObjectMap
 
-/**
- * Renders the visual representation of the game world.
- *
- * Delegates hitbox debug drawing to [HitboxRenderer]. All other
- * sub-systems (color transitions, pooling) live in their own classes;
- * this class only owns rendering concerns.
- */
 class GameRenderer(
     private val world: GameWorld,
     private val camera: OrthographicCamera,
@@ -38,14 +31,12 @@ class GameRenderer(
 ) {
 
     companion object {
-        // ── Camera / player constants ─────────────────────────────────────────────
         private const val CAMERA_X_OFFSET = 425f
         private const val CUBE_SPIN_FACTOR = 0.5f
         private const val SHIP_TILT_FACTOR = 0.18f
         private const val SHIP_MAX_TILT = 50f
         private const val SHIP_TILT_LERP = 8f
 
-        // ── Fallback colours (used when atlas region is missing) ──────────────────
         private val FALLBACK_CUBE_PORTAL = Color(0f, 0.8f, 0f, 1f)
         private val FALLBACK_SHIP_PORTAL = Color(0f, 0.5f, 1f, 1f)
         private val FALLBACK_YELLOW_ORB  = Color(1f, 0.9f, 0.1f, 1f)
@@ -54,7 +45,6 @@ class GameRenderer(
     private val shape = ShapeRenderer()
     private val hitboxRenderer = HitboxRenderer(world, shape)
 
-    // ── Texture regions ───────────────────────────────────────────────────────
     private val blockRegionsByOrdinal: Array<TextureRegion?>
     private val slopeRegion: TextureRegion?
     private val spikeRegion: TextureRegion?
@@ -67,10 +57,8 @@ class GameRenderer(
     private val gravityPortalRegion: TextureRegion?
     private val miniPortalRegion: TextureRegion?
 
-    // Orb regions keyed by type for O(1) lookup
     private val orbRegions = ObjectMap<AbstractOrb.OrbType, TextureRegion>()
 
-    // ── Player visual state ───────────────────────────────────────────────────
     var playerVisualRotation = 0f
         private set
 
@@ -94,7 +82,6 @@ class GameRenderer(
         gravityPortalRegion = atlasManager.portalsAtlas.findRegion("gravity_portal")
         miniPortalRegion = atlasManager.portalsAtlas.findRegion("mini_portal")
 
-        // Orb region map
         orbRegions.put(AbstractOrb.OrbType.YELLOW, atlasManager.orbsAtlas.findRegion("yellow_orb"))
         orbRegions.put(AbstractOrb.OrbType.BLUE, atlasManager.orbsAtlas.findRegion("blue_orb"))
         orbRegions.put(AbstractOrb.OrbType.PINK, atlasManager.orbsAtlas.findRegion("pink_orb"))
@@ -102,8 +89,6 @@ class GameRenderer(
         orbRegions.put(AbstractOrb.OrbType.GREEN, atlasManager.orbsAtlas.findRegion("green_orb"))
         orbRegions.put(AbstractOrb.OrbType.RED, atlasManager.orbsAtlas.findRegion("red_orb"))
     }
-
-    // ── Public render entry point ─────────────────────────────────────────────
 
     fun render(delta: Float, paused: Boolean, showHitboxes: Boolean) {
         _lastDelta = delta
@@ -123,8 +108,6 @@ class GameRenderer(
         if (showHitboxes) hitboxRenderer.draw(camera, player)
     }
 
-    // ── Camera ────────────────────────────────────────────────────────────────
-
     private fun updateCamera(player: AbstractPlayer) {
         camera.position.x = player.x + CAMERA_X_OFFSET
         if (player.isMini()) camera.position.x -= 12.5f
@@ -133,8 +116,6 @@ class GameRenderer(
         val worldLeft = camera.position.x - camera.viewportWidth / 2f
         world.cullX = worldLeft
     }
-
-    // ── Saw blades (separate pre-pass for rotation) ───────────────────────────
 
     private fun drawSawBlades(paused: Boolean) {
         batch.begin()
@@ -153,8 +134,6 @@ class GameRenderer(
         }
         batch.end()
     }
-
-    // ── Portal fallbacks (shapes when no texture is loaded) ───────────────────
 
     private fun drawPortalFallbacks() {
         var anyFallback = false
@@ -177,8 +156,6 @@ class GameRenderer(
             Gdx.gl.glDisable(GL20.GL_BLEND)
         }
     }
-
-    // ── Main batch pass ───────────────────────────────────────────────────────
 
     private fun drawMainPass(player: AbstractPlayer, delta: Float, paused: Boolean) {
         batch.begin()
@@ -234,7 +211,6 @@ class GameRenderer(
                     }
                 }
                 AbstractHazard.HazardType.SAW_BLADE -> {
-                    // Handled in pre-pass
                 }
                 else -> {}
             }
@@ -286,8 +262,6 @@ class GameRenderer(
         batch.begin()
     }
 
-    // ── Player ────────────────────────────────────────────────────────────────
-
     private fun drawPlayer(player: AbstractPlayer) {
         val pType = player.getType()
         val region = if (pType == AbstractPlayer.PlayerType.SHIP) shipRegion else cubeRegion
@@ -302,7 +276,6 @@ class GameRenderer(
             return
         }
 
-        // Sync Y-flip with gravity state
         if (player.isGravityFlipped()) {
             if (!region.isFlipY) region.flip(false, true)
         } else {
@@ -321,8 +294,6 @@ class GameRenderer(
         )
     }
 
-    // ── Ground ────────────────────────────────────────────────────────────────
-
     private fun drawGround() {
         val worldWidth = camera.viewportWidth
         val worldLeft = camera.position.x - worldWidth / 2f
@@ -335,8 +306,6 @@ class GameRenderer(
         shape.end()
         Gdx.gl.glDisable(GL20.GL_BLEND)
     }
-
-    // ── Player rotation ───────────────────────────────────────────────────────
 
     private fun updatePlayerRotation(player: AbstractPlayer, delta: Float, paused: Boolean) {
         val vy = player.velocityY
@@ -361,8 +330,6 @@ class GameRenderer(
             playerVisualRotation = 0f
         }
     }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
 
     private fun portalRegion(type: AbstractPortal.PortalType?): TextureRegion? {
         return when (type) {

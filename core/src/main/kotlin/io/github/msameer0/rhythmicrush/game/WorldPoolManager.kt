@@ -11,16 +11,7 @@ import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.game.gameplay.players.Cube
 import io.github.msameer0.rhythmicrush.game.gameplay.players.Ship
 
-/**
- * Owns and manages all [ObjectPool] instances used by [GameWorld].
- *
- * Centralises pool declarations, obtain helpers, and free-all cleanup so
- * that `GameWorld` itself can focus on gameplay logic rather than memory
- * management boilerplate.
- */
 class WorldPoolManager {
-
-    // ── Pools ─────────────────────────────────────────────────────────────────
 
     private val blockPool = object : ObjectPool<Block>() {
         override fun create() = Block()
@@ -50,8 +41,6 @@ class WorldPoolManager {
     private val blackOrbPool = object : ObjectPool<BlackOrb>() { override fun create() = BlackOrb(); override fun reset(obj: BlackOrb) = obj.reset() }
     private val greenOrbPool = object : ObjectPool<GreenOrb>() { override fun create() = GreenOrb(); override fun reset(obj: GreenOrb) = obj.reset() }
 
-    // ── Obtain helpers ────────────────────────────────────────────────────────
-
     fun obtainBlock(): Block = blockPool.obtain()
     fun obtainSlope(): Slope = slopePool.obtain()
     fun obtainSpike(): Spike = spikePool.obtain()
@@ -72,8 +61,6 @@ class WorldPoolManager {
     fun obtainRedOrb(): RedOrb = redOrbPool.obtain()
     fun obtainBlackOrb(): BlackOrb = blackOrbPool.obtain()
     fun obtainGreenOrb(): GreenOrb = greenOrbPool.obtain()
-
-    // ── Free helpers ──────────────────────────────────────────────────────────
 
     fun freePlayer(player: AbstractPlayer) {
         when (player) {
@@ -117,28 +104,6 @@ class WorldPoolManager {
         }
     }
 
-    // ── Bulk free ─────────────────────────────────────────────────────────────
-
-    /**
-     * Frees all active entities back to their pools and clears the provided arrays.
-     * Also resets the typed subset arrays for hazards and portals.
-     *
-     * @param blocks          Active block array (will be cleared).
-     * @param hazards         Active hazard array (will be cleared).
-     * @param portals         Active portal array (will be cleared).
-     * @param orbs            Active orb array (will be cleared).
-     * @param activeSpikes    Typed hazard subset (will be cleared).
-     * @param activeHalfSpikes Typed hazard subset (will be cleared).
-     * @param activeSawBlades Typed hazard subset (will be cleared).
-     * @param activeCubePortals    Typed portal subset (will be cleared).
-     * @param activeShipPortals    Typed portal subset (will be cleared).
-     * @param activeGravityPortals Typed portal subset (will be cleared).
-     * @param activeMiniPortals    Typed portal subset (will be cleared).
-     * @param blockCull  Index from which active (non-culled) blocks start.
-     * @param hazardCull Index from which active hazards start.
-     * @param portalCull Index from which active portals start.
-     * @param orbCull    Index from which active orbs start.
-     */
     fun freeAll(
         blocks: Array<Block>, hazards: Array<AbstractHazard>,
         portals: Array<AbstractPortal>, orbs: Array<AbstractOrb>,

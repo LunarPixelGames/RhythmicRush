@@ -17,14 +17,6 @@ import io.github.msameer0.rhythmicrush.RhythmicRushGame
 import io.github.msameer0.rhythmicrush.game.level.LevelData
 import com.badlogic.gdx.math.MathUtils
 
-/**
- * Draws the pause overlay, level-complete overlay, and volume slider UI.
- *
- * Extracted from `GameScreen` to separate overlay presentation logic
- * from core gameplay coordination. GameScreen passes its current camera/viewport
- * and UI-scaling values into each call rather than this class tracking them
- * internally, keeping state minimal.
- */
 class OverlayUI(
     private val game: RhythmicRushGame,
     private val levelData: LevelData?,
@@ -35,7 +27,6 @@ class OverlayUI(
     private val backRegion: TextureRegion?
 ) {
 
-    // ── Layout defaults (overridden per platform via updateScale) ─────────────
     private var panelW = 520f
     private var panelH = 360f
     private var btnSize = 72f
@@ -43,7 +34,6 @@ class OverlayUI(
         private set
 
     companion object {
-        // ── Colours ───────────────────────────────────────────────────────────────
         private val COL_OVERLAY = Color(0f, 0f, 0f, 0.65f)
         private val COL_PANEL = Color(0.11f, 0.11f, 0.17f, 1f)
         private val COL_HEADING = Color(1f, 0.85f, 0.35f, 1f)
@@ -84,20 +74,13 @@ class OverlayUI(
 
     private val layout = GlyphLayout()
 
-    // ── Cached panel texture ──────────────────────────────────────────────────
     private var panelTexture: Texture? = null
     private var lastPanelW = -1
     private var lastPanelH = -1
 
-    // ── Slider drag state ─────────────────────────────────────────────────────
     var isSliderDragging = false
         private set
 
-    // ── Scaling ───────────────────────────────────────────────────────────────
-
-    /**
-     * Call on show() and resize() to apply platform-appropriate sizes.
-     */
     fun updateScale() {
         val mobile = Gdx.app.type == com.badlogic.gdx.Application.ApplicationType.Android ||
                 Gdx.app.type == com.badlogic.gdx.Application.ApplicationType.iOS
@@ -112,10 +95,8 @@ class OverlayUI(
             btnSize = 72f
             uiScale = 1.0f
         }
-        lastPanelW = -1 // invalidate cached texture
+        lastPanelW = -1
     }
-
-    // ── Full-screen dim (call inside a ShapeRenderer.Filled block) ────────────
 
     fun drawDimOverlay(camera: OrthographicCamera, viewport: Viewport) {
         shapes.color = COL_OVERLAY
@@ -123,12 +104,6 @@ class OverlayUI(
             viewport.worldWidth, viewport.worldHeight)
     }
 
-    // ── Pause overlay ─────────────────────────────────────────────────────────
-
-    /**
-     * Draws the pause panel with level info and slider label.
-     * Must be called inside an open `batch.begin()` block.
-     */
     fun drawPauseOverlay(camera: OrthographicCamera, sessionAttempts: Int, levelKey: String?) {
         ensurePanel()
         val px = panelX(camera)
@@ -137,7 +112,6 @@ class OverlayUI(
 
         panelTexture?.let { batch.draw(it, px, py) }
 
-        // Level name
         val name = levelData?.name ?: "Level"
         pauseFont.data.setScale(1.1f * uiScale)
         layout.setText(pauseFont, name)
@@ -162,11 +136,9 @@ class OverlayUI(
             drawShadowText(att, x, sy, COL_DIM, shadow)
         }
 
-        // Buttons
         if (backRegion != null) batch.draw(backRegion, backX(camera), backY(camera), btnSize * 0.9f, btnSize * 0.9f)
         if (resumeRegion != null) batch.draw(resumeRegion, resumeX(camera), backY(camera), btnSize * 0.9f, btnSize * 0.9f)
 
-        // Volume label
         val sliderY = sliderY(camera)
         pauseFont.data.setScale(0.58f * uiScale)
         layout.setText(pauseFont, "Volume")
@@ -174,7 +146,6 @@ class OverlayUI(
         y = sliderY + layout.height + 12f * uiScale
         drawShadowText("Volume", x, y, COL_LABEL, shadow)
 
-        // Volume percentage
         val vol = game.settingsManager.musicVolume
         pauseFont.data.setScale(0.48f * uiScale)
         val volPct = MathUtils.round(vol * 100f).toString() + "%"
@@ -183,7 +154,6 @@ class OverlayUI(
         y = sliderY + layout.height / 2f
         drawShadowText(volPct, x, y, COL_DIM, shadow)
 
-        // Button labels
         pauseFont.data.setScale(0.5f * uiScale)
         val labelY = backY(camera) - 6f * uiScale
         layout.setText(pauseFont, "Back")
@@ -197,10 +167,6 @@ class OverlayUI(
         pauseFont.data.setScale(1f)
     }
 
-    /**
-     * Draws the volume slider track, fill, and thumb.
-     * Manages its own GL blend and ShapeRenderer calls — call outside batch.
-     */
     fun drawPauseSlider(camera: OrthographicCamera) {
         val sliderY = sliderY(camera)
         val vol = game.settingsManager.musicVolume
@@ -223,12 +189,6 @@ class OverlayUI(
         Gdx.gl.glDisable(GL20.GL_BLEND)
     }
 
-    // ── Complete overlay ──────────────────────────────────────────────────────
-
-    /**
-     * Draws the level-complete panel.
-     * Must be called inside an open `batch.begin()` block.
-     */
     fun drawCompleteOverlay(camera: OrthographicCamera, sessionAttempts: Int, levelKey: String?) {
         ensurePanel()
         val px = panelX(camera)
@@ -276,8 +236,6 @@ class OverlayUI(
         pauseFont.data.setScale(1f)
     }
 
-    // ── Hit testing ───────────────────────────────────────────────────────────
-
     fun hitsBackButton(tx: Float, ty: Float, camera: OrthographicCamera): Boolean {
         return hits(tx, ty, backX(camera), backY(camera), btnSize * 0.9f, btnSize)
     }
@@ -293,16 +251,9 @@ class OverlayUI(
         return t.x in (tx - 16f)..(tx + tw + 16f) && t.y in (ty - 16f)..(ty + 16f)
     }
 
-    // ── Slider interaction ────────────────────────────────────────────────────
-
     fun beginSliderDrag() { isSliderDragging = true }
     fun endSliderDrag() { isSliderDragging = false }
 
-    /**
-     * Updates music volume from a dragged world X coordinate.
-     *
-     * @param worldX The unprojected world X coordinate of the touch.
-     */
     fun updateSliderFromDrag(worldX: Float, camera: OrthographicCamera) {
         val tsx = sliderTrackX(camera)
         val tsw = sliderTrackW()
@@ -310,8 +261,6 @@ class OverlayUI(
         game.settingsManager.musicVolume = vol
         game.soundManager.setMusicVolume(vol)
     }
-
-    // ── Layout helpers ────────────────────────────────────────────────────────
 
     private fun panelX(c: OrthographicCamera): Float { return c.position.x - panelW / 2f }
     private fun panelY(c: OrthographicCamera): Float { return c.position.y - panelH / 2f }
@@ -323,8 +272,6 @@ class OverlayUI(
     fun getSliderTrackW(): Float { return panelW * 0.64f }
     private fun sliderTrackW(): Float { return getSliderTrackW() }
     private fun sliderY(c: OrthographicCamera): Float { return panelY(c) + btnSize + 38f }
-
-    // ── Internals ─────────────────────────────────────────────────────────────
 
     private fun ensurePanel() {
         val tw = panelW.toInt()

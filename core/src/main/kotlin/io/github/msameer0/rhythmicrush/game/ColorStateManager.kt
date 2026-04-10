@@ -4,15 +4,6 @@ import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.math.MathUtils
 import kotlin.math.min
 
-/**
- * Manages all color transition state for the game world: background and ground
- * color fades and pulses driven by level triggers.
- *
- * GameWorld owns one instance and delegates all color-animation work here.
- * When TarsosDSP audio analysis is added later, the pulse API here is the
- * natural hook point — call [startBgPulse] / [startGroundPulse]
- * in response to beat callbacks instead of (or in addition to) trigger events.
- */
 class ColorStateManager {
 
     private class ColorFade {
@@ -68,11 +59,9 @@ class ColorStateManager {
     private val bgPulse = ColorPulse()
     private val groundPulse = ColorPulse()
 
-    /** The "resting" colors that fades animate toward and pulses blend from. */
     val baseBgColor = Color(0.1f, 0.1f, 0.18f, 1f)
     val baseGroundColor = Color(0.09f, 0.13f, 0.24f, 1f)
 
-    /** The live colors actually used for rendering each frame. */
     val backgroundColor = Color(baseBgColor)
     val groundColor = Color(baseGroundColor)
 
@@ -92,12 +81,6 @@ class ColorStateManager {
         groundPulse.init(target, fadeIn, hold, fadeOut)
     }
 
-    /**
-     * Advances all active transitions. Call once per rendered frame (not per
-     * physics tick).
-     *
-     * @param delta Seconds since the last frame.
-     */
     fun update(delta: Float) {
         if (bgFade.active) {
             bgFade.elapsed += delta
@@ -131,7 +114,6 @@ class ColorStateManager {
         if (groundPulse.active) groundColor.lerp(groundPulse.target, groundPulse.getIntensity())
     }
 
-    /** Resets all transitions and restores default colors. */
     fun reset() {
         bgFade.active = false
         groundFade.active = false
@@ -143,7 +125,6 @@ class ColorStateManager {
         groundColor.set(baseGroundColor)
     }
 
-    /** Resets all active transitions without changing the base colors. */
     fun cancelTransitions() {
         bgFade.active = false
         groundFade.active = false

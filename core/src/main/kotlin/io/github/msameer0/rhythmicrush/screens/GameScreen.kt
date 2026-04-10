@@ -25,14 +25,6 @@ import io.github.msameer0.rhythmicrush.game.renderer.GameRenderer
 import io.github.msameer0.rhythmicrush.screens.ui.HudRenderer
 import io.github.msameer0.rhythmicrush.screens.ui.OverlayUI
 
-/**
- * Primary screen for the core gameplay loop.
- *
- * Acts as a coordinator only — all audio, HUD drawing, overlay UI, practice
- * checkpoints, hitbox rendering, color transitions, and pool management have
- * been extracted into dedicated classes. This class wires them together and
- * owns the high-level state machine (alive → dead → respawn, level-end, pause).
- */
 class GameScreen @JvmOverloads constructor(
     game: RhythmicRushGame,
     private val levelData: LevelData?,
@@ -41,7 +33,6 @@ class GameScreen @JvmOverloads constructor(
 ) : AbstractScreen(game) {
 
     companion object {
-        // ── Timing constants ──────────────────────────────────────────────────────
         private const val DEATH_PAUSE_DURATION = 0.75f
         private const val END_DELAY_TOTAL = 2.0f
         private const val END_MUSIC_FADE_START = 1.0f
@@ -50,7 +41,6 @@ class GameScreen @JvmOverloads constructor(
         private var lastAdTimeMillis = 0L
     }
 
-    // ── Core systems ──────────────────────────────────────────────────────────
     private val world = GameWorld()
     private val engine = FixedTickEngine(world)
     private val renderer: GameRenderer
@@ -59,21 +49,16 @@ class GameScreen @JvmOverloads constructor(
     private val overlay: OverlayUI
     private val practice: PracticeManager? = if (isPracticeMode) PracticeManager(world) else null
 
-    // ── Camera / viewport ─────────────────────────────────────────────────────
     private val gameCamera = OrthographicCamera()
     private val gameViewport = ExtendViewport(1280f, 720f, gameCamera)
 
-    // ── Rendering helpers ─────────────────────────────────────────────────────
     private val shapes = ShapeRenderer()
 
-    // ── Level metadata ────────────────────────────────────────────────────────
     private var levelKey: String? = null
 
-    // ── Session state ─────────────────────────────────────────────────────────
     private var sessionAttempts = 0
     private var hitboxesActive = false
 
-    // ── Gameplay state machine ────────────────────────────────────────────────
     private var paused = false
     private var deathPaused = false
     private var deathTimer = 0f
@@ -84,10 +69,8 @@ class GameScreen @JvmOverloads constructor(
     private var lastJumpHeld = false
     private var ignoreInputUntilRelease = false
 
-    // ── Unprojection scratch vectors ──────────────────────────────────────────
     private val _unprojectTmp = Vector3()
 
-    // ── Input processor ───────────────────────────────────────────────────────
     private val gameInputProcessor = object : InputAdapter() {
         override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
             _unprojectTmp.set(screenX.toFloat(), screenY.toFloat(), 0f)
@@ -172,8 +155,6 @@ class GameScreen @JvmOverloads constructor(
         }
     }
 
-    // ── Constructors ──────────────────────────────────────────────────────────
-
     init {
         gameViewport.update(Gdx.graphics.width, Gdx.graphics.height, true)
 
@@ -196,8 +177,6 @@ class GameScreen @JvmOverloads constructor(
 
         hitboxesActive = game.settingsManager.showHitboxes
     }
-
-    // ── AbstractScreen lifecycle ──────────────────────────────────────────────
 
     override fun show() {
         overlay.updateScale()
@@ -229,10 +208,7 @@ class GameScreen @JvmOverloads constructor(
         Gdx.input.inputProcessor = null
     }
 
-    // ── Update ────────────────────────────────────────────────────────────────
-
     override fun update(delta: Float) {
-        // Global key shortcuts
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             if (levelCompletedState) {
                 exitToLevelSelect()
@@ -254,7 +230,6 @@ class GameScreen @JvmOverloads constructor(
             return
         }
 
-        // Death pause: tick popup, then auto-respawn
         if (deathPaused) {
             deathTimer += delta
             hud.update(delta)
@@ -264,7 +239,6 @@ class GameScreen @JvmOverloads constructor(
 
         lastDelta = delta
 
-        // Music fade-out (exit after death)
         if (music.isFading) {
             if (music.updateFade(delta)) {
                 world.reset()
@@ -282,7 +256,6 @@ class GameScreen @JvmOverloads constructor(
         handleInput()
         engine.update(delta)
 
-        // Check death
         if (world.isPlayerDead) {
             recordDeath()
             music.stopAndDispose()
@@ -293,7 +266,6 @@ class GameScreen @JvmOverloads constructor(
             if (game.settingsManager.showHitboxesOnDeath) hitboxesActive = true
         }
 
-        // Level-end sequence
         if (world.isLevelComplete && !levelEndingSequence && !levelCompletedState) {
             recordComplete()
             levelEndingSequence = true
@@ -316,8 +288,6 @@ class GameScreen @JvmOverloads constructor(
         }
     }
 
-    // ── Draw ──────────────────────────────────────────────────────────────────
-
     override fun draw() {
         gameViewport.apply()
 
@@ -330,7 +300,6 @@ class GameScreen @JvmOverloads constructor(
             )
         }
 
-        // Clear with world background colour
         val bg = world.backgroundColor
         Gdx.gl.glClearColor(bg.r, bg.g, bg.b, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
@@ -340,7 +309,6 @@ class GameScreen @JvmOverloads constructor(
         game.batch.projectionMatrix = gameCamera.combined
         shapes.projectionMatrix = gameCamera.combined
 
-        // ── Shape pass ────────────────────────────────────────────────────────
         Gdx.gl.glEnable(GL20.GL_BLEND)
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
         shapes.begin(ShapeRenderer.ShapeType.Filled)
@@ -361,7 +329,6 @@ class GameScreen @JvmOverloads constructor(
         shapes.end()
         Gdx.gl.glDisable(GL20.GL_BLEND)
 
-        // ── Text / sprite pass ────────────────────────────────────────────────
         game.batch.begin()
 
         hud.drawProgressBarText(gameCamera, gameViewport, levelKey)
@@ -378,17 +345,12 @@ class GameScreen @JvmOverloads constructor(
 
         game.batch.end()
 
-        // ── Slider (standalone shape pass, only when paused) ──────────────────
         if (paused) overlay.drawPauseSlider(gameCamera)
     }
-
-    // ── Practice button text (small helper kept here for font/scale access) ───
 
     private fun drawPracticeButtonText() {
         if (practice == null) return
 
-        // Delegate font drawing here since BitmapFont is owned by game's FontManager
-        // and PracticeManager doesn't have a direct font reference
         val opacity = game.settingsManager.practiceButtonOpacity
         val uiScale = overlay.uiScale
         val btnSize = practice.btnSize
@@ -411,8 +373,6 @@ class GameScreen @JvmOverloads constructor(
         font?.draw(game.batch, "-", minusX, minusY)
         font?.data?.setScale(1f)
     }
-
-    // ── State transitions ─────────────────────────────────────────────────────
 
     private fun setPaused(p: Boolean) {
         paused = p
@@ -499,8 +459,6 @@ class GameScreen @JvmOverloads constructor(
         game.screen = LevelSelectScreen(game, levelIndex)
     }
 
-    // ── Progress recording ────────────────────────────────────────────────────
-
     private fun recordAttempt() {
         sessionAttempts++
         val key = levelKey ?: return
@@ -530,8 +488,6 @@ class GameScreen @JvmOverloads constructor(
         game.progressManager.save()
     }
 
-    // ── Input ─────────────────────────────────────────────────────────────────
-
     private fun handleInput() {
         if (ignoreInputUntilRelease) {
             if (!Gdx.input.isTouched) ignoreInputUntilRelease = false
@@ -548,8 +504,6 @@ class GameScreen @JvmOverloads constructor(
         }
     }
 
-    // ── Ad helper ─────────────────────────────────────────────────────────────
-
     private fun checkAndShowAd(adChance: Float) {
         if (TimeUtils.timeSinceMillis(lastAdTimeMillis) < AD_COOLDOWN_MS) return
         if (MathUtils.randomBoolean(adChance) && game.adController != null) {
@@ -557,8 +511,6 @@ class GameScreen @JvmOverloads constructor(
             lastAdTimeMillis = TimeUtils.millis()
         }
     }
-
-    // ── Camera helpers ────────────────────────────────────────────────────────
 
     private fun camCX(): Float {
         return gameCamera.position.x

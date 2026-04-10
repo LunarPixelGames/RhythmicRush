@@ -22,13 +22,6 @@ import io.github.msameer0.rhythmicrush.game.trigger.PulseTrigger
 import com.badlogic.gdx.math.MathUtils
 import kotlin.math.min
 
-/**
- * Manages core game logic, entity lifecycle, and state for a level.
- *
- * Pool management is delegated to [WorldPoolManager]. Color transition
- * state is delegated to [ColorStateManager], which is also the right
- * hook point for TarsosDSP audio-reactive pulses when you add them later.
- */
 class GameWorld : Tickable {
 
     companion object {
@@ -61,17 +54,14 @@ class GameWorld : Tickable {
         }
     }
 
-    // ── Sub-systems ───────────────────────────────────────────────────────────
     private val pools = WorldPoolManager()
     private val colors = ColorStateManager()
 
-    // ── Player ────────────────────────────────────────────────────────────────
     var player: AbstractPlayer? = null
         private set
     val groundY = 50f
     val scrollSpeed = 320f
 
-    // ── Game state ────────────────────────────────────────────────────────────
     var isPlayerDead = false
     var isLevelComplete = false
     var worldScrolled = 0f
@@ -79,7 +69,6 @@ class GameWorld : Tickable {
     private var postEndTimer = -1f
     var cullX = 0f
 
-    // ── Cull / start indices ──────────────────────────────────────────────────
     private var blockCull = 0
     private var blockStart = 0
     private var hazardCull = 0
@@ -90,13 +79,11 @@ class GameWorld : Tickable {
     private var orbStart = 0
     var triggerIdx = 0
 
-    // ── Entity arrays ─────────────────────────────────────────────────────────
     val portals = Array<AbstractPortal>()
     val hazards = Array<AbstractHazard>()
     val blocks = Array<Block>()
     val orbs = Array<AbstractOrb>()
 
-    // Typed subsets for pool-freeing and fast typed access
     private val activeSpikes = Array<Spike>()
     private val activeHalfSpikes = Array<HalfSpike>()
     private val activeSawBlades = Array<SawBlade>()
@@ -105,7 +92,6 @@ class GameWorld : Tickable {
     private val activeGravityPortals = Array<GravityPortal>()
     private val activeMiniPortals = Array<MiniPortal>()
 
-    // ── Triggers ──────────────────────────────────────────────────────────────
     private val triggers = Array<AbstractTrigger>()
     private var currentLevelData: LevelData? = null
 
@@ -114,8 +100,6 @@ class GameWorld : Tickable {
         player?.setWorld(this)
         Gdx.app.log("GameWorld", "Player initialized.")
     }
-
-    // ── Player helpers ────────────────────────────────────────────────────────
 
     fun obtainPlayer(typeId: String): AbstractPlayer {
         if ("cube" == typeId) return pools.obtainCube()
@@ -134,8 +118,6 @@ class GameWorld : Tickable {
         player = null
     }
 
-    // ── Color / visual delegates ──────────────────────────────────────────────
-
     fun startBgFade(target: Color, duration: Float) { colors.startBgFade(target, duration) }
     fun startGroundFade(target: Color, duration: Float) { colors.startGroundFade(target, duration) }
 
@@ -147,13 +129,10 @@ class GameWorld : Tickable {
         colors.startGroundPulse(target, fadeIn, hold, fadeOut)
     }
 
-    /** Called once per rendered frame (not per physics tick). */
     fun updateVisuals(delta: Float) {
         if (isPlayerDead || isLevelComplete) return
         colors.update(delta)
     }
-
-    // ── Level loading ─────────────────────────────────────────────────────────
 
     fun loadLevel(data: LevelData) {
         loadLevel(data, 0f, true)
@@ -176,7 +155,6 @@ class GameWorld : Tickable {
         worldScrolled = startScrolled
         postEndTimer = -1f
 
-        // Base colors from level data
         val bg = if (!data.bgColor.isNullOrEmpty()) data.bgColor else "1a1a2e"
         val gnd = if (!data.groundColor.isNullOrEmpty()) data.groundColor else "16213e"
         colors.baseBgColor.set(hexToColor(bg))
@@ -184,7 +162,6 @@ class GameWorld : Tickable {
         colors.backgroundColor.set(hexToColor(bg))
         colors.groundColor.set(hexToColor(gnd))
 
-        // Spawn all level objects
         for (e in data.objects) {
             val rx = e.x - startScrolled
             spawnObject(e, rx, startScrolled)
@@ -192,14 +169,12 @@ class GameWorld : Tickable {
 
         levelEndX = data.getLevelEndX()
 
-        // Sort all arrays by X so binary-search culling works correctly
         blocks.sort { a, b2 -> a.x.compareTo(b2.x) }
         hazards.sort { a, b2 -> a.x.compareTo(b2.x) }
         portals.sort { a, b2 -> a.x.compareTo(b2.x) }
         orbs.sort { a, b2 -> a.x.compareTo(b2.x) }
         triggers.sort { a, b2 -> a.worldX.compareTo(b2.worldX) }
 
-        // Fast-forward trigger index past already-passed triggers
         triggerIdx = 0
         val playerWorldX = 100f + startScrolled
         while (triggerIdx < triggers.size && triggers.get(triggerIdx).worldX <= playerWorldX) {
@@ -214,7 +189,6 @@ class GameWorld : Tickable {
         }
     }
 
-    /** Dispatches a single [LevelData.ObjectEntry] to the correct spawn path. */
     private fun spawnObject(e: LevelData.ObjectEntry, rx: Float, startScrolled: Float) {
         if (Registries.BLOCKS.has(e.type)) {
             if (e.x + e.size < startScrolled - 200) return
@@ -300,8 +274,6 @@ class GameWorld : Tickable {
         triggers.add(trigger)
     }
 
-    // ── Reset ─────────────────────────────────────────────────────────────────
-
     fun reset() {
         val data = currentLevelData
         if (data != null) {
@@ -321,8 +293,6 @@ class GameWorld : Tickable {
         }
     }
 
-    // ── Tickable ──────────────────────────────────────────────────────────────
-
     override fun onInput(held: Boolean): Boolean {
         return player?.let {
             it.setJumpHeld(held)
@@ -333,8 +303,6 @@ class GameWorld : Tickable {
     override fun tick(delta: Float) {
         update(delta)
     }
-
-    // ── Main update ───────────────────────────────────────────────────────────
 
     fun update(delta: Float) {
         if (isPlayerDead || isLevelComplete) return
@@ -351,7 +319,6 @@ class GameWorld : Tickable {
         val rangeMin = px - 300f
         val rangeMax = px + COLLISION_LOOKAHEAD
 
-        // Advance start indices
         if (blockStart < blockCull) blockStart = blockCull
         if (hazardStart < hazardCull) hazardStart = hazardCull
         if (portalStart < portalCull) portalStart = portalCull
@@ -362,14 +329,12 @@ class GameWorld : Tickable {
         while (portalStart < portals.size && portals.get(portalStart).x + portals.get(portalStart).width < rangeMin) portalStart++
         while (orbStart < orbs.size && orbs.get(orbStart).x + orbs.get(orbStart).width < rangeMin) orbStart++
 
-        // Block collisions
         for (i in blockStart until blocks.size) {
             val b = blocks.get(i)
             if (b.x > rangeMax) break
             b.tryTouch(p)
         }
 
-        // Portal interactions
         for (i in portalStart until portals.size) {
             val portal = portals.get(i)
             if (portal.x > rangeMax) break
@@ -377,15 +342,12 @@ class GameWorld : Tickable {
             handlePortalActivation(portal)
         }
 
-        // Hazard collisions
         for (i in hazardStart until hazards.size) {
             val h = hazards.get(i)
             if (h.x > rangeMax) break
-            h.tryTouch(p) // might call playerDied() which delegates back here indirectly
+            h.tryTouch(p)
         }
 
-        // Orb interactions
-        // Note: Java used p.isJumpHeld() but that property maps to jumpHeld or getter.
         for (i in orbStart until orbs.size) {
             val orb = orbs.get(i)
             if (orb.x > rangeMax) break
@@ -401,7 +363,6 @@ class GameWorld : Tickable {
         worldScrolled += scrollSpeed * delta
         p.worldX = 100f + worldScrolled
 
-        // Fire triggers
         while (triggerIdx < triggers.size) {
             val t = triggers.get(triggerIdx)
             if (p.worldX < t.worldX) break
@@ -412,7 +373,6 @@ class GameWorld : Tickable {
 
         p.postUpdate()
 
-        // Level-end timer
         if (levelEndX > 0 && worldScrolled >= levelEndX && postEndTimer < 0) postEndTimer = 0f
         if (postEndTimer >= 0) {
             postEndTimer += delta
@@ -446,8 +406,6 @@ class GameWorld : Tickable {
             }
         }
     }
-
-    // ── Culling ───────────────────────────────────────────────────────────────
 
     fun cull() {
         val p = player ?: return
@@ -489,16 +447,12 @@ class GameWorld : Tickable {
         }
     }
 
-    // ── Death ─────────────────────────────────────────────────────────────────
-
     fun playerDied() {
         if (!isPlayerDead) {
             Gdx.app.log("GameWorld", "Player died.")
             isPlayerDead = true
         }
     }
-
-    // ── Private helpers ───────────────────────────────────────────────────────
 
     private fun freeAllActiveObjects() {
         pools.freeAll(
@@ -513,15 +467,12 @@ class GameWorld : Tickable {
         orbCull = 0; orbStart = 0
     }
 
-    // ── Getters / setters ─────────────────────────────────────────────────────
-
     val progress: Float
         get() {
             if (levelEndX <= 0) return 0f
             return min(worldScrolled / levelEndX, 1f)
         }
 
-    // Color getters — forwarded from ColorStateManager
     var backgroundColor: Color
         get() = colors.backgroundColor
         set(value) { colors.setBackgroundColor(value) }

@@ -22,7 +22,7 @@ class LevelSerializer {
 
         fun load(file: FileHandle): LevelData? {
             val data = json.fromJson(LevelData::class.java, file)
-            if (data != null) data.fileName = file.name() // e.g. "0.json"
+            if (data != null) data.fileName = file.name()
 
             return data
         }

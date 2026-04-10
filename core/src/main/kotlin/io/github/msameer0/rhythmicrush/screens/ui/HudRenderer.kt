@@ -13,14 +13,6 @@ import io.github.msameer0.rhythmicrush.RhythmicRushGame
 import io.github.msameer0.rhythmicrush.game.GameWorld
 import com.badlogic.gdx.math.MathUtils
 
-/**
- * Draws all in-game HUD elements: progress bar, attempt/best/FPS counters,
- * the pause button, and the "New Best" popup.
- *
- * Owned by `GameScreen` and called from its `draw()` method.
- * Requires an active SpriteBatch / ShapeRenderer context to be managed by the
- * caller — see individual method docs for which renderer must be open.
- */
 class HudRenderer(
     private val game: RhythmicRushGame,
     private val world: GameWorld,
@@ -30,7 +22,6 @@ class HudRenderer(
 ) {
 
     companion object {
-        // ── Popup timing ──────────────────────────────────────────────────────────
         private const val POPUP_FADE_IN = 0.25f
         private const val POPUP_HOLD = 1.20f
         private const val POPUP_FADE_OUT = 0.45f
@@ -38,7 +29,6 @@ class HudRenderer(
 
         private const val PAUSE_BTN = 44f
 
-        // ── Colours ───────────────────────────────────────────────────────────────
         private val COL_FILL = Color(0.35f, 0.65f, 1.00f, 1f)
         private val COL_HEADING = Color(1f, 0.85f, 0.35f, 1f)
         private val HUD_ATTEMPT = Color(1f, 1f, 1f, 0.85f)
@@ -52,13 +42,6 @@ class HudRenderer(
     private var popupTimer = -1f
     private var popupBestPct = 0
 
-    // ── Update ────────────────────────────────────────────────────────────────
-
-    /**
-     * Advances the "New Best" popup timer. Call once per frame even when paused.
-     *
-     * @param delta Seconds since last frame.
-     */
     fun update(delta: Float) {
         if (popupTimer >= 0f) {
             popupTimer += delta
@@ -66,18 +49,14 @@ class HudRenderer(
         }
     }
 
-    /** Triggers the "New Best" popup animation. */
     fun showNewBestPopup(bestPct: Int) {
         popupTimer = 0f
         popupBestPct = bestPct
     }
 
-    /** Immediately hides the "New Best" popup and stops its animation. */
     fun hideNewBestPopup() {
         popupTimer = -1f
     }
-
-    // ── Shape draws (call inside a ShapeRenderer.Filled block) ───────────────
 
     fun drawProgressBarShapes(camera: OrthographicCamera, viewport: Viewport) {
         val progress = world.progress
@@ -131,8 +110,6 @@ class HudRenderer(
         shapes.rect(cx - gap - barW, cy - barH / 2f, barW, barH)
         shapes.rect(cx + gap, cy - barH / 2f, barW, barH)
     }
-
-    // ── Text draws (call inside a SpriteBatch.begin block) ────────────────────
 
     fun drawProgressBarText(camera: OrthographicCamera, viewport: Viewport, levelKey: String?) {
         val progress = world.progress
@@ -263,8 +240,6 @@ class HudRenderer(
         font.color = Color.WHITE
     }
 
-    // ── Hit testing ───────────────────────────────────────────────────────────
-
     fun hitsPauseButton(tx: Float, ty: Float, camera: OrthographicCamera, viewport: Viewport): Boolean {
         val cx = pauseCircleCX(camera, viewport)
         val cy = pauseCircleCY(camera, viewport)
@@ -273,8 +248,6 @@ class HudRenderer(
         val dy = ty - cy
         return dx * dx + dy * dy <= r * r
     }
-
-    // ── Camera convenience ────────────────────────────────────────────────────
 
     private fun camTop(camera: OrthographicCamera, viewport: Viewport): Float {
         return camera.position.y + viewport.worldHeight / 2f
@@ -291,8 +264,6 @@ class HudRenderer(
     private fun pauseCircleCY(camera: OrthographicCamera, viewport: Viewport): Float {
         return camera.position.y + viewport.worldHeight / 2f - PAUSE_BTN / 2f - (game.settingsManager.uiPadding + 2f)
     }
-
-    // ── Shape helper ──────────────────────────────────────────────────────────
 
     private fun drawRoundedRect(x: Float, y: Float, w: Float, h: Float, r: Float) {
         shapes.rect(x + r, y, w - 2 * r, h)

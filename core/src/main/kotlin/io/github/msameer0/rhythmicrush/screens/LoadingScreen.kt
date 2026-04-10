@@ -16,10 +16,6 @@ import io.github.msameer0.rhythmicrush.game.level.ProgressManager
 import io.github.msameer0.rhythmicrush.game.registries.Registries
 import io.github.msameer0.rhythmicrush.settings.SettingsManager
 
-/**
- * An enhanced loading screen that displays the game title, a progress bar,
- * and status text indicating what is currently being loaded.
- */
 class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
     private val shapeRenderer = ShapeRenderer()
@@ -37,7 +33,6 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
     }
 
     override fun show() {
-        // Overridden to prevent AbstractScreen from accessing uninitialized managers
     }
 
     override fun update(delta: Float) {
@@ -55,13 +50,11 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             2 -> {
                 statusText = "Loading Textures..."
                 game.atlasManager = AtlasManager()
-                // Cache title region for drawing in next frames
                 titleRegion = game.atlasManager.menuAtlas.findRegion("title")
             }
             3 -> {
                 statusText = "Loading Fonts..."
                 game.fontManager = FontManager()
-                // Cache font for drawing status text in next frames
                 statusFont = game.fontManager.get(FontManager.SIZE_SMALL)
             }
             4 -> {
@@ -108,7 +101,6 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         val width = viewport.worldWidth
         val height = viewport.worldHeight
 
-        // 1. Pre-calculate dimensions for centering
         val barWidth = width * 0.6f
         val barHeight = 10f
 
@@ -124,16 +116,13 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         val textPadding = 22f
         val titlePadding = if (titleRegion != null) 25f else 0f
 
-        // Total height of the centered group
         val totalGroupH = titleH + titlePadding + barHeight + textPadding
         val groupBottomY = (height - totalGroupH) / 2f
 
-        // Calculate specific Y positions
         val barY = groupBottomY + textPadding
         val titleY = barY + barHeight + titlePadding
-        val textY = barY - 10f // A bit below the bar
+        val textY = barY - 10f
 
-        // 2. Draw Title Image
         titleRegion?.let { region ->
             game.batch.projectionMatrix = camera.combined
             game.batch.begin()
@@ -142,7 +131,6 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             game.batch.end()
         }
 
-        // 3. Draw Progress Bar
         shapeRenderer.projectionMatrix = camera.combined
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
         val barX = (width - barWidth) / 2f
@@ -152,7 +140,6 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         shapeRenderer.rect(barX, barY, barWidth * progress, barHeight)
         shapeRenderer.end()
 
-        // 4. Draw Status Text
         statusFont?.let { font ->
             game.batch.begin()
             font.data.setScale(0.6f)
