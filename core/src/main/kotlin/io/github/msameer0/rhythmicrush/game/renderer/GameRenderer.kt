@@ -19,11 +19,9 @@ import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.AbstractOrb
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.AbstractPortal
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
-import java.util.EnumMap
-import kotlin.math.abs
-import kotlin.math.max
+import com.badlogic.gdx.math.MathUtils
 import kotlin.math.min
-import kotlin.math.round
+import com.badlogic.gdx.utils.ObjectMap
 
 /**
  * Renders the visual representation of the game world.
@@ -70,7 +68,7 @@ class GameRenderer(
     private val miniPortalRegion: TextureRegion?
 
     // Orb regions keyed by type for O(1) lookup
-    private val orbRegions = EnumMap<AbstractOrb.OrbType, TextureRegion>(AbstractOrb.OrbType::class.java)
+    private val orbRegions = ObjectMap<AbstractOrb.OrbType, TextureRegion>()
 
     // ── Player visual state ───────────────────────────────────────────────────
     var playerVisualRotation = 0f
@@ -97,12 +95,12 @@ class GameRenderer(
         miniPortalRegion = atlasManager.portalsAtlas.findRegion("mini_portal")
 
         // Orb region map
-        orbRegions[AbstractOrb.OrbType.YELLOW] = atlasManager.orbsAtlas.findRegion("yellow_orb")
-        orbRegions[AbstractOrb.OrbType.BLUE] = atlasManager.orbsAtlas.findRegion("blue_orb")
-        orbRegions[AbstractOrb.OrbType.PINK] = atlasManager.orbsAtlas.findRegion("pink_orb")
-        orbRegions[AbstractOrb.OrbType.BLACK] = atlasManager.orbsAtlas.findRegion("black_orb")
-        orbRegions[AbstractOrb.OrbType.GREEN] = atlasManager.orbsAtlas.findRegion("green_orb")
-        orbRegions[AbstractOrb.OrbType.RED] = atlasManager.orbsAtlas.findRegion("red_orb")
+        orbRegions.put(AbstractOrb.OrbType.YELLOW, atlasManager.orbsAtlas.findRegion("yellow_orb"))
+        orbRegions.put(AbstractOrb.OrbType.BLUE, atlasManager.orbsAtlas.findRegion("blue_orb"))
+        orbRegions.put(AbstractOrb.OrbType.PINK, atlasManager.orbsAtlas.findRegion("pink_orb"))
+        orbRegions.put(AbstractOrb.OrbType.BLACK, atlasManager.orbsAtlas.findRegion("black_orb"))
+        orbRegions.put(AbstractOrb.OrbType.GREEN, atlasManager.orbsAtlas.findRegion("green_orb"))
+        orbRegions.put(AbstractOrb.OrbType.RED, atlasManager.orbsAtlas.findRegion("red_orb"))
     }
 
     // ── Public render entry point ─────────────────────────────────────────────
@@ -347,18 +345,18 @@ class GameRenderer(
 
         if (pType == AbstractPlayer.PlayerType.CUBE) {
             if (player.isGrounded()) {
-                val nearest90 = round((playerVisualRotation - slopeRot) / 90f) * 90f
-                playerVisualRotation = lerp(playerVisualRotation, nearest90 + slopeRot, delta * 15f)
+                val nearest90 = MathUtils.round((playerVisualRotation - slopeRot) / 90f) * 90f
+                playerVisualRotation = MathUtils.lerp(playerVisualRotation, nearest90 + slopeRot, min(delta * 15f, 1f))
             } else if (!world.isPlayerDead && !paused) {
                 val t = delta * 60f
-                val rotation = (abs(vy) * CUBE_SPIN_FACTOR / 60f + 5f / 60f) * t + 300f * delta
+                val rotation = (kotlin.math.abs(vy) * CUBE_SPIN_FACTOR / 60f + 5f / 60f) * t + 300f * delta
                 if (player.isGravityFlipped()) playerVisualRotation += rotation
                 else playerVisualRotation -= rotation
             }
         } else if (pType == AbstractPlayer.PlayerType.SHIP) {
-            var targetAngle = max(-SHIP_MAX_TILT, min(SHIP_MAX_TILT, vy * SHIP_TILT_FACTOR))
+            var targetAngle = MathUtils.clamp(vy * SHIP_TILT_FACTOR, -SHIP_MAX_TILT, SHIP_MAX_TILT)
             if (player.isGrounded()) targetAngle += slopeRot
-            playerVisualRotation = lerp(playerVisualRotation, targetAngle, SHIP_TILT_LERP * delta)
+            playerVisualRotation = MathUtils.lerp(playerVisualRotation, targetAngle, min(SHIP_TILT_LERP * delta, 1f))
         } else {
             playerVisualRotation = 0f
         }

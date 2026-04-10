@@ -2,15 +2,14 @@ package io.github.msameer0.rhythmicrush.audio
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.audio.Music
-import kotlin.math.max
-import kotlin.math.min
+import com.badlogic.gdx.math.MathUtils
 
 class SoundManager {
     private var musicVolume = 1f
 
     var sfxVolume: Float = 1f
         set(volume) {
-            field = max(0f, min(1f, volume))
+            field = MathUtils.clamp(volume, 0f, 1f)
         }
 
     private var menuMusic: Music? = null
@@ -45,7 +44,7 @@ class SoundManager {
     }
 
     fun setMusicVolume(volume: Float) {
-        musicVolume = max(0f, min(1f, volume))
+        musicVolume = MathUtils.clamp(volume, 0f, 1f)
         menuMusic?.volume = musicVolume
     }
 

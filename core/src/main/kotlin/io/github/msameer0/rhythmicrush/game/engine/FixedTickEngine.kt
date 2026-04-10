@@ -1,5 +1,6 @@
 package io.github.msameer0.rhythmicrush.game.engine
 
+import com.badlogic.gdx.math.MathUtils
 import kotlin.math.min
 
 class FixedTickEngine(private val tickable: Tickable) {
@@ -35,8 +36,8 @@ class FixedTickEngine(private val tickable: Tickable) {
     }
 
     fun update(frameDelta: Float) {
-        frameStart = accumulator
         accumulator = min(accumulator + frameDelta, MAX_ACCUMULATOR)
+        frameStart = accumulator
 
         var elapsed = 0f
 

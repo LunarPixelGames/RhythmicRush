@@ -15,9 +15,7 @@ import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.viewport.Viewport
 import io.github.msameer0.rhythmicrush.RhythmicRushGame
 import io.github.msameer0.rhythmicrush.game.level.LevelData
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.math.round
+import com.badlogic.gdx.math.MathUtils
 
 /**
  * Draws the pause overlay, level-complete overlay, and volume slider UI.
@@ -179,7 +177,7 @@ class OverlayUI(
         // Volume percentage
         val vol = game.settingsManager.musicVolume
         pauseFont.data.setScale(0.48f * uiScale)
-        val volPct = round(vol * 100f).toInt().toString() + "%"
+        val volPct = MathUtils.round(vol * 100f).toString() + "%"
         layout.setText(pauseFont, volPct)
         x = sliderTrackX(camera) - layout.width - 12f * uiScale
         y = sliderY + layout.height / 2f
@@ -308,7 +306,7 @@ class OverlayUI(
     fun updateSliderFromDrag(worldX: Float, camera: OrthographicCamera) {
         val tsx = sliderTrackX(camera)
         val tsw = sliderTrackW()
-        val vol = max(0f, min(1f, (worldX - tsx) / tsw))
+        val vol = MathUtils.clamp((worldX - tsx) / tsw, 0f, 1f)
         game.settingsManager.musicVolume = vol
         game.soundManager.setMusicVolume(vol)
     }

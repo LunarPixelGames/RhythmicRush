@@ -2,11 +2,11 @@ package io.github.msameer0.rhythmicrush.ui
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
+import com.badlogic.gdx.math.MathUtils
 import kotlin.math.abs
 import kotlin.math.min
 
-class AnimatedButton
-(
+class AnimatedButton(
     private var region: TextureRegion?,
     var x: Float,
     var y: Float,
@@ -32,18 +32,18 @@ class AnimatedButton
             val dt = min(remaining, step)
 
             val displacement = scale - target
-            val acceleration: Float = -SPRING_K * displacement - SPRING_DAMPING * velocity
+            val acceleration = -SPRING_K * displacement - SPRING_DAMPING * velocity
             velocity += acceleration * dt
             scale += velocity * dt
 
             remaining -= dt
         }
 
-        if (pendingFire && !this.isPressed && abs(scale - 1f) < 0.02f && abs(velocity) < 0.5f) {
+        if (pendingFire && !this.isPressed && kotlin.math.abs(scale - 1f) < 0.02f && kotlin.math.abs(velocity) < 0.5f) {
             pendingFire = false
             scale = 1f
             velocity = 0f
-            if (action != null) action.run()
+            action?.run()
         }
     }
 
@@ -69,12 +69,12 @@ class AnimatedButton
     }
 
     fun draw(batch: SpriteBatch) {
-        if (region == null) return
+        val r = region ?: return
         val sw = w * scale
         val sh = h * scale
         val sx = x + w / 2f - sw / 2f
         val sy = y + h / 2f - sh / 2f
-        batch.draw(region, sx, sy, sw, sh)
+        batch.draw(r, sx, sy, sw, sh)
     }
 
     fun hits(tx: Float, ty: Float): Boolean {

@@ -19,6 +19,7 @@ import io.github.msameer0.rhythmicrush.game.registries.Registries
 import io.github.msameer0.rhythmicrush.game.trigger.AbstractTrigger
 import io.github.msameer0.rhythmicrush.game.trigger.ColorTrigger
 import io.github.msameer0.rhythmicrush.game.trigger.PulseTrigger
+import com.badlogic.gdx.math.MathUtils
 import kotlin.math.min
 
 /**

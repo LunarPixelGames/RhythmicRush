@@ -18,9 +18,7 @@ import io.github.msameer0.rhythmicrush.RhythmicRushGame
 import io.github.msameer0.rhythmicrush.font.FontManager
 import io.github.msameer0.rhythmicrush.game.level.LevelData
 import io.github.msameer0.rhythmicrush.ui.AnimatedButton
-import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
+import com.badlogic.gdx.math.MathUtils
 
 /**
  * The Screen that allows players to browse, view stats for, and select levels to play.
@@ -119,7 +117,7 @@ class LevelSelectScreen @JvmOverloads constructor(
             placeholder.fileName = "-1.json"
             levels.add(placeholder)
         }
-        selectedLevel = max(0, min(selectedLevel, levels.size - 1))
+        selectedLevel = kotlin.math.max(0, kotlin.math.min(selectedLevel, levels.size - 1))
     }
 
     private fun difficultyIndex(difficulty: String?): Int {
@@ -171,7 +169,7 @@ class LevelSelectScreen @JvmOverloads constructor(
 
         if (isTransitioning) {
             transitionTime += delta
-            val alpha = min(transitionTime / TRANSITION_DURATION, 1f)
+            val alpha = kotlin.math.min(transitionTime / TRANSITION_DURATION, 1f)
             val interp = Interpolation.swing.apply(alpha)
 
             // slide panel
@@ -340,10 +338,11 @@ class LevelSelectScreen @JvmOverloads constructor(
         }
 
         if (Gdx.input.isTouched && isSwiping) {
+            selectedLevel = com.badlogic.gdx.math.MathUtils.clamp(selectedLevel, 0, levels.size - 1)
             val dx = t.x - touchStartX
             val dy = t.y - touchStartY
 
-            if (abs(dx) > SWIPE_THRESHOLD && abs(dy) < SWIPE_THRESHOLD * 1.5f) {
+            if (kotlin.math.abs(dx) > SWIPE_THRESHOLD && kotlin.math.abs(dy) < SWIPE_THRESHOLD * 1.5f) {
                 if (dx > 0) {
                     navigate(-1) // Swipe Right -> Previous Level
                 } else {

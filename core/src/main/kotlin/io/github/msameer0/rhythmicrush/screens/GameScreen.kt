@@ -12,6 +12,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.math.Vector3
+import kotlin.math.min
 import com.badlogic.gdx.utils.TimeUtils
 import com.badlogic.gdx.utils.viewport.ExtendViewport
 import com.badlogic.gdx.utils.viewport.Viewport
@@ -23,8 +24,6 @@ import io.github.msameer0.rhythmicrush.game.level.LevelData
 import io.github.msameer0.rhythmicrush.game.renderer.GameRenderer
 import io.github.msameer0.rhythmicrush.screens.ui.HudRenderer
 import io.github.msameer0.rhythmicrush.screens.ui.OverlayUI
-import kotlin.math.min
-import kotlin.math.round
 
 /**
  * Primary screen for the core gameplay loop.
@@ -136,7 +135,7 @@ class GameScreen @JvmOverloads constructor(
                     camCX(), camBot(),
                     game.settingsManager.uiPadding,
                     overlay.uiScale,
-                    practice.btnSize
+                    72f * overlay.uiScale
                 )
                 if (practice.hitsPlus(tx, ty)) {
                     placeCheckpoint()
@@ -327,7 +326,7 @@ class GameScreen @JvmOverloads constructor(
                 camCX(), camBot(),
                 game.settingsManager.uiPadding,
                 overlay.uiScale,
-                practice.btnSize
+                72f * overlay.uiScale
             )
         }
 
@@ -511,7 +510,7 @@ class GameScreen @JvmOverloads constructor(
     private fun recordDeath() {
         val key = levelKey
         if (key == null || isPracticeMode) return
-        val pct = round(world.progress * 100f).toInt()
+        val pct = MathUtils.round(world.progress * 100f)
         val p = game.progressManager.getOrCreate(key)
         if (pct > p.bestPercent) {
             p.bestPercent = pct

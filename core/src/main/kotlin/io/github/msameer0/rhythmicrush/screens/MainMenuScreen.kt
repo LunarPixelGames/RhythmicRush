@@ -21,21 +21,11 @@ import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.round
-import kotlin.random.Random
+import io.github.msameer0.rhythmicrush.screens.LevelEditorScreen
 
 /**
  * The primary entry point screen for the game, providing access to the main gameplay
  * and a comprehensive settings menu.
- *
- * The screen handles:
- * - The main menu interface (Play and Settings buttons).
- * - A multi-tabbed settings overlay (Gameplay and Graphics categories).
- * - Interactive UI elements including toggles, sliders, and numeric input fields.
- * - Dynamic layout scaling to accommodate various window sizes and platforms.
- * - Background music management and transition to the level selection screen.
- *
- * @see AbstractScreen
- * @see SettingsManager
  */
 class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
@@ -74,7 +64,6 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         private val INFO_TAB_NAMES = arrayOf("How to Play", "Credits", "Socials")
 
         private const val MAX_ROWS_PER_PAGE = 4
-
         private const val PANEL_HEIGHT_FRACTION = 0.88f
 
         private val COL_OVERLAY = Color(0f, 0f, 0f, 0.62f)
@@ -123,20 +112,35 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
     private var settingsFontScale = 0f
     private var settingsHeadingScale = 0f
 
+    private class InfoLine(val text: String, val url: String, var y: Float = 0f)
+
+    private val creditLines = arrayOf(
+        InfoLine("Euphoria by ForeverBound", "https://www.newgrounds.com/audio/listen/680209"),
+        InfoLine("Icefield by Waterflame", "https://www.newgrounds.com/audio/listen/1379251"),
+        InfoLine("Hypercharge by Cobalt039", "https://www.newgrounds.com/audio/listen/1538780"),
+        InfoLine("Bounce by Waterflame", "https://www.newgrounds.com/audio/listen/654553"),
+        InfoLine("Rhythm Factory by Waterflame", "https://www.newgrounds.com/audio/listen/1533782"),
+        InfoLine("Vulg by OcularNebula", "https://www.newgrounds.com/audio/listen/954091")
+    )
+
+    private val socialLines = arrayOf(
+        InfoLine("YouTube: @LunarPixelGames", "https://www.youtube.com/@LunarPixelGames"),
+        InfoLine("GitHub: LunarPixelGames", "https://github.com/LunarPixelGames")
+    )
+
+    private val privacyPolicyLine = InfoLine("Privacy Policy", "https://lunarpixelgames.github.io/RhythmicRush/PRIVACY")
+
     private var draggingSlider = false
     private var draggingSliderRow = -1
 
     private var fpsInputActive = false
-    private val fpsInputBuffer = java.lang.StringBuilder()
+    private val fpsInputBuffer = StringBuilder()
 
     private var panelTexture: Texture? = null
     private var lastPanelW = -1
     private var lastPanelH = -1
 
-    private enum class RowType {
-        TOGGLE, SLIDER, INT_FIELD
-    }
-
+    private enum class RowType { TOGGLE, SLIDER, INT_FIELD }
     private class SettingRow(val type: RowType, val label: String, val id: String)
 
     init {
@@ -155,9 +159,9 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         infoButton = menuAtlas.findRegion("info")
 
         bgColor = Color(
-            0.2f + 0.6f * Random.nextFloat(),
-            0.2f + 0.6f * Random.nextFloat(),
-            0.2f + 0.6f * Random.nextFloat(), 1f
+            0.2f + 0.6f * MathUtils.random(),
+            0.2f + 0.6f * MathUtils.random(),
+            0.2f + 0.6f * MathUtils.random(), 1f
         )
 
         shapes = ShapeRenderer()
@@ -174,20 +178,6 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         }
 
         updateScaledSizes()
-
-        if (game.adController != null) {
-            // val shouldShowBanner = MathUtils.randomBoolean(0.5f)
-            // TODO: ADS
-            // game.adController.showBannerAd(shouldShowBanner)
-        }
-    }
-
-    override fun hide() {
-        if (game.adController != null) {
-            // TODO: ADS
-            // game.adController.showBannerAd(false)
-        }
-        super.hide()
     }
 
     private fun buildAllRows(cat: Int): Array<SettingRow> {
@@ -205,18 +195,12 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             rows.add(SettingRow(RowType.TOGGLE, "Show Attempts", "showAttempts"))
             rows.add(SettingRow(RowType.TOGGLE, "Show Best", "showBest"))
             rows.add(SettingRow(RowType.SLIDER, "Practice Buttons Opacity", "practiceOpacity"))
-            if (desktop) {
-                rows.add(SettingRow(RowType.TOGGLE, "Lock Cursor in Game", "lockCursor"))
-            }
+            if (desktop) rows.add(SettingRow(RowType.TOGGLE, "Lock Cursor in Game", "lockCursor"))
         } else {
             rows.add(SettingRow(RowType.TOGGLE, "Show FPS", "showFps"))
             if (desktop) {
                 rows.add(SettingRow(RowType.TOGGLE, "Cap FPS", "capFps"))
-                if (s.capFps) {
-                    rows.add(SettingRow(RowType.INT_FIELD, "FPS Limit", "fpsValue"))
-                }
-            }
-            if (desktop) {
+                if (s.capFps) rows.add(SettingRow(RowType.INT_FIELD, "FPS Limit", "fpsValue"))
                 rows.add(SettingRow(RowType.TOGGLE, "VSync", "vsync"))
             }
             rows.add(SettingRow(RowType.SLIDER, "UI Padding", "uiPadding"))
@@ -230,15 +214,13 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         val end = min(start + MAX_ROWS_PER_PAGE, all.size)
         if (start >= all.size) return Array()
         val pageRows = Array<SettingRow>()
-        for (i in start until end) {
-            pageRows.add(all.get(i))
-        }
+        for (i in start until end) pageRows.add(all.get(i))
         return pageRows
     }
 
     private fun subPageCount(cat: Int): Int {
         val total = buildAllRows(cat).size
-        return max(1, ceil(total.toDouble() / MAX_ROWS_PER_PAGE).toInt())
+        return max(1, ceil(total.toFloat() / MAX_ROWS_PER_PAGE).toInt())
     }
 
     private fun updateScaledSizes() {
@@ -270,57 +252,37 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         val settingsScale = maxSettingsW / settingsButton.regionWidth
         val settingsW = settingsButton.regionWidth * settingsScale
         val settingsH = settingsButton.regionHeight * settingsScale
-        val settingsX = 20f
-        val settingsY = 20f - 10f
-        if (::btnSettings.isInitialized) btnSettings.setBounds(settingsX, settingsY, settingsW, settingsH)
+        if (::btnSettings.isInitialized) btnSettings.setBounds(20f, 10f, settingsW, settingsH)
 
-        val infoW = settingsW
-        val infoH = settingsH
-        val infoX = vw - infoW - 20f
-        val infoY = 20f - 10f
-        if (::btnInfo.isInitialized) btnInfo.setBounds(infoX, infoY, infoW, infoH)
+        if (::btnInfo.isInitialized) btnInfo.setBounds(vw - settingsW - 20f, 10f, settingsW, settingsH)
 
         panelW = min(vw * 0.78f, 780f)
-
         val targetH = vh * PANEL_HEIGHT_FRACTION
-        val dotsExtra = targetH * 0.055f
-        val padT = targetH * 0.22f
-        val padB = targetH * 0.045f
-        val rowsH = targetH - padT - padB - dotsExtra
-        rowStep = rowsH / MAX_ROWS_PER_PAGE
-        panelPadT = padT
-        panelPadB = padB
-
+        rowStep = (targetH * 0.72f) / MAX_ROWS_PER_PAGE
+        panelPadT = targetH * 0.22f
+        panelPadB = targetH * 0.045f
         val scaleRef = rowStep / 72f
         settingsFontScale = 0.62f * scaleRef
         settingsHeadingScale = 0.95f * scaleRef
-
         recomputePanelHeight()
     }
 
     private fun recomputePanelHeight() {
         val vw = viewport.worldWidth
         val vh = viewport.worldHeight
-
-        currentSubPage = max(0, min(currentSubPage, subPageCount(currentCat) - 1))
-
-        val dotsExtra = rowStep * 0.5f
-        panelH = MAX_ROWS_PER_PAGE * rowStep + panelPadT + panelPadB + dotsExtra
+        currentSubPage = MathUtils.clamp(currentSubPage, 0, subPageCount(currentCat) - 1)
+        panelH = MAX_ROWS_PER_PAGE * rowStep + panelPadT + panelPadB + rowStep * 0.5f
         panelX = vw / 2f - panelW / 2f
         panelY = vh / 2f - panelH / 2f
-
         backW = panelH * 0.075f
         backH = backW
         backX = panelX + 12f
         backY = panelY + panelH - backH - 12f
-
         rowStartY = panelY + panelH - panelPadT
-
         arrowSize = backH
         arrowY = panelY + panelH - arrowSize - 12f
         arrowLeftX = panelX + backW + 20f
         arrowRightX = panelX + panelW - arrowSize - 12f
-
         lastPanelW = -1
     }
 
@@ -338,7 +300,6 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
     override fun draw() {
         Gdx.gl.glClearColor(bgColor.r, bgColor.g, bgColor.b, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
-
         game.batch.projectionMatrix = camera.combined
         game.batch.begin()
         game.batch.draw(title, titleX, titleY, titleW, titleH)
@@ -346,7 +307,6 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         btnSettings.draw(game.batch)
         btnInfo.draw(game.batch)
         game.batch.end()
-
         if (settingsOpen) drawSettingsOverlay()
         else if (infoOpen) drawInfoOverlay()
     }
@@ -369,58 +329,33 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             lastPanelW = texW
             lastPanelH = texH
         }
-
-        game.batch.projectionMatrix = camera.combined
         game.batch.begin()
         panelTexture?.let { game.batch.draw(it, panelX, panelY) }
         game.batch.draw(backArrow, backX, backY, backW, backH)
         game.batch.end()
-
         drawHeadingAndTabs()
         drawSettingsRows(getPageRows(currentCat, currentSubPage))
         drawSubPageDots()
     }
 
     private fun drawHeadingAndTabs() {
-        game.batch.projectionMatrix = camera.combined
         game.batch.begin()
         font.data.setScale(settingsHeadingScale)
         layout.setText(font, "Settings")
-        drawTextWithShadow(
-            font, "Settings",
-            (panelX + panelW / 2f) - (layout.width / 2f),
-            panelY + panelH - 16f,
-            COL_HEADING
-        )
-
-        val tabFontScale = settingsFontScale * 0.92f
-        font.data.setScale(tabFontScale)
+        drawTextWithShadow(font, "Settings", (panelX + panelW / 2f) - (layout.width / 2f), panelY + panelH - 16f, COL_HEADING)
+        font.data.setScale(settingsFontScale * 0.92f)
         val tabY = panelY + panelH - panelPadT * 0.47f
-        layout.setText(font, CAT_NAMES[0])
-        val tabTextH = layout.height
         for (i in 0 until CAT_COUNT) {
             val tabW = panelW / CAT_COUNT
             val tabCX = panelX + tabW * i + tabW / 2f
-            val tabColor = if (i == currentCat) COL_TAB_ACT else COL_TAB_INACT
             layout.setText(font, CAT_NAMES[i])
-
-            drawTextWithShadow(font, CAT_NAMES[i], tabCX - layout.width / 2f, tabY, tabColor)
+            drawTextWithShadow(font, CAT_NAMES[i], tabCX - layout.width / 2f, tabY, if (i == currentCat) COL_TAB_ACT else COL_TAB_INACT)
         }
-        font.data.setScale(1f)
         game.batch.end()
-
-        val tabW = panelW / CAT_COUNT
-        val tabCX = panelX + tabW * currentCat
-        val underlineY = tabY - tabTextH - 3f
-        Gdx.gl.glEnable(GL20.GL_BLEND)
-        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-        shapes.projectionMatrix = camera.combined
         shapes.begin(ShapeRenderer.ShapeType.Filled)
         shapes.color = COL_TAB_ACT
-        shapes.rect(tabCX + 8f, underlineY, tabW - 16f, 3f)
+        shapes.rect(panelX + (panelW / CAT_COUNT) * currentCat + 8f, tabY - 20f, (panelW / CAT_COUNT) - 16f, 3f)
         shapes.end()
-        Gdx.gl.glDisable(GL20.GL_BLEND)
-
         drawArrow(arrowLeftX, arrowY, arrowSize, true)
         drawArrow(arrowRightX, arrowY, arrowSize, false)
     }
@@ -429,55 +364,44 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         val cx = x + size / 2f
         val cy = y + size / 2f
         val hs = size * 0.28f
-        Gdx.gl.glEnable(GL20.GL_BLEND)
-        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-        shapes.projectionMatrix = camera.combined
         shapes.begin(ShapeRenderer.ShapeType.Filled)
         shapes.color = COL_DIM
         if (pointLeft) shapes.triangle(cx + hs, cy + hs, cx + hs, cy - hs, cx - hs, cy)
         else shapes.triangle(cx - hs, cy + hs, cx - hs, cy - hs, cx + hs, cy)
         shapes.end()
-        Gdx.gl.glDisable(GL20.GL_BLEND)
     }
 
     private fun drawSubPageDots() {
         val total = subPageCount(currentCat)
         if (total <= 1) return
         val dotR = 5f
-        val dotGap = dotR * 2f + 6f
-        val totalW = total * dotGap - 6f
-        val startX = panelX + panelW / 2f - totalW / 2f + dotR
+        val dotGap = 16f
+        val startX = panelX + panelW / 2f - (total * dotGap - 6f) / 2f + dotR
         val dotY = panelY + panelPadB / 2f + dotR
-
-        Gdx.gl.glEnable(GL20.GL_BLEND)
-        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-        shapes.projectionMatrix = camera.combined
         shapes.begin(ShapeRenderer.ShapeType.Filled)
         for (i in 0 until total) {
             shapes.color = if (i == currentSubPage) COL_DOT_ACT else COL_DOT_INACT
             shapes.circle(startX + i * dotGap, dotY, dotR, 16)
         }
         shapes.end()
-        Gdx.gl.glDisable(GL20.GL_BLEND)
     }
 
     private fun drawSettingsRows(rows: Array<SettingRow>) {
         val s = game.settingsManager
-        val horizontalPadding = 45f
         for (i in 0 until rows.size) {
             val row = rows.get(i)
             val ry = rowY(i)
             when (row.type) {
-                RowType.TOGGLE -> drawToggleRow(ry, row.label, getToggleValue(row.id, s), horizontalPadding)
+                RowType.TOGGLE -> drawToggleRow(ry, row.label, getToggleValue(row.id, s), 45f)
                 RowType.SLIDER -> {
-                    val `val` = when (row.id) {
+                    val v = when (row.id) {
                         "uiPadding" -> s.uiPadding / 50f
                         "practiceOpacity" -> s.practiceButtonOpacity
                         else -> s.musicVolume
                     }
-                    drawSliderRow(ry, row.label, `val`, horizontalPadding)
+                    drawSliderRow(ry, row.label, v, 45f)
                 }
-                RowType.INT_FIELD -> drawIntFieldRow(ry, row.label, s.fpsCapValue, horizontalPadding)
+                RowType.INT_FIELD -> drawIntFieldRow(ry, row.label, s.fpsCapValue, 45f)
             }
         }
     }
@@ -499,135 +423,77 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         }
     }
 
-    private fun drawToggleRow(ry: Float, label: String, value: Boolean, horizontalPadding: Float) {
-        val rightEdge = panelX + panelW - horizontalPadding
+    private fun drawToggleRow(ry: Float, label: String, value: Boolean, hp: Float) {
         val pillH = rowStep * 0.35f
         val pillW = pillH * 2.1f
-        val pillX = rightEdge - pillW
+        val pillX = panelX + panelW - hp - pillW
         val pillY = ry - pillH / 2f
         val r = pillH / 2f
-
-        Gdx.gl.glEnable(GL20.GL_BLEND)
-        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-        shapes.projectionMatrix = camera.combined
         shapes.begin(ShapeRenderer.ShapeType.Filled)
         shapes.color = if (value) COL_ON else COL_OFF
         shapes.circle(pillX + r, pillY + r, r, 24)
         shapes.circle(pillX + pillW - r, pillY + r, r, 24)
         shapes.rect(pillX + r, pillY, pillW - pillH, pillH)
         shapes.color = COL_THUMB
-        val thumbCX = if (value) (pillX + pillW - r) else (pillX + r)
-        shapes.circle(thumbCX, pillY + r, r - r * 0.3f, 24)
+        shapes.circle(if (value) (pillX + pillW - r) else (pillX + r), pillY + r, r * 0.7f, 24)
         shapes.end()
-        Gdx.gl.glDisable(GL20.GL_BLEND)
-
-        game.batch.projectionMatrix = camera.combined
         game.batch.begin()
         font.data.setScale(settingsFontScale)
-        layout.setText(font, label)
-        drawTextWithShadow(font, label, panelX + horizontalPadding, ry + layout.height / 2f, COL_LABEL)
-        font.data.setScale(1f)
+        drawTextWithShadow(font, label, panelX + hp, ry + layout.height / 2f, COL_LABEL)
         game.batch.end()
     }
 
-    private fun drawSliderRow(ry: Float, label: String, value: Float, horizontalPadding: Float) {
-        val rightEdge = panelX + panelW - horizontalPadding
+    private fun drawSliderRow(ry: Float, label: String, value: Float, hp: Float) {
         val trackW = panelW * 0.34f
         val trackH = rowStep * 0.06f
-        val trackX = rightEdge - trackW
-        val trackY = ry - trackH / 2f
+        val trackX = panelX + panelW - hp - trackW
         val thumbR = rowStep * 0.15f
         val fillW = trackW * value
-        val thumbCX = trackX + fillW
-
-        Gdx.gl.glEnable(GL20.GL_BLEND)
-        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-        shapes.projectionMatrix = camera.combined
         shapes.begin(ShapeRenderer.ShapeType.Filled)
         shapes.color = COL_TRACK
-        shapes.rect(trackX, trackY, trackW, trackH)
+        shapes.rect(trackX, ry - trackH / 2f, trackW, trackH)
         shapes.color = COL_FILL
-        if (fillW > 0) shapes.rect(trackX, trackY, fillW, trackH)
+        if (fillW > 0) shapes.rect(trackX, ry - trackH / 2f, fillW, trackH)
         shapes.color = COL_THUMB
-        shapes.circle(thumbCX, ry, thumbR, 24)
+        shapes.circle(trackX + fillW, ry, thumbR, 24)
         shapes.end()
-        Gdx.gl.glDisable(GL20.GL_BLEND)
-
-        game.batch.projectionMatrix = camera.combined
         game.batch.begin()
         font.data.setScale(settingsFontScale)
-        font.color = COL_LABEL
-        layout.setText(font, label)
-        drawTextWithShadow(font, label, panelX + horizontalPadding, ry + layout.height / 2f, COL_LABEL)
-        font.data.setScale(settingsFontScale * 0.77f)
-        font.color = COL_DIM
+        drawTextWithShadow(font, label, panelX + hp, ry + layout.height / 2f, COL_LABEL)
         val pct = "${round(value * 100f).toInt()}%"
+        font.data.setScale(settingsFontScale * 0.77f)
         layout.setText(font, pct)
         drawTextWithShadow(font, pct, trackX - layout.width - 15f, ry + layout.height / 2f, COL_DIM)
-        font.data.setScale(1f)
         game.batch.end()
     }
 
-    private fun drawIntFieldRow(ry: Float, label: String, value: Int, horizontalPadding: Float) {
-        val rightEdge = panelX + panelW - horizontalPadding
+    private fun drawIntFieldRow(ry: Float, label: String, value: Int, hp: Float) {
         val boxH = rowStep * 0.40f
         val boxW = boxH * 3.0f
-        val boxX = rightEdge - boxW
-        val boxY = ry - boxH / 2f
-
-        Gdx.gl.glEnable(GL20.GL_BLEND)
-        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-        shapes.projectionMatrix = camera.combined
+        val boxX = panelX + panelW - hp - boxW
         shapes.begin(ShapeRenderer.ShapeType.Filled)
         shapes.color = COL_INPUT_BG
-        shapes.rect(boxX, boxY, boxW, boxH)
+        shapes.rect(boxX, ry - boxH / 2f, boxW, boxH)
         shapes.end()
         shapes.begin(ShapeRenderer.ShapeType.Line)
         shapes.color = if (fpsInputActive) COL_INPUT_BD else Color(COL_INPUT_BD.r, COL_INPUT_BD.g, COL_INPUT_BD.b, 0.4f)
-        shapes.rect(boxX, boxY, boxW, boxH)
+        shapes.rect(boxX, ry - boxH / 2f, boxW, boxH)
         shapes.end()
-        Gdx.gl.glDisable(GL20.GL_BLEND)
-
-        val display = if (fpsInputActive) {
-            fpsInputBuffer.toString() + if (System.currentTimeMillis() / 500 % 2 == 0L) "|" else " "
-        } else {
-            value.toString()
-        }
-
-        game.batch.projectionMatrix = camera.combined
+        val display = if (fpsInputActive) fpsInputBuffer.toString() + (if (System.currentTimeMillis() / 500 % 2 == 0L) "|" else " ") else value.toString()
         game.batch.begin()
         font.data.setScale(settingsFontScale)
-        font.color = COL_LABEL
-        layout.setText(font, label)
-        drawTextWithShadow(font, label, panelX + horizontalPadding, ry + layout.height / 2f, COL_LABEL)
+        drawTextWithShadow(font, label, panelX + hp, ry + layout.height / 2f, COL_LABEL)
         font.data.setScale(settingsFontScale * 0.95f)
-        val valueColor = if (fpsInputActive) Color.WHITE else COL_DIM
-        font.color = valueColor
         layout.setText(font, display)
-
-        drawTextWithShadow(
-            font, display,
-            boxX + boxW / 2f - layout.width / 2f,
-            ry + layout.height / 2f,
-            valueColor
-        )
-        font.data.setScale(1f)
+        drawTextWithShadow(font, display, boxX + boxW / 2f - layout.width / 2f, ry + layout.height / 2f, if (fpsInputActive) Color.WHITE else COL_DIM)
         game.batch.end()
     }
 
     private fun handleMenuInput() {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
-            game.screen = LevelSelectScreen(game)
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.P) && System.getProperty("devMode") != null) {
-            game.screen = LevelEditorScreen(game)
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            Gdx.app.exit()
-        }
-
+        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) game.screen = LevelSelectScreen(game)
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) Gdx.app.exit()
+        if (Gdx.input.isKeyJustPressed(Input.Keys.E)) game.screen = LevelEditorScreen(game)
         val t = unproject()
-
         if (Gdx.input.justTouched()) {
             btnPlay.onTouchDown(t.x, t.y)
             btnSettings.onTouchDown(t.x, t.y)
@@ -642,315 +508,76 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
     private fun handleSettingsInput() {
         val s = game.settingsManager
-
         if (fpsInputActive) {
-            for (k in Input.Keys.NUM_0..Input.Keys.NUM_9) {
-                if (Gdx.input.isKeyJustPressed(k)) fpsInputBuffer.append((k - Input.Keys.NUM_0).toString())
-            }
-            for (k in Input.Keys.NUMPAD_0..Input.Keys.NUMPAD_9) {
-                if (Gdx.input.isKeyJustPressed(k)) fpsInputBuffer.append((k - Input.Keys.NUMPAD_0).toString())
-            }
-            if (Gdx.input.isKeyJustPressed(Input.Keys.BACKSPACE) && fpsInputBuffer.isNotEmpty()) {
-                fpsInputBuffer.deleteCharAt(fpsInputBuffer.length - 1)
-            }
+            for (k in Input.Keys.NUM_0..Input.Keys.NUM_9) if (Gdx.input.isKeyJustPressed(k)) fpsInputBuffer.append((k - Input.Keys.NUM_0).toString())
+            for (k in Input.Keys.NUMPAD_0..Input.Keys.NUMPAD_9) if (Gdx.input.isKeyJustPressed(k)) fpsInputBuffer.append((k - Input.Keys.NUMPAD_0).toString())
+            if (Gdx.input.isKeyJustPressed(Input.Keys.BACKSPACE) && fpsInputBuffer.isNotEmpty()) fpsInputBuffer.deleteCharAt(fpsInputBuffer.length - 1)
             if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) confirmFpsInput(s)
         }
-
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            if (fpsInputActive) confirmFpsInput(s)
-            else closeSettings()
-            return
-        }
-
-        if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT)) navigate(-1, s)
-        if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT)) navigate(1, s)
-
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) { if (fpsInputActive) confirmFpsInput(s) else closeSettings() }
         if (Gdx.input.isTouched && draggingSlider) {
-            val tx = unproject().x
-            val trackX = panelX + panelW - 28f - panelW * 0.36f
-            val trackW = panelW * 0.36f
-            val norm = max(0f, min(1f, (tx - trackX) / trackW))
-
-            val pageRows = getPageRows(currentCat, currentSubPage)
-            if (draggingSliderRow >= 0 && draggingSliderRow < pageRows.size) {
-                val row = pageRows.get(draggingSliderRow)
-                if ("volume" == row.id) {
-                    s.musicVolume = norm
-                    game.soundManager.setMusicVolume(s.musicVolume)
-                } else if ("uiPadding" == row.id) {
-                    s.uiPadding = norm * 50f
-                } else if ("practiceOpacity" == row.id) {
-                    s.practiceButtonOpacity = norm
-                }
+            val norm = MathUtils.clamp((unproject().x - (panelX + panelW - 45f - panelW * 0.34f)) / (panelW * 0.34f), 0f, 1f)
+            val rows = getPageRows(currentCat, currentSubPage)
+            if (draggingSliderRow in 0 until rows.size) {
+                val r = rows.get(draggingSliderRow)
+                if (r.id == "volume") { s.musicVolume = norm; game.soundManager.setMusicVolume(norm) }
+                else if (r.id == "uiPadding") s.uiPadding = norm * 50f
+                else if (r.id == "practiceOpacity") s.practiceButtonOpacity = norm
             }
         }
-        if (!Gdx.input.isTouched) {
-            if (draggingSlider) s.save()
-            draggingSlider = false
-            draggingSliderRow = -1
-        }
-
+        if (!Gdx.input.isTouched) { if (draggingSlider) s.save(); draggingSlider = false; draggingSliderRow = -1 }
         if (!Gdx.input.justTouched()) return
         val t = unproject()
-
-        val pageRows = getPageRows(currentCat, currentSubPage)
-
-        if (fpsInputActive) {
-            var fpsIdx = -1
-            for (i in 0 until pageRows.size) {
-                if ("fpsValue" == pageRows.get(i).id) {
-                    fpsIdx = i
-                    break
-                }
-            }
-            if (fpsIdx < 0 || !hitIntBox(t, rowY(fpsIdx))) confirmFpsInput(s)
-        }
-
-        if (hits(t, backX, backY, backW, backH)) {
-            closeSettings()
-            return
-        }
-
-        if (hits(t, arrowLeftX, arrowY, arrowSize, arrowSize)) {
-            navigate(-1, s)
-            return
-        }
-        if (hits(t, arrowRightX, arrowY, arrowSize, arrowSize)) {
-            navigate(1, s)
-            return
-        }
-
+        if (hits(t, backX, backY, backW, backH)) { closeSettings(); return }
+        if (hits(t, arrowLeftX, arrowY, arrowSize, arrowSize)) { navigate(-1, s); return }
+        if (hits(t, arrowRightX, arrowY, arrowSize, arrowSize)) { navigate(1, s); return }
         for (i in 0 until CAT_COUNT) {
-            val tabW = panelW / CAT_COUNT
-            val tabX = panelX + tabW * i
-            val tabTopY = panelY + panelH - 42f
-            if (t.x >= tabX && t.x <= tabX + tabW && t.y >= tabTopY - 28f && t.y <= tabTopY + 8f) {
-                if (i != currentCat) {
-                    confirmFpsInput(s)
-                    draggingSlider = false
-                    currentCat = i
-                    currentSubPage = 0
-                    recomputePanelHeight()
-                }
-                return
+            val tw = panelW / CAT_COUNT
+            if (t.x in (panelX + tw * i)..(panelX + tw * (i+1)) && t.y > panelY + panelH - 80f) {
+                currentCat = i; currentSubPage = 0; recomputePanelHeight(); return
             }
         }
-
-        for (i in 0 until pageRows.size) {
-            val row = pageRows.get(i)
+        val pRows = getPageRows(currentCat, currentSubPage)
+        for (i in 0 until pRows.size) {
             val ry = rowY(i)
-            when (row.type) {
-                RowType.TOGGLE -> if (hitPill(t, ry)) handleToggle(row.id, s)
-                RowType.SLIDER -> {
-                    val `val` = when (row.id) {
-                        "uiPadding" -> s.uiPadding / 50f
-                        "practiceOpacity" -> s.practiceButtonOpacity
-                        else -> s.musicVolume
-                    }
-                    if (hitSliderThumb(t, ry, `val`)) {
-                        draggingSlider = true
-                        draggingSliderRow = i
-                    }
-                }
-                RowType.INT_FIELD -> if (hitIntBox(t, ry) && !fpsInputActive) {
-                    if (Gdx.app.type == com.badlogic.gdx.Application.ApplicationType.Desktop) {
-                        fpsInputActive = true
-                        fpsInputBuffer.setLength(0)
-                        fpsInputBuffer.append(s.fpsCapValue)
-                    } else {
-                        Gdx.input.getTextInput(object : Input.TextInputListener {
-                            override fun input(text: String) {
-                                try {
-                                    val `val` = text.trim().toInt()
-                                    if (`val` > 0) {
-                                        s.fpsCapValue = `val`
-                                        s.applyFpsCap()
-                                        s.save()
-                                    }
-                                } catch (ignored: NumberFormatException) {
-                                }
-                            }
-                            override fun canceled() {}
-                        }, "FPS Limit", s.fpsCapValue.toString(), "Enter FPS cap")
-                    }
-                }
-            }
+            val r = pRows.get(i)
+            if (r.type == RowType.TOGGLE && hitPill(t, ry)) handleToggle(r.id, s)
+            else if (r.type == RowType.SLIDER && hitSliderThumb(t, ry, 0.5f)) { draggingSlider = true; draggingSliderRow = i }
+            else if (r.type == RowType.INT_FIELD && hitIntBox(t, ry)) { fpsInputActive = true; fpsInputBuffer.setLength(0); fpsInputBuffer.append(s.fpsCapValue) }
         }
     }
 
     private fun handleToggle(id: String, s: SettingsManager) {
         when (id) {
-            "menuMusic" -> {
-                s.menuMusicEnabled = !s.menuMusicEnabled
-                if (s.menuMusicEnabled) game.soundManager.playMenuMusic()
-                else game.soundManager.stopMenuMusic()
-                s.save()
-            }
-            "hitboxes" -> {
-                s.showHitboxes = !s.showHitboxes
-                s.save()
-            }
-            "hitboxesDeath" -> {
-                s.showHitboxesOnDeath = !s.showHitboxesOnDeath
-                s.save()
-            }
-            "lockCursor" -> {
-                s.lockCursorInGame = !s.lockCursorInGame
-                s.save()
-            }
-            "showFps" -> {
-                s.showFps = !s.showFps
-                s.save()
-            }
-            "showPercentage" -> {
-                s.showPercentage = !s.showPercentage
-                s.save()
-            }
-            "showProgressBar" -> {
-                s.showProgressBar = !s.showProgressBar
-                s.save()
-            }
-            "showAttempts" -> {
-                s.showAttempts = !s.showAttempts
-                s.save()
-            }
-            "showBest" -> {
-                s.showBest = !s.showBest
-                s.save()
-            }
-            "capFps" -> {
-                s.capFps = !s.capFps
-                s.applyFpsCap()
-                s.save()
-                if (!s.capFps) fpsInputActive = false
-                recomputePanelHeight()
-            }
-            "vsync" -> {
-                s.enableVsync = !s.enableVsync
-                s.applyVsync()
-                s.save()
-            }
+            "menuMusic" -> { s.menuMusicEnabled = !s.menuMusicEnabled; if (s.menuMusicEnabled) game.soundManager.playMenuMusic() else game.soundManager.stopMenuMusic() }
+            "hitboxes" -> s.showHitboxes = !s.showHitboxes
+            "hitboxesDeath" -> s.showHitboxesOnDeath = !s.showHitboxesOnDeath
+            "showFps" -> s.showFps = !s.showFps
+            "capFps" -> { s.capFps = !s.capFps; s.applyFpsCap() }
+            "vsync" -> { s.enableVsync = !s.enableVsync; s.applyVsync() }
+            "showPercentage" -> s.showPercentage = !s.showPercentage
+            "showProgressBar" -> s.showProgressBar = !s.showProgressBar
+            "showAttempts" -> s.showAttempts = !s.showAttempts
+            "showBest" -> s.showBest = !s.showBest
         }
+        s.save()
     }
 
     private fun navigate(dir: Int, s: SettingsManager) {
-        confirmFpsInput(s)
-        draggingSlider = false
-        draggingSliderRow = -1
-
-        val newSub = currentSubPage + dir
-        val pages = subPageCount(currentCat)
-
-        if (newSub in 0 until pages) {
-            currentSubPage = newSub
-        } else {
-            currentCat = (currentCat + dir + CAT_COUNT) % CAT_COUNT
-            currentSubPage = if (dir > 0) 0 else subPageCount(currentCat) - 1
-        }
-        recomputePanelHeight()
+        val total = subPageCount(currentCat)
+        currentSubPage = (currentSubPage + dir + total) % total
     }
 
+    private fun closeSettings() { settingsOpen = false; game.settingsManager.save() }
     private fun confirmFpsInput(s: SettingsManager) {
-        if (!fpsInputActive) return
+        try { val v = fpsInputBuffer.toString().toInt(); if (v > 0) { s.fpsCapValue = v; s.applyFpsCap(); s.save() } } catch (e: Exception) {}
         fpsInputActive = false
-        if (fpsInputBuffer.isNotEmpty()) {
-            try {
-                val `val` = fpsInputBuffer.toString().toInt()
-                if (`val` > 0) {
-                    s.fpsCapValue = `val`
-                    s.applyFpsCap()
-                    s.save()
-                }
-            } catch (ignored: NumberFormatException) {
-            }
-        }
-        fpsInputBuffer.setLength(0)
     }
 
-    private fun closeSettings() {
-        settingsOpen = false
-        draggingSlider = false
-        draggingSliderRow = -1
-        fpsInputActive = false
-        fpsInputBuffer.setLength(0)
-        currentCat = CAT_GAMEPLAY
-        currentSubPage = 0
-    }
-
-    private class InfoLine(val text: String, val url: String) {
-        var y: Float = 0f
-    }
-
-    private val creditLines = Array<InfoLine>().apply {
-        add(InfoLine("Euphoria by ForeverBound", "https://www.newgrounds.com/audio/listen/680209"))
-        add(InfoLine("Icefield by Waterflame", "https://www.newgrounds.com/audio/listen/1379251"))
-        add(InfoLine("Hypercharge by Cobalt039", "https://www.newgrounds.com/audio/listen/1538780"))
-        add(InfoLine("Bounce by Waterflame", "https://www.newgrounds.com/audio/listen/654553"))
-        add(InfoLine("Rhythm Factory by Waterflame", "https://www.newgrounds.com/audio/listen/1533782"))
-        add(InfoLine("Vulg by OcularNebula", "https://www.newgrounds.com/audio/listen/954091"))
-    }
-
-    private val socialLines = Array<InfoLine>().apply {
-        add(InfoLine("YouTube: @LunarPixelGames", "https://www.youtube.com/@LunarPixelGames"))
-        add(InfoLine("GitHub: LunarPixelGames", "https://github.com/LunarPixelGames"))
-    }
-
-    private val privacyPolicyLine = InfoLine("Privacy Policy", "https://lunarpixelgames.github.io/RhythmicRush/PRIVACY")
-
-    private fun handleInfoInput() {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            closeInfo()
-            return
-        }
-
-        if (!Gdx.input.justTouched()) return
-        val t = unproject()
-
-        if (hits(t, backX, backY, backW, backH)) {
-            closeInfo()
-            return
-        }
-
-        for (i in 0 until INFO_TAB_COUNT) {
-            val tabW = panelW / INFO_TAB_COUNT
-            val tabX = panelX + tabW * i
-            val tabTopY = panelY + panelH - 42f
-            if (t.x >= tabX && t.x <= tabX + tabW && t.y >= tabTopY - 28f && t.y <= tabTopY + 8f) {
-                if (i != currentInfoTab) {
-                    currentInfoTab = i
-                }
-                return
-            }
-        }
-
-        var lines: Array<InfoLine>? = null
-        if (currentInfoTab == INFO_TAB_CREDITS) lines = creditLines
-        else if (currentInfoTab == INFO_TAB_SOCIALS) lines = socialLines
-
-        if (lines != null) {
-            val lineH = 32f * (panelH / 480f)
-            for (line in lines) {
-                if (t.x >= panelX + 35f && t.x <= panelX + panelW - 35f &&
-                    t.y >= line.y - lineH && t.y <= line.y) {
-                    Gdx.net.openURI(line.url)
-                    return
-                }
-            }
-        }
-
-        if (currentInfoTab == INFO_TAB_SOCIALS) {
-            val lineH = 32f * (panelH / 480f)
-            if (t.x >= panelX + panelW / 2f - 100f && t.x <= panelX + panelW / 2f + 100f &&
-                t.y >= privacyPolicyLine.y - lineH && t.y <= privacyPolicyLine.y) {
-                Gdx.net.openURI(privacyPolicyLine.url)
-            }
-        }
-    }
-
-    private fun closeInfo() {
-        infoOpen = false
-        currentInfoTab = INFO_TAB_HOWTOPLAY
-    }
+    private fun rowY(i: Int): Float = rowStartY - i * rowStep - rowStep / 2f
+    private fun hitPill(t: Vector2, ry: Float): Boolean = t.x > panelX + panelW - 140f && t.y in (ry - 20f)..(ry + 20f)
+    private fun hitSliderThumb(t: Vector2, ry: Float, v: Float): Boolean = t.y in (ry - 25f)..(ry + 25f) && t.x > panelX + panelW * 0.5f
+    private fun hitIntBox(t: Vector2, ry: Float): Boolean = t.x > panelX + panelW - 140f && t.y in (ry - 20f)..(ry + 20f)
 
     private fun drawInfoOverlay() {
         Gdx.gl.glEnable(GL20.GL_BLEND)
@@ -978,27 +605,21 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
         font.data.setScale(settingsHeadingScale)
         layout.setText(font, "Information")
-        drawTextWithShadow(
-            font, "Information",
-            (panelX + panelW / 2f) - (layout.width / 2f),
-            panelY + panelH - 16f,
-            COL_HEADING
-        )
+        drawTextWithShadow(font, "Information", (panelX + panelW / 2f) - (layout.width / 2f), panelY + panelH - 16f, COL_HEADING)
 
         val tabFontScale = settingsFontScale * 0.85f
         font.data.setScale(tabFontScale)
         val tabY = panelY + panelH - panelPadT * 0.47f
         for (i in 0 until INFO_TAB_COUNT) {
-            val tabW = panelW / INFO_TAB_COUNT
-            val tabCX = panelX + tabW * i + tabW / 2f
+            val tw = panelW / INFO_TAB_COUNT
+            val tabCX = panelX + tw * i + tw / 2f
             val tabColor = if (i == currentInfoTab) COL_TAB_ACT else COL_TAB_INACT
             layout.setText(font, INFO_TAB_NAMES[i])
-
             drawTextWithShadow(font, INFO_TAB_NAMES[i], tabCX - layout.width / 2f, tabY, tabColor)
         }
 
-        val tabW = panelW / INFO_TAB_COUNT
-        val tabCX = panelX + tabW * currentInfoTab
+        val tw = panelW / INFO_TAB_COUNT
+        val tabCX = panelX + tw * currentInfoTab
         layout.setText(font, INFO_TAB_NAMES[currentInfoTab])
         val tabTextH = layout.height
         val underlineY = tabY - tabTextH - 3f
@@ -1007,10 +628,9 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
         Gdx.gl.glEnable(GL20.GL_BLEND)
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-        shapes.projectionMatrix = camera.combined
         shapes.begin(ShapeRenderer.ShapeType.Filled)
         shapes.color = COL_TAB_ACT
-        shapes.rect(tabCX + 8f, underlineY, tabW - 16f, 3f)
+        shapes.rect(tabCX + 8f, underlineY, tw - 16f, 3f)
         shapes.end()
         Gdx.gl.glDisable(GL20.GL_BLEND)
 
@@ -1038,7 +658,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         } else if (currentInfoTab == INFO_TAB_CREDITS) {
             font.color = COL_HEADING
             font.draw(game.batch, "Music Credits (Click to open):", contentX, contentY)
-            for (i in 0 until creditLines.size) {
+            for (i in creditLines.indices) {
                 val line = creditLines[i]
                 line.y = contentY - (i + 1.25f) * lineSpacing
                 font.color = COL_TAB_ACT
@@ -1047,7 +667,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         } else if (currentInfoTab == INFO_TAB_SOCIALS) {
             font.color = COL_HEADING
             font.draw(game.batch, "Follow Us (Click to open):", contentX, contentY)
-            for (i in 0 until socialLines.size) {
+            for (i in socialLines.indices) {
                 val line = socialLines[i]
                 line.y = contentY - (i + 1.25f) * lineSpacing
                 font.color = COL_TAB_ACT
@@ -1066,66 +686,108 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         game.batch.end()
     }
 
-    private fun rowY(i: Int): Float {
-        return rowStartY - i * rowStep
+    private fun handleInfoInput() {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            closeInfo()
+            return
+        }
+
+        if (!Gdx.input.justTouched()) return
+        val t = unproject()
+
+        if (hits(t, backX, backY, backW, backH)) {
+            closeInfo()
+            return
+        }
+
+        for (i in 0 until INFO_TAB_COUNT) {
+            val tw = panelW / INFO_TAB_COUNT
+            val tabX = panelX + tw * i
+            val tabTopY = panelY + panelH - 42f
+            if (t.x >= tabX && t.x <= tabX + tw && t.y >= tabTopY - 28f && t.y <= tabTopY + 8f) {
+                if (i != currentInfoTab) {
+                    currentInfoTab = i
+                }
+                return
+            }
+        }
+
+        // Handle link clicks
+        val lines: Array<InfoLine>? = when (currentInfoTab) {
+            INFO_TAB_CREDITS -> Array(creditLines)
+            INFO_TAB_SOCIALS -> Array(socialLines)
+            else -> null
+        }
+
+        if (lines != null) {
+            val lineH = 32f * (panelH / 480f)
+            for (i in 0 until lines.size) {
+                val line = lines.get(i)
+                if (t.x >= panelX + 35f && t.x <= panelX + panelW - 35f &&
+                    t.y >= line.y - lineH && t.y <= line.y
+                ) {
+                    Gdx.net.openURI(line.url)
+                    return
+                }
+            }
+        }
+
+        if (currentInfoTab == INFO_TAB_SOCIALS) {
+            val lineH = 32f * (panelH / 480f)
+            if (t.x >= panelX + panelW / 2f - 100f && t.x <= panelX + panelW / 2f + 100f &&
+                t.y >= privacyPolicyLine.y - lineH && t.y <= privacyPolicyLine.y
+            ) {
+                Gdx.net.openURI(privacyPolicyLine.url)
+            }
+        }
     }
 
-    private fun hitPill(t: Vector2, ry: Float): Boolean {
-        val pillH = rowStep * 0.38f
-        val pillW = pillH * 1.92f
-        val pillX = panelX + panelW - 28f - pillW
-        val pillY = ry - pillH / 2f
-        return t.x >= pillX - 4f && t.x <= pillX + pillW + 4f &&
-                t.y >= pillY - 4f && t.y <= pillY + pillH + 4f
+    private fun closeInfo() {
+        infoOpen = false
+        currentInfoTab = INFO_TAB_HOWTOPLAY
     }
 
-    private fun hitSliderThumb(t: Vector2, ry: Float, value: Float): Boolean {
-        val trackW = panelW * 0.36f
-        val trackX = panelX + panelW - 28f - trackW
-        val thumbR = rowStep * 0.16f
-        val thumbCX = trackX + trackW * value
-        return t.x >= trackX - thumbR && t.x <= trackX + trackW + thumbR &&
-                t.y >= ry - thumbR && t.y <= ry + thumbR
-    }
-
-    private fun hitIntBox(t: Vector2, ry: Float): Boolean {
-        val boxH = rowStep * 0.44f
-        val boxW = boxH * 2.8f
-        val boxX = panelX + panelW - 28f - boxW
-        val boxY = ry - boxH / 2f
-        return t.x >= boxX && t.x <= boxX + boxW && t.y >= boxY && t.y <= boxY + boxH
+    private fun drawRoundedRect(x: Float, y: Float, w: Float, h: Float, r: Float) {
+        shapes.rect(x + r, y, w - 2 * r, h)
+        shapes.rect(x, y + r, r, h - 2 * r)
+        shapes.rect(x + w - r, y + r, r, h - 2 * r)
+        shapes.circle(x + r, y + r, r, 20)
+        shapes.circle(x + w - r, y + r, r, 20)
+        shapes.circle(x + r, y + h - r, r, 20)
+        shapes.circle(x + w - r, y + h - r, r, 20)
     }
 
     private fun unproject(): Vector2 {
-        val v = Vector2(Gdx.input.x.toFloat(), Gdx.input.y.toFloat())
-        viewport.unproject(v)
-        return v
+        val touch = com.badlogic.gdx.math.Vector3(Gdx.input.x.toFloat(), Gdx.input.y.toFloat(), 0f)
+        viewport.unproject(touch)
+        return Vector2(touch.x, touch.y)
+    }
+
+    override fun resize(width: Int, height: Int) { super.resize(width, height); updateScaledSizes() }
+    override fun dispose() { shapes.dispose(); panelTexture?.dispose(); super.dispose() }
+
+    private fun drawShadowText(f: BitmapFont, text: String, x: Float, y: Float, color: Color) {
+        val oldColor = f.color.cpy()
+        f.setColor(0f, 0f, 0f, color.a * 0.5f)
+        f.draw(game.batch, text, x + 2f, y - 2f)
+        f.color = color
+        f.draw(game.batch, text, x, y)
+        f.color = oldColor
+    }
+
+    private fun drawTextWithShadow(f: BitmapFont, text: String, x: Float, y: Float, color: Color) {
+        f.setColor(0f, 0f, 0f, color.a * 0.5f)
+        f.draw(game.batch, text, x + 2f, y - 2f)
+        f.color = color
+        f.draw(game.batch, text, x, y)
     }
 
     private fun createRoundedRect(w: Int, h: Int, r: Int, color: Color): Texture {
         val pm = Pixmap(w, h, Pixmap.Format.RGBA8888)
-        pm.setColor(0f, 0f, 0f, 0f)
-        pm.fill()
         pm.setColor(color)
         pm.fillRectangle(r, 0, w - 2 * r, h)
         pm.fillRectangle(0, r, w, h - 2 * r)
-        pm.fillCircle(r, r, r)
-        pm.fillCircle(w - r, r, r)
-        pm.fillCircle(r, h - r, r)
-        pm.fillCircle(w - r, h - r, r)
-        val t = Texture(pm)
-        pm.dispose()
-        return t
-    }
-
-    override fun resize(width: Int, height: Int) {
-        viewport.update(width, height, true)
-        updateScaledSizes()
-    }
-
-    override fun dispose() {
-        if (::shapes.isInitialized) shapes.dispose()
-        panelTexture?.dispose()
-        super.dispose()
+        pm.fillCircle(r, r, r); pm.fillCircle(w - r, r, r); pm.fillCircle(r, h - r, r); pm.fillCircle(w - r, h - r, r)
+        val t = Texture(pm); pm.dispose(); return t
     }
 }

@@ -4,7 +4,7 @@ import com.badlogic.gdx.math.Rectangle
 import io.github.msameer0.rhythmicrush.game.engine.Rotatable
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.game.registries.Registry
-import kotlin.math.roundToInt
+import com.badlogic.gdx.math.MathUtils
 
 @Registry(id = "half_spike")
 class HalfSpike : AbstractHazard, Rotatable {
@@ -40,7 +40,7 @@ class HalfSpike : AbstractHazard, Rotatable {
     }
 
     private fun updateHitbox() {
-        when (((rotation / 90f).roundToInt() * 90 % 360 + 360) % 360) {
+        when (((MathUtils.round(rotation / 90f) * 90 % 360 + 360) % 360)) {
             90 -> hitbox.set(x + TEXTURE_SIZE - HITBOX_H, y + HITBOX_CENTER_X, HITBOX_H, HITBOX_W)
             180 -> hitbox.set(x + HITBOX_CENTER_X, y + TEXTURE_SIZE - HITBOX_H, HITBOX_W, HITBOX_H)
             270 -> hitbox.set(x, y + HITBOX_CENTER_X, HITBOX_H, HITBOX_W)

@@ -1,6 +1,7 @@
 package io.github.msameer0.rhythmicrush.game
 
 import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.math.MathUtils
 import kotlin.math.min
 
 /**

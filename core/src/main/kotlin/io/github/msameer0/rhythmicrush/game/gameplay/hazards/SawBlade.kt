@@ -2,6 +2,7 @@ package io.github.msameer0.rhythmicrush.game.gameplay.hazards
 
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.game.registries.Registry
+import com.badlogic.gdx.math.MathUtils
 import kotlin.math.max
 import kotlin.math.min
 
@@ -39,7 +40,8 @@ class SawBlade : AbstractHazard {
         this.degreesPerSecond = degreesPerSec
         this.visualRotation = 0f
         this.type = HazardType.SAW_BLADE
-        bounds.set(x, y, diameter, diameter)
+        val d = min(max(1f, diameter), 1000f)
+        bounds.set(x, y, d, d)
         return this
     }
 
@@ -54,8 +56,8 @@ class SawBlade : AbstractHazard {
 
         val pr = player.getBounds()
 
-        val closestX = max(pr.x, min(cx, pr.x + pr.width))
-        val closestY = max(pr.y, min(cy, pr.y + pr.height))
+        val closestX = MathUtils.clamp(cx, pr.x, pr.x + pr.width)
+        val closestY = MathUtils.clamp(cy, pr.y, pr.y + pr.height)
 
         val dx = cx - closestX
         val dy = cy - closestY

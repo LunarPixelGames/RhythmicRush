@@ -11,7 +11,7 @@ import com.badlogic.gdx.utils.Align
 import com.badlogic.gdx.utils.viewport.Viewport
 import io.github.msameer0.rhythmicrush.RhythmicRushGame
 import io.github.msameer0.rhythmicrush.game.GameWorld
-import kotlin.math.round
+import com.badlogic.gdx.math.MathUtils
 
 /**
  * Draws all in-game HUD elements: progress bar, attempt/best/FPS counters,
@@ -88,7 +88,7 @@ class HudRenderer(
         var textW = 0f
         if (s.showPercentage) {
             sb.setLength(0)
-            sb.append(round(progress * 100f).toInt()).append('%')
+            sb.append(MathUtils.round(progress * 100f)).append('%')
             font.data.setScale(1.2f)
             glyphLayout.setText(font, sb, Color.WHITE, 0f, Align.left, false)
             textW = glyphLayout.width
@@ -135,7 +135,7 @@ class HudRenderer(
         val s = game.settingsManager
         if (!s.showPercentage) return
 
-        val pct = round(progress * 100f).toInt()
+        val pct = MathUtils.round(progress * 100f)
         val barW = viewport.worldWidth * 0.625f * 0.55f
         val gap = 14f
         val lineY = camTop(camera, viewport) - (s.uiPadding + 6f)
