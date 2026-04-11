@@ -23,6 +23,9 @@ import io.github.msameer0.rhythmicrush.screens.ui.HudRenderer
 import io.github.msameer0.rhythmicrush.screens.ui.OverlayUI
 import kotlin.math.min
 
+/**
+ * The main gameplay screen where the game world is updated and rendered.
+ */
 class GameScreen @JvmOverloads constructor(
     game: RhythmicRushGame,
     private val levelData: LevelData?,
@@ -185,7 +188,6 @@ class GameScreen @JvmOverloads constructor(
         overlay.updateScale()
         game.soundManager.stopMenuMusic()
         
-        // Audio analysis
         val mFile = levelData?.musicFile
         if (mFile != null && mFile.isNotEmpty()) {
             try {

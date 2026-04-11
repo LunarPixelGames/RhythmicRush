@@ -5,6 +5,9 @@ import com.badlogic.gdx.math.Vector2
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.game.registries.Registry
 
+/**
+ * Special type of block that provides sloped surfaces for non-orthogonal player movement.
+ */
 @Registry(id = "slope")
 class Slope : Block {
     companion object {
@@ -164,5 +167,8 @@ class Slope : Block {
                 targetVy
             )
         }
+    }
+
+    override fun tick(delta: Float) {
     }
 }

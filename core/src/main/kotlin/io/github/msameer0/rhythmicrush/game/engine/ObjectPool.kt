@@ -2,6 +2,9 @@ package io.github.msameer0.rhythmicrush.game.engine
 
 import com.badlogic.gdx.utils.Array
 
+/**
+ * Generic object pooling system to minimize garbage collection by reusing objects.
+ */
 abstract class ObjectPool<T : Any> {
     val free = Array<T>()
 

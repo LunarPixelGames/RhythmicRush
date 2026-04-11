@@ -13,6 +13,9 @@ import io.github.msameer0.rhythmicrush.game.gameplay.hazards.SawBlade
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 
+/**
+ * Visualizes the bounding boxes and collision shapes of all game objects for debugging and development.
+ */
 class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRenderer) {
 
     companion object {

@@ -4,6 +4,9 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.files.FileHandle
 import kotlin.math.sqrt
 
+/**
+ * Analyzes audio files to extract loudness data used for reactive visual effects.
+ */
 class LoudnessAnalyzer {
 
     fun analyze(file: FileHandle, sampleRate: Int = 50): FloatArray {
@@ -73,6 +76,9 @@ class LoudnessAnalyzer {
         return result
     }
 
+    /**
+     * Represents a single MP3 frame's metadata found during analysis.
+     */
     private class Mp3Frame(
         val offset: Int,
         val frameSize: Int,

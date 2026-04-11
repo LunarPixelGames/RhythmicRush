@@ -2,11 +2,15 @@ package io.github.msameer0.rhythmicrush.game.gameplay.blocks
 
 import com.badlogic.gdx.math.Rectangle
 import io.github.msameer0.rhythmicrush.game.engine.Rotatable
+import io.github.msameer0.rhythmicrush.game.engine.Tickable
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.game.registries.Registry
 
 @Registry(id = "block")
-open class Block : Rotatable {
+/**
+ * Base class for all physical blocks in the game that the player can collide with or walk on.
+ */
+open class Block : Tickable, Rotatable {
     override var rotation: Float = 0f
     var x: Float = 0f
     var y: Float = 0f
@@ -127,5 +131,6 @@ open class Block : Rotatable {
         }
     }
 
-
+    override fun tick(delta: Float) {
+    }
 }

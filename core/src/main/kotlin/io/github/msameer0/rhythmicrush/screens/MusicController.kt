@@ -6,6 +6,9 @@ import io.github.msameer0.rhythmicrush.RhythmicRushGame
 import io.github.msameer0.rhythmicrush.game.level.LevelData
 import kotlin.math.min
 
+/**
+ * Manages game music playback, including loading, stopping, and volume fade effects.
+ */
 class MusicController(
     private val game: RhythmicRushGame,
     private val levelData: LevelData?

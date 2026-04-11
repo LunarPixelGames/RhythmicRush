@@ -3,8 +3,14 @@ package io.github.msameer0.rhythmicrush.game
 import com.badlogic.gdx.graphics.Color
 import kotlin.math.min
 
+/**
+ * Manages the background and ground colors, supporting fades and pulses triggered by game events.
+ */
 class ColorStateManager {
 
+    /**
+     * Internal state representing a color transition over time.
+     */
     private class ColorFade {
         val from = Color()
         val to = Color()
@@ -21,6 +27,9 @@ class ColorStateManager {
         }
     }
 
+    /**
+     * Internal state representing a temporary color pulse with fade-in, hold, and fade-out phases.
+     */
     private class ColorPulse {
         val target = Color()
         var fadeIn = 0f

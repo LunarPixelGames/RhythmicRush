@@ -13,6 +13,9 @@ import com.badlogic.gdx.utils.viewport.Viewport
 import io.github.msameer0.rhythmicrush.RhythmicRushGame
 import io.github.msameer0.rhythmicrush.game.GameWorld
 
+/**
+ * Handles the rendering of the gameplay HUD, including the progress bar, attempts, and UI popups.
+ */
 class HudRenderer(
     private val game: RhythmicRushGame,
     private val world: GameWorld,

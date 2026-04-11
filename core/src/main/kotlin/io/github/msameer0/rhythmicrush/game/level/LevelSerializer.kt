@@ -4,6 +4,9 @@ import com.badlogic.gdx.files.FileHandle
 import com.badlogic.gdx.utils.Json
 import com.badlogic.gdx.utils.JsonWriter
 
+/**
+ * Provides static methods for serializing and deserializing level data to and from JSON format.
+ */
 class LevelSerializer {
     companion object {
         val json: Json = buildJson()

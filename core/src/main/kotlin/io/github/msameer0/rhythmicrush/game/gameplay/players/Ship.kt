@@ -2,6 +2,9 @@ package io.github.msameer0.rhythmicrush.game.gameplay.players
 
 import io.github.msameer0.rhythmicrush.game.registries.Registry
 
+/**
+ * Ship game mode featuring flying mechanics controlled by holding the jump button.
+ */
 @Registry(id = "ship")
 class Ship : AbstractPlayer {
 
@@ -16,12 +19,14 @@ class Ship : AbstractPlayer {
 
     private var groundY: Float = 50f
 
-    constructor(startX: Float, startY: Float) : super(startX, startY) {
+    constructor(startX: Float, startY: Float) : super() {
+        this.x = startX
+        this.y = startY
         gravity = -1800f
         type = PlayerType.SHIP
     }
 
-    constructor() : super(0f, 0f) {
+    constructor() : super() {
         gravity = -1800f
         type = PlayerType.SHIP
     }

@@ -2,6 +2,9 @@ package io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals
 
 import io.github.msameer0.rhythmicrush.game.registries.Registry
 
+/**
+ * A portal that changes the player's game mode to Cube.
+ */
 @Registry(id = "cube_portal")
 class CubePortal : AbstractPortal {
     constructor(x: Float, y: Float) : super(x, y) {

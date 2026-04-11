@@ -3,9 +3,18 @@ package io.github.msameer0.rhythmicrush.game.gameplay.players
 import com.badlogic.gdx.math.Rectangle
 import io.github.msameer0.rhythmicrush.game.GameWorld
 
-abstract class AbstractPlayer(startX: Float, startY: Float) {
+/**
+ * Base class for all player modes, handling common movement, input, and state properties.
+ */
+abstract class AbstractPlayer() {
 
-    enum class PlayerType { CUBE, SHIP }
+    /**
+     * Enumeration of available player game modes.
+     */
+    enum class PlayerType {
+        CUBE,
+        SHIP
+    }
 
     @JvmField
     var gravity: Float = 0f
@@ -13,9 +22,9 @@ abstract class AbstractPlayer(startX: Float, startY: Float) {
     protected var type: PlayerType? = null
 
     @JvmField
-    var x: Float = startX
+    var x: Float = 0f
     @JvmField
-    var y: Float = startY
+    var y: Float = 0f
     @JvmField
     var worldX: Float = 0f
     @JvmField

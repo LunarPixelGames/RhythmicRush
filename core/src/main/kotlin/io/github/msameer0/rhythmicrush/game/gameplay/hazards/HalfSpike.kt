@@ -6,6 +6,9 @@ import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.game.registries.Registry
 import com.badlogic.gdx.math.MathUtils
 
+/**
+ * A hazard representing a smaller, half-sized spike.
+ */
 @Registry(id = "half_spike")
 class HalfSpike : AbstractHazard, Rotatable {
     override var rotation: Float = 0f

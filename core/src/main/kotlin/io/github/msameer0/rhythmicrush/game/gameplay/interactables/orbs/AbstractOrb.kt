@@ -3,8 +3,14 @@ package io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs
 import com.badlogic.gdx.math.Rectangle
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 
+/**
+ * Base class for all interactable orbs that provide movement boosts when clicked.
+ */
 abstract class AbstractOrb {
 
+    /**
+     * Enumeration of supported orb types and their behaviors.
+     */
     enum class OrbType {
         YELLOW,
         BLUE,

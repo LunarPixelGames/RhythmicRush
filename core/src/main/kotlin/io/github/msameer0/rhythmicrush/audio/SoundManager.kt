@@ -4,6 +4,9 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.audio.Music
 import com.badlogic.gdx.math.MathUtils
 
+/**
+ * Manages audio playback including menu music and sound effect volumes.
+ */
 class SoundManager {
     private var musicVolume = 1f
 

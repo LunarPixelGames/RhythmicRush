@@ -24,6 +24,9 @@ import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.game.gameplay.players.Cube
 import io.github.msameer0.rhythmicrush.game.gameplay.players.Ship
 
+/**
+ * Manages object pooling for frequently created and destroyed game objects to optimize performance.
+ */
 class WorldPoolManager {
 
     private val blockPool = object : ObjectPool<Block>() {

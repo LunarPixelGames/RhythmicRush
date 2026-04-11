@@ -3,6 +3,9 @@ package io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.game.registries.Registry
 
+/**
+ * An orb that flips the player's gravity on activation.
+ */
 @Registry(id = "blue_orb")
 class BlueOrb : AbstractOrb {
 

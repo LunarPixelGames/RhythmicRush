@@ -1,5 +1,8 @@
 package io.github.msameer0.rhythmicrush.game.gameplay.blocks
 
+/**
+ * Defines the various visual and structural types of blocks available in the game.
+ */
 enum class BlockType(
     val id: Int, val textureName: String
 ) {

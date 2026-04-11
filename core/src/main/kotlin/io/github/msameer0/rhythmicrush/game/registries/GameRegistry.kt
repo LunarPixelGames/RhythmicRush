@@ -2,6 +2,9 @@ package io.github.msameer0.rhythmicrush.game.registries
 
 import com.badlogic.gdx.utils.OrderedMap
 
+/**
+ * A generic registry that map string IDs to class types and factory functions for object creation.
+ */
 class GameRegistry<T> {
     val factories: OrderedMap<String, () -> T?> = OrderedMap()
     val classes: OrderedMap<String, Class<out T>> = OrderedMap()

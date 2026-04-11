@@ -14,6 +14,9 @@ import io.github.msameer0.rhythmicrush.settings.SettingsManager
 import io.github.msameer0.rhythmicrush.update.UpdateManager
 import io.github.msameer0.rhythmicrush.window.WindowController
 
+/**
+ * The main game entry point for Rhythmic Rush, managing central state, managers, and the current screen.
+ */
 class RhythmicRushGame(val adController: AdController, val updateManager: UpdateManager) :
     Game() {
 

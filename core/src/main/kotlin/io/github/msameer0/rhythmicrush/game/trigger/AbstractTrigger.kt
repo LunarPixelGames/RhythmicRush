@@ -2,6 +2,9 @@ package io.github.msameer0.rhythmicrush.game.trigger
 
 import io.github.msameer0.rhythmicrush.game.GameWorld
 
+/**
+ * Base class for all world-space triggers that execute actions when the player passes them.
+ */
 abstract class AbstractTrigger {
     var worldX: Float = 0f
     var fired: Boolean = false

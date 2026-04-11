@@ -24,6 +24,9 @@ import io.github.msameer0.rhythmicrush.game.trigger.ColorTrigger
 import io.github.msameer0.rhythmicrush.game.trigger.PulseTrigger
 import kotlin.math.min
 
+/**
+ * Represents the core game state, including the player, level objects, and world simulation logic.
+ */
 class GameWorld : Tickable {
 
     companion object {
@@ -138,8 +141,6 @@ class GameWorld : Tickable {
         if (isPlayerDead || isLevelComplete) return
         colors.update(delta)
         
-        // Smoothing for loudness pulse
-        // Quick to rise, slower to fall for better feel
         val lerpSpeed = if (targetLoudness > currentLoudness) 25f else 10f
         currentLoudness += (targetLoudness - currentLoudness) * kotlin.math.min(delta * lerpSpeed, 1f)
     }

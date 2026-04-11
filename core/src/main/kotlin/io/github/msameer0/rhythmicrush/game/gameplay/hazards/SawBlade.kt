@@ -6,6 +6,9 @@ import com.badlogic.gdx.math.MathUtils
 import kotlin.math.max
 import kotlin.math.min
 
+/**
+ * A rotating circular hazard that kills the player on overlap.
+ */
 @Registry(id = "saw_blade")
 class SawBlade : AbstractHazard {
     var degreesPerSecond: Float = 120f

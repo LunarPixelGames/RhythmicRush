@@ -4,6 +4,9 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import kotlin.math.min
 
+/**
+ * A UI button that features a spring-based animation when pressed and released.
+ */
 class AnimatedButton(
     private var region: TextureRegion?,
     var x: Float,

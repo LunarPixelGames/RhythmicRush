@@ -5,6 +5,9 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.utils.Json
 import com.badlogic.gdx.utils.JsonWriter
 
+/**
+ * Manages game settings, including persistence and application of graphics/audio configurations.
+ */
 class SettingsManager {
     var menuMusicEnabled: Boolean = true
     var musicVolume: Float = 1f
@@ -23,6 +26,9 @@ class SettingsManager {
     var practiceButtonOpacity: Float = 0.5f
     var pulseOrbs: Boolean = true
 
+    /**
+     * DTO for persisting settings data to JSON.
+     */
     class Data {
         var menuMusicEnabled: Boolean = true
         var musicVolume: Float = 1f

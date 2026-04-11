@@ -10,6 +10,9 @@ import com.badlogic.gdx.utils.viewport.ExtendViewport
 import com.badlogic.gdx.utils.viewport.Viewport
 import io.github.msameer0.rhythmicrush.RhythmicRushGame
 
+/**
+ * Base class for all game screens, providing common camera, viewport, and rendering abstractions.
+ */
 abstract class AbstractScreen(protected val game: RhythmicRushGame) : Screen {
 
     @JvmField

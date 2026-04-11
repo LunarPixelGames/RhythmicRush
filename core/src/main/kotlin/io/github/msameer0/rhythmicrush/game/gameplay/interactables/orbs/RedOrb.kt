@@ -3,6 +3,9 @@ package io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.game.registries.Registry
 
+/**
+ * An orb that provides a massive jump boost on activation.
+ */
 @Registry(id = "red_orb")
 class RedOrb : AbstractOrb {
 

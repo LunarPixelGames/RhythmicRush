@@ -3,9 +3,15 @@ package io.github.msameer0.rhythmicrush.game.gameplay.hazards
 import com.badlogic.gdx.math.Rectangle
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 
+/**
+ * Base class for all deadly hazards that can kill the player on contact.
+ */
 abstract class AbstractHazard(
     var x: Float, var y: Float, var width: Float, var height: Float
 ) {
+    /**
+     * Enumeration of supported hazard types.
+     */
     enum class HazardType {
         SPIKE, HALF_SPIKE, SAW_BLADE
     }

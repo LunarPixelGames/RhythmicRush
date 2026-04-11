@@ -3,6 +3,9 @@ package io.github.msameer0.rhythmicrush.game.level
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.utils.Array
 
+/**
+ * Responsible for scanning, loading, and providing access to all game levels.
+ */
 class LevelManager {
     private val levels = Array<LevelData?>()
 

@@ -5,6 +5,9 @@ import io.github.msameer0.rhythmicrush.game.engine.Rotatable
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.game.registries.Registry
 
+/**
+ * A classic triangular hazard that kills the player on contact with its pointed area.
+ */
 @Registry(id = "spike")
 class Spike : AbstractHazard, Rotatable {
     override var rotation: Float = 0f

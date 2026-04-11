@@ -8,6 +8,9 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFont
 import com.badlogic.gdx.math.MathUtils
 import kotlin.math.abs
 
+/**
+ * Handles initialization, caching, and retrieval of BitmapFonts of various sizes using FreeType.
+ */
 class FontManager {
     private val fonts: Array<BitmapFont>
 

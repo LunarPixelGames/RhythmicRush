@@ -2,6 +2,9 @@ package io.github.msameer0.rhythmicrush.game.gameplay.players
 
 import io.github.msameer0.rhythmicrush.game.registries.Registry
 
+/**
+ * Standard Cube game mode focusing on platforming and precise jumping.
+ */
 @Registry(id = "cube")
 class Cube : AbstractPlayer {
 
@@ -16,12 +19,14 @@ class Cube : AbstractPlayer {
         private const val COYOTE_TIME = 0.083f
     }
 
-    constructor(startX: Float, groundY: Float) : super(startX, groundY) {
+    constructor(startX: Float, groundY: Float) : super() {
+        this.x = startX
+        this.y = groundY
         gravity = -1800f
         type = PlayerType.CUBE
     }
 
-    constructor() : super(0f, 0f) {
+    constructor() : super() {
         gravity = -1800f
         type = PlayerType.CUBE
     }

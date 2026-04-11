@@ -3,6 +3,9 @@ package io.github.msameer0.rhythmicrush.game.engine
 import com.badlogic.gdx.math.MathUtils
 import kotlin.math.min
 
+/**
+ * Decouples game logic from the rendering frame rate by using a fixed time-step update loop.
+ */
 class FixedTickEngine(private val tickable: Tickable) {
     companion object {
         const val TICK_RATE = 240

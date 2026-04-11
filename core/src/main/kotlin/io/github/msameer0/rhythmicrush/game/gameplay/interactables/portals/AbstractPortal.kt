@@ -4,9 +4,15 @@ import com.badlogic.gdx.math.Rectangle
 import io.github.msameer0.rhythmicrush.game.engine.Rotatable
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 
+/**
+ * Base class for all portals that change the player's game mode or state on contact.
+ */
 abstract class AbstractPortal : Rotatable {
     override var rotation: Float = 0f
 
+    /**
+     * Enumeration of supported portal types and their effects.
+     */
     enum class PortalType {
         CUBE,
         SHIP,

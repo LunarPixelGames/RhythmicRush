@@ -7,6 +7,9 @@ import com.badlogic.gdx.utils.Array
 import io.github.msameer0.rhythmicrush.game.GameWorld
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 
+/**
+ * Handles practice mode functionality, including checkpoint management and world state restoration.
+ */
 class PracticeManager(private val world: GameWorld) {
 
     private class CheckpointState {

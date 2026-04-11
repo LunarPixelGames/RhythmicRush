@@ -22,6 +22,9 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.round
 
+/**
+ * The main menu screen providing navigation to level selection, settings, and information.
+ */
 class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
     private lateinit var title: TextureRegion

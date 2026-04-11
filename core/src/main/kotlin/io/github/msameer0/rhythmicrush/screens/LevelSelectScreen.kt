@@ -18,6 +18,9 @@ import io.github.msameer0.rhythmicrush.font.FontManager
 import io.github.msameer0.rhythmicrush.game.level.LevelData
 import io.github.msameer0.rhythmicrush.ui.AnimatedButton
 
+/**
+ * Screen used for browsing and selecting game levels, including progress display and navigation.
+ */
 class LevelSelectScreen @JvmOverloads constructor(
     game: RhythmicRushGame,
     initialIndex: Int = 0
@@ -267,7 +270,7 @@ class LevelSelectScreen @JvmOverloads constructor(
         val shapes = ShapeRenderer()
         shapes.projectionMatrix = camera.combined
         shapes.begin(ShapeRenderer.ShapeType.Filled)
-        shapes.color = Color(0.85f, 0.15f, 0.15f, 0.8f) // YouTube Red
+        shapes.color = Color(0.85f, 0.15f, 0.15f, 0.8f)
         drawRoundedRect(shapes, bx, by, bw, bh, 10f)
         shapes.end()
         shapes.dispose()

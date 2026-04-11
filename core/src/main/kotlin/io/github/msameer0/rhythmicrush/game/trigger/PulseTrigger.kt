@@ -4,6 +4,9 @@ import com.badlogic.gdx.graphics.Color
 import io.github.msameer0.rhythmicrush.game.GameWorld
 import io.github.msameer0.rhythmicrush.game.registries.Registry
 
+/**
+ * A trigger that initiates a color pulse effect on the background and ground.
+ */
 @Registry(id = "pulse_trigger")
 class PulseTrigger : AbstractTrigger {
     var pulseBg: Color

@@ -35,9 +35,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Registry-driven level editor.
- */
 public class LevelEditorScreen extends AbstractScreen {
 
     private static final float SIDEBAR_W = 260f;
@@ -251,7 +248,7 @@ public class LevelEditorScreen extends AbstractScreen {
         tabs.clear();
         tabs.add(buildTab("Blocks", Registries.BLOCKS, new Color(0.30f, 0.50f, 0.90f, 1f)));
         tabs.add(buildTab("Hazards", Registries.HAZARDS, new Color(0.90f, 0.30f, 0.30f, 1f)));
-        tabs.add(buildTab("Orbs", Registries.ORBS, new Color(1.00f, 0.85f, 0.20f, 1f)));  // ← add this
+        tabs.add(buildTab("Orbs", Registries.ORBS, new Color(1.00f, 0.85f, 0.20f, 1f)));
         tabs.add(buildTab("Portals", Registries.PORTALS, new Color(0.30f, 0.90f, 0.50f, 1f)));
         tabs.add(buildTab("Triggers", Registries.TRIGGERS, new Color(0.90f, 0.80f, 0.30f, 1f)));
     }
@@ -1007,7 +1004,7 @@ public class LevelEditorScreen extends AbstractScreen {
         if (id == null) return Color.GRAY;
         if (Registries.BLOCKS.has(id)) return new Color(0.30f, 0.50f, 0.90f, 0.85f);
         if (Registries.HAZARDS.has(id)) return new Color(0.90f, 0.30f, 0.30f, 0.85f);
-        if (Registries.ORBS.has(id)) return new Color(1.00f, 0.85f, 0.20f, 0.85f);  // ← add this
+        if (Registries.ORBS.has(id)) return new Color(1.00f, 0.85f, 0.20f, 0.85f);
         if (Registries.PORTALS.has(id)) return new Color(0.30f, 0.90f, 0.50f, 0.85f);
         return new Color(0.90f, 0.80f, 0.30f, 0.85f);
     }

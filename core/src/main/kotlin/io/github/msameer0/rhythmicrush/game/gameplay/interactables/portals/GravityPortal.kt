@@ -2,6 +2,9 @@ package io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals
 
 import io.github.msameer0.rhythmicrush.game.registries.Registry
 
+/**
+ * A portal that flips the direction of gravity for the player.
+ */
 @Registry(id = "gravity_portal")
 class GravityPortal : AbstractPortal {
     constructor(x: Float, y: Float) : super(x, y) {

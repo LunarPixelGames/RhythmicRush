@@ -3,6 +3,9 @@ package io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.game.registries.Registry
 
+/**
+ * An orb that flips gravity and provides a significant jump boost in the new direction.
+ */
 @Registry(id = "green_orb")
 class GreenOrb : AbstractOrb {
 

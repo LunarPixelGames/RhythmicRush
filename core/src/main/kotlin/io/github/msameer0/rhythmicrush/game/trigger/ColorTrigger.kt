@@ -4,6 +4,9 @@ import com.badlogic.gdx.graphics.Color
 import io.github.msameer0.rhythmicrush.game.GameWorld
 import io.github.msameer0.rhythmicrush.game.registries.Registry
 
+/**
+ * A trigger that starts a background and ground color fade when activated.
+ */
 @Registry(id = "color_trigger")
 class ColorTrigger : AbstractTrigger {
     var targetBg: Color

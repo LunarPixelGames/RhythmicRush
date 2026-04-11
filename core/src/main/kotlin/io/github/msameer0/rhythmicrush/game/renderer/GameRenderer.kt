@@ -23,6 +23,9 @@ import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.settings.SettingsManager
 import kotlin.math.min
 
+/**
+ * Primary renderer for the game world, handling sprites, shapes, backgrounds, and the player.
+ */
 class GameRenderer(
     private val world: GameWorld,
     private val camera: OrthographicCamera,
@@ -108,16 +111,12 @@ class GameRenderer(
 
         shape.projectionMatrix = camera.combined
         batch.projectionMatrix = camera.combined
-
-        // 1. Sprite Pass: Background & Game Objects
         batch.begin()
 
-        // Background (Additive blending)
         if (bgTexture != null) {
             drawBackground(bgTexture, bgColor)
         }
 
-        // Restore normal blending for game objects
         batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
         batch.color = Color.WHITE
 
@@ -287,9 +286,6 @@ class GameRenderer(
         val cullStart = world.orbCull
         
         val doPulse = settings.pulseOrbs
-        // Scale range: 0.65 to 1.35 based on loudness intensity.
-        // Intensity 0.0 (silent) -> Scale 0.65
-        // Intensity 1.0 (peak)   -> Scale 1.35
         val scale = if (doPulse) 0.65f + (beatIntensity * 0.70f) else 1f
         
         for (i in cullStart until orbs.size) {

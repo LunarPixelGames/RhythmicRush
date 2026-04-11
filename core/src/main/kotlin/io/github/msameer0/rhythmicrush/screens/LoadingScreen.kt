@@ -16,6 +16,9 @@ import io.github.msameer0.rhythmicrush.game.level.ProgressManager
 import io.github.msameer0.rhythmicrush.game.registries.Registries
 import io.github.msameer0.rhythmicrush.settings.SettingsManager
 
+/**
+ * Initial screen that handles the loading and initialization of game resources, settings, and registries.
+ */
 class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
     private val shapeRenderer = ShapeRenderer()

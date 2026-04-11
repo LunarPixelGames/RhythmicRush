@@ -25,6 +25,9 @@ import io.github.msameer0.rhythmicrush.game.trigger.AbstractTrigger
 import io.github.msameer0.rhythmicrush.game.trigger.ColorTrigger
 import io.github.msameer0.rhythmicrush.game.trigger.PulseTrigger
 
+/**
+ * Central access point for all game object registries, handling their initialization and registration.
+ */
 class Registries {
     companion object {
         @JvmField

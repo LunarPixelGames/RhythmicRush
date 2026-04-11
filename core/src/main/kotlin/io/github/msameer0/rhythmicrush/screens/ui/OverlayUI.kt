@@ -17,6 +17,9 @@ import com.badlogic.gdx.utils.viewport.Viewport
 import io.github.msameer0.rhythmicrush.RhythmicRushGame
 import io.github.msameer0.rhythmicrush.game.level.LevelData
 
+/**
+ * Manages the rendering and interaction logic for gameplay overlays such as pause and completion screens.
+ */
 class OverlayUI(
     private val game: RhythmicRushGame,
     private val levelData: LevelData?,

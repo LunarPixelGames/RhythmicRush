@@ -2,6 +2,9 @@ package io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals
 
 import io.github.msameer0.rhythmicrush.game.registries.Registry
 
+/**
+ * A portal that toggles the mini state of the player, affecting their size and movement physics.
+ */
 @Registry(id = "mini_portal")
 class MiniPortal : AbstractPortal {
     constructor(x: Float, y: Float) : super(x, y) {
