@@ -3,6 +3,9 @@ package io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.game.registries.Registry
 
+/**
+ * An orb that provides a massive jump boost on activation.
+ */
 @Registry(id = "red_orb")
 class RedOrb : AbstractOrb {
 
@@ -21,7 +24,7 @@ class RedOrb : AbstractOrb {
     }
 
     override fun onClick(player: AbstractPlayer) {
-        if (player.isGravityFlipped) {
+        if (player.isGravityFlipped()) {
             player.setVelocityY(-900f)
         } else {
             player.setVelocityY(900f)

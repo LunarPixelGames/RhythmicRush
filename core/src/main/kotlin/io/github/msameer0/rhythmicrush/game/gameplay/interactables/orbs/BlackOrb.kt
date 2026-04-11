@@ -3,6 +3,9 @@ package io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.game.registries.Registry
 
+/**
+ * An orb that forcefully pushes the player in the direction of current gravity.
+ */
 @Registry(id = "black_orb")
 class BlackOrb : AbstractOrb {
 
@@ -21,7 +24,7 @@ class BlackOrb : AbstractOrb {
     }
 
     override fun onClick(player: AbstractPlayer) {
-        if (player.isGravityFlipped) {
+        if (player.isGravityFlipped()) {
             player.setVelocityY(900f)
         } else {
             player.setVelocityY(-900f)

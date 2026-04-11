@@ -6,12 +6,15 @@ import com.badlogic.gdx.utils.JsonReader
 import com.badlogic.gdx.utils.JsonWriter
 import com.badlogic.gdx.utils.ObjectMap
 
+/**
+ * Manages the persistence of level completion progress and attempt counts.
+ */
 class ProgressManager {
     companion object {
         const val SAVE_PATH: String = "saves/progress.json"
     }
 
-    val map = ObjectMap<String?, LevelProgress?>()
+    val map = ObjectMap<String, LevelProgress>()
     var json: Json = Json()
 
     constructor() {
@@ -20,7 +23,7 @@ class ProgressManager {
         load()
     }
 
-    fun getOrCreate(levelKey: String?): LevelProgress? {
+    fun getOrCreate(levelKey: String): LevelProgress {
         if (!map.containsKey(levelKey)) {
             map.put(levelKey, LevelProgress())
         }

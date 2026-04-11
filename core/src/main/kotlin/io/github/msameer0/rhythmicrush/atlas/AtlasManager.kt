@@ -4,9 +4,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.g2d.TextureAtlas
 
 /**
- * Manages the loading, access, and disposal of all [TextureAtlas] resources used throughout the game.
- *
- *
+ * Manages the loading and disposal of texture atlases used throughout the game.
  */
 class AtlasManager {
     val menuAtlas: TextureAtlas

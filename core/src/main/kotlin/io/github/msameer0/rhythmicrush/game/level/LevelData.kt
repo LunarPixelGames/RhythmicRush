@@ -2,16 +2,25 @@ package io.github.msameer0.rhythmicrush.game.level
 
 import com.badlogic.gdx.utils.Array
 
+/**
+ * Container for all data defining a game level, including metadata and object layout.
+ */
 class LevelData {
     var name = "Unnamed Level"
     var fileName = ""
     var musicFile = ""
+    var bgImage = ""
     var bgColor = "1a1a2e"
     var groundColor = "16213e"
     var difficulty = "normal"
+    var bpm: Float = 120f
+    var youtubeLink: String = ""
 
     var objects = Array<ObjectEntry>()
 
+    /**
+     * Represents a single object within a level (block, hazard, portal, etc.).
+     */
     class ObjectEntry {
         var type: String = ""
         var x: Float = 0f
