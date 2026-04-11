@@ -45,6 +45,7 @@ class LevelSelectScreen @JvmOverloads constructor(
     private lateinit var btnRight: AnimatedButton
     private lateinit var btnPanel: AnimatedButton
     private lateinit var btnPractice: AnimatedButton
+    private lateinit var btnYoutube: AnimatedButton
 
     private var panelTexture: Texture? = null
     private var lastPanelW = -1
@@ -91,6 +92,7 @@ class LevelSelectScreen @JvmOverloads constructor(
         btnRight = AnimatedButton(rightArrow, 0f, 0f, 0f, 0f) { navigate(1) }
         btnPanel = AnimatedButton(null, 0f, 0f, 0f, 0f) { playSelected() }
         btnPractice = AnimatedButton(null, 0f, 0f, 0f, 0f) { playPractice() }
+        btnYoutube = AnimatedButton(null, 0f, 0f, 0f, 0f) { watchYoutube() }
         updateScaledSizes()
     }
 
@@ -156,6 +158,13 @@ class LevelSelectScreen @JvmOverloads constructor(
             practiceW,
             practiceH
         )
+
+        if (::btnYoutube.isInitialized) btnYoutube.setBounds(
+            vw - practiceW - 20f,
+            20f,
+            practiceW,
+            practiceH
+        )
     }
 
     override fun update(delta: Float) {
@@ -164,6 +173,9 @@ class LevelSelectScreen @JvmOverloads constructor(
         btnRight.update(delta)
         btnPanel.update(delta)
         btnPractice.update(delta)
+        if (levels.size > 0 && levels.get(selectedLevel).youtubeLink.isNotEmpty()) {
+            btnYoutube.update(delta)
+        }
         handleInput()
 
         if (isTransitioning) {
@@ -200,6 +212,9 @@ class LevelSelectScreen @JvmOverloads constructor(
         } else {
             drawLevelPanel(levels.get(selectedLevel), panelX, panelY)
             drawPracticeButton()
+            if (levels.size > 0 && levels.get(selectedLevel).youtubeLink.isNotEmpty()) {
+                drawYoutubeButton()
+            }
         }
 
         game.batch.end()
@@ -228,6 +243,39 @@ class LevelSelectScreen @JvmOverloads constructor(
 
         font.data.setScale(0.35f * scale)
         val text = "Enter Practice Mode"
+        layout.setText(font, text)
+        drawTextWithShadow(
+            font,
+            text,
+            bx + bw / 2f - layout.width / 2f,
+            by + bh / 2f + layout.height / 2f,
+            Color.WHITE
+        )
+    }
+
+    private fun drawYoutubeButton() {
+        if (!::btnYoutube.isInitialized) return
+        val scale = btnYoutube.scale
+        val bw = btnYoutube.w * scale
+        val bh = btnYoutube.h * scale
+        val bx = btnYoutube.x + btnYoutube.w / 2f - bw / 2f
+        val by = btnYoutube.y + btnYoutube.h / 2f - bh / 2f
+
+        game.batch.end()
+        Gdx.gl.glEnable(GL20.GL_BLEND)
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+        val shapes = ShapeRenderer()
+        shapes.projectionMatrix = camera.combined
+        shapes.begin(ShapeRenderer.ShapeType.Filled)
+        shapes.color = Color(0.85f, 0.15f, 0.15f, 0.8f) // YouTube Red
+        drawRoundedRect(shapes, bx, by, bw, bh, 10f)
+        shapes.end()
+        shapes.dispose()
+        Gdx.gl.glDisable(GL20.GL_BLEND)
+        game.batch.begin()
+
+        font.data.setScale(0.35f * scale)
+        val text = "Watch Showcase"
         layout.setText(font, text)
         drawTextWithShadow(
             font,
@@ -328,17 +376,6 @@ class LevelSelectScreen @JvmOverloads constructor(
             }
         }
 
-        font.data.setScale(0.35f)
-        val counter = "${if (currentLevelNum > 0) currentLevelNum else "?"} / ${levels.size}"
-        layout.setText(font, counter)
-        drawTextWithShadow(
-            font,
-            counter,
-            viewport.worldWidth / 2f - layout.width / 2f,
-            22f,
-            Color(1f, 1f, 1f, 0.4f)
-        )
-
         font.data.setScale(1f)
         font.color = Color.WHITE
     }
@@ -352,6 +389,9 @@ class LevelSelectScreen @JvmOverloads constructor(
             btnRight.onTouchDown(t.x, t.y)
             btnPanel.onTouchDown(t.x, t.y)
             btnPractice.onTouchDown(t.x, t.y)
+            if (levels.size > 0 && levels.get(selectedLevel).youtubeLink.isNotEmpty()) {
+                btnYoutube.onTouchDown(t.x, t.y)
+            }
 
             isSwiping = true
             touchStartX = t.x
@@ -380,6 +420,7 @@ class LevelSelectScreen @JvmOverloads constructor(
                 btnRight.onTouchUp(t.x, t.y)
                 btnPanel.onTouchUp(t.x, t.y)
                 btnPractice.onTouchUp(t.x, t.y)
+                btnYoutube.onTouchUp(t.x, t.y)
             }
             isSwiping = false
         }
@@ -396,6 +437,14 @@ class LevelSelectScreen @JvmOverloads constructor(
         val data = levels.get(selectedLevel)
         if ("-1.json" != data.fileName) {
             game.screen = GameScreen(game, data, selectedLevel, true)
+        }
+    }
+
+    private fun watchYoutube() {
+        if (levels.size == 0) return
+        val data = levels.get(selectedLevel)
+        if (data.youtubeLink.isNotEmpty()) {
+            Gdx.net.openURI(data.youtubeLink)
         }
     }
 
