@@ -8129,9 +8129,9 @@
 		"fadeDuration": 1,
 		"pulseBgColor": "4cc9f0",
 		"pulseGroundColor": "2f859e",
-		"fadeInTime": 0.1,
-		"holdTime": 0.1,
-		"fadeOutTime": 0.2
+		"fadeInTime": 0.2,
+		"holdTime": 0,
+		"fadeOutTime": 0.3
 	},
 	{
 		"type": "pulse_trigger",
@@ -8146,9 +8146,9 @@
 		"fadeDuration": 1,
 		"pulseBgColor": "4cc9f0",
 		"pulseGroundColor": "2f859e",
-		"fadeInTime": 0.1,
-		"holdTime": 0.1,
-		"fadeOutTime": 0.2
+		"fadeInTime": 0.2,
+		"holdTime": 0,
+		"fadeOutTime": 0.3
 	},
 	{
 		"type": "pulse_trigger",
@@ -8163,9 +8163,9 @@
 		"fadeDuration": 1,
 		"pulseBgColor": "4cc9f0",
 		"pulseGroundColor": "2f859e",
-		"fadeInTime": 0.1,
-		"holdTime": 0.1,
-		"fadeOutTime": 0.2
+		"fadeInTime": 0.2,
+		"holdTime": 0,
+		"fadeOutTime": 0.3
 	},
 	{
 		"type": "pulse_trigger",
@@ -8180,9 +8180,9 @@
 		"fadeDuration": 1,
 		"pulseBgColor": "4cc9f0",
 		"pulseGroundColor": "2f859e",
-		"fadeInTime": 0.1,
-		"holdTime": 0.1,
-		"fadeOutTime": 0.2
+		"fadeInTime": 0.2,
+		"holdTime": 0,
+		"fadeOutTime": 0.3
 	},
 	{
 		"type": "pulse_trigger",
@@ -8197,9 +8197,9 @@
 		"fadeDuration": 1,
 		"pulseBgColor": "4cc9f0",
 		"pulseGroundColor": "2f859e",
-		"fadeInTime": 0.1,
-		"holdTime": 0.1,
-		"fadeOutTime": 0.2
+		"fadeInTime": 0.2,
+		"holdTime": 0,
+		"fadeOutTime": 0.3
 	}
 ]
 }
