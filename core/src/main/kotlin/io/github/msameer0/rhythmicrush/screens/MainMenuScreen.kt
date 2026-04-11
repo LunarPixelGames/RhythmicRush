@@ -114,7 +114,8 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         InfoLine("Hypercharge by Cobalt039", "https://www.newgrounds.com/audio/listen/1538780"),
         InfoLine("Bounce by Waterflame", "https://www.newgrounds.com/audio/listen/654553"),
         InfoLine("Rhythm Factory by Waterflame", "https://www.newgrounds.com/audio/listen/1533782"),
-        InfoLine("Vulg by OcularNebula", "https://www.newgrounds.com/audio/listen/954091")
+        InfoLine("Vulg by OcularNebula", "https://www.newgrounds.com/audio/listen/954091"),
+        InfoLine("Event Horizon by DJVI", "https://www.newgrounds.com/audio/listen/809594")
     )
 
     private val socialLines = arrayOf(
