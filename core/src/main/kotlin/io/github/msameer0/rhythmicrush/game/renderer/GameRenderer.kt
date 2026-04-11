@@ -90,23 +90,62 @@ class GameRenderer(
         orbRegions.put(AbstractOrb.OrbType.RED, atlasManager.orbsAtlas.findRegion("red_orb"))
     }
 
-    fun render(delta: Float, paused: Boolean, showHitboxes: Boolean) {
+    @JvmOverloads
+    fun render(
+        delta: Float,
+        paused: Boolean,
+        showHitboxes: Boolean,
+        bgTexture: com.badlogic.gdx.graphics.Texture? = null,
+        bgColor: Color = world.backgroundColor
+    ) {
         _lastDelta = delta
         val player = world.player ?: return
-
-        // Camera update is now handled by GameScreen to keep everything in sync
 
         val rightEdge = camera.position.x + camera.viewportWidth / 2f + 100f
 
         shape.projectionMatrix = camera.combined
         batch.projectionMatrix = camera.combined
 
-        drawSawBlades(paused, rightEdge)
-        drawPortalFallbacks(rightEdge)
-        drawMainPass(player, delta, paused, rightEdge)
-        drawGround()
+        // 1. Sprite Pass: Background & Game Objects
+        batch.begin()
 
+        // Background (Additive blending)
+        if (bgTexture != null) {
+            drawBackground(bgTexture, bgColor)
+        }
+
+        // Restore normal blending for game objects
+        batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+        batch.color = Color.WHITE
+
+        drawSawBlades(paused, rightEdge)
+        drawMainPass(player, delta, paused, rightEdge)
+
+        batch.end()
+
+        // 2. Shape Pass: Fallbacks, Ground, and Hitboxes
+        Gdx.gl.glEnable(GL20.GL_BLEND)
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+        shape.begin(ShapeRenderer.ShapeType.Filled)
+
+        drawPortalFallbacks(rightEdge)
+        drawGround()
         if (showHitboxes) hitboxRenderer.draw(camera, player, rightEdge)
+
+        shape.end()
+        Gdx.gl.glDisable(GL20.GL_BLEND)
+    }
+
+    private fun drawBackground(texture: com.badlogic.gdx.graphics.Texture, color: Color) {
+        batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE)
+        batch.color = color
+
+        val viewW = camera.viewportWidth
+        val viewH = camera.viewportHeight
+        val x = camera.position.x - viewW / 2f
+        val y = camera.position.y - viewH / 2f
+
+        batch.draw(texture, x, y, viewW, viewH)
     }
 
     fun updateCamera(player: AbstractPlayer) {
@@ -119,7 +158,6 @@ class GameRenderer(
     }
 
     private fun drawSawBlades(paused: Boolean, rightEdge: Float) {
-        batch.begin()
         val cullStart = world.hazardCull
         for (i in cullStart until world.hazards.size) {
             val hazard = world.hazards.get(i)
@@ -136,11 +174,9 @@ class GameRenderer(
                 saw.visualRotation
             )
         }
-        batch.end()
     }
 
     private fun drawPortalFallbacks(rightEdge: Float) {
-        var anyFallback = false
         val cullStart = world.portalCull
         for (i in cullStart until world.portals.size) {
             val portal = world.portals.get(i)
@@ -148,32 +184,20 @@ class GameRenderer(
             val pType = portal.type
             val region = portalRegion(pType)
             if (region == null) {
-                if (!anyFallback) {
-                    Gdx.gl.glEnable(GL20.GL_BLEND)
-                    Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-                    shape.begin(ShapeRenderer.ShapeType.Filled)
-                    anyFallback = true
-                }
                 shape.color =
                     if (pType == AbstractPortal.PortalType.CUBE) FALLBACK_CUBE_PORTAL else FALLBACK_SHIP_PORTAL
                 shape.rect(portal.x, portal.y, portal.width, portal.height)
             }
         }
-        if (anyFallback) {
-            shape.end()
-            Gdx.gl.glDisable(GL20.GL_BLEND)
-        }
     }
 
     private fun drawMainPass(player: AbstractPlayer, delta: Float, paused: Boolean, rightEdge: Float) {
-        batch.begin()
         drawPortals(rightEdge)
         drawHazards(rightEdge)
         drawBlocks(rightEdge)
         drawOrbs(rightEdge)
         updatePlayerRotation(player, delta, paused)
         drawPlayer(player)
-        batch.end()
     }
 
     private fun drawPortals(rightEdge: Float) {
@@ -269,19 +293,14 @@ class GameRenderer(
     }
 
     private fun drawOrbFallback(orb: AbstractOrb) {
-        batch.end()
-        Gdx.gl.glEnable(GL20.GL_BLEND)
-        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-        shape.begin(ShapeRenderer.ShapeType.Filled)
+        val oldColor = shape.color.cpy()
         shape.color = FALLBACK_YELLOW_ORB
         shape.circle(
             orb.x + orb.width / 2f,
             orb.y + orb.height / 2f,
             orb.width / 2f, 24
         )
-        shape.end()
-        Gdx.gl.glDisable(GL20.GL_BLEND)
-        batch.begin()
+        shape.color = oldColor
     }
 
     private fun drawPlayer(player: AbstractPlayer) {
@@ -320,13 +339,8 @@ class GameRenderer(
         val worldWidth = camera.viewportWidth
         val worldLeft = camera.position.x - worldWidth / 2f
 
-        Gdx.gl.glEnable(GL20.GL_BLEND)
-        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-        shape.begin(ShapeRenderer.ShapeType.Filled)
         shape.color = world.groundColor
         shape.rect(worldLeft, 0f, worldWidth, world.groundY)
-        shape.end()
-        Gdx.gl.glDisable(GL20.GL_BLEND)
     }
 
     private fun updatePlayerRotation(player: AbstractPlayer, delta: Float, paused: Boolean) {

@@ -312,34 +312,7 @@ class GameScreen @JvmOverloads constructor(
         }
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
 
-        bgTexture?.let {
-            game.batch.projectionMatrix = gameCamera.combined
-            game.batch.begin()
-            
-            // Additive blending for a high-quality "glow" pulse effect
-            game.batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE)
-            game.batch.setColor(bg.r, bg.g, bg.b, 1f)
-            
-            val viewW = gameViewport.worldWidth
-            val viewH = gameViewport.worldHeight
-            val camX = gameCamera.position.x
-            val camY = gameCamera.position.y
-            
-            game.batch.draw(
-                it,
-                camX - viewW / 2f,
-                camY - viewH / 2f,
-                viewW,
-                viewH
-            )
-            
-            // Restore default blending
-            game.batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-            game.batch.setColor(Color.WHITE)
-            game.batch.end()
-        }
-
-        renderer.render(lastDelta, paused, hitboxesActive)
+        renderer.render(lastDelta, paused, hitboxesActive, bgTexture, bg)
 
         game.batch.projectionMatrix = gameCamera.combined
         shapes.projectionMatrix = gameCamera.combined
