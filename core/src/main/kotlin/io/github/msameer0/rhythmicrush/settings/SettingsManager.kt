@@ -21,6 +21,7 @@ class SettingsManager {
     var showBest: Boolean = true
     var uiPadding: Float = 12f
     var practiceButtonOpacity: Float = 0.5f
+    var pulseOrbs: Boolean = true
 
     class Data {
         var menuMusicEnabled: Boolean = true
@@ -38,6 +39,7 @@ class SettingsManager {
         var showBest: Boolean = true
         var uiPadding: Float = 12f
         var practiceButtonOpacity: Float = 0.5f
+        var pulseOrbs: Boolean = true
     }
 
     private val json: Json = Json()
@@ -67,6 +69,7 @@ class SettingsManager {
             snapshot.showBest = showBest
             snapshot.uiPadding = uiPadding
             snapshot.practiceButtonOpacity = practiceButtonOpacity
+            snapshot.pulseOrbs = pulseOrbs
             val file = Gdx.files.local(SAVE_PATH)
             file.parent().mkdirs()
             file.writeString(json.prettyPrint(snapshot), false)
@@ -101,6 +104,7 @@ class SettingsManager {
             showBest = d.showBest
             uiPadding = d.uiPadding
             practiceButtonOpacity = d.practiceButtonOpacity
+            pulseOrbs = d.pulseOrbs
             Gdx.app.log("SettingsManager", "Settings loaded successfully.")
         } catch (e: Exception) {
             Gdx.app.error("SettingsManager", "Failed to load: " + e.message)

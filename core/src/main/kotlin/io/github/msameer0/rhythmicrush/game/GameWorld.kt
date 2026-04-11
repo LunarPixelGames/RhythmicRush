@@ -58,6 +58,9 @@ class GameWorld : Tickable {
 
     private val pools = WorldPoolManager()
     private val colors = ColorStateManager()
+    
+    var currentLoudness: Float = 0f
+    var targetLoudness: Float = 0f
 
     var bgImage: String = ""
     var player: AbstractPlayer? = null
@@ -134,6 +137,15 @@ class GameWorld : Tickable {
     fun updateVisuals(delta: Float) {
         if (isPlayerDead || isLevelComplete) return
         colors.update(delta)
+        
+        // Smoothing for loudness pulse
+        // Quick to rise, slower to fall for better feel
+        val lerpSpeed = if (targetLoudness > currentLoudness) 25f else 10f
+        currentLoudness += (targetLoudness - currentLoudness) * kotlin.math.min(delta * lerpSpeed, 1f)
+    }
+
+    fun updateLoudness(intensity: Float) {
+        targetLoudness = intensity
     }
 
     fun loadLevel(data: LevelData) {
@@ -157,6 +169,8 @@ class GameWorld : Tickable {
         worldScrolled = startScrolled
         postEndTimer = -1f
         bgImage = data.bgImage ?: ""
+        currentLoudness = 0f
+        targetLoudness = 0f
 
         val bg = if (!data.bgColor.isNullOrEmpty()) data.bgColor else "1a1a2e"
         val gnd = if (!data.groundColor.isNullOrEmpty()) data.groundColor else "16213e"

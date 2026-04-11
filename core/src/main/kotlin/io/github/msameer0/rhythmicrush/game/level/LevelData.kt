@@ -10,6 +10,8 @@ class LevelData {
     var bgColor = "1a1a2e"
     var groundColor = "16213e"
     var difficulty = "normal"
+    var bpm: Float = 120f
+    var youtubeLink: String = ""
 
     var objects = Array<ObjectEntry>()
 

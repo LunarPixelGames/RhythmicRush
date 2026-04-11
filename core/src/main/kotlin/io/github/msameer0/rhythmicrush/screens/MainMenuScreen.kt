@@ -194,6 +194,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             rows.add(SettingRow(RowType.SLIDER, "Practice Buttons Opacity", "practiceOpacity"))
             if (desktop) rows.add(SettingRow(RowType.TOGGLE, "Lock Cursor in Game", "lockCursor"))
         } else {
+            rows.add(SettingRow(RowType.TOGGLE, "Pulse Orbs", "pulseOrbs"))
             rows.add(SettingRow(RowType.TOGGLE, "Show FPS", "showFps"))
             if (desktop) {
                 rows.add(SettingRow(RowType.TOGGLE, "Cap FPS", "capFps"))
@@ -429,6 +430,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             "hitboxes" -> s.showHitboxes
             "hitboxesDeath" -> s.showHitboxesOnDeath
             "lockCursor" -> s.lockCursorInGame
+            "pulseOrbs" -> s.pulseOrbs
             "showFps" -> s.showFps
             "capFps" -> s.capFps
             "vsync" -> s.enableVsync
@@ -607,6 +609,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
             "hitboxes" -> s.showHitboxes = !s.showHitboxes
             "hitboxesDeath" -> s.showHitboxesOnDeath = !s.showHitboxesOnDeath
+            "pulseOrbs" -> s.pulseOrbs = !s.pulseOrbs
             "showFps" -> s.showFps = !s.showFps
             "capFps" -> {
                 s.capFps = !s.capFps; s.applyFpsCap()

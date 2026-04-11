@@ -788,7 +788,7 @@ public class LevelEditorScreen extends AbstractScreen {
         ptCam.setToOrtho(false, canvasW, canvasH);
         ptCam.update();
         ptWorld = new GameWorld();
-        ptRenderer = new GameRenderer(ptWorld, ptCam, getGame().getBatch(), getGame().getAtlasManager());
+        ptRenderer = new GameRenderer(ptWorld, ptCam, getGame().getBatch(), getGame().getSettingsManager(), getGame().getAtlasManager());
         ptEngine = new FixedTickEngine(ptWorld);
         ptWorld.loadLevel(levelData);
         startEditorMusic(true);

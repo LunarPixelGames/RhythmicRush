@@ -54,6 +54,8 @@ class GameScreen @JvmOverloads constructor(
 
     private var bgTexture: Texture? = null
     private var levelKey: String? = null
+    private var loudnessMap: FloatArray? = null
+    private val loudnessSampleRate = 50
 
     private var sessionAttempts = 0
     private var hitboxesActive = false
@@ -157,7 +159,7 @@ class GameScreen @JvmOverloads constructor(
     init {
         gameViewport.update(Gdx.graphics.width, Gdx.graphics.height, true)
 
-        renderer = GameRenderer(world, gameCamera, game.batch, game.atlasManager)
+        renderer = GameRenderer(world, gameCamera, game.batch, game.settingsManager, game.atlasManager)
 
         val font = game.fontManager.get(FontManager.SIZE_SMALL)
         val pauseFont = game.fontManager.get(FontManager.SIZE_SMALL)
@@ -182,6 +184,23 @@ class GameScreen @JvmOverloads constructor(
     override fun show() {
         overlay.updateScale()
         game.soundManager.stopMenuMusic()
+        
+        // Audio analysis
+        val mFile = levelData?.musicFile
+        if (mFile != null && mFile.isNotEmpty()) {
+            try {
+                var fh = Gdx.files.internal("musics/$mFile")
+                if (!fh.exists()) fh = Gdx.files.local("assets/musics/$mFile")
+                if (fh.exists()) {
+                    Gdx.app.log("GameScreen", "Analyzing audio loudness map...")
+                    loudnessMap = io.github.msameer0.rhythmicrush.game.engine.LoudnessAnalyzer().analyze(fh, loudnessSampleRate)
+                    Gdx.app.log("GameScreen", "Analysis complete (size: ${loudnessMap?.size})")
+                }
+            } catch (e: Exception) {
+                Gdx.app.error("GameScreen", "Failed to analyze audio: ${e.message}")
+            }
+        }
+
         music.start()
         if (game.settingsManager.lockCursorInGame) {
             Gdx.input.isCursorCatched = true
@@ -288,6 +307,22 @@ class GameScreen @JvmOverloads constructor(
         }
 
         // Keep visuals and camera in sync before drawing
+        val musicPos = music.levelMusic?.position ?: 0f
+        
+        // Update loudness tracking
+        if (loudnessMap != null) {
+            val idx = (musicPos * loudnessSampleRate).toInt()
+            if (idx >= 0 && idx < (loudnessMap?.size ?: 0)) {
+                val intensity = loudnessMap!![idx]
+                world.updateLoudness(intensity)
+                if (Gdx.graphics.frameId % 60L == 0L) {
+                    Gdx.app.log("GameScreen", "Pos: $musicPos, Idx: $idx, Intensity: $intensity")
+                }
+            } else {
+                world.updateLoudness(0f)
+            }
+        }
+        
         world.updateVisuals(delta)
         world.player?.let { renderer.updateCamera(it) }
     }
@@ -312,7 +347,7 @@ class GameScreen @JvmOverloads constructor(
         }
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
 
-        renderer.render(lastDelta, paused, hitboxesActive, bgTexture, bg)
+        renderer.render(lastDelta, paused, hitboxesActive, bgTexture, bg, world.currentLoudness)
 
         game.batch.projectionMatrix = gameCamera.combined
         shapes.projectionMatrix = gameCamera.combined

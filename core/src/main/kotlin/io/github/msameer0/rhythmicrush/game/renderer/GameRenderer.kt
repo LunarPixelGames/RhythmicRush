@@ -20,12 +20,14 @@ import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.AbstractOrb
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.AbstractPortal
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
+import io.github.msameer0.rhythmicrush.settings.SettingsManager
 import kotlin.math.min
 
 class GameRenderer(
     private val world: GameWorld,
     private val camera: OrthographicCamera,
     private val batch: SpriteBatch,
+    private val settings: SettingsManager,
     atlasManager: AtlasManager
 ) {
 
@@ -96,7 +98,8 @@ class GameRenderer(
         paused: Boolean,
         showHitboxes: Boolean,
         bgTexture: com.badlogic.gdx.graphics.Texture? = null,
-        bgColor: Color = world.backgroundColor
+        bgColor: Color = world.backgroundColor,
+        beatIntensity: Float = 0f
     ) {
         _lastDelta = delta
         val player = world.player ?: return
@@ -119,7 +122,7 @@ class GameRenderer(
         batch.color = Color.WHITE
 
         drawSawBlades(paused, rightEdge)
-        drawMainPass(player, delta, paused, rightEdge)
+        drawMainPass(player, delta, paused, rightEdge, beatIntensity)
 
         batch.end()
 
@@ -130,9 +133,11 @@ class GameRenderer(
 
         drawPortalFallbacks(rightEdge)
         drawGround()
+        
+        shape.end()
+        
         if (showHitboxes) hitboxRenderer.draw(camera, player, rightEdge)
 
-        shape.end()
         Gdx.gl.glDisable(GL20.GL_BLEND)
     }
 
@@ -191,11 +196,11 @@ class GameRenderer(
         }
     }
 
-    private fun drawMainPass(player: AbstractPlayer, delta: Float, paused: Boolean, rightEdge: Float) {
+    private fun drawMainPass(player: AbstractPlayer, delta: Float, paused: Boolean, rightEdge: Float, beatIntensity: Float = 0f) {
         drawPortals(rightEdge)
         drawHazards(rightEdge)
         drawBlocks(rightEdge)
-        drawOrbs(rightEdge)
+        drawOrbs(rightEdge, beatIntensity)
         updatePlayerRotation(player, delta, paused)
         drawPlayer(player)
     }
@@ -277,15 +282,27 @@ class GameRenderer(
         }
     }
 
-    private fun drawOrbs(rightEdge: Float) {
+    private fun drawOrbs(rightEdge: Float, beatIntensity: Float = 0f) {
         val orbs = world.orbs
         val cullStart = world.orbCull
+        
+        val doPulse = settings.pulseOrbs
+        // Scale range: 0.65 to 1.35 based on loudness intensity.
+        // Intensity 0.0 (silent) -> Scale 0.65
+        // Intensity 1.0 (peak)   -> Scale 1.35
+        val scale = if (doPulse) 0.65f + (beatIntensity * 0.70f) else 1f
+        
         for (i in cullStart until orbs.size) {
             val orb = orbs.get(i)
             if (orb.x > rightEdge) break
             val region = orbRegions[orb.type]
             if (region != null) {
-                batch.draw(region, orb.x, orb.y, orb.width, orb.height)
+                val visualW = orb.width * scale
+                val visualH = orb.height * scale
+                val visualX = orb.x + (orb.width - visualW) / 2f
+                val visualY = orb.y + (orb.height - visualH) / 2f
+                
+                batch.draw(region, visualX, visualY, visualW, visualH)
             } else {
                 drawOrbFallback(orb)
             }
