@@ -33,7 +33,3 @@ Your progress is tracked automatically. You’ll see your "Personal Best" percen
 1.  Download directly from the Google Play Store using the button at the top of this page!
 2.  *(Optional)* Download and install the APK from our Releases tab.
 3.  Open the app and tap anywhere on the screen to jump and fly.
-
----
-
-*Developed by the RhythmicRush Team. We hope you enjoy the challenge!*
