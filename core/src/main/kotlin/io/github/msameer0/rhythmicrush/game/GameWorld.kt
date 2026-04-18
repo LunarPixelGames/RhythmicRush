@@ -11,6 +11,19 @@ import io.github.msameer0.rhythmicrush.game.gameplay.hazards.HalfSpike
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.SawBlade
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.AbstractOrb
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.BlackOrb
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.BlueOrb
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.GreenOrb
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.PinkOrb
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.RedOrb
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.YellowOrb
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.pads.AbstractPad
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.pads.BlackPad
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.pads.BluePad
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.pads.GreenPad
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.pads.PinkPad
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.pads.RedPad
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.pads.YellowPad
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.AbstractPortal
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.CubePortal
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.GravityPortal
@@ -61,7 +74,7 @@ class GameWorld : Tickable {
 
     private val pools = WorldPoolManager()
     private val colors = ColorStateManager()
-    
+
     var currentLoudness: Float = 0f
     var targetLoudness: Float = 0f
 
@@ -86,12 +99,15 @@ class GameWorld : Tickable {
     private var portalStart = 0
     var orbCull = 0
     private var orbStart = 0
+    var padCull = 0
+    private var padStart = 0
     var triggerIdx = 0
 
     val portals = Array<AbstractPortal>()
     val hazards = Array<AbstractHazard>()
     val blocks = Array<Block>()
     val orbs = Array<AbstractOrb>()
+    val pads = Array<AbstractPad>()
 
 
 
@@ -140,7 +156,7 @@ class GameWorld : Tickable {
     fun updateVisuals(delta: Float) {
         if (isPlayerDead || isLevelComplete) return
         colors.update(delta)
-        
+
         val lerpSpeed = if (targetLoudness > currentLoudness) 25f else 10f
         currentLoudness += (targetLoudness - currentLoudness) * kotlin.math.min(delta * lerpSpeed, 1f)
     }
@@ -191,6 +207,7 @@ class GameWorld : Tickable {
         hazards.sort { a, b2 -> a.x.compareTo(b2.x) }
         portals.sort { a, b2 -> a.x.compareTo(b2.x) }
         orbs.sort { a, b2 -> a.x.compareTo(b2.x) }
+        pads.sort { a, b2 -> a.x.compareTo(b2.x) }
         triggers.sort { a, b2 -> a.worldX.compareTo(b2.worldX) }
 
         triggerIdx = 0
@@ -226,6 +243,9 @@ class GameWorld : Tickable {
         } else if (Registries.ORBS.has(e.type)) {
             if (e.x + e.size < startScrolled - 100) return
             spawnOrb(e, rx)
+        } else if (Registries.PADS.has(e.type)) {
+            if (e.x + e.size < startScrolled - 100) return
+            spawnPad(e, rx)
         } else if (Registries.TRIGGERS.has(e.type)) {
             spawnTrigger(e)
         }
@@ -305,6 +325,36 @@ class GameWorld : Tickable {
         if (orb != null) orbs.add(orb)
     }
 
+    private fun spawnPad(e: LevelData.ObjectEntry, rx: Float) {
+        var pad: AbstractPad? = null
+        when (e.type) {
+            "yellow_pad" -> {
+                val p = pools.obtainYellowPad(); p.init(rx, e.y, e.rotation); pad = p
+            }
+
+            "blue_pad" -> {
+                val p = pools.obtainBluePad(); p.init(rx, e.y, e.rotation); pad = p
+            }
+
+            "pink_pad" -> {
+                val p = pools.obtainPinkPad(); p.init(rx, e.y, e.rotation); pad = p
+            }
+
+            "red_pad" -> {
+                val p = pools.obtainRedPad(); p.init(rx, e.y, e.rotation); pad = p
+            }
+
+            "black_pad" -> {
+                val p = pools.obtainBlackPad(); p.init(rx, e.y, e.rotation); pad = p
+            }
+
+            "green_pad" -> {
+                val p = pools.obtainGreenPad(); p.init(rx, e.y, e.rotation); pad = p
+            }
+        }
+        if (pad != null) pads.add(pad)
+    }
+
     private fun spawnTrigger(e: LevelData.ObjectEntry) {
         val trigger = Registries.TRIGGERS.create(e.type)
         if (trigger is ColorTrigger) {
@@ -359,6 +409,7 @@ class GameWorld : Tickable {
         for (i in hazardCull until hazards.size) hazards.get(i).updatePosition(scrollSpeed, delta)
         for (i in blockCull until blocks.size) blocks.get(i).updatePosition(scrollSpeed, delta)
         for (i in orbCull until orbs.size) orbs.get(i).updatePosition(scrollSpeed, delta)
+        for (i in padCull until pads.size) pads.get(i).updatePosition(scrollSpeed, delta)
 
         val px = p.x
         val rangeMin = px - 300f
@@ -373,6 +424,7 @@ class GameWorld : Tickable {
         while (hazardStart < hazards.size && hazards.get(hazardStart).x + hazards.get(hazardStart).width < rangeMin) hazardStart++
         while (portalStart < portals.size && portals.get(portalStart).x + portals.get(portalStart).width < rangeMin) portalStart++
         while (orbStart < orbs.size && orbs.get(orbStart).x + orbs.get(orbStart).width < rangeMin) orbStart++
+        while (padStart < pads.size && pads.get(padStart).x + pads.get(padStart).width < rangeMin) padStart++
 
         for (i in blockStart until blocks.size) {
             val b = blocks.get(i)
@@ -401,6 +453,12 @@ class GameWorld : Tickable {
             } else {
                 orb.resetOverlap()
             }
+        }
+
+        for (i in padStart until pads.size) {
+            val pad = pads.get(i)
+            if (pad.x > rangeMax) break
+            pad.tryTouch(p)
         }
 
         p.tryJump()
@@ -483,6 +541,13 @@ class GameWorld : Tickable {
             pools.freeOrb(o)
             orbCull++
         }
+
+        while (padCull < pads.size) {
+            val pad = pads.get(padCull)
+            if (pad.x + pad.width >= threshold) break
+            pools.freePad(pad)
+            padCull++
+        }
     }
 
     fun playerDied() {
@@ -494,13 +559,14 @@ class GameWorld : Tickable {
 
     private fun freeAllActiveObjects() {
         pools.freeAll(
-            blocks, hazards, portals, orbs,
-            blockCull, hazardCull, portalCull, orbCull
+            blocks, hazards, portals, orbs, pads,
+            blockCull, hazardCull, portalCull, orbCull, padCull
         )
         blockCull = 0; blockStart = 0
         hazardCull = 0; hazardStart = 0
         portalCull = 0; portalStart = 0
         orbCull = 0; orbStart = 0
+        padCull = 0; padStart = 0
     }
 
     val progress: Float

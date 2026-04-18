@@ -90,6 +90,14 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
             shape.rect(r.x, r.y, r.width, r.height)
         }
 
+        shape.color = HB_ORB_FILL
+        for (i in world.padCull until world.pads.size) {
+            val pad = world.pads.get(i)
+            if (pad.x > rightEdge) break
+            val r = pad.hitbox
+            shape.rect(r.x, r.y, r.width, r.height)
+        }
+
         shape.color = HB_PLAYER_FILL
         val pb = player.bounds
         shape.rect(pb.x, pb.y, pb.width, pb.height)
@@ -169,6 +177,14 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
             val orb = world.orbs.get(i)
             if (orb.x > rightEdge) break
             val r = orb.bounds
+            shape.rect(r.x, r.y, r.width, r.height)
+        }
+
+        shape.color = HB_ORB_LINE
+        for (i in world.padCull until world.pads.size) {
+            val pad = world.pads.get(i)
+            if (pad.x > rightEdge) break
+            val r = pad.hitbox
             shape.rect(r.x, r.y, r.width, r.height)
         }
 

@@ -18,6 +18,7 @@ import io.github.msameer0.rhythmicrush.game.gameplay.hazards.HalfSpike
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.SawBlade
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.Spike
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.AbstractOrb
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.pads.AbstractPad
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.AbstractPortal
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.settings.SettingsManager
@@ -62,6 +63,7 @@ class GameRenderer(
     private val miniPortalRegion: TextureRegion?
 
     private val orbRegions = ObjectMap<AbstractOrb.OrbType, TextureRegion>()
+    private val padRegions = ObjectMap<AbstractPad.PadType, TextureRegion>()
 
     var playerVisualRotation = 0f
         private set
@@ -93,6 +95,13 @@ class GameRenderer(
         orbRegions.put(AbstractOrb.OrbType.BLACK, atlasManager.orbsAtlas.findRegion("black_orb"))
         orbRegions.put(AbstractOrb.OrbType.GREEN, atlasManager.orbsAtlas.findRegion("green_orb"))
         orbRegions.put(AbstractOrb.OrbType.RED, atlasManager.orbsAtlas.findRegion("red_orb"))
+
+        padRegions.put(AbstractPad.PadType.YELLOW, atlasManager.padsAtlas.findRegion("yellow_pad"))
+        padRegions.put(AbstractPad.PadType.BLUE, atlasManager.padsAtlas.findRegion("blue_pad"))
+        padRegions.put(AbstractPad.PadType.PINK, atlasManager.padsAtlas.findRegion("pink_pad"))
+        padRegions.put(AbstractPad.PadType.RED, atlasManager.padsAtlas.findRegion("red_pad"))
+        padRegions.put(AbstractPad.PadType.BLACK, atlasManager.padsAtlas.findRegion("black_pad"))
+        padRegions.put(AbstractPad.PadType.GREEN, atlasManager.padsAtlas.findRegion("green_pad"))
     }
 
     @JvmOverloads
@@ -131,6 +140,8 @@ class GameRenderer(
         shape.begin(ShapeRenderer.ShapeType.Filled)
 
         drawPortalFallbacks(rightEdge)
+        drawOrbFallbacks(rightEdge)
+        drawPadFallbacks(rightEdge)
         drawGround()
         
         shape.end()
@@ -200,6 +211,7 @@ class GameRenderer(
         drawHazards(rightEdge)
         drawBlocks(rightEdge)
         drawOrbs(rightEdge, beatIntensity)
+        drawPads(rightEdge, beatIntensity)
         updatePlayerRotation(player, delta, paused)
         drawPlayer(player)
     }
@@ -299,21 +311,70 @@ class GameRenderer(
                 val visualY = orb.y + (orb.height - visualH) / 2f
                 
                 batch.draw(region, visualX, visualY, visualW, visualH)
-            } else {
-                drawOrbFallback(orb)
             }
         }
     }
 
-    private fun drawOrbFallback(orb: AbstractOrb) {
-        val oldColor = shape.color.cpy()
-        shape.color = FALLBACK_YELLOW_ORB
-        shape.circle(
-            orb.x + orb.width / 2f,
-            orb.y + orb.height / 2f,
-            orb.width / 2f, 24
-        )
-        shape.color = oldColor
+    private fun drawOrbFallbacks(rightEdge: Float) {
+        val orbs = world.orbs
+        val cullStart = world.orbCull
+        for (i in cullStart until orbs.size) {
+            val orb = orbs.get(i)
+            if (orb.x > rightEdge) break
+            if (orbRegions[orb.type] == null) {
+                shape.color = FALLBACK_YELLOW_ORB
+                shape.circle(
+                    orb.x + orb.width / 2f,
+                    orb.y + orb.height / 2f,
+                    orb.width / 2f, 24
+                )
+            }
+        }
+    }
+
+    private fun drawPads(rightEdge: Float, beatIntensity: Float = 0f) {
+        val pads = world.pads
+        val cullStart = world.padCull
+
+        val doPulse = settings.pulseOrbs
+        val scale = if (doPulse) 0.65f + (beatIntensity * 0.70f) else 1f
+
+        for (i in cullStart until pads.size) {
+            val pad = pads.get(i)
+            if (pad.x > rightEdge) break
+            val region = padRegions[pad.type]
+            if (region != null) {
+                val visualW = pad.width * scale
+                val visualH = pad.height * scale
+                val visualX = pad.x + (pad.width - visualW) / 2f
+                val visualY = pad.y + (pad.height - visualH) / 2f
+
+                batch.draw(
+                    region, visualX, visualY,
+                    visualW / 2f, visualH / 2f,
+                    visualW, visualH,
+                    1f, 1f, pad.rotation
+                )
+            }
+        }
+    }
+
+    private fun drawPadFallbacks(rightEdge: Float) {
+        val pads = world.pads
+        val cullStart = world.padCull
+        for (i in cullStart until pads.size) {
+            val pad = pads.get(i)
+            if (pad.x > rightEdge) break
+            if (padRegions[pad.type] == null) {
+                shape.color = FALLBACK_YELLOW_ORB
+                shape.rect(
+                    pad.x, pad.y,
+                    pad.width / 2f, pad.height / 2f,
+                    pad.width, pad.height,
+                    1f, 1f, pad.rotation
+                )
+            }
+        }
     }
 
     private fun drawPlayer(player: AbstractPlayer) {

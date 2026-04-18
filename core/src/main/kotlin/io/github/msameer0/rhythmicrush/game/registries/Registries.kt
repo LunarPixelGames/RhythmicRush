@@ -13,6 +13,13 @@ import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.GreenOrb
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.PinkOrb
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.RedOrb
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.YellowOrb
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.pads.AbstractPad
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.pads.BlackPad
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.pads.BluePad
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.pads.GreenPad
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.pads.PinkPad
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.pads.RedPad
+import io.github.msameer0.rhythmicrush.game.gameplay.interactables.pads.YellowPad
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.AbstractPortal
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.CubePortal
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.GravityPortal
@@ -48,6 +55,9 @@ class Registries {
         @JvmField
         val ORBS: GameRegistry<AbstractOrb?> = GameRegistry<AbstractOrb?>()
 
+        @JvmField
+        val PADS: GameRegistry<AbstractPad?> = GameRegistry<AbstractPad?>()
+
         @JvmStatic
         fun init() {
             BLOCKS.register(Block::class.java) { Block() }
@@ -68,6 +78,13 @@ class Registries {
             ORBS.register(RedOrb::class.java) { RedOrb() }
             ORBS.register(BlackOrb::class.java) { BlackOrb() }
             ORBS.register(GreenOrb::class.java) { GreenOrb() }
+
+            PADS.register(YellowPad::class.java) { YellowPad() }
+            PADS.register(BluePad::class.java) { BluePad() }
+            PADS.register(PinkPad::class.java) { PinkPad() }
+            PADS.register(RedPad::class.java) { RedPad() }
+            PADS.register(BlackPad::class.java) { BlackPad() }
+            PADS.register(GreenPad::class.java) { GreenPad() }
 
             PLAYERS.register(Cube::class.java) { Cube(0f, 0f) }
             PLAYERS.register(Ship::class.java) { Ship(0f, 0f) }

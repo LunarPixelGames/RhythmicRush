@@ -83,6 +83,12 @@ public class LevelEditorScreen extends AbstractScreen {
     private TextureRegion redOrbRegion;
     private TextureRegion blackOrbRegion;
     private TextureRegion greenOrbRegion;
+    private TextureRegion yellowPadRegion;
+    private TextureRegion bluePadRegion;
+    private TextureRegion pinkPadRegion;
+    private TextureRegion redPadRegion;
+    private TextureRegion blackPadRegion;
+    private TextureRegion greenPadRegion;
 
     private float camX = 400f, camY = 200f;
     private float zoom = 1.0f;
@@ -200,6 +206,12 @@ public class LevelEditorScreen extends AbstractScreen {
         redOrbRegion = getGame().getAtlasManager().getOrbsAtlas().findRegion("red_orb");
         blackOrbRegion = getGame().getAtlasManager().getOrbsAtlas().findRegion("black_orb");
         greenOrbRegion = getGame().getAtlasManager().getOrbsAtlas().findRegion("green_orb");
+        yellowPadRegion = getGame().getAtlasManager().getOrbsAtlas().findRegion("yellow_pad");
+        bluePadRegion = getGame().getAtlasManager().getOrbsAtlas().findRegion("blue_pad");
+        pinkPadRegion = getGame().getAtlasManager().getOrbsAtlas().findRegion("pink_pad");
+        redPadRegion = getGame().getAtlasManager().getOrbsAtlas().findRegion("red_pad");
+        blackPadRegion = getGame().getAtlasManager().getOrbsAtlas().findRegion("black_pad");
+        greenPadRegion = getGame().getAtlasManager().getOrbsAtlas().findRegion("green_pad");
 
         buildTabs();
         scanMusicFiles();
@@ -249,6 +261,7 @@ public class LevelEditorScreen extends AbstractScreen {
         tabs.add(buildTab("Blocks", Registries.BLOCKS, new Color(0.30f, 0.50f, 0.90f, 1f)));
         tabs.add(buildTab("Hazards", Registries.HAZARDS, new Color(0.90f, 0.30f, 0.30f, 1f)));
         tabs.add(buildTab("Orbs", Registries.ORBS, new Color(1.00f, 0.85f, 0.20f, 1f)));
+        tabs.add(buildTab("Pads", Registries.PADS, new Color(1.00f, 0.70f, 0.30f, 1f)));
         tabs.add(buildTab("Portals", Registries.PORTALS, new Color(0.30f, 0.90f, 0.50f, 1f)));
         tabs.add(buildTab("Triggers", Registries.TRIGGERS, new Color(0.90f, 0.80f, 0.30f, 1f)));
     }
@@ -1005,6 +1018,7 @@ public class LevelEditorScreen extends AbstractScreen {
         if (Registries.BLOCKS.has(id)) return new Color(0.30f, 0.50f, 0.90f, 0.85f);
         if (Registries.HAZARDS.has(id)) return new Color(0.90f, 0.30f, 0.30f, 0.85f);
         if (Registries.ORBS.has(id)) return new Color(1.00f, 0.85f, 0.20f, 0.85f);
+        if (Registries.PADS.has(id)) return new Color(1.00f, 0.70f, 0.30f, 0.85f);
         if (Registries.PORTALS.has(id)) return new Color(0.30f, 0.90f, 0.50f, 0.85f);
         return new Color(0.90f, 0.80f, 0.30f, 0.85f);
     }
@@ -1024,6 +1038,19 @@ public class LevelEditorScreen extends AbstractScreen {
         if ("red_orb".equals(e.getType())) return redOrbRegion;
         if ("black_orb".equals(e.getType())) return blackOrbRegion;
         if ("green_orb".equals(e.getType())) return greenOrbRegion;
+        if ("yellow_pad".equals(e.getType())) return yellowPadRegion;
+        if ("blue_pad".equals(e.getType())) return bluePadRegion;
+        if ("pink_pad".equals(e.getType())) return pinkOrbRegion; // Pads usually use orb sprites if missing
+        if ("red_pad".equals(e.getType())) return redOrbRegion;
+        if ("black_pad".equals(e.getType())) return blackOrbRegion;
+        if ("green_pad".equals(e.getType())) return greenOrbRegion;
+        
+        // Try specific pad regions if they exist
+        if ("pink_pad".equals(e.getType()) && pinkPadRegion != null) return pinkPadRegion;
+        if ("red_pad".equals(e.getType()) && redPadRegion != null) return redPadRegion;
+        if ("black_pad".equals(e.getType()) && blackPadRegion != null) return blackPadRegion;
+        if ("green_pad".equals(e.getType()) && greenPadRegion != null) return greenPadRegion;
+
         if (Registries.BLOCKS.has(e.getType())) {
             BlockType bt = BlockType.DEFAULT;
             if (e.getBlockType() != null)
