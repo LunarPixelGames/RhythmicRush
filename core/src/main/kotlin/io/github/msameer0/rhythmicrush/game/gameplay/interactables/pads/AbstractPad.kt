@@ -23,10 +23,10 @@ abstract class AbstractPad {
     var type: PadType = PadType.YELLOW
     var x: Float = 0f
     var y: Float = 0f
-    var width: Float = 55f
-    var height: Float = 55f
+    var width: Float = 50f
+    var height: Float = 50f
     var rotation: Float = 0f
-    
+
     // The actual collision hitbox (1/10th of the height)
     var hitbox: Rectangle = Rectangle()
     private var used: Boolean = false
@@ -63,7 +63,7 @@ abstract class AbstractPad {
     fun updateHitbox() {
         val hHeight = height / 10f
         val rot = ((rotation / 90f).toInt() % 4 + 4) % 4 * 90
-        
+
         when (rot) {
             0 -> hitbox.set(x, y, width, hHeight) // Bottom
             90 -> hitbox.set(x, y, hHeight, height) // Left
@@ -81,13 +81,13 @@ abstract class AbstractPad {
     fun canActivate(player: AbstractPlayer): Boolean {
         val flipped = player.isGravityFlipped()
         val rot = ((rotation / 90f).toInt() % 4 + 4) % 4 * 90
-        
-        val isRegularPad = type == PadType.YELLOW || type == PadType.BLUE || 
+
+        val isRegularPad = type == PadType.YELLOW || type == PadType.BLUE ||
                           type == PadType.PINK || type == PadType.RED
-        
+
         // Sideways pads (90, 270) activate for both
         if (rot == 90 || rot == 270) return true
-        
+
         return if (isRegularPad) {
             if (!flipped) rot == 0 else rot == 180
         } else { // Black and Green pads have inverted conditions

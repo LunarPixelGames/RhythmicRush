@@ -336,23 +336,15 @@ class GameRenderer(
         val pads = world.pads
         val cullStart = world.padCull
 
-        val doPulse = settings.pulseOrbs
-        val scale = if (doPulse) 0.65f + (beatIntensity * 0.70f) else 1f
-
         for (i in cullStart until pads.size) {
             val pad = pads.get(i)
             if (pad.x > rightEdge) break
             val region = padRegions[pad.type]
             if (region != null) {
-                val visualW = pad.width * scale
-                val visualH = pad.height * scale
-                val visualX = pad.x + (pad.width - visualW) / 2f
-                val visualY = pad.y + (pad.height - visualH) / 2f
-
                 batch.draw(
-                    region, visualX, visualY,
-                    visualW / 2f, visualH / 2f,
-                    visualW, visualH,
+                    region, pad.x, pad.y,
+                    pad.width / 2f, pad.height / 2f,
+                    pad.width, pad.height,
                     1f, 1f, pad.rotation
                 )
             }
