@@ -206,12 +206,12 @@ public class LevelEditorScreen extends AbstractScreen {
         redOrbRegion = getGame().getAtlasManager().getOrbsAtlas().findRegion("red_orb");
         blackOrbRegion = getGame().getAtlasManager().getOrbsAtlas().findRegion("black_orb");
         greenOrbRegion = getGame().getAtlasManager().getOrbsAtlas().findRegion("green_orb");
-        yellowPadRegion = getGame().getAtlasManager().getOrbsAtlas().findRegion("yellow_pad");
-        bluePadRegion = getGame().getAtlasManager().getOrbsAtlas().findRegion("blue_pad");
-        pinkPadRegion = getGame().getAtlasManager().getOrbsAtlas().findRegion("pink_pad");
-        redPadRegion = getGame().getAtlasManager().getOrbsAtlas().findRegion("red_pad");
-        blackPadRegion = getGame().getAtlasManager().getOrbsAtlas().findRegion("black_pad");
-        greenPadRegion = getGame().getAtlasManager().getOrbsAtlas().findRegion("green_pad");
+        yellowPadRegion = getGame().getAtlasManager().getPadsAtlas().findRegion("yellow_pad");
+        bluePadRegion = getGame().getAtlasManager().getPadsAtlas().findRegion("blue_pad");
+        pinkPadRegion = getGame().getAtlasManager().getPadsAtlas().findRegion("pink_pad");
+        redPadRegion = getGame().getAtlasManager().getPadsAtlas().findRegion("red_pad");
+        blackPadRegion = getGame().getAtlasManager().getPadsAtlas().findRegion("black_pad");
+        greenPadRegion = getGame().getAtlasManager().getPadsAtlas().findRegion("green_pad");
 
         buildTabs();
         scanMusicFiles();
@@ -1040,16 +1040,12 @@ public class LevelEditorScreen extends AbstractScreen {
         if ("green_orb".equals(e.getType())) return greenOrbRegion;
         if ("yellow_pad".equals(e.getType())) return yellowPadRegion;
         if ("blue_pad".equals(e.getType())) return bluePadRegion;
-        if ("pink_pad".equals(e.getType())) return pinkOrbRegion; // Pads usually use orb sprites if missing
-        if ("red_pad".equals(e.getType())) return redOrbRegion;
-        if ("black_pad".equals(e.getType())) return blackOrbRegion;
-        if ("green_pad".equals(e.getType())) return greenOrbRegion;
+        if ("pink_pad".equals(e.getType())) return pinkPadRegion;
+        if ("red_pad".equals(e.getType())) return redPadRegion;
+        if ("black_pad".equals(e.getType())) return blackPadRegion;
+        if ("green_pad".equals(e.getType())) return greenPadRegion;
         
-        // Try specific pad regions if they exist
-        if ("pink_pad".equals(e.getType()) && pinkPadRegion != null) return pinkPadRegion;
-        if ("red_pad".equals(e.getType()) && redPadRegion != null) return redPadRegion;
-        if ("black_pad".equals(e.getType()) && blackPadRegion != null) return blackPadRegion;
-        if ("green_pad".equals(e.getType()) && greenPadRegion != null) return greenPadRegion;
+
 
         if (Registries.BLOCKS.has(e.getType())) {
             BlockType bt = BlockType.DEFAULT;
