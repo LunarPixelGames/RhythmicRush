@@ -405,6 +405,16 @@ class GameWorld : Tickable {
         val p = player ?: return
         p.update(delta, groundY)
 
+        // Check if player went offscreen using the viewport height
+        // The ExtendViewport uses 480f as its virtual height
+        val viewportHeight = 480f  // This matches your ExtendViewport(800f, 480f, camera)
+        val killZoneMargin = p.height + 350f  // Extra buffer to ensure player is fully offscreen
+
+        if (p.y < -killZoneMargin || p.y > viewportHeight + killZoneMargin) {
+            playerDied()
+            return
+        }
+
         for (i in portalCull until portals.size) portals.get(i).updatePosition(scrollSpeed, delta)
         for (i in hazardCull until hazards.size) hazards.get(i).updatePosition(scrollSpeed, delta)
         for (i in blockCull until blocks.size) blocks.get(i).updatePosition(scrollSpeed, delta)
