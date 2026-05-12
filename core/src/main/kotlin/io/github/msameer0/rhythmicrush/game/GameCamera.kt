@@ -2,6 +2,7 @@ package io.github.msameer0.rhythmicrush.game
 
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.math.MathUtils
+import io.github.msameer0.rhythmicrush.GameConstants
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import kotlin.math.min
 
@@ -12,7 +13,8 @@ import kotlin.math.min
 class GameCamera(val camera: OrthographicCamera, private val world: GameWorld) {
 
     companion object {
-        private const val CAMERA_X_OFFSET = 307f
+        private const val CAMERA_X_OFFSET = GameConstants.Camera.X_OFFSET
+        private const val CAMERA_Y_LERP = GameConstants.Camera.Y_LERP
     }
 
     private var cameraTargetY = 540f
@@ -102,7 +104,7 @@ class GameCamera(val camera: OrthographicCamera, private val world: GameWorld) {
 
                 cameraTargetY = windowBottom + (paddingHeight / 2f)
                 // Pan smoothly towards the window center
-                camera.position.y = MathUtils.lerp(camera.position.y, cameraTargetY, min(delta * 6f, 1f))
+                camera.position.y = MathUtils.lerp(camera.position.y, cameraTargetY, min(delta * GameConstants.Camera.SMOOTH_LERP, 1f))
             }
         } else if (currentType == AbstractPlayer.PlayerType.SHIP) {
             if (shouldSnap) {
@@ -110,7 +112,7 @@ class GameCamera(val camera: OrthographicCamera, private val world: GameWorld) {
                 shouldSnap = false
             }
             // Pan smoothly towards the locked height
-            camera.position.y = MathUtils.lerp(camera.position.y, shipLockedY, min(delta * 6f, 1f))
+            camera.position.y = MathUtils.lerp(camera.position.y, shipLockedY, min(delta * GameConstants.Camera.SMOOTH_LERP, 1f))
         }
 
         camera.update()
@@ -137,5 +139,5 @@ class GameCamera(val camera: OrthographicCamera, private val world: GameWorld) {
     fun getCorridorTop(): Float = boundaryCorridorTop
 
     fun getWindowBottom(): Float = windowBottom
-    fun getPaddingHeight(): Float = 500f
+    fun getPaddingHeight(): Float = GameConstants.Camera.PADDING_HEIGHT
 }

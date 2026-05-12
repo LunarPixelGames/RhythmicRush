@@ -2,6 +2,7 @@ package io.github.msameer0.rhythmicrush.game.gameplay.players
 
 import com.badlogic.gdx.math.MathUtils
 import io.github.msameer0.rhythmicrush.game.registries.Registry
+import io.github.msameer0.rhythmicrush.GameConstants
 
 /**
  * Standard Cube game mode focusing on platforming and precise jumping.
@@ -10,26 +11,26 @@ import io.github.msameer0.rhythmicrush.game.registries.Registry
 class Cube : AbstractPlayer {
 
     @JvmField
-    var jumpVelocity: Float = 1906.2f
+    var jumpVelocity: Float = GameConstants.Player.Cube.JUMP_VELOCITY
 
     private var isGrounded: Boolean = false
 
     private var coyoteTimer: Float = 0f
 
     companion object {
-        private const val COYOTE_TIME = 0.083f
+        private const val COYOTE_TIME = GameConstants.Player.Cube.COYOTE_TIME
         private const val CUBE_SPIN_FACTOR = 0.5f
     }
 
     constructor(startX: Float, groundY: Float) : super() {
         this.x = startX
         this.y = groundY
-        gravity = -8450.2f
+        gravity = GameConstants.Player.Cube.GRAVITY
         type = PlayerType.CUBE
     }
 
     constructor() : super() {
-        gravity = -8450.2f
+        gravity = GameConstants.Player.Cube.GRAVITY
         type = PlayerType.CUBE
     }
 
@@ -37,7 +38,7 @@ class Cube : AbstractPlayer {
         type = PlayerType.CUBE
         x = startX
         y = startY
-        gravity = -8450.2f
+        gravity = GameConstants.Player.Cube.GRAVITY
         this.velocityY = velocityY
         isGrounded = false
         this.jumpHeld = jumpHeld
@@ -84,7 +85,7 @@ class Cube : AbstractPlayer {
             coyoteTimer = kotlin.math.max(0f, coyoteTimer - delta)
 
             // Rotate in air
-            val spinAmount = 399.0f * delta
+            val spinAmount = GameConstants.Player.Cube.SPIN_SPEED * delta
             if (gravityFlipped) setRotation(getRotation() + spinAmount)
             else setRotation(getRotation() - spinAmount)
         }

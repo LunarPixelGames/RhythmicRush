@@ -2,6 +2,7 @@ package io.github.msameer0.rhythmicrush.game.gameplay.players
 
 import com.badlogic.gdx.math.MathUtils
 import io.github.msameer0.rhythmicrush.game.registries.Registry
+import io.github.msameer0.rhythmicrush.GameConstants
 
 /**
  * Ship game mode featuring flying mechanics controlled by holding the jump button.
@@ -10,31 +11,31 @@ import io.github.msameer0.rhythmicrush.game.registries.Registry
 class Ship : AbstractPlayer {
 
     @JvmField
-    var maxUpSpeed: Float = 986.35f
+    var maxUpSpeed: Float = GameConstants.Player.Ship.MAX_UP_SPEED
     @JvmField
-    var maxDownSpeed: Float = -986.35f
+    var maxDownSpeed: Float = GameConstants.Player.Ship.MAX_DOWN_SPEED
     @JvmField
-    var accel: Float = 2432.2f
+    var accel: Float = GameConstants.Player.Ship.ACCEL
     @JvmField
-    var decel: Float = 2432.2f
+    var decel: Float = GameConstants.Player.Ship.DECEL
 
     companion object {
-        private const val SHIP_TILT_FACTOR = 0.18f
-        private const val SHIP_MAX_TILT = 50f
-        private const val SHIP_TILT_LERP = 8f
+        private const val SHIP_TILT_EXAGGERATION = GameConstants.Player.Ship.TILT_EXAGGERATION
+        private const val SHIP_MAX_TILT = GameConstants.Player.Ship.MAX_TILT
+        private const val SHIP_TILT_LERP = GameConstants.Player.Ship.TILT_LERP
     }
 
-    private var groundY: Float = 304f
+    private var groundY: Float = GameConstants.World.GROUND_Y
 
     constructor(startX: Float, startY: Float) : super() {
         this.x = startX
         this.y = startY
-        gravity = -3600f
+        gravity = GameConstants.Player.Cube.GRAVITY
         type = PlayerType.SHIP
     }
 
     constructor() : super() {
-        gravity = -3600f
+        gravity = GameConstants.Player.Cube.GRAVITY
         type = PlayerType.SHIP
     }
 
@@ -42,7 +43,7 @@ class Ship : AbstractPlayer {
         type = PlayerType.SHIP
         x = startX
         y = startY
-        gravity = -3600f
+        gravity = GameConstants.Player.Cube.GRAVITY
         this.velocityY = velocityY
         this.jumpHeld = jumpHeld
         jumpConsumed = false
@@ -96,12 +97,12 @@ class Ship : AbstractPlayer {
         updateBounds()
 
         // Update Tilt Rotation with exaggeration and smoothing to prevent snapping
-        val scrollSpeed = world?.scrollSpeed ?: 1038.26f
-        var targetAngle = MathUtils.atan2(velocityY, scrollSpeed) * MathUtils.radiansToDegrees * 1.4f
+        val scrollSpeed = world?.scrollSpeed ?: GameConstants.World.SCROLL_SPEED
+        var targetAngle = MathUtils.atan2(velocityY, scrollSpeed) * MathUtils.radiansToDegrees * GameConstants.Player.Ship.TILT_EXAGGERATION
         if (gravityFlipped) targetAngle = -targetAngle
-        targetAngle = MathUtils.clamp(targetAngle, -50f, 50f)
+        targetAngle = MathUtils.clamp(targetAngle, -GameConstants.Player.Ship.MAX_TILT, GameConstants.Player.Ship.MAX_TILT)
         
-        setRotation(MathUtils.lerp(getRotation(), targetAngle, MathUtils.clamp(12f * delta, 0f, 1f)))
+        setRotation(MathUtils.lerp(getRotation(), targetAngle, MathUtils.clamp(GameConstants.Player.Ship.TILT_LERP * delta, 0f, 1f)))
     }
 
     override fun jump() {

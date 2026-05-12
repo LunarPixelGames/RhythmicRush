@@ -3,6 +3,7 @@ package io.github.msameer0.rhythmicrush.game
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.utils.Array
+import io.github.msameer0.rhythmicrush.GameConstants
 import io.github.msameer0.rhythmicrush.game.engine.Tickable
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Block
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.BlockType
@@ -81,8 +82,8 @@ class GameWorld : Tickable {
     var bgImage: String = ""
     var player: AbstractPlayer? = null
         private set
-    val groundY = 304f
-    var scrollSpeed = 986.35f
+    val groundY = GameConstants.World.GROUND_Y
+    var scrollSpeed = GameConstants.World.SCROLL_SPEED
 
     var isPlayerDead = false
     var isLevelComplete = false
@@ -220,8 +221,8 @@ class GameWorld : Tickable {
 
         if (resetPlayer) {
             freePlayer()
-            player = obtainPlayer("cube").init(100f, groundY)
-            player?.worldX = 100f + worldScrolled
+            player = obtainPlayer("cube").init(GameConstants.Player.START_X, GameConstants.World.GROUND_Y)
+            player?.worldX = GameConstants.Player.START_X + worldScrolled
             player?.setWorld(this)
         }
     }
@@ -385,7 +386,7 @@ class GameWorld : Tickable {
             postEndTimer = -1f
             levelEndX = 0f
             freePlayer()
-            player = obtainPlayer("cube").init(100f, groundY)
+            player = obtainPlayer("cube").init(GameConstants.Player.START_X, groundY)
             player?.setWorld(this)
         }
     }
@@ -476,7 +477,7 @@ class GameWorld : Tickable {
         p.tryJump()
 
         worldScrolled += scrollSpeed * delta
-        p.worldX = 100f + worldScrolled
+        p.worldX = GameConstants.Player.START_X + worldScrolled
 
         while (triggerIdx < triggers.size) {
             val t = triggers.get(triggerIdx)
