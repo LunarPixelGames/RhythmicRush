@@ -10,7 +10,7 @@ import io.github.msameer0.rhythmicrush.game.registries.Registry
 class Cube : AbstractPlayer {
 
     @JvmField
-    var jumpVelocity: Float = 1200f
+    var jumpVelocity: Float = 1906.2f
 
     private var isGrounded: Boolean = false
 
@@ -24,12 +24,12 @@ class Cube : AbstractPlayer {
     constructor(startX: Float, groundY: Float) : super() {
         this.x = startX
         this.y = groundY
-        gravity = -3600f
+        gravity = -8450.2f
         type = PlayerType.CUBE
     }
 
     constructor() : super() {
-        gravity = -3600f
+        gravity = -8450.2f
         type = PlayerType.CUBE
     }
 
@@ -37,7 +37,7 @@ class Cube : AbstractPlayer {
         type = PlayerType.CUBE
         x = startX
         y = startY
-        gravity = -3600f
+        gravity = -8450.2f
         this.velocityY = velocityY
         isGrounded = false
         this.jumpHeld = jumpHeld
@@ -84,8 +84,7 @@ class Cube : AbstractPlayer {
             coyoteTimer = kotlin.math.max(0f, coyoteTimer - delta)
 
             // Rotate in air
-            val t = delta * 60f
-            val spinAmount = (kotlin.math.abs(velocityY) * CUBE_SPIN_FACTOR / 60f + 5f / 60f) * t + 300f * delta
+            val spinAmount = 399.0f * delta
             if (gravityFlipped) setRotation(getRotation() + spinAmount)
             else setRotation(getRotation() - spinAmount)
         }

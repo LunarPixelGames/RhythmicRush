@@ -82,7 +82,7 @@ class GameWorld : Tickable {
     var player: AbstractPlayer? = null
         private set
     val groundY = 304f
-    val scrollSpeed = 640f
+    var scrollSpeed = 986.35f
 
     var isPlayerDead = false
     var isLevelComplete = false

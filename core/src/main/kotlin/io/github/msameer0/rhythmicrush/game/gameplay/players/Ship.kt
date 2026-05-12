@@ -10,13 +10,13 @@ import io.github.msameer0.rhythmicrush.game.registries.Registry
 class Ship : AbstractPlayer {
 
     @JvmField
-    var maxUpSpeed: Float = 800f
+    var maxUpSpeed: Float = 986.35f
     @JvmField
-    var maxDownSpeed: Float = -1000f
+    var maxDownSpeed: Float = -986.35f
     @JvmField
-    var accel: Float = 2000f
+    var accel: Float = 2432.2f
     @JvmField
-    var decel: Float = 1600f
+    var decel: Float = 2432.2f
 
     companion object {
         private const val SHIP_TILT_FACTOR = 0.18f
@@ -95,12 +95,13 @@ class Ship : AbstractPlayer {
 
         updateBounds()
 
-        // Update Tilt Rotation
-        var targetAngle = MathUtils.clamp(velocityY * SHIP_TILT_FACTOR, -SHIP_MAX_TILT, SHIP_MAX_TILT)
-        // Note: Ship doesn't have isGrounded() true usually unless on floor
-        if (y <= groundY) targetAngle += lastSlopeRotation
+        // Update Tilt Rotation with exaggeration and smoothing to prevent snapping
+        val scrollSpeed = world?.scrollSpeed ?: 1038.26f
+        var targetAngle = MathUtils.atan2(velocityY, scrollSpeed) * MathUtils.radiansToDegrees * 1.4f
+        if (gravityFlipped) targetAngle = -targetAngle
+        targetAngle = MathUtils.clamp(targetAngle, -50f, 50f)
         
-        setRotation(MathUtils.lerp(getRotation(), targetAngle, MathUtils.clamp(SHIP_TILT_LERP * delta, 0f, 1f)))
+        setRotation(MathUtils.lerp(getRotation(), targetAngle, MathUtils.clamp(12f * delta, 0f, 1f)))
     }
 
     override fun jump() {
