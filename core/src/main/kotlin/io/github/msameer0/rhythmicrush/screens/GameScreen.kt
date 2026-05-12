@@ -277,6 +277,13 @@ class GameScreen @JvmOverloads constructor(
         }
 
         handleInput()
+        
+        world.player?.let { 
+            customCamera.update(it, delta)
+            world.boundaryTop = customCamera.getCeilingY()
+            world.boundaryBottom = customCamera.getFloorY()
+        }
+        
         engine.update(delta)
 
         if (world.isPlayerDead) {
@@ -328,7 +335,6 @@ class GameScreen @JvmOverloads constructor(
         }
         
         world.updateVisuals(delta)
-        world.player?.let { customCamera.update(it, delta) }
     }
 
     override fun draw() {

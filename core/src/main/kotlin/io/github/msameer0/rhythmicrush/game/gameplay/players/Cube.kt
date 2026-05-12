@@ -50,7 +50,7 @@ class Cube : AbstractPlayer {
 
     override fun init(startX: Float, startY: Float): Cube = init(startX, startY, 0f, false)
 
-    override fun update(delta: Float, groundY: Float) {
+    override fun update(delta: Float, groundY: Float, ceilingY: Float) {
         val wasGrounded = isGrounded
         isGrounded = false
         currentSlopeRotation = 0f

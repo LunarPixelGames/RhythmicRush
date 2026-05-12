@@ -87,7 +87,7 @@ abstract class AbstractPlayer() {
     ): AbstractPlayer
 
     abstract fun init(startX: Float, startY: Float): AbstractPlayer
-    abstract fun update(delta: Float, groundY: Float)
+    abstract fun update(delta: Float, groundY: Float, ceilingY: Float)
     abstract fun jump()
     abstract fun copyState(other: AbstractPlayer)
 

@@ -396,13 +396,33 @@ class GameRenderer(
     private fun drawGround() {
         val worldWidth = camera.viewportWidth
         val worldLeft = camera.position.x - worldWidth / 2f
+        val viewportHeight = camera.viewportHeight
+        val screenBottom = camera.position.y - viewportHeight / 2f
+        val screenTop = camera.position.y + viewportHeight / 2f
 
+        // 1. Draw Real Ground
         shape.color = world.groundColor
         shape.rect(worldLeft, 0f, worldWidth, world.groundY)
-
-        // White line on top of ground (5px)
-        shape.color = com.badlogic.gdx.graphics.Color.WHITE
+        shape.color = Color.WHITE
         shape.rect(worldLeft, world.groundY, worldWidth, 5f)
+
+        // 2. Draw Ship Mode Boundaries
+        val player = world.player ?: return
+        if (player.getType() == AbstractPlayer.PlayerType.SHIP) {
+            // Top Boundary (Ceiling)
+            shape.color = world.groundColor
+            shape.rect(worldLeft, screenTop - 34f, worldWidth, 34f)
+            shape.color = Color.WHITE
+            shape.rect(worldLeft, screenTop - 39f, worldWidth, 5f)
+
+            // Bottom Boundary (Fake Floor if real ground is off-screen)
+            if (screenBottom > world.groundY - 34f) {
+                shape.color = world.groundColor
+                shape.rect(worldLeft, screenBottom, worldWidth, 34f)
+                shape.color = Color.WHITE
+                shape.rect(worldLeft, screenBottom + 34f, worldWidth, 5f)
+            }
+        }
     }
 
     private fun updatePlayerRotation(player: AbstractPlayer, delta: Float, paused: Boolean) {

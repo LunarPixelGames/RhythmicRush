@@ -48,7 +48,7 @@ class Ship : AbstractPlayer {
 
     override fun init(startX: Float, startY: Float): Ship = init(startX, startY, 0f, false)
 
-    override fun update(delta: Float, groundY: Float) {
+    override fun update(delta: Float, groundY: Float, ceilingY: Float) {
         this.groundY = groundY
         currentSlopeRotation = 0f
 
@@ -77,8 +77,11 @@ class Ship : AbstractPlayer {
 
         y += velocityY * delta
 
-        if (!gravityFlipped && y < groundY) {
+        if (y < groundY) {
             y = groundY
+            velocityY = 0f
+        } else if (y + height > ceilingY) {
+            y = ceilingY - height
             velocityY = 0f
         }
 

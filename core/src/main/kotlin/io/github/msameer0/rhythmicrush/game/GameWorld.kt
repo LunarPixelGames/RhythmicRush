@@ -90,6 +90,8 @@ class GameWorld : Tickable {
     private var levelEndX = 0f
     private var postEndTimer = -1f
     var cullX = 0f
+    var boundaryBottom: Float = -Float.MAX_VALUE
+    var boundaryTop: Float = Float.MAX_VALUE
 
     var blockCull = 0
     private var blockStart = 0
@@ -403,7 +405,7 @@ class GameWorld : Tickable {
         if (isPlayerDead || isLevelComplete) return
 
         val p = player ?: return
-        p.update(delta, groundY)
+        p.update(delta, maxOf(groundY, boundaryBottom), boundaryTop)
 
         // Check if player went offscreen using the viewport height
         // The ExtendViewport uses 1080f as its virtual height
