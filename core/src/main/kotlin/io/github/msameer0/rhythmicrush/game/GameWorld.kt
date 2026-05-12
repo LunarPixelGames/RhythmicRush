@@ -517,6 +517,7 @@ class GameWorld : Tickable {
                 next.x = p.x
                 next.setY(p.y)
                 next.lastPortalCenterY = portal.y + portal.height / 2f
+                next.lastPortalBottomY = portal.y
                 freePlayer()
                 player = next
             }

@@ -213,8 +213,12 @@ class GameScreen @JvmOverloads constructor(
     }
 
     override fun resize(width: Int, height: Int) {
+        val oldX = gameCamera.position.x
+        val oldY = gameCamera.position.y
         overlay.updateScale()
         gameViewport.update(width, height, true)
+        gameCamera.position.set(oldX, oldY, 0f)
+        gameCamera.update()
     }
 
     override fun hide() {
@@ -445,6 +449,7 @@ class GameScreen @JvmOverloads constructor(
         hud.hideNewBestPopup()
         music.stopAndDispose()
         world.reset()
+        renderer.reset()
         customCamera.reset()
         engine.reset()
         music.start()
@@ -488,6 +493,7 @@ class GameScreen @JvmOverloads constructor(
         lastDelta = 0f
         lastJumpHeld = false
         world.reset()
+        renderer.reset()
         customCamera.reset()
         engine.reset()
         music.start()
@@ -509,6 +515,7 @@ class GameScreen @JvmOverloads constructor(
         lastJumpHeld = false
 
         val musicOffset = practice.applyLatestCheckpoint()
+        renderer.reset()
         customCamera.reset()
         engine.reset()
         music.stopAndDispose()

@@ -22,11 +22,18 @@ class GameCamera(val camera: OrthographicCamera, private val world: GameWorld) {
 
     private var lastPlayerType: AbstractPlayer.PlayerType? = null
     private var shipLockedY = 810f
+    
+    private var boundaryCorridorBottom = 0f
+    private var boundaryCorridorTop = 1080f
+    private var isUsingCorridor = false
 
     fun reset() {
         isFirstUpdate = true
         lastPlayerType = null
         shouldSnap = true
+        cameraTargetY = 540f
+        windowBottom = 0f
+        camera.position.y = 540f
     }
 
     fun update(player: AbstractPlayer, delta: Float) {
@@ -39,15 +46,35 @@ class GameCamera(val camera: OrthographicCamera, private val world: GameWorld) {
         val currentType = player.getType()
 
         if (currentType != lastPlayerType) {
-            if (currentType == AbstractPlayer.PlayerType.SHIP) {
-                // Centered on portal, but max 810 to keep ground visible at 34px
-                shipLockedY = Math.max(player.lastPortalCenterY, 810f)
-            } else if (currentType == AbstractPlayer.PlayerType.CUBE) {
-                // When transitioning back to Cube, try to maintain current camera Y if possible
-                val idealBottom = camera.position.y - 250f
-                windowBottom = MathUtils.clamp(idealBottom, player.y + player.height - 500f, player.y)
-                cameraTargetY = windowBottom + 250f
-                isFirstUpdate = false
+            // Only handle as a "transition" if we were already playing a different mode
+            if (lastPlayerType != null) {
+                if (currentType == AbstractPlayer.PlayerType.SHIP) {
+                    val pBottom = player.lastPortalBottomY
+                    val gY = world.groundY
+                    val distToGround = pBottom - gY
+                    
+                    if (distToGround in 0f..400f) {
+                        // Case 1: Near Ground (0-4 grids) - Use real ground with padding
+                        shipLockedY = gY + 501f // 540 - 39 padding
+                        isUsingCorridor = false
+                    } else {
+                        // Case 2: High Air - Use dynamic corridor centered on portal
+                        shipLockedY = pBottom + 100f // Portal center (assuming 200px height)
+                        boundaryCorridorBottom = pBottom - 400f // 4 grids below
+                        boundaryCorridorTop = pBottom + 600f    // 4 grids above (200 portal + 400)
+                        isUsingCorridor = true
+                    }
+                } else if (currentType == AbstractPlayer.PlayerType.CUBE) {
+                    // When transitioning back to Cube, try to maintain current camera Y if possible
+                    val idealBottom = camera.position.y - 250f
+                    windowBottom = MathUtils.clamp(idealBottom, player.y + player.height - 500f, player.y)
+                    cameraTargetY = windowBottom + 250f
+                }
+            } else {
+                // First spawn: Initialize locked height just in case we start as Ship (checkpoints)
+                if (currentType == AbstractPlayer.PlayerType.SHIP) {
+                    shipLockedY = player.lastPortalBottomY + 100f // Default or from checkpoint
+                }
             }
             lastPlayerType = currentType
         }
@@ -94,18 +121,20 @@ class GameCamera(val camera: OrthographicCamera, private val world: GameWorld) {
     }
 
     fun getCeilingY(): Float {
-        if (lastPlayerType == AbstractPlayer.PlayerType.SHIP) {
-            return camera.position.y + 540f - 39f
-        }
-        return Float.MAX_VALUE
+        if (lastPlayerType != AbstractPlayer.PlayerType.SHIP) return Float.MAX_VALUE
+        if (isUsingCorridor) return boundaryCorridorTop
+        return camera.position.y + 540f - 39f
     }
 
     fun getFloorY(): Float {
-        if (lastPlayerType == AbstractPlayer.PlayerType.SHIP) {
-            return camera.position.y - 540f + 39f
-        }
-        return -Float.MAX_VALUE
+        if (lastPlayerType != AbstractPlayer.PlayerType.SHIP) return -Float.MAX_VALUE
+        if (isUsingCorridor) return boundaryCorridorBottom
+        return world.groundY
     }
+
+    fun isUsingCorridor(): Boolean = isUsingCorridor
+    fun getCorridorBottom(): Float = boundaryCorridorBottom
+    fun getCorridorTop(): Float = boundaryCorridorTop
 
     fun getWindowBottom(): Float = windowBottom
     fun getPaddingHeight(): Float = 500f

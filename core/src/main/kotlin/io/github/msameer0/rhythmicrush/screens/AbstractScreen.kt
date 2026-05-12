@@ -27,8 +27,11 @@ abstract class AbstractScreen(protected val game: RhythmicRushGame) : Screen {
     }
 
     override fun render(delta: Float) {
+        // Cap delta to prevent huge spikes (e.g. during resize/fullscreen switch) 
+        // from snapping animations instantly.
+        val cappedDelta = kotlin.math.min(delta, 0.1f)
         handleWindowKeys()
-        update(delta)
+        update(cappedDelta)
         draw()
     }
 
