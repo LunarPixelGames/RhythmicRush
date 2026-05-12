@@ -19,13 +19,15 @@ import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRenderer) {
 
     companion object {
-        private val HB_PLAYER_FILL = Color(1.0f, 0.9f, 0.0f, 0.75f)
+        private val HB_PLAYER_FILL = Color(0.0f, 1.0f, 0.0f, 0.45f)
+        private val HB_PLAYER_INNER_FILL = Color(1.0f, 0.0f, 0.0f, 0.65f)
         private val HB_HAZARD_FILL = Color(1.0f, 0.2f, 0.2f, 0.75f)
         private val HB_BLOCK_FILL = Color(0.2f, 0.5f, 1.0f, 0.75f)
         private val HB_PORTAL_FILL = Color(0.2f, 1.0f, 0.4f, 0.75f)
         private val HB_ORB_FILL = Color(1.0f, 0.9f, 0.1f, 0.55f)
 
-        private val HB_PLAYER_LINE = Color(1.0f, 0.9f, 0.0f, 1.0f)
+        private val HB_PLAYER_LINE = Color(0.0f, 1.0f, 0.0f, 1.0f)
+        private val HB_PLAYER_INNER_LINE = Color(1.0f, 0.0f, 0.0f, 1.0f)
         private val HB_HAZARD_LINE = Color(1.0f, 0.2f, 0.2f, 1.0f)
         private val HB_BLOCK_LINE = Color(0.2f, 0.5f, 1.0f, 1.0f)
         private val HB_PORTAL_LINE = Color(0.2f, 1.0f, 0.4f, 1.0f)
@@ -101,6 +103,10 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
         shape.color = HB_PLAYER_FILL
         val pb = player.bounds
         shape.rect(pb.x, pb.y, pb.width, pb.height)
+
+        shape.color = HB_PLAYER_INNER_FILL
+        val ib = player.innerBounds
+        shape.rect(ib.x, ib.y, ib.width, ib.height)
 
         shape.setColor(1.0f, 1.0f, 1.0f, 0.5f)
         val radius = player.width * 0.5f * Slope.CIRCLE_RATIO
@@ -191,6 +197,10 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
         shape.color = HB_PLAYER_LINE
         val pb = player.bounds
         shape.rect(pb.x, pb.y, pb.width, pb.height)
+
+        shape.color = HB_PLAYER_INNER_LINE
+        val ib = player.innerBounds
+        shape.rect(ib.x, ib.y, ib.width, ib.height)
 
         shape.setColor(1.0f, 1.0f, 1.0f, 0.8f)
         val radius = player.width * 0.5f * Slope.CIRCLE_RATIO

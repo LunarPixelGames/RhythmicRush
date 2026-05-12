@@ -35,6 +35,8 @@ abstract class AbstractPlayer() {
     var velocityY: Float = 0f
     @JvmField
     var bounds: Rectangle = Rectangle(x, y, width, height)
+    @JvmField
+    var innerBounds: Rectangle = Rectangle(x + 40f, y + 40f, 20f, 20f)
 
     @JvmField
     protected var gravityFlipped: Boolean = false
@@ -117,9 +119,16 @@ abstract class AbstractPlayer() {
     }
 
     fun getBounds(): Rectangle = bounds
+    fun getInnerBounds(): Rectangle = innerBounds
 
     protected fun updateBounds() {
         bounds.setPosition(x, y)
+        innerBounds.set(
+            x + (width - 20f) / 2f,
+            y + (height - 20f) / 2f,
+            20f,
+            20f
+        )
     }
 
     fun getX(): Float = x

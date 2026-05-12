@@ -122,10 +122,7 @@ open class Block : Tickable, Rotatable {
             }
         }
 
-        val hMargin = playerRect.width * 0.25f
-        val vMargin = playerRect.height * 0.25f
-
-        if (playerRight - hMargin > blockLeft && playerLeft + hMargin < blockRight && playerTop - vMargin > blockBottom && playerBottom + vMargin < blockTop) {
+        if (player.getInnerBounds().overlaps(bounds)) {
             val world = player.getWorld()
             world?.playerDied()
         }
