@@ -43,7 +43,7 @@ import kotlin.math.min
 class GameWorld : Tickable {
 
     companion object {
-        private const val COLLISION_LOOKAHEAD = 1400f
+        private const val COLLISION_LOOKAHEAD = 2800f
         private const val POST_END_DELAY = 2f
 
         private fun parseOptionalHex(hex: String?): Color? {
@@ -81,8 +81,8 @@ class GameWorld : Tickable {
     var bgImage: String = ""
     var player: AbstractPlayer? = null
         private set
-    val groundY = 50f
-    val scrollSpeed = 320f
+    val groundY = 304f
+    val scrollSpeed = 640f
 
     var isPlayerDead = false
     var isLevelComplete = false
@@ -226,7 +226,7 @@ class GameWorld : Tickable {
 
     private fun spawnObject(e: LevelData.ObjectEntry, rx: Float, startScrolled: Float) {
         if (Registries.BLOCKS.has(e.type)) {
-            if (e.x + e.size < startScrolled - 200) return
+            if (e.x + e.size < startScrolled - 400) return
             val bt = resolveBlockType(e.blockType)
             if ("slope" == e.type) {
                 blocks.add(pools.obtainSlope().init(rx, e.y, e.size, bt, e.rotation))
@@ -234,14 +234,14 @@ class GameWorld : Tickable {
                 blocks.add(pools.obtainBlock().init(rx, e.y, e.size, bt, e.rotation))
             }
         } else if (Registries.HAZARDS.has(e.type)) {
-            val hW = if ("saw_blade" == e.type) e.size else 50f
-            if (e.x + hW < startScrolled - 100) return
+            val hW = if ("saw_blade" == e.type) e.size else 100f
+            if (e.x + hW < startScrolled - 200) return
             spawnHazard(e, rx)
         } else if (Registries.PORTALS.has(e.type)) {
-            if (e.x + 50f < startScrolled - 100) return
+            if (e.x + 100f < startScrolled - 200) return
             spawnPortal(e, rx)
         } else if (Registries.ORBS.has(e.type)) {
-            if (e.x + e.size < startScrolled - 100) return
+            if (e.x + e.size < startScrolled - 200) return
             spawnOrb(e, rx)
         } else if (Registries.PADS.has(e.type)) {
             if (e.x + e.size < startScrolled - 100) return
@@ -408,7 +408,7 @@ class GameWorld : Tickable {
         // Check if player went offscreen using the viewport height
         // The ExtendViewport uses 1080f as its virtual height
         val viewportHeight = 1080f  // This matches your ExtendViewport(1920f, 1080f, camera)
-        val killZoneMargin = p.height + 350f  // Extra buffer to ensure player is fully offscreen
+        val killZoneMargin = p.height + 700f  // Extra buffer to ensure player is fully offscreen
 
         if (p.y < -killZoneMargin || p.y > viewportHeight + killZoneMargin) {
             playerDied()
@@ -422,7 +422,7 @@ class GameWorld : Tickable {
         for (i in padCull until pads.size) pads.get(i).updatePosition(scrollSpeed, delta)
 
         val px = p.x
-        val rangeMin = px - 300f
+        val rangeMin = px - 600f
         val rangeMax = px + COLLISION_LOOKAHEAD
 
         if (blockStart < blockCull) blockStart = blockCull
@@ -522,11 +522,11 @@ class GameWorld : Tickable {
 
     fun cull() {
         val p = player ?: return
-        val threshold = p.x - 500f
+        val threshold = p.x - 1000f
 
         while (blockCull < blocks.size) {
             val b = blocks.get(blockCull)
-            if (b.x + b.width >= threshold - 200) break
+            if (b.x + b.width >= threshold - 400) break
             pools.freeBlock(b)
             blockCull++
         }

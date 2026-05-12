@@ -25,9 +25,9 @@ class BlackPad : AbstractPad {
 
     override fun onActivate(player: AbstractPlayer) {
         if (player.isGravityFlipped()) {
-            player.setVelocityY(1100f)
+            player.setVelocityY(2200f)
         } else {
-            player.setVelocityY(-1100f)
+            player.setVelocityY(-2200f)
         }
     }
 }

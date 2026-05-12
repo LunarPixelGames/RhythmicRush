@@ -25,9 +25,9 @@ class PinkPad : AbstractPad {
 
     override fun onActivate(player: AbstractPlayer) {
         if (player.isGravityFlipped()) {
-            player.setVelocityY(-600f)
+            player.setVelocityY(-1200f)
         } else {
-            player.setVelocityY(600f)
+            player.setVelocityY(1200f)
         }
     }
 }

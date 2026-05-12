@@ -23,8 +23,8 @@ abstract class AbstractPad {
     var type: PadType = PadType.YELLOW
     var x: Float = 0f
     var y: Float = 0f
-    var width: Float = 50f
-    var height: Float = 50f
+    var width: Float = 100f
+    var height: Float = 100f
     var rotation: Float = 0f
 
     // The actual collision hitbox (1/10th of the height)

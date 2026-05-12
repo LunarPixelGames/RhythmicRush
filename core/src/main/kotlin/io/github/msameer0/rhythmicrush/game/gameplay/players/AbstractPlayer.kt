@@ -28,9 +28,9 @@ abstract class AbstractPlayer() {
     @JvmField
     var worldX: Float = 0f
     @JvmField
-    var width: Float = 50f
+    var width: Float = 100f
     @JvmField
-    var height: Float = 50f
+    var height: Float = 100f
     @JvmField
     var velocityY: Float = 0f
     @JvmField
@@ -59,14 +59,14 @@ abstract class AbstractPlayer() {
 
         if (mini && !this.mini) {
             this.mini = true
-            this.width = 25f
-            this.height = 25f
+            this.width = 50f
+            this.height = 50f
             this.x += (oldWidth - this.width) / 2f
             this.y += (oldHeight - this.height) / 2f
         } else if (!mini && this.mini) {
             this.mini = false
-            this.width = 50f
-            this.height = 50f
+            this.width = 100f
+            this.height = 100f
             this.x -= (this.width - oldWidth) / 2f
             if (gravityFlipped) {
                 this.y -= (this.height - oldHeight)

@@ -36,7 +36,7 @@ class GameRenderer(
 ) {
 
     companion object {
-        private const val CAMERA_X_OFFSET = 425f
+        private const val CAMERA_X_OFFSET = 307f
         private const val CUBE_SPIN_FACTOR = 0.5f
         private const val SHIP_TILT_FACTOR = 0.18f
         private const val SHIP_MAX_TILT = 50f
@@ -165,7 +165,7 @@ class GameRenderer(
 
     fun updateCamera(player: AbstractPlayer) {
         camera.position.x = player.x + CAMERA_X_OFFSET
-        if (player.isMini()) camera.position.x -= 12.5f
+        if (player.isMini()) camera.position.x -= 25f
         camera.update()
 
         val worldLeft = camera.position.x - camera.viewportWidth / 2f
@@ -407,6 +407,10 @@ class GameRenderer(
 
         shape.color = world.groundColor
         shape.rect(worldLeft, 0f, worldWidth, world.groundY)
+
+        // White line on top of ground (5px)
+        shape.color = com.badlogic.gdx.graphics.Color.WHITE
+        shape.rect(worldLeft, world.groundY, worldWidth, 5f)
     }
 
     private fun updatePlayerRotation(player: AbstractPlayer, delta: Float, paused: Boolean) {

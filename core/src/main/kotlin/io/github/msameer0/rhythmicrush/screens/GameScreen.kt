@@ -51,7 +51,7 @@ class GameScreen @JvmOverloads constructor(
     private val practice: PracticeManager? = if (isPracticeMode) PracticeManager(world) else null
 
     private val gameCamera = OrthographicCamera()
-    private val gameViewport = ExtendViewport(1280f, 720f, gameCamera)
+    private val gameViewport = ExtendViewport(1920f, 1080f, gameCamera)
 
     private val shapes = ShapeRenderer()
 

@@ -9,7 +9,7 @@ import io.github.msameer0.rhythmicrush.game.registries.Registry
 class Cube : AbstractPlayer {
 
     @JvmField
-    var jumpVelocity: Float = 600f
+    var jumpVelocity: Float = 1200f
 
     private var isGrounded: Boolean = false
 
@@ -22,12 +22,12 @@ class Cube : AbstractPlayer {
     constructor(startX: Float, groundY: Float) : super() {
         this.x = startX
         this.y = groundY
-        gravity = -1800f
+        gravity = -3600f
         type = PlayerType.CUBE
     }
 
     constructor() : super() {
-        gravity = -1800f
+        gravity = -3600f
         type = PlayerType.CUBE
     }
 
@@ -35,7 +35,7 @@ class Cube : AbstractPlayer {
         type = PlayerType.CUBE
         x = startX
         y = startY
-        gravity = -1800f
+        gravity = -3600f
         this.velocityY = velocityY
         isGrounded = false
         this.jumpHeld = jumpHeld
@@ -67,7 +67,7 @@ class Cube : AbstractPlayer {
             }
         } else {
             @Suppress("UNUSED_VARIABLE")
-            val ceilingY = 720 - groundY - height
+            val ceilingY = 1080 - groundY - height
         }
 
         if (isGrounded) {

@@ -25,9 +25,9 @@ class YellowPad : AbstractPad {
 
     override fun onActivate(player: AbstractPlayer) {
         if (player.isGravityFlipped()) {
-            player.setVelocityY(-850f)
+            player.setVelocityY(-1700f)
         } else {
-            player.setVelocityY(850f)
+            player.setVelocityY(1700f)
         }
     }
 }

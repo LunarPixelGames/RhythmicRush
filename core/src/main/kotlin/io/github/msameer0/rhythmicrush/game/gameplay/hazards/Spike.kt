@@ -67,8 +67,8 @@ class Spike : AbstractHazard, Rotatable {
     }
 
     companion object {
-        private const val PLAYER_SIZE = 50f
-        private const val TEXTURE_SIZE = 50f
+        private const val PLAYER_SIZE = 100f
+        private const val TEXTURE_SIZE = 100f
         private const val HITBOX_W: Float = PLAYER_SIZE * 0.25f
         private const val HITBOX_H: Float = PLAYER_SIZE * 0.5f
         private const val HITBOX_CENTER_X: Float = (TEXTURE_SIZE - HITBOX_W) / 2f

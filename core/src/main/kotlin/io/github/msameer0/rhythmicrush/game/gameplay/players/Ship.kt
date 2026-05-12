@@ -9,25 +9,25 @@ import io.github.msameer0.rhythmicrush.game.registries.Registry
 class Ship : AbstractPlayer {
 
     @JvmField
-    var maxUpSpeed: Float = 400f
+    var maxUpSpeed: Float = 800f
     @JvmField
-    var maxDownSpeed: Float = -500f
+    var maxDownSpeed: Float = -1000f
     @JvmField
-    var accel: Float = 1000f
+    var accel: Float = 2000f
     @JvmField
-    var decel: Float = 800f
+    var decel: Float = 1600f
 
-    private var groundY: Float = 50f
+    private var groundY: Float = 304f
 
     constructor(startX: Float, startY: Float) : super() {
         this.x = startX
         this.y = startY
-        gravity = -1800f
+        gravity = -3600f
         type = PlayerType.SHIP
     }
 
     constructor() : super() {
-        gravity = -1800f
+        gravity = -3600f
         type = PlayerType.SHIP
     }
 
@@ -35,7 +35,7 @@ class Ship : AbstractPlayer {
         type = PlayerType.SHIP
         x = startX
         y = startY
-        gravity = -1800f
+        gravity = -3600f
         this.velocityY = velocityY
         this.jumpHeld = jumpHeld
         jumpConsumed = false

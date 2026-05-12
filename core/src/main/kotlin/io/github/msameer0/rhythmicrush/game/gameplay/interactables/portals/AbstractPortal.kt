@@ -23,8 +23,8 @@ abstract class AbstractPortal : Rotatable {
     var type: PortalType? = null
     var x: Float = 0f
     var y: Float = 0f
-    var width: Float = 50f
-    var height: Float = 100f
+    var width: Float = 100f
+    var height: Float = 200f
     var bounds: Rectangle
     var isUsed: Boolean = false
 
