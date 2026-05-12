@@ -38,6 +38,10 @@ abstract class AbstractPlayer() {
     @JvmField
     var innerBounds: Rectangle = Rectangle(x + 40f, y + 40f, 20f, 20f)
 
+    private var rotation: Float = 0f
+    private val playerPolygon: com.badlogic.gdx.math.Polygon = com.badlogic.gdx.math.Polygon()
+    private val innerPolygon: com.badlogic.gdx.math.Polygon = com.badlogic.gdx.math.Polygon()
+
     @JvmField
     protected var gravityFlipped: Boolean = false
     @JvmField
@@ -120,6 +124,13 @@ abstract class AbstractPlayer() {
 
     fun getBounds(): Rectangle = bounds
     fun getInnerBounds(): Rectangle = innerBounds
+    fun getRotation(): Float = rotation
+    fun setRotation(rot: Float) {
+        rotation = rot
+    }
+
+    fun getPlayerPolygon(): com.badlogic.gdx.math.Polygon = playerPolygon
+    fun getInnerPolygon(): com.badlogic.gdx.math.Polygon = innerPolygon
 
     protected fun updateBounds() {
         bounds.setPosition(x, y)
@@ -129,6 +140,31 @@ abstract class AbstractPlayer() {
             20f,
             20f
         )
+
+        // Update Polygons
+        if (playerPolygon.vertices.size != 8) {
+            playerPolygon.vertices = floatArrayOf(
+                0f, 0f,
+                width, 0f,
+                width, height,
+                0f, height
+            )
+        }
+        playerPolygon.setPosition(x, y)
+        playerPolygon.setOrigin(width / 2f, height / 2f)
+        playerPolygon.rotation = rotation
+
+        if (innerPolygon.vertices.size != 8) {
+            innerPolygon.vertices = floatArrayOf(
+                0f, 0f,
+                20f, 0f,
+                20f, 20f,
+                0f, 20f
+            )
+        }
+        innerPolygon.setPosition(x + (width - 20f) / 2f, y + (height - 20f) / 2f)
+        innerPolygon.setOrigin(10f, 10f)
+        innerPolygon.rotation = rotation
     }
 
     fun getX(): Float = x

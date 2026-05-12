@@ -1,5 +1,7 @@
 package io.github.msameer0.rhythmicrush.game.gameplay.hazards
 
+import com.badlogic.gdx.math.Intersector
+import com.badlogic.gdx.math.Polygon
 import com.badlogic.gdx.math.Rectangle
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 
@@ -18,6 +20,7 @@ abstract class AbstractHazard(
 
     var type: HazardType? = null
     var bounds: Rectangle = Rectangle(x, y, width, height)
+    protected val hazardPolygon: Polygon = Polygon(floatArrayOf(0f, 0f, width, 0f, width, height, 0f, height))
 
     open fun updatePosition(scrollSpeed: Float, delta: Float) {
         x -= scrollSpeed * delta
@@ -26,6 +29,7 @@ abstract class AbstractHazard(
 
     protected fun updateBounds() {
         bounds.setPosition(x, y)
+        hazardPolygon.setPosition(x, y)
     }
 
     open fun reset() {
@@ -35,7 +39,11 @@ abstract class AbstractHazard(
     }
 
     open fun tryTouch(player: AbstractPlayer) {
-        if (player.getBounds().overlaps(bounds)) {
+        // Broad phase check
+        if (!player.getBounds().overlaps(bounds)) return
+        
+        // Precise phase check (rotated)
+        if (Intersector.overlapConvexPolygons(player.getPlayerPolygon(), hazardPolygon)) {
             onTouch(player)
         }
     }

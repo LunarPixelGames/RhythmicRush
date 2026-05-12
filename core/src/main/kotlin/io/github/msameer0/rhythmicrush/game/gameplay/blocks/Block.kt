@@ -1,5 +1,7 @@
 package io.github.msameer0.rhythmicrush.game.gameplay.blocks
 
+import com.badlogic.gdx.math.Intersector
+import com.badlogic.gdx.math.Polygon
 import com.badlogic.gdx.math.Rectangle
 import io.github.msameer0.rhythmicrush.game.engine.Rotatable
 import io.github.msameer0.rhythmicrush.game.engine.Tickable
@@ -57,6 +59,8 @@ open class Block : Tickable, Rotatable {
     fun updateBounds() {
         bounds.setPosition(x, y)
     }
+
+    private val blockPolygon = Polygon()
 
     open fun reset() {
         this.x = 0f
@@ -122,7 +126,18 @@ open class Block : Tickable, Rotatable {
             }
         }
 
-        if (player.getInnerBounds().overlaps(bounds)) {
+        // Update block polygon for precise collision
+        blockPolygon.vertices = floatArrayOf(
+            0f, 0f,
+            width, 0f,
+            width, height,
+            0f, height
+        )
+        blockPolygon.setPosition(x, y)
+        blockPolygon.setOrigin(width / 2f, height / 2f)
+        blockPolygon.rotation = rotation
+
+        if (Intersector.overlapConvexPolygons(player.getInnerPolygon(), blockPolygon)) {
             val world = player.getWorld()
             world?.playerDied()
         }

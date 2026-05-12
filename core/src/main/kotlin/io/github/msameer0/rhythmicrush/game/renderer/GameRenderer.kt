@@ -39,10 +39,6 @@ class GameRenderer(
 
     companion object {
         private const val CAMERA_X_OFFSET = 307f
-        private const val CUBE_SPIN_FACTOR = 0.5f
-        private const val SHIP_TILT_FACTOR = 0.18f
-        private const val SHIP_MAX_TILT = 50f
-        private const val SHIP_TILT_LERP = 8f
 
         private val FALLBACK_CUBE_PORTAL = Color(0f, 0.8f, 0f, 1f)
         private val FALLBACK_SHIP_PORTAL = Color(0f, 0.5f, 1f, 1f)
@@ -219,7 +215,6 @@ class GameRenderer(
         drawBlocks(rightEdge)
         drawOrbs(rightEdge, beatIntensity)
         drawPads(rightEdge, beatIntensity)
-        updatePlayerRotation(player, delta, paused)
         drawPlayer(player)
     }
 
@@ -404,7 +399,7 @@ class GameRenderer(
             player.x, player.y,
             player.width / 2f, player.height / 2f,
             player.width, player.height,
-            scaleX, scaleY, playerVisualRotation
+            scaleX, scaleY, player.getRotation()
         )
     }
 
@@ -450,33 +445,6 @@ class GameRenderer(
 
         shape.color = Color(1f, 1f, 1f, 0.15f)
         shape.rect(player.x, cam.getWindowBottom(), player.width, cam.getPaddingHeight())
-    }
-
-    private fun updatePlayerRotation(player: AbstractPlayer, delta: Float, paused: Boolean) {
-        val vy = player.velocityY
-        val slopeRot = player.getCurrentSlopeRotation()
-        val pType = player.getType()
-
-        if (pType == AbstractPlayer.PlayerType.CUBE) {
-            if (player.isGrounded()) {
-                val nearest90 = MathUtils.round((playerVisualRotation - slopeRot) / 90f) * 90f
-                playerVisualRotation =
-                    MathUtils.lerp(playerVisualRotation, nearest90 + slopeRot, min(delta * 15f, 1f))
-            } else if (!world.isPlayerDead && !paused) {
-                val t = delta * 60f
-                val rotation =
-                    (kotlin.math.abs(vy) * CUBE_SPIN_FACTOR / 60f + 5f / 60f) * t + 300f * delta
-                if (player.isGravityFlipped()) playerVisualRotation += rotation
-                else playerVisualRotation -= rotation
-            }
-        } else if (pType == AbstractPlayer.PlayerType.SHIP) {
-            var targetAngle = MathUtils.clamp(vy * SHIP_TILT_FACTOR, -SHIP_MAX_TILT, SHIP_MAX_TILT)
-            if (player.isGrounded()) targetAngle += slopeRot
-            playerVisualRotation =
-                MathUtils.lerp(playerVisualRotation, targetAngle, min(SHIP_TILT_LERP * delta, 1f))
-        } else {
-            playerVisualRotation = 0f
-        }
     }
 
     private fun portalRegion(type: AbstractPortal.PortalType?): TextureRegion? {

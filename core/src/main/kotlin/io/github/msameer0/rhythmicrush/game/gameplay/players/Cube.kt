@@ -1,5 +1,6 @@
 package io.github.msameer0.rhythmicrush.game.gameplay.players
 
+import com.badlogic.gdx.math.MathUtils
 import io.github.msameer0.rhythmicrush.game.registries.Registry
 
 /**
@@ -17,6 +18,7 @@ class Cube : AbstractPlayer {
 
     companion object {
         private const val COYOTE_TIME = 0.083f
+        private const val CUBE_SPIN_FACTOR = 0.5f
     }
 
     constructor(startX: Float, groundY: Float) : super() {
@@ -52,6 +54,7 @@ class Cube : AbstractPlayer {
 
     override fun update(delta: Float, groundY: Float, ceilingY: Float) {
         val wasGrounded = isGrounded
+        val lastSlopeRotation = currentSlopeRotation
         isGrounded = false
         currentSlopeRotation = 0f
 
@@ -70,10 +73,21 @@ class Cube : AbstractPlayer {
             val ceilingY = 1080 - groundY - height
         }
 
-        if (isGrounded) {
+        if (wasGrounded) {
             coyoteTimer = COYOTE_TIME
-        } else if (!wasGrounded) {
-            coyoteTimer = maxOf(0f, coyoteTimer - delta)
+
+            // Snap rotation to nearest 90 degrees relative to slope
+            val currentRot = getRotation()
+            val nearest90 = MathUtils.round((currentRot - lastSlopeRotation) / 90f) * 90f
+            setRotation(MathUtils.lerp(currentRot, nearest90 + lastSlopeRotation, MathUtils.clamp(delta * 15f, 0f, 1f)))
+        } else {
+            coyoteTimer = kotlin.math.max(0f, coyoteTimer - delta)
+
+            // Rotate in air
+            val t = delta * 60f
+            val spinAmount = (kotlin.math.abs(velocityY) * CUBE_SPIN_FACTOR / 60f + 5f / 60f) * t + 300f * delta
+            if (gravityFlipped) setRotation(getRotation() + spinAmount)
+            else setRotation(getRotation() - spinAmount)
         }
 
         updateBounds()

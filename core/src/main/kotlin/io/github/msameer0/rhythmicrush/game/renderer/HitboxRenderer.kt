@@ -100,14 +100,14 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
             shape.rect(r.x, r.y, r.width, r.height)
         }
 
-        shape.color = HB_PLAYER_FILL
         val pb = player.bounds
-        shape.rect(pb.x, pb.y, pb.width, pb.height)
-
-        shape.color = HB_PLAYER_INNER_FILL
+        shape.color = HB_PLAYER_FILL
+        shape.rect(pb.x, pb.y, pb.width / 2f, pb.height / 2f, pb.width, pb.height, 1f, 1f, player.getRotation())
+ 
         val ib = player.innerBounds
-        shape.rect(ib.x, ib.y, ib.width, ib.height)
-
+        shape.color = HB_PLAYER_INNER_FILL
+        shape.rect(ib.x, ib.y, ib.width / 2f, ib.height / 2f, ib.width, ib.height, 1f, 1f, player.getRotation())
+ 
         shape.setColor(1.0f, 1.0f, 1.0f, 0.5f)
         val radius = player.width * 0.5f * Slope.CIRCLE_RATIO
         shape.circle(pb.x + pb.width * 0.5f, pb.y + pb.height * 0.5f, radius)
@@ -194,14 +194,14 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
             shape.rect(r.x, r.y, r.width, r.height)
         }
 
-        shape.color = HB_PLAYER_LINE
         val pb = player.bounds
-        shape.rect(pb.x, pb.y, pb.width, pb.height)
-
-        shape.color = HB_PLAYER_INNER_LINE
+        shape.color = HB_PLAYER_LINE
+        shape.rect(pb.x, pb.y, pb.width / 2f, pb.height / 2f, pb.width, pb.height, 1f, 1f, player.getRotation())
+ 
         val ib = player.innerBounds
-        shape.rect(ib.x, ib.y, ib.width, ib.height)
-
+        shape.color = HB_PLAYER_INNER_LINE
+        shape.rect(ib.x, ib.y, ib.width / 2f, ib.height / 2f, ib.width, ib.height, 1f, 1f, player.getRotation())
+ 
         shape.setColor(1.0f, 1.0f, 1.0f, 0.8f)
         val radius = player.width * 0.5f * Slope.CIRCLE_RATIO
         shape.circle(pb.x + pb.width * 0.5f, pb.y + pb.height * 0.5f, radius)
