@@ -19,7 +19,7 @@ abstract class AbstractScreen(protected val game: RhythmicRushGame) : Screen {
     protected val camera: OrthographicCamera = OrthographicCamera()
 
     @JvmField
-    protected val viewport: Viewport = ExtendViewport(800f, 480f, camera)
+    protected val viewport: Viewport = ExtendViewport(1920f, 1080f, camera)
 
     init {
         viewport.update(Gdx.graphics.width, Gdx.graphics.height, true)
