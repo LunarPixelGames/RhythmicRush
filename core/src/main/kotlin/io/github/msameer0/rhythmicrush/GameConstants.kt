@@ -51,4 +51,14 @@ object GameConstants {
         val DEFAULT_GROUND_COLOR = Color.valueOf("000080")
         const val BOUNDARY_LINE_WIDTH = 5f
     }
+
+    object Editor {
+        const val GRID_SIZE = 100f
+        const val SIDEBAR_W = 260f
+        const val TOPBAR_H = 48f
+        const val ITEM_PAD = 6f
+        const val ITEM_SIZE = 48f
+        const val TAB_H = 34f
+        const val CAM_SPEED = 400f
+    }
 }

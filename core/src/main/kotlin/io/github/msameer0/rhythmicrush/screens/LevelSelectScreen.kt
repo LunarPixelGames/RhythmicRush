@@ -244,7 +244,7 @@ class LevelSelectScreen @JvmOverloads constructor(
         Gdx.gl.glDisable(GL20.GL_BLEND)
         game.batch.begin()
 
-        font.data.setScale(0.35f * scale)
+        font.data.setScale(0.60f * scale)
         val text = "Enter Practice Mode"
         layout.setText(font, text)
         drawTextWithShadow(
@@ -315,7 +315,7 @@ class LevelSelectScreen @JvmOverloads constructor(
         val iconSize = panelH * 0.55f
         val spacing = panelW * 0.05f
 
-        font.data.setScale(1.7f)
+        font.data.setScale(1.55f)
         val name = current.name ?: "Unknown"
         layout.setText(font, name)
         val nameW = layout.width
@@ -328,7 +328,7 @@ class LevelSelectScreen @JvmOverloads constructor(
             scale = (maxTotalWidth - iconSize - spacing) / nameW
         }
 
-        font.data.setScale(0.85f * scale)
+        font.data.setScale(1.55f * scale)
         layout.setText(font, name)
 
         val iconX = pX + (panelW - (iconSize + spacing + layout.width)) / 2f
@@ -339,7 +339,7 @@ class LevelSelectScreen @JvmOverloads constructor(
         game.batch.draw(diffRegion, iconX, iconY, iconSize, iconSize)
         drawTextWithShadow(font, name, textX, textY, Color.WHITE)
 
-        font.data.setScale(0.8f * scale)
+        font.data.setScale(1.35f * scale)
         val diff = current.difficulty ?: "Normal"
         val diffLabel = diff.substring(0, 1).uppercase() + diff.substring(1)
         layout.setText(font, diffLabel)
@@ -358,7 +358,7 @@ class LevelSelectScreen @JvmOverloads constructor(
             font,
             bestText,
             statsX - layout.width / 2f,
-            pY - 18f,
+            pY - 15f,
             Color(1f, 1f, 1f, 0.8f)
         )
 
@@ -367,7 +367,7 @@ class LevelSelectScreen @JvmOverloads constructor(
             font,
             attemptsText,
             statsX - layout.width / 2f,
-            pY - 44f,
+            pY - 55f,
             Color(1f, 1f, 1f, 0.55f)
         )
 

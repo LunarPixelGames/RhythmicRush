@@ -16,6 +16,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.FloatArray;
+import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 import io.github.msameer0.rhythmicrush.RhythmicRushGame;
@@ -29,6 +30,7 @@ import io.github.msameer0.rhythmicrush.game.level.LevelSerializer;
 import io.github.msameer0.rhythmicrush.game.renderer.GameRenderer;
 import io.github.msameer0.rhythmicrush.game.registries.Registries;
 import io.github.msameer0.rhythmicrush.screens.MainMenuScreen;
+import io.github.msameer0.rhythmicrush.GameConstants;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,13 +40,13 @@ import java.util.Map;
 
 public class LevelEditorScreen extends AbstractScreen {
 
-    private static final float SIDEBAR_W = 260f;
-    private static final float TOPBAR_H = 48f;
-    private static final float GRID_SIZE = 50f;
-    private static final float ITEM_PAD = 6f;
-    private static final float ITEM_SIZE = 48f;
-    private static final float TAB_H = 34f;
-    private static final float CAM_SPEED = 400f;
+    private static final float SIDEBAR_W = GameConstants.Editor.SIDEBAR_W;
+    private static final float TOPBAR_H = GameConstants.Editor.TOPBAR_H;
+    private static final float GRID_SIZE = GameConstants.Editor.GRID_SIZE;
+    private static final float ITEM_PAD = GameConstants.Editor.ITEM_PAD;
+    private static final float ITEM_SIZE = GameConstants.Editor.ITEM_SIZE;
+    private static final float TAB_H = GameConstants.Editor.TAB_H;
+    private static final float CAM_SPEED = GameConstants.Editor.CAM_SPEED;
 
     private static final Color C_BG = new Color(0.10f, 0.10f, 0.14f, 1f);
     private static final Color C_CANVAS = new Color(0.13f, 0.13f, 0.18f, 1f);
@@ -136,6 +138,8 @@ public class LevelEditorScreen extends AbstractScreen {
     private GameRenderer ptRenderer;
     private FixedTickEngine ptEngine;
     private OrthographicCamera ptCam;
+    private ExtendViewport ptViewport;
+    private GameCamera ptGameCamera;
     private boolean lastJump = false;
 
     private static final int TRAIL_SAMPLE = 3;
@@ -293,7 +297,7 @@ public class LevelEditorScreen extends AbstractScreen {
         if (playtesting) {
             tickPlaytest(delta);
         } else if (levelMusic != null && levelMusic.isPlaying()) {
-            camX = levelMusic.getPosition() * 320f;
+            camX = levelMusic.getPosition() * GameConstants.World.SCROLL_SPEED;
         }
     }
 
@@ -316,9 +320,9 @@ public class LevelEditorScreen extends AbstractScreen {
         drawSidebar(sw, sh, canvasH);
 
         if (playtesting && ptRenderer != null) {
-            Gdx.gl.glViewport(0, (int) TOPBAR_H, (int) canvasW, (int) canvasH);
+            ptViewport.setScreenBounds(0, (int) TOPBAR_H, (int) canvasW, (int) canvasH);
+            ptViewport.apply();
             ptRenderer.render(Gdx.graphics.getDeltaTime(), false, false);
-            Gdx.gl.glViewport(0, 0, sw, sh);
             uiViewport.apply();
         }
 
@@ -440,7 +444,7 @@ public class LevelEditorScreen extends AbstractScreen {
         shapes.begin(ShapeRenderer.ShapeType.Filled);
         shapes.setColor(C_CANVAS);
         shapes.rect(0, 0, canvasW, canvasH);
-        float groundSY = worldToSY(50f, canvasH);
+        float groundSY = worldToSY(GameConstants.World.GROUND_Y, canvasH);
         shapes.setColor(C_GROUND);
         shapes.rect(0, groundSY - 3, canvasW, 6);
         shapes.end();
@@ -796,10 +800,14 @@ public class LevelEditorScreen extends AbstractScreen {
         trailHasData = false;
         float canvasW = Gdx.graphics.getWidth() - SIDEBAR_W, canvasH = Gdx.graphics.getHeight() - TOPBAR_H;
         ptCam = new OrthographicCamera();
-        ptCam.setToOrtho(false, canvasW, canvasH);
+        ptViewport = new ExtendViewport(1920f, 1080f, ptCam);
+        float canvasPixelW = Gdx.graphics.getWidth() - SIDEBAR_W;
+        float canvasPixelH = Gdx.graphics.getHeight() - TOPBAR_H;
+        ptViewport.update((int) canvasPixelW, (int) canvasPixelH, true);
         ptCam.update();
         ptWorld = new GameWorld();
-        ptRenderer = new GameRenderer(ptWorld, ptCam, getGame().getBatch(), getGame().getSettingsManager(), getGame().getAtlasManager(), new GameCamera(ptCam, ptWorld));
+        ptGameCamera = new GameCamera(ptCam, ptWorld);
+        ptRenderer = new GameRenderer(ptWorld, ptCam, getGame().getBatch(), getGame().getSettingsManager(), getGame().getAtlasManager(), ptGameCamera);
         ptEngine = new FixedTickEngine(ptWorld);
         ptWorld.loadLevel(levelData);
         startEditorMusic(true);
@@ -808,6 +816,14 @@ public class LevelEditorScreen extends AbstractScreen {
     private void tickPlaytest(float delta) {
         ptEngine.update(delta);
         ptWorld.updateVisuals(delta);
+
+        // Update camera tracking (Y-padding, boundaries) just like GameScreen
+        if (ptWorld.getPlayer() != null) {
+            ptGameCamera.update(ptWorld.getPlayer(), delta);
+            ptWorld.setBoundaryTop(ptGameCamera.getCeilingY());
+            ptWorld.setBoundaryBottom(ptGameCamera.getFloorY());
+        }
+
         trailTick++;
         if (trailTick >= TRAIL_SAMPLE && ptWorld.getPlayer() != null) {
             trailTick = 0;
@@ -825,6 +841,7 @@ public class LevelEditorScreen extends AbstractScreen {
         ptRenderer = null;
         ptWorld = null;
         ptEngine = null;
+        ptGameCamera = null;
         stopAndDisposeMusic();
     }
 
@@ -1458,7 +1475,7 @@ public class LevelEditorScreen extends AbstractScreen {
             }
             if (levelMusic != null) {
                 if (restart) levelMusic.setPosition(0);
-                else levelMusic.setPosition(Math.max(0, camX / 320f));
+                else levelMusic.setPosition(Math.max(0, camX / GameConstants.World.SCROLL_SPEED));
                 levelMusic.play();
             }
         } catch (Exception ignored) {
