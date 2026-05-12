@@ -88,15 +88,15 @@ class OverlayUI(
         val mobile = Gdx.app.type == com.badlogic.gdx.Application.ApplicationType.Android ||
             Gdx.app.type == com.badlogic.gdx.Application.ApplicationType.iOS
         if (mobile) {
-            panelW = 740f
-            panelH = 480f
-            btnSize = 100f
-            uiScale = 1.4f
+            panelW = 1600f
+            panelH = 1000f
+            btnSize = 220f
+            uiScale = 3.0f
         } else {
-            panelW = 520f
-            panelH = 360f
-            btnSize = 72f
-            uiScale = 1.0f
+            panelW = 1150f
+            panelH = 800f
+            btnSize = 160f
+            uiScale = 2.2f
         }
         lastPanelW = -1
     }

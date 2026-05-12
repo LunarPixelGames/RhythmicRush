@@ -112,7 +112,7 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         val height = viewport.worldHeight
 
         val barWidth = width * 0.6f
-        val barHeight = 10f
+        val barHeight = 25f
 
         var titleW = 0f
         var titleH = 0f
@@ -123,15 +123,15 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             titleH = region.regionHeight * titleScale
         }
 
-        val textPadding = 22f
-        val titlePadding = if (titleRegion != null) 25f else 0f
+        val textPadding = 45f
+        val titlePadding = if (titleRegion != null) 50f else 0f
 
         val totalGroupH = titleH + titlePadding + barHeight + textPadding
         val groupBottomY = (height - totalGroupH) / 2f
 
         val barY = groupBottomY + textPadding
         val titleY = barY + barHeight + titlePadding
-        val textY = barY - 10f
+        val textY = barY - 25f
 
         titleRegion?.let { region ->
             game.batch.projectionMatrix = camera.combined
@@ -152,7 +152,7 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
         statusFont?.let { font ->
             game.batch.begin()
-            font.data.setScale(0.6f)
+            font.data.setScale(1.2f)
             layout.setText(font, statusText)
             font.color = Color.LIGHT_GRAY
             font.draw(game.batch, statusText, (width - layout.width) / 2f, textY)

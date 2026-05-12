@@ -298,7 +298,7 @@ class LevelSelectScreen @JvmOverloads constructor(
             panelTexture?.dispose()
             panelTexture = createRoundedRect(
                 texW, texH,
-                (PANEL_CORNER_RADIUS * (panelW / 800f)).toInt(),
+                (PANEL_CORNER_RADIUS * (panelW / 1920f) * 2.4f).toInt(),
                 Color(0.2f, 0.2f, 0.28f, 1f)
             )
             panelTexture?.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear)
@@ -315,7 +315,7 @@ class LevelSelectScreen @JvmOverloads constructor(
         val iconSize = panelH * 0.55f
         val spacing = panelW * 0.05f
 
-        font.data.setScale(0.85f)
+        font.data.setScale(1.7f)
         val name = current.name ?: "Unknown"
         layout.setText(font, name)
         val nameW = layout.width
@@ -339,7 +339,7 @@ class LevelSelectScreen @JvmOverloads constructor(
         game.batch.draw(diffRegion, iconX, iconY, iconSize, iconSize)
         drawTextWithShadow(font, name, textX, textY, Color.WHITE)
 
-        font.data.setScale(0.38f * scale)
+        font.data.setScale(0.8f * scale)
         val diff = current.difficulty ?: "Normal"
         val diffLabel = diff.substring(0, 1).uppercase() + diff.substring(1)
         layout.setText(font, diffLabel)
@@ -348,7 +348,7 @@ class LevelSelectScreen @JvmOverloads constructor(
         val levelKey = current.fileName ?: "${current.name}.json"
         val progress = game.progressManager.getOrCreate(levelKey)
 
-        font.data.setScale(0.42f)
+        font.data.setScale(0.8f)
         val bestText = "Best: ${progress.bestPercent}%"
         val attemptsText = "Total Attempts: ${progress.totalAttempts}"
         val statsX = pX + panelW / 2f

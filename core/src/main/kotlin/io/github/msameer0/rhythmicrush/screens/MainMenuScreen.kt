@@ -280,7 +280,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             settingsH
         )
 
-        panelW = min(vw * 0.78f, 780f)
+        panelW = min(vw * 0.78f, 1560f)
         val targetH = vh * PANEL_HEIGHT_FRACTION
         rowStep = (targetH * 0.72f) / MAX_ROWS_PER_PAGE
         panelPadT = targetH * 0.22f
@@ -298,16 +298,16 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         panelX = vw / 2f - panelW / 2f
         panelY = vh / 2f - panelH / 2f
 
-        backW = 56f
-        backH = 56f
-        backX = 25f
-        backY = vh - backH - 25f
+        backW = 112f
+        backH = 112f
+        backX = 50f
+        backY = vh - backH - 50f
 
         rowStartY = panelY + panelH - panelPadT
-        arrowSize = 48f
+        arrowSize = 96f
         arrowY = panelY + panelH / 2f - arrowSize / 2f
-        arrowLeftX = panelX - arrowSize - 10f
-        arrowRightX = panelX + panelW + 10f
+        arrowLeftX = panelX - arrowSize - 20f
+        arrowRightX = panelX + panelW + 20f
         lastPanelW = -1
     }
 
@@ -384,10 +384,10 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
     private fun drawSettingsDots() {
         val total = totalSettingsPages()
         if (total <= 1) return
-        val dotR = 6f
-        val dotGap = 20f
+        val dotR = 12f
+        val dotGap = 40f
         val startX = panelX + panelW / 2f - (total * dotGap - (dotGap - dotR * 2f)) / 2f + dotR
-        val dotY = panelY + 25f
+        val dotY = panelY + 50f
         shapes.begin(ShapeRenderer.ShapeType.Filled)
         for (i in 0 until total) {
             shapes.color = if (i == currentSettingsPage) COL_DOT_ACT else COL_DOT_INACT
@@ -702,7 +702,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         game.batch.begin()
         val contentX = panelX + 55f
         val contentY = panelY + panelH - panelPadT - 5f
-        val lineSpacing = 42f * (panelH / 480f)
+        val lineSpacing = 42f * (panelH / 1080f) * 2.25f
         font.data.setScale(settingsFontScale * 0.85f)
 
         if (currentInfoPage == INFO_TAB_HOWTOPLAY) {
@@ -764,10 +764,10 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
     private fun drawInfoDots() {
         val total = INFO_TAB_COUNT
-        val dotR = 6f
-        val dotGap = 20f
+        val dotR = 12f
+        val dotGap = 40f
         val startX = panelX + panelW / 2f - (total * dotGap - (dotGap - dotR * 2f)) / 2f + dotR
-        val dotY = panelY + 25f
+        val dotY = panelY + 50f
         shapes.begin(ShapeRenderer.ShapeType.Filled)
         for (i in 0 until total) {
             shapes.color = if (i == currentInfoPage) COL_DOT_ACT else COL_DOT_INACT
@@ -805,7 +805,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         }
 
         if (lines != null) {
-            val lineH = 32f * (panelH / 480f)
+            val lineH = 32f * (panelH / 1080f) * 2.25f
             for (i in 0 until lines.size) {
                 val line = lines.get(i)
                 if (t.x >= panelX + 35f && t.x <= panelX + panelW - 35f &&
@@ -818,7 +818,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         }
 
         if (currentInfoPage == INFO_TAB_SOCIALS) {
-            val lineH = 32f * (panelH / 480f)
+            val lineH = 32f * (panelH / 1080f) * 2.25f
             if (t.x >= panelX + panelW / 2f - 100f && t.x <= panelX + panelW / 2f + 100f &&
                 t.y >= privacyPolicyLine.y - lineH && t.y <= privacyPolicyLine.y
             ) {
