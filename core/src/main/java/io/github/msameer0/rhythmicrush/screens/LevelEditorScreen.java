@@ -20,6 +20,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 import io.github.msameer0.rhythmicrush.RhythmicRushGame;
 import io.github.msameer0.rhythmicrush.font.FontManager;
+import io.github.msameer0.rhythmicrush.game.GameCamera;
 import io.github.msameer0.rhythmicrush.game.GameWorld;
 import io.github.msameer0.rhythmicrush.game.engine.FixedTickEngine;
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.BlockType;
@@ -798,7 +799,7 @@ public class LevelEditorScreen extends AbstractScreen {
         ptCam.setToOrtho(false, canvasW, canvasH);
         ptCam.update();
         ptWorld = new GameWorld();
-        ptRenderer = new GameRenderer(ptWorld, ptCam, getGame().getBatch(), getGame().getSettingsManager(), getGame().getAtlasManager());
+        ptRenderer = new GameRenderer(ptWorld, ptCam, getGame().getBatch(), getGame().getSettingsManager(), getGame().getAtlasManager(), new GameCamera(ptCam, ptWorld));
         ptEngine = new FixedTickEngine(ptWorld);
         ptWorld.loadLevel(levelData);
         startEditorMusic(true);
@@ -1044,7 +1045,7 @@ public class LevelEditorScreen extends AbstractScreen {
         if ("red_pad".equals(e.getType())) return redPadRegion;
         if ("black_pad".equals(e.getType())) return blackPadRegion;
         if ("green_pad".equals(e.getType())) return greenPadRegion;
-        
+
 
 
         if (Registries.BLOCKS.has(e.getType())) {

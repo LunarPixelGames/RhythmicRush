@@ -18,6 +18,7 @@ class GameCamera(val camera: OrthographicCamera, private val world: GameWorld) {
     private var cameraTargetY = 540f
     private var windowBottom = 0f
     private var isFirstUpdate = true
+    private var shouldSnap = false
 
     private var lastPlayerType: AbstractPlayer.PlayerType? = null
     private var shipLockedY = 810f
@@ -25,6 +26,7 @@ class GameCamera(val camera: OrthographicCamera, private val world: GameWorld) {
     fun reset() {
         isFirstUpdate = true
         lastPlayerType = null
+        shouldSnap = true
     }
 
     fun update(player: AbstractPlayer, delta: Float) {
@@ -41,7 +43,11 @@ class GameCamera(val camera: OrthographicCamera, private val world: GameWorld) {
                 // Centered on portal, but max 810 to keep ground visible at 34px
                 shipLockedY = Math.max(player.y, 810f)
             } else if (currentType == AbstractPlayer.PlayerType.CUBE) {
-                isFirstUpdate = true
+                // When transitioning back to Cube, try to maintain current camera Y if possible
+                val idealBottom = camera.position.y - 250f
+                windowBottom = MathUtils.clamp(idealBottom, player.y + player.height - 500f, player.y)
+                cameraTargetY = windowBottom + 250f
+                isFirstUpdate = false
             }
             lastPlayerType = currentType
         }
@@ -52,7 +58,10 @@ class GameCamera(val camera: OrthographicCamera, private val world: GameWorld) {
             if (isFirstUpdate) {
                 windowBottom = player.y
                 cameraTargetY = windowBottom + (paddingHeight / 2f)
-                camera.position.y = cameraTargetY
+                if (shouldSnap) {
+                    camera.position.y = cameraTargetY
+                    shouldSnap = false
+                }
                 isFirstUpdate = false
             } else {
                 val windowTop = windowBottom + paddingHeight
@@ -69,8 +78,12 @@ class GameCamera(val camera: OrthographicCamera, private val world: GameWorld) {
                 camera.position.y = MathUtils.lerp(camera.position.y, cameraTargetY, min(delta * 6f, 1f))
             }
         } else if (currentType == AbstractPlayer.PlayerType.SHIP) {
+            if (shouldSnap) {
+                camera.position.y = shipLockedY
+                shouldSnap = false
+            }
             // Pan smoothly towards the locked height
-            camera.position.y = MathUtils.lerp(camera.position.y, shipLockedY, min(delta * 4f, 1f))
+            camera.position.y = MathUtils.lerp(camera.position.y, shipLockedY, min(delta * 6f, 1f))
         }
 
         camera.update()
@@ -93,4 +106,7 @@ class GameCamera(val camera: OrthographicCamera, private val world: GameWorld) {
         }
         return -Float.MAX_VALUE
     }
+
+    fun getWindowBottom(): Float = windowBottom
+    fun getPaddingHeight(): Float = 500f
 }

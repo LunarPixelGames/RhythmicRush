@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.utils.ObjectMap
 import io.github.msameer0.rhythmicrush.atlas.AtlasManager
+import io.github.msameer0.rhythmicrush.game.GameCamera
 import io.github.msameer0.rhythmicrush.game.GameWorld
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.BlockType
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Slope
@@ -32,7 +33,8 @@ class GameRenderer(
     private val camera: OrthographicCamera,
     private val batch: SpriteBatch,
     private val settings: SettingsManager,
-    atlasManager: AtlasManager
+    atlasManager: AtlasManager,
+    private val customCamera: GameCamera? = null
 ) {
 
     companion object {
@@ -67,6 +69,8 @@ class GameRenderer(
 
     var playerVisualRotation = 0f
         private set
+    
+    private var boundaryProgress = 0f
 
     private var _lastDelta = 0f
 
@@ -113,6 +117,9 @@ class GameRenderer(
         bgColor: Color = world.backgroundColor,
         beatIntensity: Float = 0f
     ) {
+        val targetProgress = if (world.player?.getType() == AbstractPlayer.PlayerType.SHIP) 1f else 0f
+        boundaryProgress = MathUtils.lerp(boundaryProgress, targetProgress, min(delta * 10f, 1f))
+        
         _lastDelta = delta
         val player = world.player ?: return
 
@@ -124,6 +131,14 @@ class GameRenderer(
 
         if (bgTexture != null) {
             drawBackground(bgTexture, bgColor)
+        }
+
+        if (showHitboxes) {
+            batch.end()
+            shape.begin(ShapeRenderer.ShapeType.Filled)
+            drawCameraDebug()
+            shape.end()
+            batch.begin()
         }
 
         batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
@@ -406,23 +421,35 @@ class GameRenderer(
         shape.color = Color.WHITE
         shape.rect(worldLeft, world.groundY, worldWidth, 5f)
 
-        // 2. Draw Ship Mode Boundaries
-        val player = world.player ?: return
-        if (player.getType() == AbstractPlayer.PlayerType.SHIP) {
-            // Top Boundary (Ceiling)
+        // 2. Draw Ship Mode Boundaries (Animated)
+        if (boundaryProgress > 0.001f) {
+            val bp = boundaryProgress
+            
+            // Top Boundary (Ceiling) - Slides down from screenTop
+            val ceilingY = screenTop - (34f * bp)
             shape.color = world.groundColor
-            shape.rect(worldLeft, screenTop - 34f, worldWidth, 34f)
+            shape.rect(worldLeft, ceilingY, worldWidth, 34f)
             shape.color = Color.WHITE
-            shape.rect(worldLeft, screenTop - 39f, worldWidth, 5f)
+            shape.rect(worldLeft, ceilingY - 5f, worldWidth, 5f)
 
-            // Bottom Boundary (Fake Floor if real ground is off-screen)
+            // Bottom Boundary (Fake Floor) - Slides up from screenBottom
             if (screenBottom > world.groundY - 34f) {
+                val floorY = screenBottom - 34f * (1f - bp)
                 shape.color = world.groundColor
-                shape.rect(worldLeft, screenBottom, worldWidth, 34f)
+                shape.rect(worldLeft, floorY, worldWidth, 34f)
                 shape.color = Color.WHITE
-                shape.rect(worldLeft, screenBottom + 34f, worldWidth, 5f)
+                shape.rect(worldLeft, floorY + 34f, worldWidth, 5f)
             }
         }
+    }
+
+    private fun drawCameraDebug() {
+        val player = world.player ?: return
+        val cam = customCamera ?: return
+        if (player.getType() != AbstractPlayer.PlayerType.CUBE) return
+
+        shape.color = Color(1f, 1f, 1f, 0.15f)
+        shape.rect(player.x, cam.getWindowBottom(), player.width, cam.getPaddingHeight())
     }
 
     private fun updatePlayerRotation(player: AbstractPlayer, delta: Float, paused: Boolean) {

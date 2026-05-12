@@ -164,7 +164,7 @@ class GameScreen @JvmOverloads constructor(
     init {
         gameViewport.update(Gdx.graphics.width, Gdx.graphics.height, true)
 
-        renderer = GameRenderer(world, gameCamera, game.batch, game.settingsManager, game.atlasManager)
+        renderer = GameRenderer(world, gameCamera, game.batch, game.settingsManager, game.atlasManager, customCamera)
 
         val font = game.fontManager.get(FontManager.SIZE_SMALL)
         val pauseFont = game.fontManager.get(FontManager.SIZE_SMALL)
