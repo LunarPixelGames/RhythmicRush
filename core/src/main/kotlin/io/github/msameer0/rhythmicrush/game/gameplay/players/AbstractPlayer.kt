@@ -56,6 +56,8 @@ abstract class AbstractPlayer() {
     protected var justPressed: Boolean = false
     @JvmField
     protected var world: GameWorld? = null
+    @JvmField
+    var lastPortalCenterY: Float = 0f
 
     fun isMini(): Boolean = mini
 

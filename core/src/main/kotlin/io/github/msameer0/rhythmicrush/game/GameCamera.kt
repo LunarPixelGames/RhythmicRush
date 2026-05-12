@@ -41,7 +41,7 @@ class GameCamera(val camera: OrthographicCamera, private val world: GameWorld) {
         if (currentType != lastPlayerType) {
             if (currentType == AbstractPlayer.PlayerType.SHIP) {
                 // Centered on portal, but max 810 to keep ground visible at 34px
-                shipLockedY = Math.max(player.y, 810f)
+                shipLockedY = Math.max(player.lastPortalCenterY, 810f)
             } else if (currentType == AbstractPlayer.PlayerType.CUBE) {
                 // When transitioning back to Cube, try to maintain current camera Y if possible
                 val idealBottom = camera.position.y - 250f
