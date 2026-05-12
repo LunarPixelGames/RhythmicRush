@@ -163,14 +163,6 @@ class GameRenderer(
         batch.draw(texture, x, y, viewW, viewH)
     }
 
-    fun updateCamera(player: AbstractPlayer) {
-        camera.position.x = player.x + CAMERA_X_OFFSET
-        if (player.isMini()) camera.position.x -= 25f
-        camera.update()
-
-        val worldLeft = camera.position.x - camera.viewportWidth / 2f
-        world.cullX = worldLeft
-    }
 
     private fun drawSawBlades(paused: Boolean, rightEdge: Float) {
         val cullStart = world.hazardCull

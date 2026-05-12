@@ -15,6 +15,7 @@ import com.badlogic.gdx.utils.TimeUtils
 import com.badlogic.gdx.utils.viewport.ExtendViewport
 import io.github.msameer0.rhythmicrush.RhythmicRushGame
 import io.github.msameer0.rhythmicrush.font.FontManager
+import io.github.msameer0.rhythmicrush.game.GameCamera
 import io.github.msameer0.rhythmicrush.game.GameWorld
 import io.github.msameer0.rhythmicrush.game.engine.FixedTickEngine
 import io.github.msameer0.rhythmicrush.game.level.LevelData
@@ -51,6 +52,7 @@ class GameScreen @JvmOverloads constructor(
     private val practice: PracticeManager? = if (isPracticeMode) PracticeManager(world) else null
 
     private val gameCamera = OrthographicCamera()
+    private val customCamera = GameCamera(gameCamera, world)
     private val gameViewport = ExtendViewport(1920f, 1080f, gameCamera)
 
     private val shapes = ShapeRenderer()
@@ -326,7 +328,7 @@ class GameScreen @JvmOverloads constructor(
         }
         
         world.updateVisuals(delta)
-        world.player?.let { renderer.updateCamera(it) }
+        world.player?.let { customCamera.update(it, delta) }
     }
 
     override fun draw() {
@@ -437,6 +439,7 @@ class GameScreen @JvmOverloads constructor(
         hud.hideNewBestPopup()
         music.stopAndDispose()
         world.reset()
+        customCamera.reset()
         engine.reset()
         music.start()
         recordAttempt()
@@ -479,6 +482,7 @@ class GameScreen @JvmOverloads constructor(
         lastDelta = 0f
         lastJumpHeld = false
         world.reset()
+        customCamera.reset()
         engine.reset()
         music.start()
         recordAttempt()
@@ -499,6 +503,7 @@ class GameScreen @JvmOverloads constructor(
         lastJumpHeld = false
 
         val musicOffset = practice.applyLatestCheckpoint()
+        customCamera.reset()
         engine.reset()
         music.stopAndDispose()
         music.start(musicOffset)
