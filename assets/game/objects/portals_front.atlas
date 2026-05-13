@@ -20,28 +20,28 @@ cube
   index: -1
 gravity
   rotate: false
-  xy: 609, 39
-  size: 150, 346
-  orig: 150, 346
+  xy: 305, 1
+  size: 150, 384
+  orig: 150, 384
   offset: 0, 0
   index: -1
 mini
   rotate: false
-  xy: 761, 39
-  size: 150, 346
-  orig: 150, 346
+  xy: 457, 1
+  size: 150, 384
+  orig: 150, 384
   offset: 0, 0
   index: -1
 ship
   rotate: false
-  xy: 305, 1
+  xy: 609, 1
   size: 150, 384
   orig: 150, 384
   offset: 0, 0
   index: -1
 ufo
   rotate: false
-  xy: 457, 1
+  xy: 761, 1
   size: 150, 384
   orig: 150, 384
   offset: 0, 0
