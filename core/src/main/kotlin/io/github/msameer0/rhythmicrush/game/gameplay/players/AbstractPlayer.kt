@@ -153,15 +153,13 @@ abstract class AbstractPlayer() {
             20f
         )
 
-        // Update Polygons
-        if (playerPolygon.vertices.size != 8) {
-            playerPolygon.vertices = floatArrayOf(
-                0f, 0f,
-                width, 0f,
-                width, height,
-                0f, height
-            )
-        }
+        // Update Polygons - Always refresh vertices to reflect current width/height (e.g. mini mode)
+        playerPolygon.vertices = floatArrayOf(
+            0f, 0f,
+            width, 0f,
+            width, height,
+            0f, height
+        )
         playerPolygon.setPosition(x, y)
         playerPolygon.setOrigin(width / 2f, height / 2f)
         playerPolygon.rotation = rotation
