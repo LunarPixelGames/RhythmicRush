@@ -11,11 +11,9 @@ import io.github.msameer0.rhythmicrush.game.registries.Registry
 @Registry(id = "spike")
 class Spike : AbstractHazard, Rotatable {
     override var rotation: Float = 0f
-    val hitbox: Rectangle
 
     constructor() : super(0f, 0f, TEXTURE_SIZE, TEXTURE_SIZE) {
         this.type = HazardType.SPIKE
-        this.hitbox = Rectangle()
     }
 
     constructor(x: Float, y: Float) : this(x, y, 0f) {
@@ -25,7 +23,6 @@ class Spike : AbstractHazard, Rotatable {
     constructor(x: Float, y: Float, rotation: Float) : super(x, y, TEXTURE_SIZE, TEXTURE_SIZE) {
         this.type = HazardType.SPIKE
         this.rotation = rotation
-        this.hitbox = Rectangle()
         updateHitbox()
     }
 
@@ -42,12 +39,20 @@ class Spike : AbstractHazard, Rotatable {
     }
 
     private fun updateHitbox() {
-        when ((Math.round(rotation / 90f) * 90 % 360 + 360) % 360) {
-            90 -> hitbox.set(x + TEXTURE_SIZE - HITBOX_H, y + HITBOX_CENTER_X, HITBOX_H, HITBOX_W)
-            180 -> hitbox.set(x + HITBOX_CENTER_X, y + TEXTURE_SIZE - HITBOX_H, HITBOX_W, HITBOX_H)
-            270 -> hitbox.set(x, y + HITBOX_CENTER_X, HITBOX_H, HITBOX_W)
-            else -> hitbox.set(x + HITBOX_CENTER_X, y, HITBOX_W, HITBOX_H)
-        }
+        // Revert to original forgiving rectangular hitbox (25x50 centered)
+        val xMin = (TEXTURE_SIZE - HITBOX_W) / 2f
+        val xMax = xMin + HITBOX_W
+        val yMin = 0f
+        val yMax = HITBOX_H
+        
+        hazardPolygon.vertices = floatArrayOf(
+            xMin, yMin,
+            xMax, yMin,
+            xMax, yMax,
+            xMin, yMax
+        )
+        hazardPolygon.rotation = rotation
+        updateBounds()
     }
 
     override fun reset() {
@@ -61,9 +66,7 @@ class Spike : AbstractHazard, Rotatable {
     }
 
     public override fun onTouch(player: AbstractPlayer?) {
-        if (hitbox.overlaps(player?.getBounds())) {
-            player?.getWorld()?.playerDied()
-        }
+        player?.getWorld()?.playerDied()
     }
 
     companion object {

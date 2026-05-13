@@ -68,19 +68,9 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
         for (i in world.hazardCull until world.hazards.size) {
             val h = world.hazards.get(i)
             if (h.x > rightEdge) break
-            when (h.type) {
-                AbstractHazard.HazardType.SPIKE -> {
-                    val r = (h as Spike).hitbox
-                    shape.rect(r.x, r.y, r.width, r.height)
-                }
-
-                AbstractHazard.HazardType.HALF_SPIKE -> {
-                    val r = (h as HalfSpike).hitbox
-                    shape.rect(r.x, r.y, r.width, r.height)
-                }
-
-                else -> shape.rect(h.x, h.y, h.width, h.height)
-            }
+            
+            val poly = h.hazardPolygon
+            drawFilledPolygon(poly)
         }
 
         shape.color = HB_ORB_FILL
@@ -100,17 +90,15 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
             shape.rect(r.x, r.y, r.width, r.height)
         }
 
-        val pb = player.bounds
-        shape.color = HB_PLAYER_FILL
-        shape.rect(pb.x, pb.y, pb.width / 2f, pb.height / 2f, pb.width, pb.height, 1f, 1f, player.getRotation())
+        drawFilledPolygon(player.getPlayerPolygon())
  
-        val ib = player.innerBounds
+        val ib = player.getInnerPolygon()
         shape.color = HB_PLAYER_INNER_FILL
-        shape.rect(ib.x, ib.y, ib.width / 2f, ib.height / 2f, ib.width, ib.height, 1f, 1f, player.getRotation())
+        drawFilledPolygon(ib)
  
         shape.setColor(1.0f, 1.0f, 1.0f, 0.5f)
         val radius = player.width * 0.5f * Slope.CIRCLE_RATIO
-        shape.circle(pb.x + pb.width * 0.5f, pb.y + pb.height * 0.5f, radius)
+        shape.circle(player.x + player.width * 0.5f, player.y + player.height * 0.5f, radius)
 
         shape.end()
     }
@@ -153,27 +141,19 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
         for (i in world.hazardCull until world.hazards.size) {
             val h = world.hazards.get(i)
             if (h.x > rightEdge) break
-            when (h.type) {
-                AbstractHazard.HazardType.SPIKE -> {
-                    val r = (h as Spike).hitbox
-                    shape.rect(r.x, r.y, r.width, r.height)
-                }
+            
+            val poly = h.hazardPolygon
+            shape.polygon(poly.transformedVertices)
 
-                AbstractHazard.HazardType.HALF_SPIKE -> {
-                    val r = (h as HalfSpike).hitbox
-                    shape.rect(r.x, r.y, r.width, r.height)
-                }
-
-                AbstractHazard.HazardType.SAW_BLADE -> {
-                    val saw = h as SawBlade
-                    shape.circle(
-                        saw.x + saw.diameter / 2f,
-                        saw.y + saw.diameter / 2f,
-                        saw.diameter / 2f, 32
-                    )
-                }
-
-                else -> {}
+            if (h.type == AbstractHazard.HazardType.SAW_BLADE) {
+                val saw = h as SawBlade
+                shape.color = Color.WHITE
+                shape.circle(
+                    saw.x + saw.diameter / 2f,
+                    saw.y + saw.diameter / 2f,
+                    saw.diameter * 0.35f, 32
+                )
+                shape.color = HB_HAZARD_LINE
             }
         }
 
@@ -194,17 +174,15 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
             shape.rect(r.x, r.y, r.width, r.height)
         }
 
-        val pb = player.bounds
         shape.color = HB_PLAYER_LINE
-        shape.rect(pb.x, pb.y, pb.width / 2f, pb.height / 2f, pb.width, pb.height, 1f, 1f, player.getRotation())
+        shape.polygon(player.getPlayerPolygon().transformedVertices)
  
-        val ib = player.innerBounds
         shape.color = HB_PLAYER_INNER_LINE
-        shape.rect(ib.x, ib.y, ib.width / 2f, ib.height / 2f, ib.width, ib.height, 1f, 1f, player.getRotation())
+        shape.polygon(player.getInnerPolygon().transformedVertices)
  
         shape.setColor(1.0f, 1.0f, 1.0f, 0.8f)
         val radius = player.width * 0.5f * Slope.CIRCLE_RATIO
-        shape.circle(pb.x + pb.width * 0.5f, pb.y + pb.height * 0.5f, radius)
+        shape.circle(player.x + player.width * 0.5f, player.y + player.height * 0.5f, radius)
 
         shape.end()
     }
@@ -240,5 +218,19 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
             }
         }
         shape.triangle(line[0], line[1], line[2], line[3], solidCX, solidCY)
+    }
+
+    private fun drawFilledPolygon(poly: com.badlogic.gdx.math.Polygon) {
+        val vertices = poly.transformedVertices
+        if (vertices.size < 6) return
+
+        // Simple triangulation for convex polygons (fan)
+        for (i in 2 until vertices.size - 2 step 2) {
+            shape.triangle(
+                vertices[0], vertices[1],
+                vertices[i], vertices[i + 1],
+                vertices[i + 2], vertices[i + 3]
+            )
+        }
     }
 }

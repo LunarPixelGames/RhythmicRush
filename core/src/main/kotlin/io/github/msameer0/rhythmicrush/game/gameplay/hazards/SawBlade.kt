@@ -2,7 +2,11 @@ package io.github.msameer0.rhythmicrush.game.gameplay.hazards
 
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.game.registries.Registry
+import com.badlogic.gdx.math.Circle
+import com.badlogic.gdx.math.Intersector
 import com.badlogic.gdx.math.MathUtils
+import com.badlogic.gdx.math.Polygon
+import com.badlogic.gdx.math.Vector2
 import kotlin.math.max
 import kotlin.math.min
 
@@ -48,20 +52,43 @@ class SawBlade : AbstractHazard {
 
     override fun tryTouch(player: AbstractPlayer) {
         val radius = width * 0.35f
-        val cx = x + radius
-        val cy = y + radius
+        val cx = x + width / 2f
+        val cy = y + height / 2f
 
-        val pr = player.getBounds()
+        val collisionCircle = Circle(cx, cy, radius)
+        val pPoly = player.getPlayerPolygon()
 
-        val closestX = MathUtils.clamp(cx, pr.x, pr.x + pr.width)
-        val closestY = MathUtils.clamp(cy, pr.y, pr.y + pr.height)
+        // Broad phase using bounding box
+        if (!pPoly.boundingRectangle.overlaps(bounds)) return
 
-        val dx = cx - closestX
-        val dy = cy - closestY
-
-        if (dx * dx + dy * dy <= radius * radius) {
+        // Precise phase: Circle vs Rotated Polygon
+        if (circleOverlapsPolygon(collisionCircle, pPoly)) {
             onTouch(player)
         }
+    }
+
+    private fun circleOverlapsPolygon(circle: Circle, poly: Polygon): Boolean {
+        // 1. Check if circle center is inside polygon
+        if (poly.contains(circle.x, circle.y)) return true
+
+        // 2. Check if any edge intersects the circle
+        val vertices = poly.transformedVertices
+        val center = Vector2(circle.x, circle.y)
+        val squareRadius = circle.radius * circle.radius
+
+        for (i in 0 until vertices.size step 2) {
+            val x1 = vertices[i]
+            val y1 = vertices[i + 1]
+            val x2 = if (i + 2 < vertices.size) vertices[i + 2] else vertices[0]
+            val y2 = if (i + 3 < vertices.size) vertices[i + 3] else vertices[1]
+
+            if (Intersector.intersectSegmentCircle(
+                    Vector2(x1, y1), Vector2(x2, y2),
+                    center, squareRadius
+                )) return true
+        }
+
+        return false
     }
 
     fun tickVisualRotation(delta: Float) {
