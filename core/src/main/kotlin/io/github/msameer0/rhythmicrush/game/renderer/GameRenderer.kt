@@ -408,14 +408,14 @@ class GameRenderer(
     }
 
     private fun drawGround() {
+        val player = world.player ?: return
         val worldWidth = camera.viewportWidth
         val worldLeft = camera.position.x - worldWidth / 2f
         val viewportHeight = camera.viewportHeight
-        val cam = customCamera ?: return
         val screenBottom = camera.position.y - viewportHeight / 2f
         val screenTop = camera.position.y + viewportHeight / 2f
         val bp = boundaryProgress
-        val isCorridor = cam.isUsingCorridor()
+        val isCorridor = player.isUsingCorridor()
 
         // 1. Draw Real Ground (Hide only if fully in a high-air corridor)
         if (!isCorridor || bp < 0.99f) {
@@ -429,8 +429,8 @@ class GameRenderer(
         if (bp > 0.001f) {
             // Case 2: High Air Corridor
             if (isCorridor) {
-                val targetCeilingTop = cam.getCorridorTop()
-                val targetFloorBottom = cam.getCorridorBottom()
+                val targetCeilingTop = player.getCorridorTop() ?: 1080f
+                val targetFloorBottom = player.getCorridorBottom() ?: 0f
 
                 // Top Boundary (Ceiling) - Surface is targetCeilingTop
                 val ceilingBottomY = screenTop - (screenTop - targetCeilingTop) * bp

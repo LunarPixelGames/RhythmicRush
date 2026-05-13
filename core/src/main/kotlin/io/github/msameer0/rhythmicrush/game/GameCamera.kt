@@ -14,7 +14,6 @@ class GameCamera(val camera: OrthographicCamera, private val world: GameWorld) {
 
     companion object {
         private const val CAMERA_X_OFFSET = GameConstants.Camera.X_OFFSET
-        private const val CAMERA_Y_LERP = GameConstants.Camera.Y_LERP
     }
 
     private var cameraTargetY = 540f
@@ -22,16 +21,11 @@ class GameCamera(val camera: OrthographicCamera, private val world: GameWorld) {
     private var isFirstUpdate = true
     private var shouldSnap = false
 
-    private var lastPlayerType: AbstractPlayer.PlayerType? = null
-    private var shipLockedY = 810f
-    
-    private var boundaryCorridorBottom = 0f
-    private var boundaryCorridorTop = 1080f
-    private var isUsingCorridor = false
+    private var lastPlayer: AbstractPlayer? = null
 
     fun reset() {
         isFirstUpdate = true
-        lastPlayerType = null
+        lastPlayer = null
         shouldSnap = true
         cameraTargetY = 540f
         windowBottom = 0f
@@ -45,44 +39,26 @@ class GameCamera(val camera: OrthographicCamera, private val world: GameWorld) {
         camera.position.x = targetX
 
         // Vertical Movement (Y-axis logic)
-        val currentType = player.getType()
-
-        if (currentType != lastPlayerType) {
+        if (player != lastPlayer) {
             // Only handle as a "transition" if we were already playing a different mode
-            if (lastPlayerType != null) {
-                if (currentType == AbstractPlayer.PlayerType.SHIP) {
-                    val pBottom = player.lastPortalBottomY
-                    val gY = world.groundY
-                    val distToGround = pBottom - gY
-                    
-                    if (distToGround in 0f..400f) {
-                        // Case 1: Near Ground (0-4 grids) - Use real ground with padding
-                        shipLockedY = gY + 501f // 540 - 39 padding
-                        isUsingCorridor = false
-                    } else {
-                        // Case 2: High Air - Use dynamic corridor centered on portal
-                        shipLockedY = pBottom + 100f // Portal center (assuming 200px height)
-                        boundaryCorridorBottom = pBottom - 400f // 4 grids below
-                        boundaryCorridorTop = pBottom + 600f    // 4 grids above (200 portal + 400)
-                        isUsingCorridor = true
-                    }
-                } else if (currentType == AbstractPlayer.PlayerType.CUBE) {
-                    // When transitioning back to Cube, try to maintain current camera Y if possible
+            if (lastPlayer != null) {
+                player.onCameraModeEnter(camera.position.y, world.groundY)
+                
+                if (player.getCameraMode() == AbstractPlayer.CameraMode.FREE) {
+                    // When transitioning back to a FREE mode, try to maintain current camera Y if possible
                     val idealBottom = camera.position.y - 250f
                     windowBottom = MathUtils.clamp(idealBottom, player.y + player.height - 500f, player.y)
                     cameraTargetY = windowBottom + 250f
                 }
             } else {
-                // First spawn: Initialize locked height just in case we start as Ship (checkpoints)
-                if (currentType == AbstractPlayer.PlayerType.SHIP) {
-                    shipLockedY = player.lastPortalBottomY + 100f // Default or from checkpoint
-                }
+                // First spawn: Initialize camera mode
+                player.onCameraModeEnter(camera.position.y, world.groundY)
             }
-            lastPlayerType = currentType
+            lastPlayer = player
         }
 
-        if (currentType == AbstractPlayer.PlayerType.CUBE) {
-            val paddingHeight = 500f
+        if (player.getCameraMode() == AbstractPlayer.CameraMode.FREE) {
+            val paddingHeight = GameConstants.Camera.PADDING_HEIGHT
 
             if (isFirstUpdate) {
                 windowBottom = player.y
@@ -106,13 +82,14 @@ class GameCamera(val camera: OrthographicCamera, private val world: GameWorld) {
                 // Pan smoothly towards the window center
                 camera.position.y = MathUtils.lerp(camera.position.y, cameraTargetY, min(delta * GameConstants.Camera.SMOOTH_LERP, 1f))
             }
-        } else if (currentType == AbstractPlayer.PlayerType.SHIP) {
+        } else {
+            cameraTargetY = player.getRestrictedCameraY()
             if (shouldSnap) {
-                camera.position.y = shipLockedY
+                camera.position.y = cameraTargetY
                 shouldSnap = false
             }
             // Pan smoothly towards the locked height
-            camera.position.y = MathUtils.lerp(camera.position.y, shipLockedY, min(delta * GameConstants.Camera.SMOOTH_LERP, 1f))
+            camera.position.y = MathUtils.lerp(camera.position.y, cameraTargetY, min(delta * GameConstants.Camera.SMOOTH_LERP, 1f))
         }
 
         camera.update()
@@ -122,21 +99,9 @@ class GameCamera(val camera: OrthographicCamera, private val world: GameWorld) {
         world.cullX = worldLeft
     }
 
-    fun getCeilingY(): Float {
-        if (lastPlayerType != AbstractPlayer.PlayerType.SHIP) return Float.MAX_VALUE
-        if (isUsingCorridor) return boundaryCorridorTop
-        return camera.position.y + 540f - 39f
-    }
+    fun getCeilingY(): Float = lastPlayer?.getCameraCeilingY() ?: Float.MAX_VALUE
 
-    fun getFloorY(): Float {
-        if (lastPlayerType != AbstractPlayer.PlayerType.SHIP) return -Float.MAX_VALUE
-        if (isUsingCorridor) return boundaryCorridorBottom
-        return world.groundY
-    }
-
-    fun isUsingCorridor(): Boolean = isUsingCorridor
-    fun getCorridorBottom(): Float = boundaryCorridorBottom
-    fun getCorridorTop(): Float = boundaryCorridorTop
+    fun getFloorY(): Float = lastPlayer?.getCameraFloorY(world.groundY) ?: -Float.MAX_VALUE
 
     fun getWindowBottom(): Float = windowBottom
     fun getPaddingHeight(): Float = GameConstants.Camera.PADDING_HEIGHT

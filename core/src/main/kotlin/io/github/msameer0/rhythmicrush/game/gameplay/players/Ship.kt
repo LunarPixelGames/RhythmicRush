@@ -26,6 +26,10 @@ class Ship : AbstractPlayer {
     }
 
     private var groundY: Float = GameConstants.World.GROUND_Y
+    private var restrictedCameraY: Float = 810f
+    private var corridorBottom: Float = 0f
+    private var corridorTop: Float = 1080f
+    private var isUsingCorridor: Boolean = false
 
     constructor(startX: Float, startY: Float) : super() {
         this.x = startX
@@ -125,5 +129,40 @@ class Ship : AbstractPlayer {
         jumpConsumed = other.isJumpConsumed()
         currentSlopeRotation = other.getCurrentSlopeRotation()
         setMini(other.isMini())
+        lastPortalCenterY = other.lastPortalCenterY
+        lastPortalBottomY = other.lastPortalBottomY
     }
+
+    // Camera and Boundary management
+    override fun getCameraMode(): CameraMode = CameraMode.RESTRICTED
+
+    override fun onCameraModeEnter(cameraY: Float, worldGroundY: Float) {
+        val distToGround = lastPortalBottomY - worldGroundY
+
+        if (distToGround in 0f..400f) {
+            // Case 1: Near Ground (0-4 grids) - Use real ground with padding
+            restrictedCameraY = worldGroundY + 501f // 540 - 39 padding
+            isUsingCorridor = false
+        } else {
+            // Case 2: High Air - Use dynamic corridor centered on portal
+            restrictedCameraY = lastPortalBottomY + 100f // Portal center (assuming 200px height)
+            corridorBottom = lastPortalBottomY - 400f // 4 grids below
+            corridorTop = lastPortalBottomY + 600f    // 4 grids above (200 portal + 400)
+            isUsingCorridor = true
+        }
+    }
+
+    override fun getRestrictedCameraY(): Float = restrictedCameraY
+
+    override fun getCameraFloorY(worldGroundY: Float): Float {
+        return if (isUsingCorridor) corridorBottom else worldGroundY
+    }
+
+    override fun getCameraCeilingY(): Float {
+        return if (isUsingCorridor) corridorTop else (restrictedCameraY - 501f + 1080f - 39f)
+    }
+
+    override fun isUsingCorridor(): Boolean = isUsingCorridor
+    override fun getCorridorTop(): Float? = if (isUsingCorridor) corridorTop else null
+    override fun getCorridorBottom(): Float? = if (isUsingCorridor) corridorBottom else null
 }

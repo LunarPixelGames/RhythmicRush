@@ -16,6 +16,14 @@ abstract class AbstractPlayer() {
         SHIP
     }
 
+    /**
+     * Defines how the camera should follow the player.
+     */
+    enum class CameraMode {
+        FREE,       // Cube-like: pans within a vertical window
+        RESTRICTED  // Ship-like: follows a locked height or corridor
+    }
+
     @JvmField
     var gravity: Float = 0f
     @JvmField
@@ -207,4 +215,34 @@ abstract class AbstractPlayer() {
     fun setCurrentSlopeRotation(rot: Float) {
         currentSlopeRotation = rot
     }
+
+    // Camera and Boundary management
+    open fun getCameraMode(): CameraMode = CameraMode.FREE
+
+    /**
+     * Called when the camera starts following this player mode.
+     * @param cameraY The current camera Y position at the moment of transition.
+     * @param worldGroundY The world's base ground Y level.
+     */
+    open fun onCameraModeEnter(cameraY: Float, worldGroundY: Float) {}
+
+    /**
+     * For RESTRICTED mode: The target Y position for the camera.
+     */
+    open fun getRestrictedCameraY(): Float = 540f
+
+    /**
+     * The lower boundary for player movement.
+     */
+    open fun getCameraFloorY(worldGroundY: Float): Float = -Float.MAX_VALUE
+
+    /**
+     * The upper boundary for player movement.
+     */
+    open fun getCameraCeilingY(): Float = Float.MAX_VALUE
+
+    // Corridor management (for visual rendering)
+    open fun isUsingCorridor(): Boolean = false
+    open fun getCorridorTop(): Float? = null
+    open fun getCorridorBottom(): Float? = null
 }
