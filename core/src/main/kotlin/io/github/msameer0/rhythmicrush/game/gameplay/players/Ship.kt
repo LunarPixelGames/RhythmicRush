@@ -159,7 +159,8 @@ class Ship : AbstractPlayer {
     }
 
     override fun getCameraCeilingY(): Float {
-        return if (isUsingCorridor) corridorTop else (restrictedCameraY - 501f + 1080f - 39f)
+        // Ceiling surface is at the bottom of the 39px ceiling bar
+        return if (isUsingCorridor) corridorTop else (restrictedCameraY + 540f - 39f)
     }
 
     override fun isUsingCorridor(): Boolean = isUsingCorridor
