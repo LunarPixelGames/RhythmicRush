@@ -9,18 +9,15 @@ import io.github.msameer0.rhythmicrush.game.registries.Registry
 class GravityPortal : AbstractPortal {
     constructor(x: Float, y: Float) : super(x, y) {
         this.type = PortalType.GRAVITY
-        this.height = 200f
     }
 
     constructor() : super() {
         this.type = PortalType.GRAVITY
-        this.height = 200f
     }
 
     override fun init(x: Float, y: Float, rotation: Float): GravityPortal {
         super.init(x, y, rotation)
         this.type = PortalType.GRAVITY
-        this.height = 200f
         return this
     }
 

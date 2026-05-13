@@ -18,6 +18,20 @@ cube
   orig: 150, 384
   offset: 0, 0
   index: -1
+gravity
+  rotate: false
+  xy: 609, 39
+  size: 150, 346
+  orig: 150, 346
+  offset: 0, 0
+  index: -1
+mini
+  rotate: false
+  xy: 761, 39
+  size: 150, 346
+  orig: 150, 346
+  offset: 0, 0
+  index: -1
 ship
   rotate: false
   xy: 305, 1
