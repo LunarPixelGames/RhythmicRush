@@ -25,10 +25,11 @@ class GreenOrb : AbstractOrb {
 
     override fun onClick(player: AbstractPlayer) {
         player.setGravityFlipped(!player.isGravityFlipped())
+        val v = io.github.msameer0.rhythmicrush.GameConstants.Interactables.Orbs.GREEN_VELOCITY
         if (player.isGravityFlipped()) {
-            player.setVelocityY(-1200f)
+            player.setVelocityY(-v)
         } else {
-            player.setVelocityY(1200f)
+            player.setVelocityY(v)
         }
     }
 }

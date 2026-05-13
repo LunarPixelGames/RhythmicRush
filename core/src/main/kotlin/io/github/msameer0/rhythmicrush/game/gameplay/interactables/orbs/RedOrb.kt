@@ -24,10 +24,11 @@ class RedOrb : AbstractOrb {
     }
 
     override fun onClick(player: AbstractPlayer) {
+        val v = io.github.msameer0.rhythmicrush.GameConstants.Interactables.Orbs.RED_VELOCITY
         if (player.isGravityFlipped()) {
-            player.setVelocityY(-1800f)
+            player.setVelocityY(-v)
         } else {
-            player.setVelocityY(1800f)
+            player.setVelocityY(v)
         }
     }
 }

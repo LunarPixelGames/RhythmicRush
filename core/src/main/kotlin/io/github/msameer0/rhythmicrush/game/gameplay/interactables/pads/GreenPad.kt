@@ -25,10 +25,11 @@ class GreenPad : AbstractPad {
 
     override fun onActivate(player: AbstractPlayer) {
         player.setGravityFlipped(!player.isGravityFlipped())
+        val v = io.github.msameer0.rhythmicrush.GameConstants.Interactables.Pads.GREEN_VELOCITY
         if (player.isGravityFlipped()) {
-            player.setVelocityY(-1700f)
+            player.setVelocityY(-v)
         } else {
-            player.setVelocityY(1700f)
+            player.setVelocityY(v)
         }
     }
 }

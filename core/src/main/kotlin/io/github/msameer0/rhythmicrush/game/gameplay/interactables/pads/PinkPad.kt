@@ -24,10 +24,11 @@ class PinkPad : AbstractPad {
     }
 
     override fun onActivate(player: AbstractPlayer) {
+        val v = io.github.msameer0.rhythmicrush.GameConstants.Interactables.Pads.PINK_VELOCITY
         if (player.isGravityFlipped()) {
-            player.setVelocityY(-1200f)
+            player.setVelocityY(-v)
         } else {
-            player.setVelocityY(1200f)
+            player.setVelocityY(v)
         }
     }
 }

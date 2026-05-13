@@ -61,4 +61,23 @@ object GameConstants {
         const val TAB_H = 34f
         const val CAM_SPEED = 400f
     }
+
+    object Interactables {
+        object Pads {
+            const val PINK_VELOCITY = 2055f
+            const val YELLOW_VELOCITY = 3050f
+            const val RED_VELOCITY = 3900f
+            const val GREEN_VELOCITY = 3050f
+            const val BLUE_VELOCITY = 600f
+            const val BLACK_VELOCITY = 2200f
+        }
+
+        object Orbs {
+            const val PINK_VELOCITY = 1840f
+            const val YELLOW_VELOCITY = 2430f
+            const val RED_VELOCITY = 3180f
+            const val GREEN_VELOCITY = 2430f
+            const val BLACK_VELOCITY = 1800f
+        }
+    }
 }

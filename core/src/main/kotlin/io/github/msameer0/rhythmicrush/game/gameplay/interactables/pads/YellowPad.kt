@@ -24,10 +24,11 @@ class YellowPad : AbstractPad {
     }
 
     override fun onActivate(player: AbstractPlayer) {
+        val v = io.github.msameer0.rhythmicrush.GameConstants.Interactables.Pads.YELLOW_VELOCITY
         if (player.isGravityFlipped()) {
-            player.setVelocityY(-1700f)
+            player.setVelocityY(-v)
         } else {
-            player.setVelocityY(1700f)
+            player.setVelocityY(v)
         }
     }
 }
