@@ -13,9 +13,16 @@ object PackPortalsAtlas {
 
         TexturePacker.process(
             settings,
-            "textures_to_put_in_atlases/game/objects/portals",  // input
-            "assets/game/objects",  // output
-            "portals" // atlas name → spikes.atlas
+            "textures_to_put_in_atlases/objects/portals/back/",
+            "assets/game/objects",
+            "portals_back"
+        )
+
+        TexturePacker.process(
+            settings,
+            "textures_to_put_in_atlases/objects/portals/front/",
+            "assets/game/objects",
+            "portals_front"
         )
     }
 }

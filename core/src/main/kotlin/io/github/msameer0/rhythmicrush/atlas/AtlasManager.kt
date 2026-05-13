@@ -13,6 +13,8 @@ class AtlasManager {
     val spikesAtlas: TextureAtlas
     val gamemodesAtlas: TextureAtlas
     val portalsAtlas: TextureAtlas
+    val portalsBackAtlas: TextureAtlas
+    val portalsFrontAtlas: TextureAtlas
     val orbsAtlas: TextureAtlas
     val padsAtlas: TextureAtlas
 
@@ -25,6 +27,8 @@ class AtlasManager {
         spikesAtlas = TextureAtlas(Gdx.files.internal("game/objects/spikes.atlas"))
         gamemodesAtlas = TextureAtlas(Gdx.files.internal("game/objects/gamemodes.atlas"))
         portalsAtlas = TextureAtlas(Gdx.files.internal("game/objects/portals.atlas"))
+        portalsBackAtlas = TextureAtlas(Gdx.files.internal("game/objects/portals_back.atlas"))
+        portalsFrontAtlas = TextureAtlas(Gdx.files.internal("game/objects/portals_front.atlas"))
         orbsAtlas = TextureAtlas(Gdx.files.internal("game/objects/orbs.atlas"))
         padsAtlas = TextureAtlas(Gdx.files.internal("game/objects/pads.atlas"))
         Gdx.app.log("AtlasManager", "All texture atlases loaded.")
@@ -38,6 +42,8 @@ class AtlasManager {
         spikesAtlas.dispose()
         gamemodesAtlas.dispose()
         portalsAtlas.dispose()
+        portalsBackAtlas.dispose()
+        portalsFrontAtlas.dispose()
         orbsAtlas.dispose()
         padsAtlas.dispose()
         Gdx.app.log("AtlasManager", "All texture atlases disposed.")

@@ -24,7 +24,7 @@ abstract class AbstractPortal : Rotatable {
     var x: Float = 0f
     var y: Float = 0f
     var width: Float = 100f
-    var height: Float = 200f
+    var height: Float = 250f
     var bounds: Rectangle
     var isUsed: Boolean = false
 

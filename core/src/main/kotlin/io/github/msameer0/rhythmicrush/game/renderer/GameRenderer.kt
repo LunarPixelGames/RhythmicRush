@@ -57,6 +57,10 @@ class GameRenderer(
     private val shipRegion: TextureRegion?
     private val cubePortalRegion: TextureRegion?
     private val shipPortalRegion: TextureRegion?
+    private val cubePortalBackRegion: TextureRegion?
+    private val cubePortalFrontRegion: TextureRegion?
+    private val shipPortalBackRegion: TextureRegion?
+    private val shipPortalFrontRegion: TextureRegion?
     private val gravityPortalRegion: TextureRegion?
     private val miniPortalRegion: TextureRegion?
 
@@ -90,6 +94,12 @@ class GameRenderer(
         shipRegion = atlasManager.gamemodesAtlas.findRegion("ship")
         cubePortalRegion = atlasManager.portalsAtlas.findRegion("cube_portal")
         shipPortalRegion = atlasManager.portalsAtlas.findRegion("ship_portal")
+        
+        cubePortalBackRegion = atlasManager.portalsBackAtlas.findRegion("cube")
+        cubePortalFrontRegion = atlasManager.portalsFrontAtlas.findRegion("cube")
+        shipPortalBackRegion = atlasManager.portalsBackAtlas.findRegion("ship")
+        shipPortalFrontRegion = atlasManager.portalsFrontAtlas.findRegion("ship")
+        
         gravityPortalRegion = atlasManager.portalsAtlas.findRegion("gravity_portal")
         miniPortalRegion = atlasManager.portalsAtlas.findRegion("mini_portal")
 
@@ -145,7 +155,19 @@ class GameRenderer(
         batch.color = Color.WHITE
 
         drawSawBlades(paused, rightEdge)
-        drawMainPass(player, delta, paused, rightEdge, beatIntensity)
+        
+        // Pass 1: Background elements
+        drawPortalsBack(rightEdge)
+        drawHazards(rightEdge)
+        drawBlocks(rightEdge)
+        drawOrbs(rightEdge, beatIntensity)
+        drawPads(rightEdge, beatIntensity)
+        
+        // Pass 2: Player
+        drawPlayer(player)
+        
+        // Pass 3: Foreground elements
+        drawPortalsFront(rightEdge)
 
         batch.end()
 
@@ -213,29 +235,45 @@ class GameRenderer(
         }
     }
 
-    private fun drawMainPass(player: AbstractPlayer, delta: Float, paused: Boolean, rightEdge: Float, beatIntensity: Float = 0f) {
-        drawPortals(rightEdge)
-        drawHazards(rightEdge)
-        drawBlocks(rightEdge)
-        drawOrbs(rightEdge, beatIntensity)
-        drawPads(rightEdge, beatIntensity)
-        drawPlayer(player)
-    }
-
-    private fun drawPortals(rightEdge: Float) {
+    private fun drawPortalsBack(rightEdge: Float) {
         val cullStart = world.portalCull
         for (i in cullStart until world.portals.size) {
             val portal = world.portals.get(i)
             if (portal.x > rightEdge) break
-            val region = portalRegion(portal.type)
-            if (region != null) {
-                batch.draw(
-                    region,
-                    portal.x, portal.y,
-                    portal.width / 2f, portal.height / 2f,
-                    portal.width, portal.height,
-                    1f, 1f, portal.rotation
-                )
+            
+            if (portal.type == AbstractPortal.PortalType.CUBE || portal.type == AbstractPortal.PortalType.SHIP) {
+                val region = if (portal.type == AbstractPortal.PortalType.CUBE) cubePortalBackRegion else shipPortalBackRegion
+                if (region != null) {
+                    val visualH = portal.height
+                    val visualW = visualH * (150f / 384f)
+                    val drawX = portal.x + (portal.width - visualW) / 2f
+                    val drawY = portal.y
+                    batch.draw(region, drawX, drawY, visualW / 2f, visualH / 2f, visualW, visualH, 1f, 1f, portal.rotation)
+                }
+            } else {
+                val region = portalRegion(portal.type)
+                if (region != null) {
+                    batch.draw(region, portal.x, portal.y, portal.width / 2f, portal.height / 2f, portal.width, portal.height, 1f, 1f, portal.rotation)
+                }
+            }
+        }
+    }
+
+    private fun drawPortalsFront(rightEdge: Float) {
+        val cullStart = world.portalCull
+        for (i in cullStart until world.portals.size) {
+            val portal = world.portals.get(i)
+            if (portal.x > rightEdge) break
+            
+            if (portal.type == AbstractPortal.PortalType.CUBE || portal.type == AbstractPortal.PortalType.SHIP) {
+                val region = if (portal.type == AbstractPortal.PortalType.CUBE) cubePortalFrontRegion else shipPortalFrontRegion
+                if (region != null) {
+                    val visualH = portal.height
+                    val visualW = visualH * (150f / 384f)
+                    val drawX = portal.x + (portal.width - visualW) / 2f
+                    val drawY = portal.y
+                    batch.draw(region, drawX, drawY, visualW / 2f, visualH / 2f, visualW, visualH, 1f, 1f, portal.rotation)
+                }
             }
         }
     }

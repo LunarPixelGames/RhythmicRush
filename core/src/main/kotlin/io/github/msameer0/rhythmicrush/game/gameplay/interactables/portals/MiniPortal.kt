@@ -9,15 +9,18 @@ import io.github.msameer0.rhythmicrush.game.registries.Registry
 class MiniPortal : AbstractPortal {
     constructor(x: Float, y: Float) : super(x, y) {
         this.type = PortalType.MINI
+        this.height = 200f
     }
 
     constructor() : super() {
         this.type = PortalType.MINI
+        this.height = 200f
     }
 
     override fun init(x: Float, y: Float, rotation: Float): MiniPortal {
         super.init(x, y, rotation)
         this.type = PortalType.MINI
+        this.height = 200f
         return this
     }
 
