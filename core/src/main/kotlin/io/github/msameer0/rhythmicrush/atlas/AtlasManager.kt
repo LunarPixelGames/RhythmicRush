@@ -11,13 +11,13 @@ class AtlasManager {
     val levelSelectAtlas: TextureAtlas
     val blocksAtlas: TextureAtlas
     val spikesAtlas: TextureAtlas
-    val gamemodesAtlas: TextureAtlas
     val portalsAtlas: TextureAtlas
     val portalsBackAtlas: TextureAtlas
     val portalsFrontAtlas: TextureAtlas
     val orbsAtlas: TextureAtlas
     val padsAtlas: TextureAtlas
     val cubesAtlas: TextureAtlas
+    val shipsAtlas: TextureAtlas
 
     init {
         Gdx.app.log("AtlasManager", "Loading texture atlases...")
@@ -26,13 +26,13 @@ class AtlasManager {
             TextureAtlas(Gdx.files.internal("level_select_atlases/level_select.atlas"))
         blocksAtlas = TextureAtlas(Gdx.files.internal("game/objects/blocks.atlas"))
         spikesAtlas = TextureAtlas(Gdx.files.internal("game/objects/spikes.atlas"))
-        gamemodesAtlas = TextureAtlas(Gdx.files.internal("game/objects/gamemodes.atlas"))
         portalsAtlas = TextureAtlas(Gdx.files.internal("game/objects/portals.atlas"))
         portalsBackAtlas = TextureAtlas(Gdx.files.internal("game/objects/portals_back.atlas"))
         portalsFrontAtlas = TextureAtlas(Gdx.files.internal("game/objects/portals_front.atlas"))
         orbsAtlas = TextureAtlas(Gdx.files.internal("game/objects/orbs.atlas"))
         padsAtlas = TextureAtlas(Gdx.files.internal("game/objects/pads.atlas"))
         cubesAtlas = TextureAtlas(Gdx.files.internal("game/objects/cubes.atlas"))
+        shipsAtlas = TextureAtlas(Gdx.files.internal("game/objects/ships.atlas"))
         Gdx.app.log("AtlasManager", "All texture atlases loaded.")
     }
 
@@ -42,13 +42,13 @@ class AtlasManager {
         levelSelectAtlas.dispose()
         blocksAtlas.dispose()
         spikesAtlas.dispose()
-        gamemodesAtlas.dispose()
         portalsAtlas.dispose()
         portalsBackAtlas.dispose()
         portalsFrontAtlas.dispose()
         orbsAtlas.dispose()
         padsAtlas.dispose()
         cubesAtlas.dispose()
+        shipsAtlas.dispose()
         Gdx.app.log("AtlasManager", "All texture atlases disposed.")
     }
 }

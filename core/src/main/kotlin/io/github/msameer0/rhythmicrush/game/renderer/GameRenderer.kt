@@ -55,7 +55,8 @@ class GameRenderer(
     private val sawBladeRegion: TextureRegion?
     private val cubeLayer1Region: TextureRegion?
     private val cubeLayer2Region: TextureRegion?
-    private val shipRegion: TextureRegion?
+    private val shipLayer1Region: TextureRegion?
+    private val shipLayer2Region: TextureRegion?
     private val cubePortalRegion: TextureRegion?
     private val shipPortalRegion: TextureRegion?
     private val cubePortalBackRegion: TextureRegion?
@@ -97,7 +98,8 @@ class GameRenderer(
         sawBladeRegion = atlasManager.spikesAtlas.findRegion("saw_blade")
         cubeLayer1Region = atlasManager.cubesAtlas.findRegion("11")
         cubeLayer2Region = atlasManager.cubesAtlas.findRegion("12")
-        shipRegion = atlasManager.gamemodesAtlas.findRegion("ship")
+        shipLayer1Region = atlasManager.shipsAtlas.findRegion("11")
+        shipLayer2Region = atlasManager.shipsAtlas.findRegion("12")
         cubePortalRegion = atlasManager.portalsAtlas.findRegion("cube_portal")
         shipPortalRegion = atlasManager.portalsAtlas.findRegion("ship_portal")
 
@@ -487,24 +489,111 @@ class GameRenderer(
             batch.color = Color.WHITE
         } else {
             // Ship rendering
-            val region = shipRegion ?: return
+            val ship1 = shipLayer1Region
+            val ship2 = shipLayer2Region
+            val cube1 = cubeLayer1Region
+            val cube2 = cubeLayer2Region
 
-            if (player.isGravityFlipped()) {
-                if (!region.isFlipY) region.flip(false, true)
-            } else {
-                if (region.isFlipY) region.flip(false, true)
+            if (ship1 == null || ship2 == null || cube1 == null || cube2 == null) {
+                // Fallback
+                batch.end()
+                shape.begin(ShapeRenderer.ShapeType.Filled)
+                shape.setColor(0f, 0.5f, 1f, 1f)
+                shape.rect(player.x, player.y, player.width, player.height)
+                shape.end()
+                batch.begin()
+                return
             }
 
-            val scaleX = 1.35f
-            val scaleY = 1.35f
+            // Ship scale
+            val scale = 1.35f
 
+            // Handle flipping for ship layers
+            if (player.isGravityFlipped()) {
+                if (!ship1.isFlipY) ship1.flip(false, true)
+                if (!ship2.isFlipY) ship2.flip(false, true)
+            } else {
+                if (ship1.isFlipY) ship1.flip(false, true)
+                if (ship2.isFlipY) ship2.flip(false, true)
+            }
+
+            // Handle flipping for cube layers inside ship
+            if (player.isGravityFlipped()) {
+                if (!cube1.isFlipY) cube1.flip(false, true)
+                if (!cube2.isFlipY) cube2.flip(false, true)
+            } else {
+                if (cube1.isFlipY) cube1.flip(false, true)
+                if (cube2.isFlipY) cube2.flip(false, true)
+            }
+
+            // Colors
+            val color1 = Color.GREEN
+            val color2 = Color.CYAN
+
+            // 1. Draw Ship Layer 1
+            batch.color = color1
             batch.draw(
-                region,
+                ship1,
                 player.x, player.y,
                 player.width / 2f, player.height / 2f,
                 player.width, player.height,
-                scaleX, scaleY, player.getRotation()
+                scale, scale, player.getRotation()
             )
+
+            // 2. Draw Cube Skin inside ship
+            // Calculation based on 128x128 texture: 54 from left, 61 from top
+            // Unit conversion (100/128): X = 42.1875, Y = 52.34375
+            val cubeSize = player.width * 0.375f
+            val xOffset = 42.1875f
+            var yOffset = 52.34375f
+
+            if (player.isGravityFlipped()) {
+                // Mirror yOffset across the center (50)
+                // Cube center is yOffset + cubeSize/2 = 52.34375 + 25 = 77.34375
+                // Mirrored center = 100 - 77.34375 = 22.65625
+                // New yOffset = 22.65625 - 25 = -2.34375
+                yOffset = -2.34375f
+            }
+
+            // Calculate world position relative to ship center to rotate around it
+            // We set the cube's origin so that it aligns with the ship's center (50, 50)
+            val cubeOriginX = player.width / 2f - xOffset
+            val cubeOriginY = player.height / 2f - yOffset
+
+            val cubeDrawX = player.x + (player.width / 2f) + (xOffset - player.width / 2f) * scale
+            val cubeDrawY = player.y + (player.height / 2f) + (yOffset - player.height / 2f) * scale
+
+            // Draw cube layer 1
+            batch.color = color1
+            batch.draw(
+                cube1,
+                cubeDrawX, cubeDrawY,
+                cubeOriginX, cubeOriginY,
+                cubeSize, cubeSize,
+                scale, scale, player.getRotation()
+            )
+
+            // Draw cube layer 2
+            batch.color = color2
+            batch.draw(
+                cube2,
+                cubeDrawX, cubeDrawY,
+                cubeOriginX, cubeOriginY,
+                cubeSize, cubeSize,
+                scale, scale, player.getRotation()
+            )
+
+            // 3. Draw Ship Layer 2
+            batch.color = color2
+            batch.draw(
+                ship2,
+                player.x, player.y,
+                player.width / 2f, player.height / 2f,
+                player.width, player.height,
+                scale, scale, player.getRotation()
+            )
+
+            batch.color = Color.WHITE
         }
     }
 
