@@ -53,7 +53,8 @@ class GameRenderer(
     private val spikeRegion: TextureRegion?
     private val halfSpikeRegion: TextureRegion?
     private val sawBladeRegion: TextureRegion?
-    private val cubeRegion: TextureRegion?
+    private val cubeLayer1Region: TextureRegion?
+    private val cubeLayer2Region: TextureRegion?
     private val shipRegion: TextureRegion?
     private val cubePortalRegion: TextureRegion?
     private val shipPortalRegion: TextureRegion?
@@ -73,7 +74,7 @@ class GameRenderer(
 
     var playerVisualRotation = 0f
         private set
-    
+
     private var boundaryProgress = 0f
 
     private var _lastDelta = 0f
@@ -94,21 +95,22 @@ class GameRenderer(
         spikeRegion = atlasManager.spikesAtlas.findRegion("spike")
         halfSpikeRegion = atlasManager.spikesAtlas.findRegion("half_spike")
         sawBladeRegion = atlasManager.spikesAtlas.findRegion("saw_blade")
-        cubeRegion = atlasManager.gamemodesAtlas.findRegion("cube")
+        cubeLayer1Region = atlasManager.cubesAtlas.findRegion("11")
+        cubeLayer2Region = atlasManager.cubesAtlas.findRegion("12")
         shipRegion = atlasManager.gamemodesAtlas.findRegion("ship")
         cubePortalRegion = atlasManager.portalsAtlas.findRegion("cube_portal")
         shipPortalRegion = atlasManager.portalsAtlas.findRegion("ship_portal")
-        
+
         cubePortalBackRegion = atlasManager.portalsBackAtlas.findRegion("cube")
         cubePortalFrontRegion = atlasManager.portalsFrontAtlas.findRegion("cube")
         shipPortalBackRegion = atlasManager.portalsBackAtlas.findRegion("ship")
         shipPortalFrontRegion = atlasManager.portalsFrontAtlas.findRegion("ship")
-        
+
         gravityPortalBackRegion = atlasManager.portalsBackAtlas.findRegion("gravity")
         gravityPortalFrontRegion = atlasManager.portalsFrontAtlas.findRegion("gravity")
         miniPortalBackRegion = atlasManager.portalsBackAtlas.findRegion("mini")
         miniPortalFrontRegion = atlasManager.portalsFrontAtlas.findRegion("mini")
-        
+
         gravityPortalRegion = atlasManager.portalsAtlas.findRegion("gravity_portal")
         miniPortalRegion = atlasManager.portalsAtlas.findRegion("mini_portal")
 
@@ -138,7 +140,7 @@ class GameRenderer(
     ) {
         val targetProgress = if (world.player?.getType() == AbstractPlayer.PlayerType.SHIP) 1f else 0f
         boundaryProgress = MathUtils.lerp(boundaryProgress, targetProgress, min(delta * 10f, 1f))
-        
+
         _lastDelta = delta
         val player = world.player ?: return
 
@@ -164,17 +166,17 @@ class GameRenderer(
         batch.color = Color.WHITE
 
         drawSawBlades(paused, rightEdge)
-        
+
         // Pass 1: Background elements
         drawPortalsBack(rightEdge)
         drawHazards(rightEdge)
         drawBlocks(rightEdge)
         drawOrbs(rightEdge, beatIntensity)
         drawPads(rightEdge, beatIntensity)
-        
+
         // Pass 2: Player
         drawPlayer(player)
-        
+
         // Pass 3: Foreground elements
         drawPortalsFront(rightEdge)
 
@@ -189,9 +191,9 @@ class GameRenderer(
         drawOrbFallbacks(rightEdge)
         drawPadFallbacks(rightEdge)
         drawGround()
-        
+
         shape.end()
-        
+
         if (showHitboxes) hitboxRenderer.draw(camera, player, rightEdge)
 
         Gdx.gl.glDisable(GL20.GL_BLEND)
@@ -249,7 +251,7 @@ class GameRenderer(
         for (i in cullStart until world.portals.size) {
             val portal = world.portals.get(i)
             if (portal.x > rightEdge) break
-            
+
             val region = when (portal.type) {
                 AbstractPortal.PortalType.CUBE -> cubePortalBackRegion
                 AbstractPortal.PortalType.SHIP -> shipPortalBackRegion
@@ -257,7 +259,7 @@ class GameRenderer(
                 AbstractPortal.PortalType.MINI -> miniPortalBackRegion
                 else -> null
             }
-            
+
             if (region != null) {
                 val visualH = portal.height
                 val visualW = visualH * (region.regionWidth.toFloat() / region.regionHeight.toFloat())
@@ -279,7 +281,7 @@ class GameRenderer(
         for (i in cullStart until world.portals.size) {
             val portal = world.portals.get(i)
             if (portal.x > rightEdge) break
-            
+
             val region = when (portal.type) {
                 AbstractPortal.PortalType.CUBE -> cubePortalFrontRegion
                 AbstractPortal.PortalType.SHIP -> shipPortalFrontRegion
@@ -287,7 +289,7 @@ class GameRenderer(
                 AbstractPortal.PortalType.MINI -> miniPortalFrontRegion
                 else -> null
             }
-            
+
             if (region != null) {
                 val visualH = portal.height
                 val visualW = visualH * (region.regionWidth.toFloat() / region.regionHeight.toFloat())
@@ -360,10 +362,10 @@ class GameRenderer(
     private fun drawOrbs(rightEdge: Float, beatIntensity: Float = 0f) {
         val orbs = world.orbs
         val cullStart = world.orbCull
-        
+
         val doPulse = settings.pulseOrbs
         val scale = if (doPulse) 0.65f + (beatIntensity * 0.70f) else 1f
-        
+
         for (i in cullStart until orbs.size) {
             val orb = orbs.get(i)
             if (orb.x > rightEdge) break
@@ -373,7 +375,7 @@ class GameRenderer(
                 val visualH = orb.height * scale
                 val visualX = orb.x + (orb.width - visualW) / 2f
                 val visualY = orb.y + (orb.height - visualH) / 2f
-                
+
                 batch.draw(region, visualX, visualY, visualW, visualH)
             }
         }
@@ -435,34 +437,75 @@ class GameRenderer(
 
     private fun drawPlayer(player: AbstractPlayer) {
         val pType = player.getType()
-        val region = if (pType == AbstractPlayer.PlayerType.SHIP) shipRegion else cubeRegion
 
-        if (region == null) {
-            batch.end()
-            shape.begin(ShapeRenderer.ShapeType.Filled)
-            shape.setColor(1f, 0.5f, 0.2f, 1f)
-            shape.rect(player.x, player.y, player.width, player.height)
-            shape.end()
-            batch.begin()
-            return
-        }
+        if (pType == AbstractPlayer.PlayerType.CUBE) {
+            val layer1 = cubeLayer1Region
+            val layer2 = cubeLayer2Region
 
-        if (player.isGravityFlipped()) {
-            if (!region.isFlipY) region.flip(false, true)
+            if (layer1 == null || layer2 == null) {
+                batch.end()
+                shape.begin(ShapeRenderer.ShapeType.Filled)
+                shape.setColor(1f, 0.5f, 0.2f, 1f)
+                shape.rect(player.x, player.y, player.width, player.height)
+                shape.end()
+                batch.begin()
+                return
+            }
+
+            if (player.isGravityFlipped()) {
+                if (!layer1.isFlipY) layer1.flip(false, true)
+                if (!layer2.isFlipY) layer2.flip(false, true)
+            } else {
+                if (layer1.isFlipY) layer1.flip(false, true)
+                if (layer2.isFlipY) layer2.flip(false, true)
+            }
+
+            // Hardcoded colors for now: Layer 1 Green, Layer 2 Cyan
+            val color1 = Color.GREEN
+            val color2 = Color.CYAN
+
+            // Draw layer 1
+            batch.color = color1
+            batch.draw(
+                layer1,
+                player.x, player.y,
+                player.width / 2f, player.height / 2f,
+                player.width, player.height,
+                1f, 1f, player.getRotation()
+            )
+
+            // Draw layer 2
+            batch.color = color2
+            batch.draw(
+                layer2,
+                player.x, player.y,
+                player.width / 2f, player.height / 2f,
+                player.width, player.height,
+                1f, 1f, player.getRotation()
+            )
+
+            batch.color = Color.WHITE
         } else {
-            if (region.isFlipY) region.flip(false, true)
+            // Ship rendering
+            val region = shipRegion ?: return
+
+            if (player.isGravityFlipped()) {
+                if (!region.isFlipY) region.flip(false, true)
+            } else {
+                if (region.isFlipY) region.flip(false, true)
+            }
+
+            val scaleX = 1.35f
+            val scaleY = 1.35f
+
+            batch.draw(
+                region,
+                player.x, player.y,
+                player.width / 2f, player.height / 2f,
+                player.width, player.height,
+                scaleX, scaleY, player.getRotation()
+            )
         }
-
-        val scaleX = if (pType == AbstractPlayer.PlayerType.SHIP) 1.35f else 1f
-        val scaleY = scaleX
-
-        batch.draw(
-            region,
-            player.x, player.y,
-            player.width / 2f, player.height / 2f,
-            player.width, player.height,
-            scaleX, scaleY, player.getRotation()
-        )
     }
 
     private fun drawGround() {
@@ -508,7 +551,7 @@ class GameRenderer(
             } else {
                 // Case 1: Near Ground - Only need the CEILING boundary
                 // Note: Bottom ground is already handled by the "Real Ground" draw call above
-                
+
                 val targetCeilingBottom = screenTop - 39f
                 val ceilingBottomY = screenTop - (screenTop - targetCeilingBottom) * bp
                 shape.color = world.groundColor

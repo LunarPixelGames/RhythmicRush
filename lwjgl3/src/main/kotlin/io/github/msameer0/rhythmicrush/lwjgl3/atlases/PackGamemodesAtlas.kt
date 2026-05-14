@@ -17,5 +17,12 @@ object PackGamemodesAtlas {
             "assets/game/objects",  // output folder
             "gamemodes" // atlas name → blocks.atlas + blocks.png
         )
+
+        TexturePacker.process(
+            settings,
+            "textures_to_put_in_atlases/objects/gamemodes/cube",  // input folder (one PNG per BlockType.textureName)
+            "assets/game/objects",  // output folder
+            "cubes" // atlas name → blocks.atlas + blocks.png
+        )
     }
 }

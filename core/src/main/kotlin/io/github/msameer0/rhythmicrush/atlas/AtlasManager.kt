@@ -17,6 +17,7 @@ class AtlasManager {
     val portalsFrontAtlas: TextureAtlas
     val orbsAtlas: TextureAtlas
     val padsAtlas: TextureAtlas
+    val cubesAtlas: TextureAtlas
 
     init {
         Gdx.app.log("AtlasManager", "Loading texture atlases...")
@@ -31,6 +32,7 @@ class AtlasManager {
         portalsFrontAtlas = TextureAtlas(Gdx.files.internal("game/objects/portals_front.atlas"))
         orbsAtlas = TextureAtlas(Gdx.files.internal("game/objects/orbs.atlas"))
         padsAtlas = TextureAtlas(Gdx.files.internal("game/objects/pads.atlas"))
+        cubesAtlas = TextureAtlas(Gdx.files.internal("game/objects/cubes.atlas"))
         Gdx.app.log("AtlasManager", "All texture atlases loaded.")
     }
 
@@ -46,6 +48,7 @@ class AtlasManager {
         portalsFrontAtlas.dispose()
         orbsAtlas.dispose()
         padsAtlas.dispose()
+        cubesAtlas.dispose()
         Gdx.app.log("AtlasManager", "All texture atlases disposed.")
     }
 }
