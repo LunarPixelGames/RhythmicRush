@@ -544,8 +544,8 @@ class GameRenderer(
             // Calculation based on 128x128 texture: 54 from left, 61 from top
             // Unit conversion (100/128): X = 42.1875, Y = 52.34375
             val cubeSize = player.width * 0.26f
-            val xOffset = 32.375f
-            var yOffset = 51.5625f
+            val xOffset = 34.375f
+            var yOffset = 48.5625f
 
             if (player.isGravityFlipped()) {
                 // Mirror yOffset across the center (50)
