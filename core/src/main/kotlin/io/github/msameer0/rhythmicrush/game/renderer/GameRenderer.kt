@@ -506,7 +506,7 @@ class GameRenderer(
             }
 
             // Ship scale
-            val scale = 1.35f
+            val scale = 1.675f
 
             // Handle flipping for ship layers
             if (player.isGravityFlipped()) {
@@ -544,31 +544,24 @@ class GameRenderer(
             // Calculation based on 128x128 texture: 54 from left, 61 from top
             // Unit conversion (100/128): X = 42.1875, Y = 52.34375
             val cubeSize = player.width * 0.26f
-            val xOffset = 34.375f
+            val xOffset = 33.3f
             var yOffset = 48.5625f
 
             if (player.isGravityFlipped()) {
-                // Mirror yOffset across the center (50)
-                // Cube center is yOffset + cubeSize/2 = 52.34375 + 25 = 77.34375
-                // Mirrored center = 100 - 77.34375 = 22.65625
-                // New yOffset = 22.65625 - 25 = -2.34375
-                yOffset = -2.34375f
+                // Original ship flipped offset
+                yOffset = 25.4375f
             }
 
-            // Calculate world position relative to ship center to rotate around it
-            // We set the cube's origin so that it aligns with the ship's center (50, 50)
-            val cubeOriginX = player.width / 2f - xOffset
-            val cubeOriginY = player.height / 2f - yOffset
-
-            val cubeDrawX = player.x + (player.width / 2f) + (xOffset - player.width / 2f) * scale
-            val cubeDrawY = player.y + (player.height / 2f) + (yOffset - player.height / 2f) * scale
+            // Origin relative to cube's unscaled bottom-left, mapping to ship center (50, 50)
+            val originX = player.width / 2f - xOffset
+            val originY = player.height / 2f - yOffset
 
             // Draw cube layer 1
             batch.color = color1
             batch.draw(
                 cube1,
-                cubeDrawX, cubeDrawY,
-                cubeOriginX, cubeOriginY,
+                player.x + xOffset, player.y + yOffset,
+                originX, originY,
                 cubeSize, cubeSize,
                 scale, scale, player.getRotation()
             )
@@ -577,8 +570,8 @@ class GameRenderer(
             batch.color = color2
             batch.draw(
                 cube2,
-                cubeDrawX, cubeDrawY,
-                cubeOriginX, cubeOriginY,
+                player.x + xOffset, player.y + yOffset,
+                originX, originY,
                 cubeSize, cubeSize,
                 scale, scale, player.getRotation()
             )

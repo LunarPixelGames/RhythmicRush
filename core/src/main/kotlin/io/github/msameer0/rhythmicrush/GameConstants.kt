@@ -17,7 +17,7 @@ object GameConstants {
     object Player {
         const val PLAYER_SIZE = 100f
         const val START_X = 100f
-        
+
         object Cube {
             const val JUMP_VELOCITY = 1906.2f
             const val GRAVITY = -8450.2f

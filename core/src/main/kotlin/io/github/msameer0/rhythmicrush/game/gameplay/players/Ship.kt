@@ -105,7 +105,7 @@ class Ship : AbstractPlayer {
         var targetAngle = MathUtils.atan2(velocityY, scrollSpeed) * MathUtils.radiansToDegrees * GameConstants.Player.Ship.TILT_EXAGGERATION
         if (gravityFlipped) targetAngle = -targetAngle
         targetAngle = MathUtils.clamp(targetAngle, -GameConstants.Player.Ship.MAX_TILT, GameConstants.Player.Ship.MAX_TILT)
-        
+
         setRotation(MathUtils.lerp(getRotation(), targetAngle, MathUtils.clamp(GameConstants.Player.Ship.TILT_LERP * delta, 0f, 1f)))
     }
 
