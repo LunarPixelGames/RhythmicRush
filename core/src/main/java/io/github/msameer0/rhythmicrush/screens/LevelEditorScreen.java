@@ -904,7 +904,7 @@ public class LevelEditorScreen extends AbstractScreen {
         font.draw(getGame().getBatch(), "Load Level", px + 12, py + ph - 12);
         float itemH = 36f, startY = py + ph - 60f - loadScroll;
         for (String file : levelFiles) {
-            if (startY > py && startY < py + ph - 60) {
+            if (startY > py && startY <= py + ph - 60f) {
                 font.getData().setScale(0.5f);
                 font.draw(getGame().getBatch(), file, px + 20, startY);
             }
