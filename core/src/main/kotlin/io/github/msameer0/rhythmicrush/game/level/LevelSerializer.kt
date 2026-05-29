@@ -15,6 +15,7 @@ class LevelSerializer {
             val j = Json()
             j.setOutputType(JsonWriter.OutputType.json)
             j.setUsePrototypes(false)
+            j.setIgnoreUnknownFields(true)
             return j
         }
 
