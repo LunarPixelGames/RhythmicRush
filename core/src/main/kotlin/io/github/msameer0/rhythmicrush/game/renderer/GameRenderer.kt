@@ -177,23 +177,34 @@ class GameRenderer(
 
         batch.end()
 
-        // Pass 2: Shape elements and ground overlays
+        // Pass 2: Shape elements that sit behind pads
         Gdx.gl.glEnable(GL20.GL_BLEND)
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
         shape.begin(ShapeRenderer.ShapeType.Filled)
 
         drawPortalFallbacks(rightEdge)
         drawOrbFallbacks(rightEdge)
-        drawGround()
-        drawPadFallbacks(rightEdge)
+        drawGroundSurfaceLines()
 
         shape.end()
 
-        // Pass 3: Elements that should sit above the ground line
+        // Pass 3: Pads should sit above the surface line
         batch.begin()
         batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
         batch.color = Color.WHITE
         drawPads(rightEdge, beatIntensity)
+        batch.end()
+
+        // Pass 4: Ground fill should still cover the lower portion of pads
+        shape.begin(ShapeRenderer.ShapeType.Filled)
+        drawPadFallbacks(rightEdge)
+        drawGroundFill()
+        shape.end()
+
+        // Pass 5: Foreground gameplay elements
+        batch.begin()
+        batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+        batch.color = Color.WHITE
         drawPlayer(player)
         drawPortalsFront(rightEdge)
         batch.end()
@@ -592,7 +603,7 @@ class GameRenderer(
         }
     }
 
-    private fun drawGround() {
+    private fun drawGroundSurfaceLines() {
         val player = world.player ?: return
         val worldWidth = camera.viewportWidth
         val worldLeft = camera.position.x - worldWidth / 2f
@@ -602,46 +613,68 @@ class GameRenderer(
         val bp = boundaryProgress
         val isCorridor = player.isUsingCorridor()
 
-        // 1. Draw Real Ground (Hide only if fully in a high-air corridor)
+        // 1. Draw Real Ground surface (hide only if fully in a high-air corridor)
         if (!isCorridor || bp < 0.99f) {
-            shape.color = world.groundColor
-            shape.rect(worldLeft, 0f, worldWidth, world.groundY)
             shape.color = Color.WHITE
             shape.rect(worldLeft, world.groundY, worldWidth, 5f)
         }
 
-        // 2. Draw Ship Mode Boundaries (Animated Slide-in)
+        // 2. Draw ship mode boundary surface lines
         if (bp > 0.001f) {
-            // Case 2: High Air Corridor
             if (isCorridor) {
                 val targetCeilingTop = player.getCorridorTop() ?: 1080f
                 val targetFloorBottom = player.getCorridorBottom() ?: 0f
 
-                // Top Boundary (Ceiling) - Surface is targetCeilingTop
+                val ceilingBottomY = screenTop - (screenTop - targetCeilingTop) * bp
+                shape.color = Color.WHITE
+                shape.rect(worldLeft, ceilingBottomY - 5f, worldWidth, 5f)
+
+                val floorTopY = screenBottom + (targetFloorBottom - screenBottom) * bp
+                shape.color = Color.WHITE
+                shape.rect(worldLeft, floorTopY, worldWidth, 5f)
+            } else {
+                val targetCeilingBottom = screenTop - 39f
+                val ceilingBottomY = screenTop - (screenTop - targetCeilingBottom) * bp
+                shape.color = Color.WHITE
+                shape.rect(worldLeft, ceilingBottomY - 5f, worldWidth, 5f)
+            }
+        }
+    }
+
+    private fun drawGroundFill() {
+        val player = world.player ?: return
+        val worldWidth = camera.viewportWidth
+        val worldLeft = camera.position.x - worldWidth / 2f
+        val viewportHeight = camera.viewportHeight
+        val screenBottom = camera.position.y - viewportHeight / 2f
+        val screenTop = camera.position.y + viewportHeight / 2f
+        val bp = boundaryProgress
+        val isCorridor = player.isUsingCorridor()
+
+        if (!isCorridor || bp < 0.99f) {
+            shape.color = world.groundColor
+            shape.rect(worldLeft, 0f, worldWidth, world.groundY)
+        }
+
+        if (bp > 0.001f) {
+            if (isCorridor) {
+                val targetCeilingTop = player.getCorridorTop() ?: 1080f
+                val targetFloorBottom = player.getCorridorBottom() ?: 0f
+
                 val ceilingBottomY = screenTop - (screenTop - targetCeilingTop) * bp
                 val ceilingTopY = kotlin.math.max(screenTop, targetCeilingTop)
                 shape.color = world.groundColor
                 shape.rect(worldLeft, ceilingBottomY, worldWidth, ceilingTopY - ceilingBottomY)
-                shape.color = Color.WHITE
-                shape.rect(worldLeft, ceilingBottomY - 5f, worldWidth, 5f)
 
-                // Bottom Boundary (Fake Floor) - Surface is targetFloorBottom
                 val floorTopY = screenBottom + (targetFloorBottom - screenBottom) * bp
                 val floorBottomY = kotlin.math.min(screenBottom, targetFloorBottom)
                 shape.color = world.groundColor
                 shape.rect(worldLeft, floorBottomY, worldWidth, floorTopY - floorBottomY)
-                shape.color = Color.WHITE
-                shape.rect(worldLeft, floorTopY, worldWidth, 5f)
             } else {
-                // Case 1: Near Ground - Only need the CEILING boundary
-                // Note: Bottom ground is already handled by the "Real Ground" draw call above
-
                 val targetCeilingBottom = screenTop - 39f
                 val ceilingBottomY = screenTop - (screenTop - targetCeilingBottom) * bp
                 shape.color = world.groundColor
                 shape.rect(worldLeft, ceilingBottomY, worldWidth, 39f)
-                shape.color = Color.WHITE
-                shape.rect(worldLeft, ceilingBottomY - 5f, worldWidth, 5f)
             }
         }
     }
