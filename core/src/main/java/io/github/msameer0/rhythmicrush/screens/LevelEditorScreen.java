@@ -862,7 +862,7 @@ public class LevelEditorScreen extends AbstractScreen {
 
     private void saveLevel() {
         if (savePath == null)
-            savePath = levelData.getName().replaceAll("\\s+", "_") + ".ubj";
+            savePath = findNextLevelFileName();
         try {
             FileHandle file = resolveWritableLevelFile(savePath);
             LevelSerializer.Companion.saveBinary(levelData, file);
@@ -1497,6 +1497,23 @@ public class LevelEditorScreen extends AbstractScreen {
         if (!levelsDir.exists()) levelsDir = Gdx.files.local("assets/levels");
         if (!levelsDir.exists()) levelsDir.mkdirs();
         return levelsDir.child(filename);
+    }
+
+    private String findNextLevelFileName() {
+        FileHandle dir = resolveLevelsDirectory();
+        int nextIndex = 0;
+        if (dir.exists()) {
+            for (FileHandle file : dir.list()) {
+                String extension = file.extension().toLowerCase();
+                if (!extension.equals("ubj") && !extension.equals("json")) continue;
+                try {
+                    int index = Integer.parseInt(file.nameWithoutExtension());
+                    if (index >= nextIndex) nextIndex = index + 1;
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+        return nextIndex + ".ubj";
     }
 
     private FileHandle resolveLevelsDirectory() {
