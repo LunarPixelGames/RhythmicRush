@@ -22,7 +22,7 @@ object GameConstants {
             const val JUMP_VELOCITY = 1906.2f
             const val GRAVITY = -8450.2f
             const val SPIN_SPEED = 399.0f
-            const val COYOTE_TIME = 0.083f
+            const val COYOTE_TIME = 0.033f
         }
 
         object Ship {
