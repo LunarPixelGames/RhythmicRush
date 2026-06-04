@@ -50,22 +50,27 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
     private val layout = GlyphLayout()
 
     companion object {
-        private const val CAT_GAMEPLAY = 0
-        private const val CAT_GRAPHICS = 1
-        private const val CAT_COUNT = 2
-        private val CAT_NAMES = arrayOf("Gameplay", "Graphics")
+        private const val CAT_AUDIO = 0
+        private const val CAT_GAMEPLAY = 1
+        private const val CAT_INTERFACE = 2
+        private const val CAT_GRAPHICS = 3
+        private const val CAT_COUNT = 4
+        private val CAT_NAMES = arrayOf("Audio", "Gameplay", "Interface", "Graphics")
 
         private const val INFO_TAB_HOWTOPLAY = 0
-        private const val INFO_TAB_CREDITS = 1
-        private const val INFO_TAB_SOCIALS = 2
-        private const val INFO_TAB_COUNT = 3
-        private val INFO_TAB_NAMES = arrayOf("How to Play", "Credits", "Socials")
+        private const val INFO_TAB_CONTROLS = 1
+        private const val INFO_TAB_CREDITS_A = 2
+        private const val INFO_TAB_CREDITS_B = 3
+        private const val INFO_TAB_SOCIALS = 4
+        private const val INFO_TAB_COUNT = 5
+        private val INFO_TAB_NAMES = arrayOf("How to Play", "Controls", "Credits I", "Credits II", "Socials")
 
-        private const val MAX_ROWS_PER_PAGE = 4
+        private const val MAX_ROWS_PER_PAGE = 5
         private const val PANEL_HEIGHT_FRACTION = 0.88f
 
         private val COL_OVERLAY = Color(0f, 0f, 0f, 0.62f)
         private val COL_PANEL = Color(0.13f, 0.13f, 0.19f, 1f)
+        private val COL_PANEL_SHADOW = Color(0f, 0f, 0f, 0.22f)
         private val COL_LABEL = Color(1f, 1f, 1f, 0.90f)
         private val COL_DIM = Color(1f, 1f, 1f, 0.45f)
         private val COL_ON = Color(0.35f, 0.85f, 0.55f, 1f)
@@ -129,6 +134,27 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         InfoLine("Vulg by OcularNebula", "https://www.newgrounds.com/audio/listen/954091"),
         InfoLine("Event Horizon by DJVI", "https://www.newgrounds.com/audio/listen/809594"),
         InfoLine("Geometry Bounce by DJ Nate", "https://www.newgrounds.com/audio/listen/770546")
+    )
+
+    private val howToLines = arrayOf(
+        "Rhythmic Rush is built around committed timing.",
+        "Read the lane early and jump before the obstacle reaches you.",
+        "The level camera and color changes also telegraph upcoming pressure.",
+        "Short clicks are safer than holding unless you are in ship mode."
+    )
+
+    private val controlLines = arrayOf(
+        "Space / Click",
+        "Jump as cube, rise as ship",
+        "",
+        "Esc",
+        "Pause gameplay or close menu overlays",
+        "",
+        "R",
+        "Restart the level",
+        "",
+        "Practice: Z / X",
+        "Place or remove checkpoint"
     )
 
     private val socialLines = arrayOf(
@@ -195,21 +221,23 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         val desktop = Gdx.app.type == com.badlogic.gdx.Application.ApplicationType.Desktop
         val rows = Array<SettingRow>()
 
-        if (cat == CAT_GAMEPLAY) {
+        if (cat == CAT_AUDIO) {
             rows.add(SettingRow(RowType.TOGGLE, "Menu Music", "menuMusic"))
             rows.add(SettingRow(RowType.SLIDER, "Music Volume", "volume"))
             rows.add(SettingRow(RowType.SLIDER, "SFX Volume", "sfxVolume"))
+        } else if (cat == CAT_GAMEPLAY) {
             rows.add(SettingRow(RowType.TOGGLE, "Death Effect", "deathEffect"))
             rows.add(SettingRow(RowType.TOGGLE, "Show Hitboxes", "hitboxes"))
             rows.add(SettingRow(RowType.TOGGLE, "Show Hitboxes on Death", "hitboxesDeath"))
+            rows.add(SettingRow(RowType.TOGGLE, "Pulse Orbs", "pulseOrbs"))
+            if (desktop) rows.add(SettingRow(RowType.TOGGLE, "Lock Cursor in Game", "lockCursor"))
+        } else if (cat == CAT_INTERFACE) {
             rows.add(SettingRow(RowType.TOGGLE, "Show Percentage", "showPercentage"))
             rows.add(SettingRow(RowType.TOGGLE, "Show Progress Bar", "showProgressBar"))
             rows.add(SettingRow(RowType.TOGGLE, "Show Attempts", "showAttempts"))
             rows.add(SettingRow(RowType.TOGGLE, "Show Best", "showBest"))
             rows.add(SettingRow(RowType.SLIDER, "Practice Buttons Opacity", "practiceOpacity"))
-            if (desktop) rows.add(SettingRow(RowType.TOGGLE, "Lock Cursor in Game", "lockCursor"))
         } else {
-            rows.add(SettingRow(RowType.TOGGLE, "Pulse Orbs", "pulseOrbs"))
             rows.add(SettingRow(RowType.TOGGLE, "Show FPS", "showFps"))
             if (desktop) {
                 rows.add(SettingRow(RowType.TOGGLE, "Cap FPS", "capFps"))
@@ -291,8 +319,8 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             settingsH
         )
 
-        panelW = min(vw * 0.72f, 1320f)
-        val targetH = min(vh * 0.80f, 860f)
+        panelW = min(vw * 0.74f, 1380f)
+        val targetH = min(vh * 0.82f, 900f)
         panelPadX = panelW * 0.07f
         panelPadY = targetH * 0.065f
         panelPadT = targetH * 0.15f
@@ -300,8 +328,8 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         rowStep = (targetH - panelPadT - panelPadB) / MAX_ROWS_PER_PAGE
         sliderTrackW = panelW * 0.28f
         val scaleRef = targetH / 760f
-        settingsFontScale = 0.72f * scaleRef
-        settingsHeadingScale = 1.02f * scaleRef
+        settingsFontScale = 0.78f * scaleRef
+        settingsHeadingScale = 1.08f * scaleRef
         recomputePanelHeight()
     }
 
@@ -312,8 +340,8 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         panelX = vw / 2f - panelW / 2f
         panelY = vh / 2f - panelH / 2f
 
-        backW = 80f
-        backH = 80f
+        backW = 78f
+        backH = 78f
         backX = panelX + panelPadX - 8f
         backY = panelY + panelH - panelPadY - backH + 12f
 
@@ -325,7 +353,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         rowLabelX = panelX + panelPadX
         controlRightX = panelX + panelW - panelPadX
 
-        arrowSize = 68f
+        arrowSize = 52f
         arrowY = panelY + panelH / 2f - arrowSize / 2f
         arrowLeftX = panelX + 18f
         arrowRightX = panelX + panelW - arrowSize - 18f
@@ -376,7 +404,12 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             lastPanelH = texH
         }
         game.batch.begin()
-        panelTexture?.let { game.batch.draw(it, panelX, panelY) }
+        panelTexture?.let {
+            game.batch.color = COL_PANEL_SHADOW
+            game.batch.draw(it, panelX + 10f, panelY - 12f)
+            game.batch.color = Color.WHITE
+            game.batch.draw(it, panelX, panelY)
+        }
         game.batch.draw(backArrow, backX, backY, backW, backH)
         game.batch.end()
         shapes.begin(ShapeRenderer.ShapeType.Filled)
@@ -426,10 +459,6 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         val cy = y + size / 2f
         val hs = size * 0.35f
         shapes.begin(ShapeRenderer.ShapeType.Filled)
-        shapes.color = Color(COL_DIM.r, COL_DIM.g, COL_DIM.b, 0.8f)
-        shapes.circle(cx, cy, size * 0.48f, 28)
-        shapes.color = COL_PANEL
-        shapes.circle(cx, cy, size * 0.42f, 28)
         shapes.color = COL_DIM
         if (pointLeft) shapes.triangle(cx + hs, cy + hs, cx + hs, cy - hs, cx - hs, cy)
         else shapes.triangle(cx - hs, cy + hs, cx - hs, cy - hs, cx + hs, cy)
@@ -716,7 +745,12 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
         game.batch.projectionMatrix = camera.combined
         game.batch.begin()
-        panelTexture?.let { game.batch.draw(it, panelX, panelY) }
+        panelTexture?.let {
+            game.batch.color = COL_PANEL_SHADOW
+            game.batch.draw(it, panelX + 10f, panelY - 12f)
+            game.batch.color = Color.WHITE
+            game.batch.draw(it, panelX, panelY)
+        }
         game.batch.draw(backArrow, backX, backY, backW, backH)
 
         val titleText = INFO_TAB_NAMES[currentInfoPage]
@@ -745,26 +779,46 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         font.data.setScale(settingsFontScale * 0.84f)
 
         if (currentInfoPage == INFO_TAB_HOWTOPLAY) {
-            val lines = arrayOf(
-                "Welcome to Rhythmic Rush.",
-                "",
-                "Jump and fly through rhythm-driven obstacle patterns.",
-                "Read the terrain early and commit to your timing.",
-                "",
-                "Controls",
-                "Space / Click: jump or fly up",
-                "Esc: pause or go back"
-            )
-            for (i in lines.indices) {
-                font.color = if (i == 5) COL_HEADING else COL_LABEL
-                font.draw(game.batch, lines[i], contentX, contentY - i * lineSpacing)
+            font.color = COL_HEADING
+            font.draw(game.batch, "Read Ahead", contentX, contentY)
+            font.color = COL_LABEL
+            for (i in howToLines.indices) {
+                font.draw(game.batch, howToLines[i], contentX, contentY - (i + 1.2f) * lineSpacing)
             }
-        } else if (currentInfoPage == INFO_TAB_CREDITS) {
+        } else if (currentInfoPage == INFO_TAB_CONTROLS) {
+            for (i in controlLines.indices) {
+                val text = controlLines[i]
+                val y = contentY - i * (lineSpacing * 0.9f)
+                when {
+                    text.isEmpty() -> {}
+                    i % 3 == 0 -> {
+                        font.color = COL_HEADING
+                        font.draw(game.batch, text, contentX, y)
+                    }
+                    else -> {
+                        font.color = COL_LABEL
+                        font.draw(game.batch, text, contentX + 20f, y)
+                    }
+                }
+            }
+        } else if (currentInfoPage == INFO_TAB_CREDITS_A) {
             font.color = COL_HEADING
             font.draw(game.batch, "Music Credits", contentX, contentY)
-            for (i in creditLines.indices) {
+            for (i in 0 until 4) {
                 val line = creditLines[i]
                 line.y = contentY - (i + 1.15f) * lineSpacing
+                font.color = COL_TAB_ACT
+                font.draw(game.batch, "- " + line.text, contentX, line.y)
+            }
+            font.color = COL_DIM
+            font.draw(game.batch, "More tracks on the next page.", contentX, footerY + 18f)
+        } else if (currentInfoPage == INFO_TAB_CREDITS_B) {
+            font.color = COL_HEADING
+            font.draw(game.batch, "Music Credits", contentX, contentY)
+            for (i in 4 until creditLines.size) {
+                val line = creditLines[i]
+                val lineIndex = i - 4
+                line.y = contentY - (lineIndex + 1.15f) * lineSpacing
                 font.color = COL_TAB_ACT
                 font.draw(game.batch, "- " + line.text, contentX, line.y)
             }
@@ -838,7 +892,8 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         }
 
         val lines: Array<InfoLine>? = when (currentInfoPage) {
-            INFO_TAB_CREDITS -> Array(creditLines)
+            INFO_TAB_CREDITS_A -> Array.with(*creditLines.copyOfRange(0, 4))
+            INFO_TAB_CREDITS_B -> Array.with(*creditLines.copyOfRange(4, creditLines.size))
             INFO_TAB_SOCIALS -> Array(socialLines)
             else -> null
         }

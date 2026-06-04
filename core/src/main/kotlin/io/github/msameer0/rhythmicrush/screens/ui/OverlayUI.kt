@@ -52,6 +52,7 @@ class OverlayUI(
     companion object {
         private val COL_OVERLAY = Color(0f, 0f, 0f, 0.65f)
         private val COL_PANEL = Color(0.11f, 0.11f, 0.17f, 1f)
+        private val COL_PANEL_SHADOW = Color(0f, 0f, 0f, 0.24f)
         private val COL_HEADING = Color(1f, 0.85f, 0.35f, 1f)
         private val COL_LABEL = Color(1f, 1f, 1f, 0.85f)
         private val COL_DIM = Color(1f, 1f, 1f, 0.50f)
@@ -108,20 +109,20 @@ class OverlayUI(
             panelH = minOf(vh * 0.74f, 920f)
             uiScale = MathUtils.clamp(baseScale * 1.3f, 1.2f, 1.8f)
         } else {
-            panelW = minOf(vw * 0.54f, 940f)
-            panelH = minOf(vh * 0.58f, 560f)
-            uiScale = baseScale
+            panelW = minOf(vw * 0.64f, 1180f)
+            panelH = minOf(vh * 0.68f, 760f)
+            uiScale = MathUtils.clamp(baseScale * 1.08f, 1f, 1.35f)
         }
         panelPadX = panelW * 0.085f
         panelPadY = panelH * 0.085f
         cornerRadius = panelW * 0.035f
-        btnSize = panelH * 0.16f
+        btnSize = panelH * 0.15f
         actionGap = btnSize * 0.32f
-        titleScale = 0.9f * uiScale
-        bodyScale = 0.58f * uiScale
-        metaScale = 0.46f * uiScale
-        smallScale = 0.4f * uiScale
-        sliderGap = panelH * 0.14f
+        titleScale = 1.18f * uiScale
+        bodyScale = 0.82f * uiScale
+        metaScale = 0.62f * uiScale
+        smallScale = 0.54f * uiScale
+        sliderGap = panelH * 0.16f
         sliderTrackWidth = panelW * 0.56f
         sliderTrackHeight = maxOf(4f, panelH * 0.012f)
         sliderThumbRadius = panelH * 0.022f
@@ -143,11 +144,11 @@ class OverlayUI(
         val shadow = 2f * uiScale
         val centerX = px + panelW / 2f
         val titleY = py + panelH - panelPadY
-        val statsY = titleY - 84f * uiScale
+        val statsY = titleY - 92f * uiScale
         val actionsY = py + panelPadY
-        val contentCenterY = py + panelH * 0.40f
+        val contentCenterY = py + panelH * 0.38f
 
-        panelTexture?.let { batch.draw(it, px, py) }
+        drawPanel(px, py)
 
         val name = levelData?.name ?: "Level"
         pauseFont.data.setScale(titleScale)
@@ -191,7 +192,7 @@ class OverlayUI(
         pauseFont.data.setScale(bodyScale)
         layout.setText(pauseFont, "Music Volume")
         x = sliderTrackX(camera)
-        var y = musicSliderY + 34f * uiScale
+        var y = musicSliderY + 40f * uiScale
         drawShadowText("Music Volume", x, y, COL_LABEL, shadow)
 
         val vol = game.settingsManager.musicVolume
@@ -199,14 +200,14 @@ class OverlayUI(
         val volPct = MathUtils.round(vol * 100f).toString() + "%"
         layout.setText(pauseFont, volPct)
         x = sliderTrackX(camera) + sliderTrackWidth - layout.width
-        y = musicSliderY + 34f * uiScale
+        y = musicSliderY + 40f * uiScale
         drawShadowText(volPct, x, y, COL_DIM, shadow)
 
         val sfxSliderY = contentCenterY - sliderGap * 0.5f
         pauseFont.data.setScale(bodyScale)
         layout.setText(pauseFont, "SFX Volume")
         x = sliderTrackX(camera)
-        y = sfxSliderY + 34f * uiScale
+        y = sfxSliderY + 40f * uiScale
         drawShadowText("SFX Volume", x, y, COL_LABEL, shadow)
 
         val sfx = game.settingsManager.sfxVolume
@@ -214,7 +215,7 @@ class OverlayUI(
         val sfxPct = MathUtils.round(sfx * 100f).toString() + "%"
         layout.setText(pauseFont, sfxPct)
         x = sliderTrackX(camera) + sliderTrackWidth - layout.width
-        y = sfxSliderY + 34f * uiScale
+        y = sfxSliderY + 40f * uiScale
         drawShadowText(sfxPct, x, y, COL_DIM, shadow)
 
         pauseFont.data.setScale(smallScale)
@@ -252,10 +253,10 @@ class OverlayUI(
         val shadow = 2f * uiScale
         val centerX = px + panelW / 2f
         val titleY = py + panelH - panelPadY
-        val statsY = py + panelH * 0.54f
+        val statsY = py + panelH * 0.56f
         val actionsY = py + panelPadY
 
-        panelTexture?.let { batch.draw(it, px, py) }
+        drawPanel(px, py)
 
         pauseFont.data.setScale(titleScale)
         layout.setText(pauseFont, "LEVEL COMPLETE")
@@ -416,6 +417,15 @@ class OverlayUI(
             panelTexture = createRoundedRect(tw, th, cornerRadius.toInt(), COL_PANEL)
             lastPanelW = tw
             lastPanelH = th
+        }
+    }
+
+    private fun drawPanel(px: Float, py: Float) {
+        panelTexture?.let {
+            batch.color = COL_PANEL_SHADOW
+            batch.draw(it, px + 10f, py - 12f)
+            batch.color = Color.WHITE
+            batch.draw(it, px, py)
         }
     }
 
