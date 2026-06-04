@@ -49,6 +49,8 @@ class GameWorld : Tickable {
         val startRadius: Float,
         val endRadius: Float,
         val duration: Float,
+        val brightness: Float,
+        val maxAlpha: Float,
         var age: Float = 0f
     ) {
         val progress: Float
@@ -58,7 +60,7 @@ class GameWorld : Tickable {
             get() = startRadius + (endRadius - startRadius) * progress
 
         val alpha: Float
-            get() = 0.5f * (1f - progress)
+            get() = maxAlpha * (1f - progress)
     }
 
     companion object {
@@ -600,17 +602,18 @@ class GameWorld : Tickable {
         val p = player ?: return
         val centerX = p.x + p.width / 2f
         val centerY = p.y + p.height / 2f
-        val burstCount = MathUtils.random(2, 3)
+        val burstCount = 5
         for (i in 0 until burstCount) {
-            val offsetX = MathUtils.random(-18f, 18f)
-            val offsetY = MathUtils.random(-18f, 18f)
+            val t = if (burstCount <= 1) 1f else i / (burstCount - 1f)
             deathBursts.add(
                 DeathBurst(
-                    x = centerX + offsetX,
-                    y = centerY + offsetY,
-                    startRadius = MathUtils.random(12f, 22f),
-                    endRadius = MathUtils.random(48f, 82f),
-                    duration = MathUtils.random(0.22f, 0.34f)
+                    x = centerX,
+                    y = centerY,
+                    startRadius = 10f + i * 3f,
+                    endRadius = 34f + i * 13f,
+                    duration = 0.16f + i * 0.02f,
+                    brightness = 0.45f + t * 0.5f,
+                    maxAlpha = 0.5f - t * 0.22f
                 )
             )
         }
