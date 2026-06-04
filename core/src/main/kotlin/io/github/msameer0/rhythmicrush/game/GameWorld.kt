@@ -611,7 +611,7 @@ class GameWorld : Tickable {
         val p = player ?: return
         val centerX = p.x + p.width / 2f
         val centerY = p.y + p.height / 2f
-        val burstCount = 5
+        val burstCount = 3
         for (i in 0 until burstCount) {
             deathBursts.add(
                 DeathBurst(
@@ -619,8 +619,8 @@ class GameWorld : Tickable {
                     y = centerY,
                     startRadius = 0f,
                     endRadius = 78f,
-                    startDelay = i * 0.03f,
-                    duration = 0.14f,
+                    startDelay = i * 0.06f,
+                    duration = 0.22f,
                     maxAlpha = 0.42f
                 )
             )
