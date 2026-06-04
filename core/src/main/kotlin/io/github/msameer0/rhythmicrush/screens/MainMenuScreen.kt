@@ -190,6 +190,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             rows.add(SettingRow(RowType.TOGGLE, "Menu Music", "menuMusic"))
             rows.add(SettingRow(RowType.SLIDER, "Music Volume", "volume"))
             rows.add(SettingRow(RowType.SLIDER, "SFX Volume", "sfxVolume"))
+            rows.add(SettingRow(RowType.TOGGLE, "Death Effect", "deathEffect"))
             rows.add(SettingRow(RowType.TOGGLE, "Show Hitboxes", "hitboxes"))
             rows.add(SettingRow(RowType.TOGGLE, "Show Hitboxes on Death", "hitboxesDeath"))
             rows.add(SettingRow(RowType.TOGGLE, "Show Percentage", "showPercentage"))
@@ -433,6 +434,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
     private fun getToggleValue(id: String, s: SettingsManager): Boolean {
         return when (id) {
             "menuMusic" -> s.menuMusicEnabled
+            "deathEffect" -> s.deathEffectEnabled
             "hitboxes" -> s.showHitboxes
             "hitboxesDeath" -> s.showHitboxesOnDeath
             "lockCursor" -> s.lockCursorInGame
@@ -616,6 +618,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             }
 
             "hitboxes" -> s.showHitboxes = !s.showHitboxes
+            "deathEffect" -> s.deathEffectEnabled = !s.deathEffectEnabled
             "hitboxesDeath" -> s.showHitboxesOnDeath = !s.showHitboxesOnDeath
             "pulseOrbs" -> s.pulseOrbs = !s.pulseOrbs
             "showFps" -> s.showFps = !s.showFps

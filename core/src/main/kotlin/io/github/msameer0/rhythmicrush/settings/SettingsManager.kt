@@ -12,6 +12,7 @@ class SettingsManager {
     var menuMusicEnabled: Boolean = true
     var musicVolume: Float = 1f
     var sfxVolume: Float = 1f
+    var deathEffectEnabled: Boolean = true
     var showHitboxes: Boolean = false
     var showHitboxesOnDeath: Boolean = false
     var lockCursorInGame: Boolean = false
@@ -34,6 +35,7 @@ class SettingsManager {
         var menuMusicEnabled: Boolean = true
         var musicVolume: Float = 1f
         var sfxVolume: Float = 1f
+        var deathEffectEnabled: Boolean = true
         var showHitboxes: Boolean = false
         var showHitboxesOnDeath: Boolean = false
         var lockCursorInGame: Boolean = false
@@ -65,6 +67,7 @@ class SettingsManager {
             snapshot.menuMusicEnabled = menuMusicEnabled
             snapshot.musicVolume = musicVolume
             snapshot.sfxVolume = sfxVolume
+            snapshot.deathEffectEnabled = deathEffectEnabled
             snapshot.showHitboxes = showHitboxes
             snapshot.showHitboxesOnDeath = showHitboxesOnDeath
             snapshot.lockCursorInGame = lockCursorInGame
@@ -101,6 +104,7 @@ class SettingsManager {
             menuMusicEnabled = d.menuMusicEnabled
             musicVolume = d.musicVolume
             sfxVolume = d.sfxVolume
+            deathEffectEnabled = d.deathEffectEnabled
             showHitboxes = d.showHitboxes
             showHitboxesOnDeath = d.showHitboxesOnDeath
             lockCursorInGame = d.lockCursorInGame

@@ -681,6 +681,7 @@ class GameRenderer(
     }
 
     private fun drawDeathBursts() {
+        if (!settings.deathEffectEnabled) return
         for (i in 0 until world.deathBursts.size) {
             val burst = world.deathBursts[i]
             if (burst.alpha <= 0f) continue
