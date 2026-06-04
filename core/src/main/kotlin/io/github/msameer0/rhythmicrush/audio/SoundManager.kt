@@ -2,6 +2,7 @@ package io.github.msameer0.rhythmicrush.audio
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.audio.Music
+import com.badlogic.gdx.audio.Sound
 import com.badlogic.gdx.math.MathUtils
 
 /**
@@ -9,13 +10,10 @@ import com.badlogic.gdx.math.MathUtils
  */
 class SoundManager {
     private var musicVolume = 1f
-
-    var sfxVolume: Float = 1f
-        set(volume) {
-            field = MathUtils.clamp(volume, 0f, 1f)
-        }
+    private var sfxVolume = 1f
 
     private var menuMusic: Music? = null
+    private var deathSound: Sound? = null
 
     fun playMenuMusic() {
         if (menuMusic == null) {
@@ -51,6 +49,29 @@ class SoundManager {
         menuMusic?.volume = musicVolume
     }
 
+    fun getSfxVolume(): Float {
+        return sfxVolume
+    }
+
+    fun setSfxVolume(volume: Float) {
+        sfxVolume = MathUtils.clamp(volume, 0f, 1f)
+    }
+
+    fun playDeathSound() {
+        val sound = deathSound ?: loadDeathSound() ?: return
+        sound.play(sfxVolume)
+    }
+
+    private fun loadDeathSound(): Sound? {
+        if (deathSound == null) {
+            val file = Gdx.files.internal("sfx/death.wav")
+            if (file.exists()) {
+                deathSound = Gdx.audio.newSound(file)
+            }
+        }
+        return deathSound
+    }
+
     fun dispose() {
         menuMusic?.let {
             Gdx.app.log("SoundManager", "Disposing menu music...")
@@ -59,5 +80,7 @@ class SoundManager {
             menuMusic = null
             Gdx.app.log("SoundManager", "Menu music disposed.")
         }
+        deathSound?.dispose()
+        deathSound = null
     }
 }

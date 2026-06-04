@@ -189,6 +189,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         if (cat == CAT_GAMEPLAY) {
             rows.add(SettingRow(RowType.TOGGLE, "Menu Music", "menuMusic"))
             rows.add(SettingRow(RowType.SLIDER, "Music Volume", "volume"))
+            rows.add(SettingRow(RowType.SLIDER, "SFX Volume", "sfxVolume"))
             rows.add(SettingRow(RowType.TOGGLE, "Show Hitboxes", "hitboxes"))
             rows.add(SettingRow(RowType.TOGGLE, "Show Hitboxes on Death", "hitboxesDeath"))
             rows.add(SettingRow(RowType.TOGGLE, "Show Percentage", "showPercentage"))
@@ -418,6 +419,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
                     val v = when (row.id) {
                         "uiPadding" -> s.uiPadding / 50f
                         "practiceOpacity" -> s.practiceButtonOpacity
+                        "sfxVolume" -> s.sfxVolume
                         else -> s.musicVolume
                     }
                     drawSliderRow(ry, row.label, v, 45f)
@@ -571,6 +573,8 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
                 val r = rows.get(draggingSliderRow)
                 if (r.id == "volume") {
                     s.musicVolume = norm; game.soundManager.setMusicVolume(norm)
+                } else if (r.id == "sfxVolume") {
+                    s.sfxVolume = norm; game.soundManager.setSfxVolume(norm)
                 } else if (r.id == "uiPadding") s.uiPadding = norm * 50f
                 else if (r.id == "practiceOpacity") s.practiceButtonOpacity = norm
             }

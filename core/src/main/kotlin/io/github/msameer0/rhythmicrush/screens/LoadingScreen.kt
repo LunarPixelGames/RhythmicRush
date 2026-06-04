@@ -94,6 +94,7 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
     private fun finalizeLoading() {
         game.soundManager.setMusicVolume(game.settingsManager.musicVolume)
+        game.soundManager.setSfxVolume(game.settingsManager.sfxVolume)
         game.settingsManager.applyFpsCap()
         game.settingsManager.applyVsync()
 

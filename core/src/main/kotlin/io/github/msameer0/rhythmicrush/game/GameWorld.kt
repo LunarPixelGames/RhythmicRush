@@ -2,6 +2,7 @@ package io.github.msameer0.rhythmicrush.game
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.utils.Array
 import io.github.msameer0.rhythmicrush.GameConstants
 import io.github.msameer0.rhythmicrush.game.engine.Tickable
@@ -42,6 +43,23 @@ import kotlin.math.min
  * Represents the core game state, including the player, level objects, and world simulation logic.
  */
 class GameWorld : Tickable {
+    data class DeathBurst(
+        val x: Float,
+        val y: Float,
+        val startRadius: Float,
+        val endRadius: Float,
+        val duration: Float,
+        var age: Float = 0f
+    ) {
+        val progress: Float
+            get() = min(age / duration, 1f)
+
+        val radius: Float
+            get() = startRadius + (endRadius - startRadius) * progress
+
+        val alpha: Float
+            get() = 0.5f * (1f - progress)
+    }
 
     companion object {
         private const val COLLISION_LOOKAHEAD = 2800f
@@ -116,6 +134,7 @@ class GameWorld : Tickable {
 
     private val triggers = Array<AbstractTrigger>()
     private var currentLevelData: LevelData? = null
+    val deathBursts = Array<DeathBurst>()
 
     init {
         player = pools.obtainCube().init(100f, groundY)
@@ -157,6 +176,7 @@ class GameWorld : Tickable {
     }
 
     fun updateVisuals(delta: Float) {
+        updateDeathBursts(delta)
         if (isPlayerDead || isLevelComplete) return
         colors.update(delta)
 
@@ -186,6 +206,7 @@ class GameWorld : Tickable {
         colors.cancelTransitions()
         isPlayerDead = false
         isLevelComplete = false
+        deathBursts.clear()
         worldScrolled = startScrolled
         postEndTimer = -1f
         bgImage = data.bgImage ?: ""
@@ -382,6 +403,7 @@ class GameWorld : Tickable {
             colors.reset()
             isPlayerDead = false
             isLevelComplete = false
+            deathBursts.clear()
             worldScrolled = 0f
             postEndTimer = -1f
             levelEndX = 0f
@@ -568,7 +590,37 @@ class GameWorld : Tickable {
     fun playerDied() {
         if (!isPlayerDead) {
             Gdx.app.log("GameWorld", "Player died.")
+            spawnDeathBursts()
             isPlayerDead = true
+        }
+    }
+
+    private fun spawnDeathBursts() {
+        deathBursts.clear()
+        val p = player ?: return
+        val centerX = p.x + p.width / 2f
+        val centerY = p.y + p.height / 2f
+        val burstCount = MathUtils.random(2, 3)
+        for (i in 0 until burstCount) {
+            val offsetX = MathUtils.random(-18f, 18f)
+            val offsetY = MathUtils.random(-18f, 18f)
+            deathBursts.add(
+                DeathBurst(
+                    x = centerX + offsetX,
+                    y = centerY + offsetY,
+                    startRadius = MathUtils.random(12f, 22f),
+                    endRadius = MathUtils.random(48f, 82f),
+                    duration = MathUtils.random(0.22f, 0.34f)
+                )
+            )
+        }
+    }
+
+    private fun updateDeathBursts(delta: Float) {
+        for (i in deathBursts.size - 1 downTo 0) {
+            val burst = deathBursts[i]
+            burst.age += delta
+            if (burst.age >= burst.duration) deathBursts.removeIndex(i)
         }
     }
 

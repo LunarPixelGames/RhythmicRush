@@ -29,6 +29,8 @@ class OverlayUI(
     private val resumeRegion: TextureRegion?,
     private val backRegion: TextureRegion?
 ) {
+    enum class SliderKind { MUSIC, SFX }
+
 
     private var panelW = 520f
     private var panelH = 360f
@@ -81,7 +83,7 @@ class OverlayUI(
     private var lastPanelW = -1
     private var lastPanelH = -1
 
-    var isSliderDragging = false
+    var activeSlider: SliderKind? = null
         private set
 
     fun updateScale() {
@@ -156,20 +158,35 @@ class OverlayUI(
             btnSize * 0.9f
         )
 
-        val sliderY = sliderY(camera)
+        val musicSliderY = sliderY(camera, SliderKind.MUSIC)
         pauseFont.data.setScale(0.58f * uiScale)
-        layout.setText(pauseFont, "Volume")
+        layout.setText(pauseFont, "Music Volume")
         x = px + panelW / 2f - layout.width / 2f
-        y = sliderY + layout.height + 12f * uiScale
-        drawShadowText("Volume", x, y, COL_LABEL, shadow)
+        y = musicSliderY + layout.height + 12f * uiScale
+        drawShadowText("Music Volume", x, y, COL_LABEL, shadow)
 
         val vol = game.settingsManager.musicVolume
         pauseFont.data.setScale(0.48f * uiScale)
         val volPct = MathUtils.round(vol * 100f).toString() + "%"
         layout.setText(pauseFont, volPct)
         x = sliderTrackX(camera) - layout.width - 12f * uiScale
-        y = sliderY + layout.height / 2f
+        y = musicSliderY + layout.height / 2f
         drawShadowText(volPct, x, y, COL_DIM, shadow)
+
+        val sfxSliderY = sliderY(camera, SliderKind.SFX)
+        pauseFont.data.setScale(0.58f * uiScale)
+        layout.setText(pauseFont, "SFX Volume")
+        x = px + panelW / 2f - layout.width / 2f
+        y = sfxSliderY + layout.height + 12f * uiScale
+        drawShadowText("SFX Volume", x, y, COL_LABEL, shadow)
+
+        val sfx = game.settingsManager.sfxVolume
+        pauseFont.data.setScale(0.48f * uiScale)
+        val sfxPct = MathUtils.round(sfx * 100f).toString() + "%"
+        layout.setText(pauseFont, sfxPct)
+        x = sliderTrackX(camera) - layout.width - 12f * uiScale
+        y = sfxSliderY + layout.height / 2f
+        drawShadowText(sfxPct, x, y, COL_DIM, shadow)
 
         pauseFont.data.setScale(0.5f * uiScale)
         val labelY = backY(camera) - 6f * uiScale
@@ -184,24 +201,17 @@ class OverlayUI(
         pauseFont.data.setScale(1f)
     }
 
-    fun drawPauseSlider(camera: OrthographicCamera) {
-        val sliderY = sliderY(camera)
-        val vol = game.settingsManager.musicVolume
+    fun drawPauseSliders(camera: OrthographicCamera) {
         val tx = sliderTrackX(camera)
         val tw = sliderTrackW()
         val trackH = 5f * uiScale
         val thumbR = 10f * uiScale
-        val fillW = tw * vol
 
         Gdx.gl.glEnable(GL20.GL_BLEND)
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
         shapes.begin(ShapeRenderer.ShapeType.Filled)
-        shapes.color = COL_TRACK
-        shapes.rect(tx, sliderY - trackH / 2f, tw, trackH)
-        shapes.color = COL_FILL
-        if (fillW > 0) shapes.rect(tx, sliderY - trackH / 2f, fillW, trackH)
-        shapes.color = COL_THUMB
-        shapes.circle(tx + fillW, sliderY, thumbR, 24)
+        drawSliderTrack(tx, sliderY(camera, SliderKind.MUSIC), tw, trackH, thumbR, game.settingsManager.musicVolume)
+        drawSliderTrack(tx, sliderY(camera, SliderKind.SFX), tw, trackH, thumbR, game.settingsManager.sfxVolume)
         shapes.end()
         Gdx.gl.glDisable(GL20.GL_BLEND)
     }
@@ -273,27 +283,39 @@ class OverlayUI(
         return hits(tx, ty, resumeX(camera), backY(camera), btnSize * 0.9f, btnSize)
     }
 
-    fun hitsSlider(t: Vector2, camera: OrthographicCamera): Boolean {
+    fun hitSlider(t: Vector2, camera: OrthographicCamera): SliderKind? {
         val tx = sliderTrackX(camera)
         val tw = sliderTrackW()
-        val ty = sliderY(camera)
-        return t.x in (tx - 16f)..(tx + tw + 16f) && t.y in (ty - 16f)..(ty + 16f)
+        for (kind in SliderKind.entries) {
+            val ty = sliderY(camera, kind)
+            if (t.x in (tx - 16f)..(tx + tw + 16f) && t.y in (ty - 16f)..(ty + 16f)) return kind
+        }
+        return null
     }
 
-    fun beginSliderDrag() {
-        isSliderDragging = true
+    fun beginSliderDrag(kind: SliderKind) {
+        activeSlider = kind
     }
 
     fun endSliderDrag() {
-        isSliderDragging = false
+        activeSlider = null
     }
 
     fun updateSliderFromDrag(worldX: Float, camera: OrthographicCamera) {
         val tsx = sliderTrackX(camera)
         val tsw = sliderTrackW()
         val vol = MathUtils.clamp((worldX - tsx) / tsw, 0f, 1f)
-        game.settingsManager.musicVolume = vol
-        game.soundManager.setMusicVolume(vol)
+        when (activeSlider) {
+            SliderKind.MUSIC -> {
+                game.settingsManager.musicVolume = vol
+                game.soundManager.setMusicVolume(vol)
+            }
+            SliderKind.SFX -> {
+                game.settingsManager.sfxVolume = vol
+                game.soundManager.setSfxVolume(vol)
+            }
+            null -> {}
+        }
     }
 
     private fun panelX(c: OrthographicCamera): Float {
@@ -332,8 +354,26 @@ class OverlayUI(
         return getSliderTrackW()
     }
 
-    private fun sliderY(c: OrthographicCamera): Float {
-        return panelY(c) + btnSize + 38f
+    private fun sliderY(c: OrthographicCamera, kind: SliderKind): Float {
+        val base = panelY(c) + btnSize + 38f
+        return if (kind == SliderKind.MUSIC) base + 56f * uiScale else base
+    }
+
+    private fun drawSliderTrack(
+        tx: Float,
+        sliderY: Float,
+        trackW: Float,
+        trackH: Float,
+        thumbR: Float,
+        value: Float
+    ) {
+        val fillW = trackW * value
+        shapes.color = COL_TRACK
+        shapes.rect(tx, sliderY - trackH / 2f, trackW, trackH)
+        shapes.color = COL_FILL
+        if (fillW > 0) shapes.rect(tx, sliderY - trackH / 2f, fillW, trackH)
+        shapes.color = COL_THUMB
+        shapes.circle(tx + fillW, sliderY, thumbR, 24)
     }
 
     private fun ensurePanel() {

@@ -94,8 +94,9 @@ class GameScreen @JvmOverloads constructor(
                     ignoreInputUntilRelease = true
                     return true
                 }
-                if (overlay.hitsSlider(Vector2(tx, ty), gameCamera)) {
-                    overlay.beginSliderDrag()
+                val slider = overlay.hitSlider(Vector2(tx, ty), gameCamera)
+                if (slider != null) {
+                    overlay.beginSliderDrag(slider)
                     return true
                 }
                 return false
@@ -139,7 +140,7 @@ class GameScreen @JvmOverloads constructor(
         }
 
         override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
-            if (paused && overlay.isSliderDragging) {
+            if (paused && overlay.activeSlider != null) {
                 _unprojectTmp.set(screenX.toFloat(), screenY.toFloat(), 0f)
                 gameCamera.unproject(_unprojectTmp)
                 overlay.updateSliderFromDrag(_unprojectTmp.x, gameCamera)
@@ -152,7 +153,7 @@ class GameScreen @JvmOverloads constructor(
         }
 
         override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-            if (overlay.isSliderDragging) {
+            if (overlay.activeSlider != null) {
                 overlay.endSliderDrag()
                 game.settingsManager.save()
                 return true
@@ -259,6 +260,7 @@ class GameScreen @JvmOverloads constructor(
 
         if (deathPaused) {
             deathTimer += delta
+            world.updateVisuals(delta)
             hud.update(delta)
             if (deathTimer >= DEATH_PAUSE_DURATION) triggerRespawn()
             return
@@ -292,6 +294,7 @@ class GameScreen @JvmOverloads constructor(
 
         if (world.isPlayerDead) {
             recordDeath()
+            game.soundManager.playDeathSound()
             music.stopAndDispose()
             deathPaused = true
             deathTimer = 0f
@@ -402,7 +405,7 @@ class GameScreen @JvmOverloads constructor(
 
         game.batch.end()
 
-        if (paused) overlay.drawPauseSlider(gameCamera)
+        if (paused) overlay.drawPauseSliders(gameCamera)
     }
 
     private fun drawPracticeButtonText() {

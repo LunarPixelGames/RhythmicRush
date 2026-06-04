@@ -199,13 +199,14 @@ class GameRenderer(
         shape.begin(ShapeRenderer.ShapeType.Filled)
         drawPadFallbacks(rightEdge)
         drawGroundFill()
+        drawDeathBursts()
         shape.end()
 
         // Pass 5: Foreground gameplay elements
         batch.begin()
         batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
         batch.color = Color.WHITE
-        drawPlayer(player)
+        if (!world.isPlayerDead) drawPlayer(player)
         drawPortalsFront(rightEdge)
         batch.end()
 
@@ -676,6 +677,15 @@ class GameRenderer(
                 shape.color = world.groundColor
                 shape.rect(worldLeft, ceilingBottomY, worldWidth, 39f)
             }
+        }
+    }
+
+    private fun drawDeathBursts() {
+        for (i in 0 until world.deathBursts.size) {
+            val burst = world.deathBursts[i]
+            if (burst.alpha <= 0f) continue
+            shape.color = Color(0.7f, 0.7f, 0.7f, burst.alpha)
+            shape.circle(burst.x, burst.y, burst.radius, 28)
         }
     }
 

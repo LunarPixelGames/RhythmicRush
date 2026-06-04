@@ -11,6 +11,7 @@ import com.badlogic.gdx.utils.JsonWriter
 class SettingsManager {
     var menuMusicEnabled: Boolean = true
     var musicVolume: Float = 1f
+    var sfxVolume: Float = 1f
     var showHitboxes: Boolean = false
     var showHitboxesOnDeath: Boolean = false
     var lockCursorInGame: Boolean = false
@@ -32,6 +33,7 @@ class SettingsManager {
     class Data {
         var menuMusicEnabled: Boolean = true
         var musicVolume: Float = 1f
+        var sfxVolume: Float = 1f
         var showHitboxes: Boolean = false
         var showHitboxesOnDeath: Boolean = false
         var lockCursorInGame: Boolean = false
@@ -62,6 +64,7 @@ class SettingsManager {
             val snapshot = Data()
             snapshot.menuMusicEnabled = menuMusicEnabled
             snapshot.musicVolume = musicVolume
+            snapshot.sfxVolume = sfxVolume
             snapshot.showHitboxes = showHitboxes
             snapshot.showHitboxesOnDeath = showHitboxesOnDeath
             snapshot.lockCursorInGame = lockCursorInGame
@@ -97,6 +100,7 @@ class SettingsManager {
             if (d == null) return
             menuMusicEnabled = d.menuMusicEnabled
             musicVolume = d.musicVolume
+            sfxVolume = d.sfxVolume
             showHitboxes = d.showHitboxes
             showHitboxesOnDeath = d.showHitboxesOnDeath
             lockCursorInGame = d.lockCursorInGame
