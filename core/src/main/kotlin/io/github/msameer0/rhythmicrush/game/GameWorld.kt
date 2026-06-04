@@ -48,19 +48,28 @@ class GameWorld : Tickable {
         val y: Float,
         val startRadius: Float,
         val endRadius: Float,
+        val startDelay: Float,
         val duration: Float,
-        val brightness: Float,
         val maxAlpha: Float,
         var age: Float = 0f
     ) {
+        val activeAge: Float
+            get() = age - startDelay
+
+        val isActive: Boolean
+            get() = activeAge >= 0f
+
         val progress: Float
-            get() = min(age / duration, 1f)
+            get() = if (!isActive) 0f else min(activeAge / duration, 1f)
 
         val radius: Float
             get() = startRadius + (endRadius - startRadius) * progress
 
         val alpha: Float
-            get() = maxAlpha * (1f - progress)
+            get() = if (!isActive) 0f else maxAlpha * (1f - progress)
+
+        val brightness: Float
+            get() = if (!isActive) 0.55f else 0.55f + 0.4f * progress
     }
 
     companion object {
@@ -604,16 +613,15 @@ class GameWorld : Tickable {
         val centerY = p.y + p.height / 2f
         val burstCount = 5
         for (i in 0 until burstCount) {
-            val t = if (burstCount <= 1) 1f else i / (burstCount - 1f)
             deathBursts.add(
                 DeathBurst(
                     x = centerX,
                     y = centerY,
-                    startRadius = 10f + i * 3f,
-                    endRadius = 34f + i * 13f,
-                    duration = 0.16f + i * 0.02f,
-                    brightness = 0.45f + t * 0.5f,
-                    maxAlpha = 0.5f - t * 0.22f
+                    startRadius = 0f,
+                    endRadius = 78f,
+                    startDelay = i * 0.03f,
+                    duration = 0.14f,
+                    maxAlpha = 0.42f
                 )
             )
         }
@@ -623,7 +631,7 @@ class GameWorld : Tickable {
         for (i in deathBursts.size - 1 downTo 0) {
             val burst = deathBursts[i]
             burst.age += delta
-            if (burst.age >= burst.duration) deathBursts.removeIndex(i)
+            if (burst.age >= burst.startDelay + burst.duration) deathBursts.removeIndex(i)
         }
     }
 
