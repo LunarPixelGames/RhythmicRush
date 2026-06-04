@@ -42,6 +42,9 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
     private lateinit var btnPlay: AnimatedButton
     private lateinit var btnSettings: AnimatedButton
     private lateinit var btnInfo: AnimatedButton
+    private lateinit var btnOverlayBack: AnimatedButton
+    private lateinit var btnOverlayLeft: AnimatedButton
+    private lateinit var btnOverlayRight: AnimatedButton
 
     private var settingsOpen = false
     private var infoOpen = false
@@ -156,6 +159,12 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         "Practice: Z / X",
         "Place or remove checkpoint"
     )
+    private val controlEntries = arrayOf(
+        Pair("Space / Click", "Jump as cube, rise as ship"),
+        Pair("Esc", "Pause gameplay or close menu overlays"),
+        Pair("R", "Restart the level"),
+        Pair("Practice: Z / X", "Place or remove checkpoint")
+    )
 
     private val socialLines = arrayOf(
         InfoLine("YouTube: @LunarPixelGames", "https://www.youtube.com/@LunarPixelGames"),
@@ -206,6 +215,9 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             AnimatedButton(startButton, 0f, 0f, 0f, 0f) { game.screen = LevelSelectScreen(game) }
         btnSettings = AnimatedButton(settingsButton, 0f, 0f, 0f, 0f) { settingsOpen = true }
         btnInfo = AnimatedButton(infoButton, 0f, 0f, 0f, 0f) { infoOpen = true }
+        btnOverlayBack = AnimatedButton(backArrow, 0f, 0f, 0f, 0f, null)
+        btnOverlayLeft = AnimatedButton(null, 0f, 0f, 0f, 0f, null)
+        btnOverlayRight = AnimatedButton(null, 0f, 0f, 0f, 0f, null)
 
         if (game.settingsManager.menuMusicEnabled) {
             game.soundManager.playMenuMusic()
@@ -349,14 +361,17 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         contentTopY = panelY + panelH - panelPadT
         footerY = panelY + panelPadB * 0.78f
         footerDotY = panelY + panelPadB * 0.28f
-        rowStartY = contentTopY
-        rowLabelX = panelX + panelPadX
-        controlRightX = panelX + panelW - panelPadX
-
         arrowSize = 52f
+        rowStartY = contentTopY
+        rowLabelX = panelX + panelPadX + arrowSize + 28f
+        controlRightX = panelX + panelW - panelPadX - arrowSize - 28f
+
         arrowY = panelY + panelH / 2f - arrowSize / 2f
         arrowLeftX = panelX + 18f
         arrowRightX = panelX + panelW - arrowSize - 18f
+        if (::btnOverlayBack.isInitialized) btnOverlayBack.setBounds(backX, backY, backW, backH)
+        if (::btnOverlayLeft.isInitialized) btnOverlayLeft.setBounds(arrowLeftX - 10f, arrowY - 10f, arrowSize + 20f, arrowSize + 20f)
+        if (::btnOverlayRight.isInitialized) btnOverlayRight.setBounds(arrowRightX - 10f, arrowY - 10f, arrowSize + 20f, arrowSize + 20f)
         lastPanelW = -1
     }
 
@@ -365,6 +380,11 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             btnPlay.update(delta)
             btnSettings.update(delta)
             btnInfo.update(delta)
+        }
+        if (settingsOpen || infoOpen) {
+            btnOverlayBack.update(delta)
+            btnOverlayLeft.update(delta)
+            btnOverlayRight.update(delta)
         }
         if (settingsOpen) handleSettingsInput()
         else if (infoOpen) handleInfoInput()
@@ -435,6 +455,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             headerY,
             COL_HEADING
         )
+        drawOverlayBackButton()
         game.batch.end()
         drawArrow(arrowLeftX, arrowY, arrowSize, true)
         drawArrow(arrowRightX, arrowY, arrowSize, false)
@@ -456,9 +477,14 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
     }
 
     private fun drawArrow(x: Float, y: Float, size: Float, pointLeft: Boolean) {
-        val cx = x + size / 2f
-        val cy = y + size / 2f
-        val hs = size * 0.35f
+        val button = if (pointLeft) btnOverlayLeft else btnOverlayRight
+        val scale = button.scale
+        val drawSize = size * scale
+        val drawX = x + size / 2f - drawSize / 2f
+        val drawY = y + size / 2f - drawSize / 2f
+        val cx = drawX + drawSize / 2f
+        val cy = drawY + drawSize / 2f
+        val hs = drawSize * 0.35f
         shapes.begin(ShapeRenderer.ShapeType.Filled)
         shapes.color = COL_DIM
         if (pointLeft) shapes.triangle(cx + hs, cy + hs, cx + hs, cy - hs, cx - hs, cy)
@@ -606,6 +632,29 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
     private fun handleSettingsInput() {
         val s = game.settingsManager
+        val t = unproject()
+        if (Gdx.input.justTouched()) {
+            btnOverlayBack.onTouchDown(t.x, t.y)
+            btnOverlayLeft.onTouchDown(t.x, t.y)
+            btnOverlayRight.onTouchDown(t.x, t.y)
+        }
+        if (!Gdx.input.isTouched) {
+            val backPressed = btnOverlayBack.isPressed
+            val leftPressed = btnOverlayLeft.isPressed
+            val rightPressed = btnOverlayRight.isPressed
+            btnOverlayBack.onTouchUp(t.x, t.y)
+            btnOverlayLeft.onTouchUp(t.x, t.y)
+            btnOverlayRight.onTouchUp(t.x, t.y)
+            if (backPressed && btnOverlayBack.hits(t.x, t.y)) {
+                closeSettings(); return
+            }
+            if (leftPressed && btnOverlayLeft.hits(t.x, t.y)) {
+                navigateSettings(-1); return
+            }
+            if (rightPressed && btnOverlayRight.hits(t.x, t.y)) {
+                navigateSettings(1); return
+            }
+        }
         if (fpsInputActive) {
             for (k in Input.Keys.NUM_0..Input.Keys.NUM_9) if (Gdx.input.isKeyJustPressed(k)) fpsInputBuffer.append(
                 (k - Input.Keys.NUM_0).toString()
@@ -643,16 +692,6 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             if (draggingSlider) s.save(); draggingSlider = false; draggingSliderRow = -1
         }
         if (!Gdx.input.justTouched()) return
-        val t = unproject()
-        if (hits(t, backX, backY, backW, backH)) {
-            closeSettings(); return
-        }
-        if (hits(t, arrowLeftX, arrowY, arrowSize, arrowSize)) {
-            navigateSettings(-1); return
-        }
-        if (hits(t, arrowRightX, arrowY, arrowSize, arrowSize)) {
-            navigateSettings(1); return
-        }
 
         val pRows = getPageRows(currentSettingsPage)
         for (i in 0 until pRows.size) {
@@ -702,7 +741,11 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
     }
 
     private fun closeSettings() {
-        settingsOpen = false; game.settingsManager.save()
+        settingsOpen = false
+        btnOverlayBack.cancel()
+        btnOverlayLeft.cancel()
+        btnOverlayRight.cancel()
+        game.settingsManager.save()
     }
 
     private fun confirmFpsInput(s: SettingsManager) {
@@ -752,7 +795,6 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             game.batch.color = Color.WHITE
             game.batch.draw(it, panelX, panelY)
         }
-        game.batch.draw(backArrow, backX, backY, backW, backH)
 
         val titleText = INFO_TAB_NAMES[currentInfoPage]
         font.data.setScale(settingsHeadingScale)
@@ -764,6 +806,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             headerY,
             COL_HEADING
         )
+        drawOverlayBackButton()
         game.batch.end()
 
         drawArrow(arrowLeftX, arrowY, arrowSize, true)
@@ -775,7 +818,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         shapes.end()
 
         game.batch.begin()
-        val contentX = panelX + panelPadX
+        val contentX = rowLabelX
         val contentY = contentTopY - 18f
         val lineSpacing = rowStep * 0.64f
         font.data.setScale(settingsFontScale * 0.84f)
@@ -788,20 +831,15 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
                 font.draw(game.batch, howToLines[i], contentX, contentY - (i + 1.2f) * lineSpacing)
             }
         } else if (currentInfoPage == INFO_TAB_CONTROLS) {
-            for (i in controlLines.indices) {
-                val text = controlLines[i]
-                val y = contentY - i * (lineSpacing * 0.9f)
-                when {
-                    text.isEmpty() -> {}
-                    i % 3 == 0 -> {
-                        font.color = COL_HEADING
-                        font.draw(game.batch, text, contentX, y)
-                    }
-                    else -> {
-                        font.color = COL_LABEL
-                        font.draw(game.batch, text, contentX + 20f, y)
-                    }
-                }
+            val blockGap = rowStep * 0.86f
+            val descriptionOffset = rowStep * 0.34f
+            for (i in controlEntries.indices) {
+                val entry = controlEntries[i]
+                val y = contentY - i * blockGap
+                font.color = COL_HEADING
+                font.draw(game.batch, entry.first, contentX, y)
+                font.color = COL_LABEL
+                font.draw(game.batch, entry.second, contentX + 18f, y - descriptionOffset)
             }
         } else if (currentInfoPage == INFO_TAB_CREDITS_A) {
             font.color = COL_HEADING
@@ -878,20 +916,32 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             return
         }
 
-        if (!Gdx.input.justTouched()) return
         val t = unproject()
-
-        if (hits(t, backX, backY, backW, backH)) {
-            closeInfo()
-            return
+        if (Gdx.input.justTouched()) {
+            btnOverlayBack.onTouchDown(t.x, t.y)
+            btnOverlayLeft.onTouchDown(t.x, t.y)
+            btnOverlayRight.onTouchDown(t.x, t.y)
+        }
+        if (!Gdx.input.isTouched) {
+            val backPressed = btnOverlayBack.isPressed
+            val leftPressed = btnOverlayLeft.isPressed
+            val rightPressed = btnOverlayRight.isPressed
+            btnOverlayBack.onTouchUp(t.x, t.y)
+            btnOverlayLeft.onTouchUp(t.x, t.y)
+            btnOverlayRight.onTouchUp(t.x, t.y)
+            if (backPressed && btnOverlayBack.hits(t.x, t.y)) {
+                closeInfo()
+                return
+            }
+            if (leftPressed && btnOverlayLeft.hits(t.x, t.y)) {
+                navigateInfo(-1); return
+            }
+            if (rightPressed && btnOverlayRight.hits(t.x, t.y)) {
+                navigateInfo(1); return
+            }
         }
 
-        if (hits(t, arrowLeftX, arrowY, arrowSize, arrowSize)) {
-            navigateInfo(-1); return
-        }
-        if (hits(t, arrowRightX, arrowY, arrowSize, arrowSize)) {
-            navigateInfo(1); return
-        }
+        if (!Gdx.input.justTouched()) return
 
         val lines: Array<InfoLine>? = when (currentInfoPage) {
             INFO_TAB_CREDITS_A -> Array.with(*creditLines.copyOfRange(0, 4))
@@ -930,6 +980,18 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
     private fun closeInfo() {
         infoOpen = false
         currentInfoPage = 0
+        btnOverlayBack.cancel()
+        btnOverlayLeft.cancel()
+        btnOverlayRight.cancel()
+    }
+
+    private fun drawOverlayBackButton() {
+        val scale = btnOverlayBack.scale
+        val drawW = backW * scale
+        val drawH = backH * scale
+        val drawX = backX + backW / 2f - drawW / 2f
+        val drawY = backY + backH / 2f - drawH / 2f
+        game.batch.draw(backArrow, drawX, drawY, drawW, drawH)
     }
 
     private fun drawRoundedRect(x: Float, y: Float, w: Float, h: Float, r: Float) {
