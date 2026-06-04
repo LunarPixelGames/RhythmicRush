@@ -174,27 +174,29 @@ class GameRenderer(
         drawHazards(rightEdge)
         drawBlocks(rightEdge)
         drawOrbs(rightEdge, beatIntensity)
-        drawPads(rightEdge, beatIntensity)
-
-        // Pass 2: Player
-        drawPlayer(player)
-
-        // Pass 3: Foreground elements
-        drawPortalsFront(rightEdge)
 
         batch.end()
 
-        // 2. Shape Pass: Fallbacks, Ground, and Hitboxes
+        // Pass 2: Shape elements and ground overlays
         Gdx.gl.glEnable(GL20.GL_BLEND)
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
         shape.begin(ShapeRenderer.ShapeType.Filled)
 
         drawPortalFallbacks(rightEdge)
         drawOrbFallbacks(rightEdge)
-        drawPadFallbacks(rightEdge)
         drawGround()
+        drawPadFallbacks(rightEdge)
 
         shape.end()
+
+        // Pass 3: Elements that should sit above the ground line
+        batch.begin()
+        batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+        batch.color = Color.WHITE
+        drawPads(rightEdge, beatIntensity)
+        drawPlayer(player)
+        drawPortalsFront(rightEdge)
+        batch.end()
 
         if (showHitboxes) hitboxRenderer.draw(camera, player, rightEdge)
 
