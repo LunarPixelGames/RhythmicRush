@@ -188,7 +188,7 @@ class GameScreen @JvmOverloads constructor(
     }
 
     override fun show() {
-        overlay.updateScale()
+        overlay.updateScale(gameViewport)
         game.soundManager.stopMenuMusic()
         
         val mFile = levelData?.musicFile
@@ -216,8 +216,8 @@ class GameScreen @JvmOverloads constructor(
     override fun resize(width: Int, height: Int) {
         val oldX = gameCamera.position.x
         val oldY = gameCamera.position.y
-        overlay.updateScale()
         gameViewport.update(width, height, true)
+        overlay.updateScale(gameViewport)
         gameCamera.position.set(oldX, oldY, 0f)
         gameCamera.update()
     }

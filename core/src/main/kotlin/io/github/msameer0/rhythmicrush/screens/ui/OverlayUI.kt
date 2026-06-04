@@ -31,10 +31,21 @@ class OverlayUI(
 ) {
     enum class SliderKind { MUSIC, SFX }
 
-
     private var panelW = 520f
     private var panelH = 360f
+    private var panelPadX = 40f
+    private var panelPadY = 32f
+    private var cornerRadius = 24f
     private var btnSize = 72f
+    private var actionGap = 24f
+    private var titleScale = 1f
+    private var bodyScale = 1f
+    private var metaScale = 1f
+    private var smallScale = 1f
+    private var sliderGap = 64f
+    private var sliderTrackWidth = 320f
+    private var sliderTrackHeight = 6f
+    private var sliderThumbRadius = 10f
     var uiScale = 1.0f
         private set
 
@@ -86,20 +97,34 @@ class OverlayUI(
     var activeSlider: SliderKind? = null
         private set
 
-    fun updateScale() {
+    fun updateScale(viewport: Viewport) {
+        val vw = viewport.worldWidth
+        val vh = viewport.worldHeight
         val mobile = Gdx.app.type == com.badlogic.gdx.Application.ApplicationType.Android ||
             Gdx.app.type == com.badlogic.gdx.Application.ApplicationType.iOS
+        val baseScale = MathUtils.clamp(minOf(vw / 1920f, vh / 1080f), 0.95f, 1.25f)
         if (mobile) {
-            panelW = 1600f
-            panelH = 1000f
-            btnSize = 220f
-            uiScale = 3.0f
+            panelW = minOf(vw * 0.88f, 1520f)
+            panelH = minOf(vh * 0.74f, 920f)
+            uiScale = MathUtils.clamp(baseScale * 1.3f, 1.2f, 1.8f)
         } else {
-            panelW = 1150f
-            panelH = 800f
-            btnSize = 160f
-            uiScale = 2.2f
+            panelW = minOf(vw * 0.54f, 940f)
+            panelH = minOf(vh * 0.58f, 560f)
+            uiScale = baseScale
         }
+        panelPadX = panelW * 0.085f
+        panelPadY = panelH * 0.085f
+        cornerRadius = panelW * 0.035f
+        btnSize = panelH * 0.16f
+        actionGap = btnSize * 0.32f
+        titleScale = 0.9f * uiScale
+        bodyScale = 0.58f * uiScale
+        metaScale = 0.46f * uiScale
+        smallScale = 0.4f * uiScale
+        sliderGap = panelH * 0.14f
+        sliderTrackWidth = panelW * 0.56f
+        sliderTrackHeight = maxOf(4f, panelH * 0.012f)
+        sliderThumbRadius = panelH * 0.022f
         lastPanelW = -1
     }
 
@@ -116,30 +141,34 @@ class OverlayUI(
         val px = panelX(camera)
         val py = panelY(camera)
         val shadow = 2f * uiScale
+        val centerX = px + panelW / 2f
+        val titleY = py + panelH - panelPadY
+        val statsY = titleY - 84f * uiScale
+        val actionsY = py + panelPadY
+        val contentCenterY = py + panelH * 0.40f
 
         panelTexture?.let { batch.draw(it, px, py) }
 
         val name = levelData?.name ?: "Level"
-        pauseFont.data.setScale(1.1f * uiScale)
+        pauseFont.data.setScale(titleScale)
         layout.setText(pauseFont, name)
-        var x = px + panelW / 2f - layout.width / 2f
-        var y = py + panelH - 18f * uiScale
-        drawShadowText(name, x, y, COL_HEADING, shadow)
+        var x = centerX - layout.width / 2f
+        drawShadowText(name, x, titleY, COL_HEADING, shadow)
 
-        var sy = y - layout.height - 22f * uiScale
+        var sy = statsY
         if (levelKey != null) {
             val p = game.progressManager.getOrCreate(levelKey)
 
-            pauseFont.data.setScale(0.68f * uiScale)
+            pauseFont.data.setScale(bodyScale)
             val best = "Personal Best: " + p?.bestPercent + "%"
             layout.setText(pauseFont, best)
-            x = px + panelW / 2f - layout.width / 2f
+            x = centerX - layout.width / 2f
             drawShadowText(best, x, sy, COL_LABEL, shadow)
 
             sy -= layout.height + 14f * uiScale
             val att = "Total: " + p?.totalAttempts + "   Session: " + sessionAttempts
             layout.setText(pauseFont, att)
-            x = px + panelW / 2f - layout.width / 2f
+            x = centerX - layout.width / 2f
             drawShadowText(att, x, sy, COL_DIM, shadow)
         }
 
@@ -147,55 +176,55 @@ class OverlayUI(
             backRegion,
             backX(camera),
             backY(camera),
-            btnSize * 0.9f,
-            btnSize * 0.9f
+            btnSize,
+            btnSize
         )
         if (resumeRegion != null) batch.draw(
             resumeRegion,
             resumeX(camera),
             backY(camera),
-            btnSize * 0.9f,
-            btnSize * 0.9f
+            btnSize,
+            btnSize
         )
 
-        val musicSliderY = sliderY(camera, SliderKind.MUSIC)
-        pauseFont.data.setScale(0.58f * uiScale)
+        val musicSliderY = contentCenterY + sliderGap * 0.5f
+        pauseFont.data.setScale(bodyScale)
         layout.setText(pauseFont, "Music Volume")
-        x = px + panelW / 2f - layout.width / 2f
-        y = musicSliderY + layout.height + 12f * uiScale
+        x = sliderTrackX(camera)
+        var y = musicSliderY + 34f * uiScale
         drawShadowText("Music Volume", x, y, COL_LABEL, shadow)
 
         val vol = game.settingsManager.musicVolume
-        pauseFont.data.setScale(0.48f * uiScale)
+        pauseFont.data.setScale(metaScale)
         val volPct = MathUtils.round(vol * 100f).toString() + "%"
         layout.setText(pauseFont, volPct)
-        x = sliderTrackX(camera) - layout.width - 12f * uiScale
-        y = musicSliderY + layout.height / 2f
+        x = sliderTrackX(camera) + sliderTrackWidth - layout.width
+        y = musicSliderY + 34f * uiScale
         drawShadowText(volPct, x, y, COL_DIM, shadow)
 
-        val sfxSliderY = sliderY(camera, SliderKind.SFX)
-        pauseFont.data.setScale(0.58f * uiScale)
+        val sfxSliderY = contentCenterY - sliderGap * 0.5f
+        pauseFont.data.setScale(bodyScale)
         layout.setText(pauseFont, "SFX Volume")
-        x = px + panelW / 2f - layout.width / 2f
-        y = sfxSliderY + layout.height + 12f * uiScale
+        x = sliderTrackX(camera)
+        y = sfxSliderY + 34f * uiScale
         drawShadowText("SFX Volume", x, y, COL_LABEL, shadow)
 
         val sfx = game.settingsManager.sfxVolume
-        pauseFont.data.setScale(0.48f * uiScale)
+        pauseFont.data.setScale(metaScale)
         val sfxPct = MathUtils.round(sfx * 100f).toString() + "%"
         layout.setText(pauseFont, sfxPct)
-        x = sliderTrackX(camera) - layout.width - 12f * uiScale
-        y = sfxSliderY + layout.height / 2f
+        x = sliderTrackX(camera) + sliderTrackWidth - layout.width
+        y = sfxSliderY + 34f * uiScale
         drawShadowText(sfxPct, x, y, COL_DIM, shadow)
 
-        pauseFont.data.setScale(0.5f * uiScale)
-        val labelY = backY(camera) - 6f * uiScale
+        pauseFont.data.setScale(smallScale)
+        val labelY = actionsY - 12f * uiScale
         layout.setText(pauseFont, "Back")
-        x = backX(camera) + btnSize * 0.9f / 2f - layout.width / 2f
+        x = backX(camera) + btnSize / 2f - layout.width / 2f
         drawShadowText("Back", x, labelY, COL_DIM, shadow)
 
         layout.setText(pauseFont, "Resume")
-        x = resumeX(camera) + btnSize * 0.9f / 2f - layout.width / 2f
+        x = resumeX(camera) + btnSize / 2f - layout.width / 2f
         drawShadowText("Resume", x, labelY, COL_DIM, shadow)
 
         pauseFont.data.setScale(1f)
@@ -204,8 +233,8 @@ class OverlayUI(
     fun drawPauseSliders(camera: OrthographicCamera) {
         val tx = sliderTrackX(camera)
         val tw = sliderTrackW()
-        val trackH = 5f * uiScale
-        val thumbR = 10f * uiScale
+        val trackH = sliderTrackHeight
+        val thumbR = sliderThumbRadius
 
         Gdx.gl.glEnable(GL20.GL_BLEND)
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
@@ -221,29 +250,32 @@ class OverlayUI(
         val px = panelX(camera)
         val py = panelY(camera)
         val shadow = 2f * uiScale
+        val centerX = px + panelW / 2f
+        val titleY = py + panelH - panelPadY
+        val statsY = py + panelH * 0.54f
+        val actionsY = py + panelPadY
 
         panelTexture?.let { batch.draw(it, px, py) }
 
-        pauseFont.data.setScale(1.25f * uiScale)
+        pauseFont.data.setScale(titleScale)
         layout.setText(pauseFont, "LEVEL COMPLETE")
-        var x = px + panelW / 2f - layout.width / 2f
-        val y = py + panelH - 22f * uiScale
-        drawShadowText("LEVEL COMPLETE", x, y, COL_HEADING, shadow)
+        var x = centerX - layout.width / 2f
+        drawShadowText("LEVEL COMPLETE", x, titleY, COL_HEADING, shadow)
 
-        var sy = y - layout.height - 35f * uiScale
+        var sy = statsY
         if (levelKey != null) {
             val p = game.progressManager.getOrCreate(levelKey)
 
-            pauseFont.data.setScale(0.85f * uiScale)
+            pauseFont.data.setScale(bodyScale)
             val total = "Total Attempts: " + p?.totalAttempts
             layout.setText(pauseFont, total)
-            x = px + panelW / 2f - layout.width / 2f
+            x = centerX - layout.width / 2f
             drawShadowText(total, x, sy, COL_LABEL, shadow)
 
-            sy -= layout.height + 20f * uiScale
+            sy -= layout.height + 18f * uiScale
             val session = "Session Attempts: " + sessionAttempts
             layout.setText(pauseFont, session)
-            x = px + panelW / 2f - layout.width / 2f
+            x = centerX - layout.width / 2f
             drawShadowText(session, x, sy, COL_DIM, shadow)
         }
 
@@ -251,36 +283,36 @@ class OverlayUI(
             backRegion,
             backX(camera),
             backY(camera),
-            btnSize * 0.9f,
-            btnSize * 0.9f
+            btnSize,
+            btnSize
         )
         if (resumeRegion != null) batch.draw(
             resumeRegion,
             resumeX(camera),
             backY(camera),
-            btnSize * 0.9f,
-            btnSize * 0.9f
+            btnSize,
+            btnSize
         )
 
-        pauseFont.data.setScale(0.52f * uiScale)
-        val labelY = backY(camera) - 6f * uiScale
+        pauseFont.data.setScale(smallScale)
+        val labelY = actionsY - 12f * uiScale
         layout.setText(pauseFont, "Menu")
-        x = backX(camera) + btnSize * 0.9f / 2f - layout.width / 2f
+        x = backX(camera) + btnSize / 2f - layout.width / 2f
         drawShadowText("Menu", x, labelY, COL_DIM, shadow)
 
         layout.setText(pauseFont, "Replay")
-        x = resumeX(camera) + btnSize * 0.9f / 2f - layout.width / 2f
+        x = resumeX(camera) + btnSize / 2f - layout.width / 2f
         drawShadowText("Replay", x, labelY, COL_DIM, shadow)
 
         pauseFont.data.setScale(1f)
     }
 
     fun hitsBackButton(tx: Float, ty: Float, camera: OrthographicCamera): Boolean {
-        return hits(tx, ty, backX(camera), backY(camera), btnSize * 0.9f, btnSize)
+        return hits(tx, ty, backX(camera), backY(camera), btnSize, btnSize)
     }
 
     fun hitsResumeButton(tx: Float, ty: Float, camera: OrthographicCamera): Boolean {
-        return hits(tx, ty, resumeX(camera), backY(camera), btnSize * 0.9f, btnSize)
+        return hits(tx, ty, resumeX(camera), backY(camera), btnSize, btnSize)
     }
 
     fun hitSlider(t: Vector2, camera: OrthographicCamera): SliderKind? {
@@ -288,7 +320,7 @@ class OverlayUI(
         val tw = sliderTrackW()
         for (kind in SliderKind.entries) {
             val ty = sliderY(camera, kind)
-            if (t.x in (tx - 16f)..(tx + tw + 16f) && t.y in (ty - 16f)..(ty + 16f)) return kind
+            if (t.x in tx..(tx + tw) && t.y in (ty - 24f * uiScale)..(ty + 48f * uiScale)) return kind
         }
         return null
     }
@@ -327,19 +359,19 @@ class OverlayUI(
     }
 
     private fun resumeX(c: OrthographicCamera): Float {
-        return c.position.x + 16f
+        return c.position.x + actionGap / 2f
     }
 
     private fun backX(c: OrthographicCamera): Float {
-        return c.position.x - btnSize - 16f
+        return c.position.x - actionGap / 2f - btnSize
     }
 
     private fun backY(c: OrthographicCamera): Float {
-        return panelY(c) + 20f
+        return panelY(c) + panelPadY
     }
 
     fun getSliderTrackX(c: OrthographicCamera): Float {
-        return panelX(c) + panelW * 0.18f
+        return panelX(c) + panelPadX
     }
 
     private fun sliderTrackX(c: OrthographicCamera): Float {
@@ -347,7 +379,7 @@ class OverlayUI(
     }
 
     fun getSliderTrackW(): Float {
-        return panelW * 0.64f
+        return sliderTrackWidth
     }
 
     private fun sliderTrackW(): Float {
@@ -355,8 +387,8 @@ class OverlayUI(
     }
 
     private fun sliderY(c: OrthographicCamera, kind: SliderKind): Float {
-        val base = panelY(c) + btnSize + 38f
-        return if (kind == SliderKind.MUSIC) base + 56f * uiScale else base
+        val centerY = panelY(c) + panelH * 0.40f
+        return if (kind == SliderKind.MUSIC) centerY + sliderGap * 0.5f else centerY - sliderGap * 0.5f
     }
 
     private fun drawSliderTrack(
@@ -381,11 +413,12 @@ class OverlayUI(
         val th = panelH.toInt()
         if (panelTexture == null || tw != lastPanelW || th != lastPanelH) {
             panelTexture?.dispose()
-            panelTexture = createRoundedRect(tw, th, (24 * uiScale).toInt(), COL_PANEL)
+            panelTexture = createRoundedRect(tw, th, cornerRadius.toInt(), COL_PANEL)
             lastPanelW = tw
             lastPanelH = th
         }
     }
+
 
     private fun drawShadowText(text: String, x: Float, y: Float, color: Color, shadow: Float) {
         pauseFont.setColor(0f, 0f, 0f, color.a * 0.4f)

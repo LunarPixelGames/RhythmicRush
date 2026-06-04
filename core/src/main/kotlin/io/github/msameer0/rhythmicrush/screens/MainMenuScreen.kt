@@ -106,6 +106,15 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
     private var rowStep = 0f
     private var panelPadT = 0f
     private var panelPadB = 0f
+    private var panelPadX = 0f
+    private var panelPadY = 0f
+    private var headerY = 0f
+    private var contentTopY = 0f
+    private var footerY = 0f
+    private var rowLabelX = 0f
+    private var controlRightX = 0f
+    private var sliderTrackW = 0f
+    private var footerDotY = 0f
     private var settingsFontScale = 0f
     private var settingsHeadingScale = 0f
 
@@ -282,34 +291,44 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             settingsH
         )
 
-        panelW = min(vw * 0.78f, 1560f)
-        val targetH = vh * PANEL_HEIGHT_FRACTION
-        rowStep = (targetH * 0.72f) / MAX_ROWS_PER_PAGE
-        panelPadT = targetH * 0.22f
-        panelPadB = targetH * 0.045f
-        val scaleRef = rowStep / 72f
-        settingsFontScale = 0.62f * scaleRef
-        settingsHeadingScale = 0.95f * scaleRef
+        panelW = min(vw * 0.72f, 1320f)
+        val targetH = min(vh * 0.80f, 860f)
+        panelPadX = panelW * 0.07f
+        panelPadY = targetH * 0.065f
+        panelPadT = targetH * 0.15f
+        panelPadB = targetH * 0.12f
+        rowStep = (targetH - panelPadT - panelPadB) / MAX_ROWS_PER_PAGE
+        sliderTrackW = panelW * 0.28f
+        val scaleRef = targetH / 760f
+        settingsFontScale = 0.72f * scaleRef
+        settingsHeadingScale = 1.02f * scaleRef
         recomputePanelHeight()
     }
 
     private fun recomputePanelHeight() {
         val vw = viewport.worldWidth
         val vh = viewport.worldHeight
-        panelH = MAX_ROWS_PER_PAGE * rowStep + panelPadT + panelPadB + rowStep * 0.5f
+        panelH = MAX_ROWS_PER_PAGE * rowStep + panelPadT + panelPadB
         panelX = vw / 2f - panelW / 2f
         panelY = vh / 2f - panelH / 2f
 
-        backW = 112f
-        backH = 112f
-        backX = 50f
-        backY = vh - backH - 50f
+        backW = 80f
+        backH = 80f
+        backX = panelX + panelPadX - 8f
+        backY = panelY + panelH - panelPadY - backH + 12f
 
-        rowStartY = panelY + panelH - panelPadT
-        arrowSize = 96f
+        headerY = panelY + panelH - panelPadY - 18f
+        contentTopY = panelY + panelH - panelPadT
+        footerY = panelY + panelPadB * 0.52f
+        footerDotY = panelY + panelPadB * 0.42f
+        rowStartY = contentTopY
+        rowLabelX = panelX + panelPadX
+        controlRightX = panelX + panelW - panelPadX
+
+        arrowSize = 68f
         arrowY = panelY + panelH / 2f - arrowSize / 2f
-        arrowLeftX = panelX - arrowSize - 20f
-        arrowRightX = panelX + panelW + 20f
+        arrowLeftX = panelX + 18f
+        arrowRightX = panelX + panelW - arrowSize - 18f
         lastPanelW = -1
     }
 
@@ -352,7 +371,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         val texH = panelH.toInt()
         if (panelTexture == null || texW != lastPanelW || texH != lastPanelH) {
             panelTexture?.dispose()
-            panelTexture = createRoundedRect(texW, texH, (26f * (panelW / 740f)).toInt(), COL_PANEL)
+            panelTexture = createRoundedRect(texW, texH, (24f * (panelW / 960f)).toInt(), COL_PANEL)
             lastPanelW = texW
             lastPanelH = texH
         }
@@ -360,6 +379,10 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         panelTexture?.let { game.batch.draw(it, panelX, panelY) }
         game.batch.draw(backArrow, backX, backY, backW, backH)
         game.batch.end()
+        shapes.begin(ShapeRenderer.ShapeType.Filled)
+        shapes.color = Color(COL_DIM.r, COL_DIM.g, COL_DIM.b, 0.16f)
+        shapes.rect(panelX + panelPadX, contentTopY + 18f, panelW - panelPadX * 2f, 2f)
+        shapes.end()
         drawSettingsHeading()
         drawSettingsRows(getPageRows(currentSettingsPage))
         drawSettingsDots()
@@ -375,7 +398,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             font,
             titleText,
             (panelX + panelW / 2f) - (layout.width / 2f),
-            panelY + panelH - 45f,
+            headerY,
             COL_HEADING
         )
         game.batch.end()
@@ -386,10 +409,10 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
     private fun drawSettingsDots() {
         val total = totalSettingsPages()
         if (total <= 1) return
-        val dotR = 12f
-        val dotGap = 40f
+        val dotR = 8f
+        val dotGap = 28f
         val startX = panelX + panelW / 2f - (total * dotGap - (dotGap - dotR * 2f)) / 2f + dotR
-        val dotY = panelY + 50f
+        val dotY = footerDotY
         shapes.begin(ShapeRenderer.ShapeType.Filled)
         for (i in 0 until total) {
             shapes.color = if (i == currentSettingsPage) COL_DOT_ACT else COL_DOT_INACT
@@ -403,6 +426,10 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         val cy = y + size / 2f
         val hs = size * 0.35f
         shapes.begin(ShapeRenderer.ShapeType.Filled)
+        shapes.color = Color(COL_DIM.r, COL_DIM.g, COL_DIM.b, 0.8f)
+        shapes.circle(cx, cy, size * 0.48f, 28)
+        shapes.color = COL_PANEL
+        shapes.circle(cx, cy, size * 0.42f, 28)
         shapes.color = COL_DIM
         if (pointLeft) shapes.triangle(cx + hs, cy + hs, cx + hs, cy - hs, cx - hs, cy)
         else shapes.triangle(cx - hs, cy + hs, cx - hs, cy - hs, cx + hs, cy)
@@ -453,7 +480,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
     private fun drawToggleRow(ry: Float, label: String, value: Boolean, hp: Float) {
         val pillH = rowStep * 0.35f
         val pillW = pillH * 2.1f
-        val pillX = panelX + panelW - hp - pillW
+        val pillX = controlRightX - pillW
         val pillY = ry - pillH / 2f
         val r = pillH / 2f
         shapes.begin(ShapeRenderer.ShapeType.Filled)
@@ -466,14 +493,14 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         shapes.end()
         game.batch.begin()
         font.data.setScale(settingsFontScale)
-        drawTextWithShadow(font, label, panelX + hp, ry + layout.height / 2f, COL_LABEL)
+        drawTextWithShadow(font, label, rowLabelX, ry + layout.height / 2f, COL_LABEL)
         game.batch.end()
     }
 
     private fun drawSliderRow(ry: Float, label: String, value: Float, hp: Float) {
-        val trackW = panelW * 0.25f
+        val trackW = sliderTrackW
         val trackH = rowStep * 0.06f
-        val trackX = panelX + panelW - hp - trackW
+        val trackX = controlRightX - trackW
         val thumbR = rowStep * 0.15f
         val fillW = trackW * value
         shapes.begin(ShapeRenderer.ShapeType.Filled)
@@ -486,18 +513,18 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         shapes.end()
         game.batch.begin()
         font.data.setScale(settingsFontScale)
-        drawTextWithShadow(font, label, panelX + hp, ry + layout.height / 2f, COL_LABEL)
+        drawTextWithShadow(font, label, rowLabelX, ry + layout.height / 2f, COL_LABEL)
         val pct = "${round(value * 100f).toInt()}%"
         font.data.setScale(settingsFontScale * 0.77f)
         layout.setText(font, pct)
-        drawTextWithShadow(font, pct, trackX - layout.width - 15f, ry + layout.height / 2f, COL_DIM)
+        drawTextWithShadow(font, pct, trackX + trackW - layout.width, ry + layout.height / 2f + rowStep * 0.34f, COL_DIM)
         game.batch.end()
     }
 
     private fun drawIntFieldRow(ry: Float, label: String, value: Int, hp: Float) {
         val boxH = rowStep * 0.40f
         val boxW = boxH * 3.0f
-        val boxX = panelX + panelW - hp - boxW
+        val boxX = controlRightX - boxW
         shapes.begin(ShapeRenderer.ShapeType.Filled)
         shapes.color = COL_INPUT_BG
         shapes.rect(boxX, ry - boxH / 2f, boxW, boxH)
@@ -515,7 +542,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             if (fpsInputActive) fpsInputBuffer.toString() + (if (System.currentTimeMillis() / 500 % 2 == 0L) "|" else " ") else value.toString()
         game.batch.begin()
         font.data.setScale(settingsFontScale)
-        drawTextWithShadow(font, label, panelX + hp, ry + layout.height / 2f, COL_LABEL)
+        drawTextWithShadow(font, label, rowLabelX, ry + layout.height / 2f, COL_LABEL)
         font.data.setScale(settingsFontScale * 0.95f)
         layout.setText(font, display)
         drawTextWithShadow(
@@ -565,8 +592,9 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             if (fpsInputActive) confirmFpsInput(s) else closeSettings()
         }
         if (Gdx.input.isTouched && draggingSlider) {
+            val sliderX = controlRightX - sliderTrackW
             val norm = MathUtils.clamp(
-                (unproject().x - (panelX + panelW - 45f - panelW * 0.25f)) / (panelW * 0.25f),
+                (unproject().x - sliderX) / sliderTrackW,
                 0f,
                 1f
             )
@@ -659,13 +687,13 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
     private fun rowY(i: Int): Float = rowStartY - i * rowStep - rowStep / 2f
     private fun hitPill(t: Vector2, ry: Float): Boolean =
-        t.x > panelX + panelW - 140f && t.y in (ry - 20f)..(ry + 20f)
+        t.x >= controlRightX - rowStep * 0.9f && t.x <= controlRightX + 8f && t.y in (ry - rowStep * 0.3f)..(ry + rowStep * 0.3f)
 
     private fun hitSliderThumb(t: Vector2, ry: Float, v: Float): Boolean =
-        t.y in (ry - 25f)..(ry + 25f) && t.x > panelX + panelW * 0.5f
+        t.y in (ry - rowStep * 0.3f)..(ry + rowStep * 0.3f) && t.x in (controlRightX - sliderTrackW - 8f)..(controlRightX + 8f)
 
     private fun hitIntBox(t: Vector2, ry: Float): Boolean =
-        t.x > panelX + panelW - 140f && t.y in (ry - 20f)..(ry + 20f)
+        t.x >= controlRightX - rowStep * 1.3f && t.x <= controlRightX + 8f && t.y in (ry - rowStep * 0.3f)..(ry + rowStep * 0.3f)
 
     private fun drawInfoOverlay() {
         Gdx.gl.glEnable(GL20.GL_BLEND)
@@ -681,7 +709,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         val texH = panelH.toInt()
         if (panelTexture == null || texW != lastPanelW || texH != lastPanelH) {
             panelTexture?.dispose()
-            panelTexture = createRoundedRect(texW, texH, (26f * (panelW / 740f)).toInt(), COL_PANEL)
+            panelTexture = createRoundedRect(texW, texH, (24f * (panelW / 960f)).toInt(), COL_PANEL)
             lastPanelW = texW
             lastPanelH = texH
         }
@@ -698,50 +726,54 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             font,
             titleText,
             (panelX + panelW / 2f) - (layout.width / 2f),
-            panelY + panelH - 45f,
+            headerY,
             COL_HEADING
         )
         game.batch.end()
 
         drawArrow(arrowLeftX, arrowY, arrowSize, true)
         drawArrow(arrowRightX, arrowY, arrowSize, false)
+        shapes.begin(ShapeRenderer.ShapeType.Filled)
+        shapes.color = Color(COL_DIM.r, COL_DIM.g, COL_DIM.b, 0.16f)
+        shapes.rect(panelX + panelPadX, contentTopY + 18f, panelW - panelPadX * 2f, 2f)
+        shapes.end()
 
         game.batch.begin()
-        val contentX = panelX + 55f
-        val contentY = panelY + panelH - panelPadT - 5f
-        val lineSpacing = 42f * (panelH / 1080f) * 2.25f
-        font.data.setScale(settingsFontScale * 0.85f)
+        val contentX = panelX + panelPadX
+        val contentY = contentTopY - 18f
+        val lineSpacing = rowStep * 0.64f
+        font.data.setScale(settingsFontScale * 0.84f)
 
         if (currentInfoPage == INFO_TAB_HOWTOPLAY) {
             val lines = arrayOf(
-                "Welcome to Rhythmic Rush!",
+                "Welcome to Rhythmic Rush.",
                 "",
-                "Jump and fly through obstacles in this",
-                "rhythm-based platformer. Timing is key!",
+                "Jump and fly through rhythm-driven obstacle patterns.",
+                "Read the terrain early and commit to your timing.",
                 "",
-                "Controls:",
-                "- Space / Click: Jump or fly up",
-                "- ESC: Pause or Go Back"
+                "Controls",
+                "Space / Click: jump or fly up",
+                "Esc: pause or go back"
             )
             for (i in lines.indices) {
-                font.color = COL_LABEL
+                font.color = if (i == 5) COL_HEADING else COL_LABEL
                 font.draw(game.batch, lines[i], contentX, contentY - i * lineSpacing)
             }
         } else if (currentInfoPage == INFO_TAB_CREDITS) {
             font.color = COL_HEADING
-            font.draw(game.batch, "Music Credits (Click to open):", contentX, contentY)
+            font.draw(game.batch, "Music Credits", contentX, contentY)
             for (i in creditLines.indices) {
                 val line = creditLines[i]
-                line.y = contentY - (i + 1.25f) * lineSpacing
+                line.y = contentY - (i + 1.15f) * lineSpacing
                 font.color = COL_TAB_ACT
                 font.draw(game.batch, "- " + line.text, contentX, line.y)
             }
         } else if (currentInfoPage == INFO_TAB_SOCIALS) {
             font.color = COL_HEADING
-            font.draw(game.batch, "Follow Us (Click to open):", contentX, contentY)
+            font.draw(game.batch, "Follow Us", contentX, contentY)
             for (i in socialLines.indices) {
                 val line = socialLines[i]
-                line.y = contentY - (i + 1.25f) * lineSpacing
+                line.y = contentY - (i + 1.15f) * lineSpacing
                 font.color = COL_TAB_ACT
                 font.draw(game.batch, line.text, contentX, line.y)
             }
@@ -750,12 +782,12 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
                 game.batch,
                 "Thanks for playing Rhythmic Rush!",
                 contentX,
-                contentY - 4.5f * lineSpacing
+                contentY - 3.9f * lineSpacing
             )
 
             font.color = COL_TAB_ACT
             layout.setText(font, privacyPolicyLine.text)
-            privacyPolicyLine.y = panelY + 65f
+            privacyPolicyLine.y = footerY + 18f
             font.draw(
                 game.batch,
                 privacyPolicyLine.text,
@@ -771,10 +803,10 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
     private fun drawInfoDots() {
         val total = INFO_TAB_COUNT
-        val dotR = 12f
-        val dotGap = 40f
+        val dotR = 8f
+        val dotGap = 28f
         val startX = panelX + panelW / 2f - (total * dotGap - (dotGap - dotR * 2f)) / 2f + dotR
-        val dotY = panelY + 50f
+        val dotY = footerDotY
         shapes.begin(ShapeRenderer.ShapeType.Filled)
         for (i in 0 until total) {
             shapes.color = if (i == currentInfoPage) COL_DOT_ACT else COL_DOT_INACT
@@ -812,10 +844,10 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         }
 
         if (lines != null) {
-            val lineH = 32f * (panelH / 1080f) * 2.25f
+            val lineH = rowStep * 0.42f
             for (i in 0 until lines.size) {
                 val line = lines.get(i)
-                if (t.x >= panelX + 35f && t.x <= panelX + panelW - 35f &&
+                if (t.x >= panelX + panelPadX && t.x <= panelX + panelW - panelPadX &&
                     t.y >= line.y - lineH && t.y <= line.y
                 ) {
                     Gdx.net.openURI(line.url)
@@ -825,8 +857,8 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         }
 
         if (currentInfoPage == INFO_TAB_SOCIALS) {
-            val lineH = 32f * (panelH / 1080f) * 2.25f
-            if (t.x >= panelX + panelW / 2f - 100f && t.x <= panelX + panelW / 2f + 100f &&
+            val lineH = rowStep * 0.42f
+            if (t.x >= panelX + panelW / 2f - 120f && t.x <= panelX + panelW / 2f + 120f &&
                 t.y >= privacyPolicyLine.y - lineH && t.y <= privacyPolicyLine.y
             ) {
                 Gdx.net.openURI(privacyPolicyLine.url)
