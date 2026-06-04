@@ -862,10 +862,12 @@ public class LevelEditorScreen extends AbstractScreen {
 
     private void saveLevel() {
         if (savePath == null)
-            savePath = "assets/levels/" + levelData.getName().replaceAll("\\s+", "_") + ".json";
+            savePath = levelData.getName().replaceAll("\\s+", "_") + ".ubj";
         try {
-            LevelSerializer.Companion.save(levelData, Gdx.files.local(savePath));
-            Gdx.app.log("Editor", "Saved: " + savePath);
+            FileHandle file = resolveWritableLevelFile(savePath);
+            LevelSerializer.Companion.saveBinary(levelData, file);
+            savePath = file.name();
+            Gdx.app.log("Editor", "Saved: " + file.path());
         } catch (Exception ex) {
             Gdx.app.error("Editor", "Save failed: " + ex.getMessage());
         }
@@ -875,11 +877,10 @@ public class LevelEditorScreen extends AbstractScreen {
         loadDialogOpen = true;
         levelFiles.clear();
         try {
-            FileHandle dir = Gdx.files.internal("levels");
-            if (!dir.exists()) dir = Gdx.files.local("assets/levels");
+            FileHandle dir = resolveLevelsDirectory();
             if (dir.exists()) {
                 for (FileHandle f : dir.list())
-                    if (f.name().endsWith(".json")) levelFiles.add(f.name());
+                    if (f.name().endsWith(".json") || f.name().endsWith(".ubj")) levelFiles.add(f.name());
                 Collections.sort(levelFiles);
             }
         } catch (Exception ignored) {
@@ -1328,9 +1329,10 @@ public class LevelEditorScreen extends AbstractScreen {
     private void loadLevel(String filename) {
         try {
             FileHandle fh = Gdx.files.internal("levels/" + filename);
+            if (!fh.exists()) fh = Gdx.files.local("levels/" + filename);
             if (!fh.exists()) fh = Gdx.files.local("assets/levels/" + filename);
             levelData = LevelSerializer.Companion.load(fh);
-            savePath = fh.path();
+            savePath = fh.name();
             selection.clear();
             placementId = null;
             trailHasData = false;
@@ -1488,5 +1490,19 @@ public class LevelEditorScreen extends AbstractScreen {
             levelMusic.dispose();
             levelMusic = null;
         }
+    }
+
+    private FileHandle resolveWritableLevelFile(String filename) {
+        FileHandle levelsDir = Gdx.files.local("levels");
+        if (!levelsDir.exists()) levelsDir = Gdx.files.local("assets/levels");
+        if (!levelsDir.exists()) levelsDir.mkdirs();
+        return levelsDir.child(filename);
+    }
+
+    private FileHandle resolveLevelsDirectory() {
+        FileHandle dir = Gdx.files.internal("levels");
+        if (!dir.exists()) dir = Gdx.files.local("levels");
+        if (!dir.exists()) dir = Gdx.files.local("assets/levels");
+        return dir;
     }
 }

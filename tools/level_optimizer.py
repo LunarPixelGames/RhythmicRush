@@ -52,7 +52,6 @@ def optimize_object(obj):
     return optimized
 
 def is_duplicate(obj1, obj2):
-    # Check if all fields match
     return obj1 == obj2
 
 def optimize_level(level_path, backup_path):
@@ -65,8 +64,10 @@ def optimize_level(level_path, backup_path):
             print(f"Error: Could not decode {level_path}")
             return
 
-    # Backup
-    shutil.copy2(level_path, os.path.join(backup_path, os.path.basename(level_path)))
+    # Backup if not already backed up
+    backup_file = os.path.join(backup_path, os.path.basename(level_path))
+    if not os.path.exists(backup_file):
+        shutil.copy2(level_path, backup_file)
 
     # Optimize Level Metadata
     optimized_data = {}
@@ -76,9 +77,6 @@ def optimize_level(level_path, backup_path):
             if val != default_val:
                 optimized_data[key] = val
 
-    # Redundant fields to remove explicitly (bpm is already gone if not in LEVEL_DEFAULTS)
-    # But just in case, we only keep what we need.
-
     # Optimize Objects
     raw_objects = data.get("objects", [])
     optimized_objects = []
@@ -87,7 +85,6 @@ def optimize_level(level_path, backup_path):
     for obj in raw_objects:
         opt_obj = optimize_object(obj)
 
-        # Duplicate detection
         is_dup = False
         for seen in seen_objects:
             if is_duplicate(opt_obj, seen):
@@ -100,12 +97,13 @@ def optimize_level(level_path, backup_path):
 
     optimized_data["objects"] = optimized_objects
 
+    # Save back as optimized JSON
     with open(level_path, 'w', encoding='utf-8') as f:
         json.dump(optimized_data, f, indent=2)
 
 def main():
     root = tk.Tk()
-    root.withdraw() # Hide the main tkinter window
+    root.withdraw()
 
     print("Please select the levels directory...")
     levels_dir = filedialog.askdirectory(title="Select Levels Directory", initialdir=os.getcwd())
@@ -124,7 +122,8 @@ def main():
             level_path = os.path.join(levels_dir, filename)
             optimize_level(level_path, backup_dir)
 
-    print("\nOptimization complete!")
+    print("\nOptimization and Migration to minimalist JSON complete!")
+    print(f"Note: Levels are saved as .json but the game is now ready to load binary .ubj versions if you choose to convert them.")
     print(f"Original files were backed up to: {backup_dir}")
 
 if __name__ == "__main__":

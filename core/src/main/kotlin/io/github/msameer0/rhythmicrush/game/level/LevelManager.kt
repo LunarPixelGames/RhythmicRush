@@ -19,8 +19,14 @@ class LevelManager {
         levels.clear()
         var index = 0
         while (true) {
-            val fh = Gdx.files.internal("levels/$index.json")
+            // Check for binary .ubj first, then fallback to .json
+            var fh = Gdx.files.internal("levels/$index.ubj")
+            if (!fh.exists()) {
+                fh = Gdx.files.internal("levels/$index.json")
+            }
+
             if (!fh.exists()) break
+
             try {
                 val data = LevelSerializer.load(fh)
                 if (data != null) {
@@ -28,7 +34,7 @@ class LevelManager {
                 }
                 index++
             } catch (e: Exception) {
-                Gdx.app.error("LevelManager", "Failed to load level " + index + ": " + e.message)
+                Gdx.app.error("LevelManager", "Failed to load level $index: ${e.message}")
                 break
             }
         }
