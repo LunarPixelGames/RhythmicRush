@@ -46,6 +46,7 @@ class OverlayUI(
     private var sliderTrackWidth = 320f
     private var sliderTrackHeight = 6f
     private var sliderThumbRadius = 10f
+    private var sliderBlockX = 0f
     var uiScale = 1.0f
         private set
 
@@ -126,6 +127,7 @@ class OverlayUI(
         sliderTrackWidth = panelW * 0.56f
         sliderTrackHeight = maxOf(4f, panelH * 0.012f)
         sliderThumbRadius = panelH * 0.022f
+        sliderBlockX = (panelW - sliderTrackWidth) * 0.5f
         lastPanelW = -1
     }
 
@@ -146,7 +148,7 @@ class OverlayUI(
         val titleY = py + panelH - panelPadY
         val statsY = titleY - 92f * uiScale
         val actionsY = py + panelPadY
-        val contentCenterY = py + panelH * 0.38f
+        val contentCenterY = py + panelH * 0.40f
 
         drawPanel(px, py)
 
@@ -253,12 +255,12 @@ class OverlayUI(
         val shadow = 2f * uiScale
         val centerX = px + panelW / 2f
         val titleY = py + panelH - panelPadY
-        val statsY = py + panelH * 0.56f
+        val statsY = py + panelH * 0.60f
         val actionsY = py + panelPadY
 
         drawPanel(px, py)
 
-        pauseFont.data.setScale(titleScale)
+        pauseFont.data.setScale(titleScale * 1.08f)
         layout.setText(pauseFont, "LEVEL COMPLETE")
         var x = centerX - layout.width / 2f
         drawShadowText("LEVEL COMPLETE", x, titleY, COL_HEADING, shadow)
@@ -267,13 +269,13 @@ class OverlayUI(
         if (levelKey != null) {
             val p = game.progressManager.getOrCreate(levelKey)
 
-            pauseFont.data.setScale(bodyScale)
+            pauseFont.data.setScale(bodyScale * 1.18f)
             val total = "Total Attempts: " + p?.totalAttempts
             layout.setText(pauseFont, total)
             x = centerX - layout.width / 2f
             drawShadowText(total, x, sy, COL_LABEL, shadow)
 
-            sy -= layout.height + 18f * uiScale
+            sy -= layout.height + 22f * uiScale
             val session = "Session Attempts: " + sessionAttempts
             layout.setText(pauseFont, session)
             x = centerX - layout.width / 2f
@@ -295,7 +297,7 @@ class OverlayUI(
             btnSize
         )
 
-        pauseFont.data.setScale(smallScale)
+        pauseFont.data.setScale(smallScale * 1.08f)
         val labelY = actionsY - 12f * uiScale
         layout.setText(pauseFont, "Menu")
         x = backX(camera) + btnSize / 2f - layout.width / 2f
@@ -372,7 +374,7 @@ class OverlayUI(
     }
 
     fun getSliderTrackX(c: OrthographicCamera): Float {
-        return panelX(c) + panelPadX
+        return panelX(c) + sliderBlockX
     }
 
     private fun sliderTrackX(c: OrthographicCamera): Float {

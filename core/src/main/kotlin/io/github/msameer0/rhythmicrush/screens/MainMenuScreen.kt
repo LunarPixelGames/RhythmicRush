@@ -343,12 +343,12 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         backW = 78f
         backH = 78f
         backX = panelX + panelPadX - 8f
-        backY = panelY + panelH - panelPadY - backH + 12f
+        backY = panelY + panelH - panelPadY - backH + 2f
 
         headerY = panelY + panelH - panelPadY - 18f
         contentTopY = panelY + panelH - panelPadT
-        footerY = panelY + panelPadB * 0.52f
-        footerDotY = panelY + panelPadB * 0.42f
+        footerY = panelY + panelPadB * 0.78f
+        footerDotY = panelY + panelPadB * 0.28f
         rowStartY = contentTopY
         rowLabelX = panelX + panelPadX
         controlRightX = panelX + panelW - panelPadX
@@ -414,7 +414,8 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         game.batch.end()
         shapes.begin(ShapeRenderer.ShapeType.Filled)
         shapes.color = Color(COL_DIM.r, COL_DIM.g, COL_DIM.b, 0.16f)
-        shapes.rect(panelX + panelPadX, contentTopY + 18f, panelW - panelPadX * 2f, 2f)
+        val dividerStartX = backX + backW + 16f
+        shapes.rect(dividerStartX, contentTopY + 18f, panelX + panelW - panelPadX - dividerStartX, 2f)
         shapes.end()
         drawSettingsHeading()
         drawSettingsRows(getPageRows(currentSettingsPage))
@@ -769,7 +770,8 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         drawArrow(arrowRightX, arrowY, arrowSize, false)
         shapes.begin(ShapeRenderer.ShapeType.Filled)
         shapes.color = Color(COL_DIM.r, COL_DIM.g, COL_DIM.b, 0.16f)
-        shapes.rect(panelX + panelPadX, contentTopY + 18f, panelW - panelPadX * 2f, 2f)
+        val dividerStartX = backX + backW + 16f
+        shapes.rect(dividerStartX, contentTopY + 18f, panelX + panelW - panelPadX - dividerStartX, 2f)
         shapes.end()
 
         game.batch.begin()
@@ -841,7 +843,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
             font.color = COL_TAB_ACT
             layout.setText(font, privacyPolicyLine.text)
-            privacyPolicyLine.y = footerY + 18f
+            privacyPolicyLine.y = footerY + 10f
             font.draw(
                 game.batch,
                 privacyPolicyLine.text,
