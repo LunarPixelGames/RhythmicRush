@@ -158,6 +158,17 @@ public class LevelEditorScreen extends AbstractScreen {
     private String[] propLabels = {};
     private int propFieldCount = 0;
 
+    private boolean levelPanelOpen = false;
+    private int levelField = 0;
+    private final StringBuilder[] levelBuffers = {
+        new StringBuilder(), new StringBuilder(), new StringBuilder(),
+        new StringBuilder(), new StringBuilder(), new StringBuilder()
+    };
+    private static final String[] LEVEL_LABELS = {
+        "Level Name", "Difficulty", "Music File", "Background Image", "Start BG Color", "Ground Color"
+    };
+    private static final String[] DIFFICULTY_OPTIONS = {"easy", "normal", "hard", "harder", "insane", "demon"};
+
     private static final Color C_PROP_BG = new Color(0.07f, 0.07f, 0.11f, 0.97f);
     private static final Color C_PROP_BORDER = new Color(0.35f, 0.65f, 1.00f, 1f);
     private static final Color C_PROP_ACTIVE = new Color(1.00f, 0.95f, 0.35f, 1f);
@@ -221,23 +232,7 @@ public class LevelEditorScreen extends AbstractScreen {
         buildTabs();
         scanMusicFiles();
         scanBgFiles();
-
-        if (levelData.getMusicFile() != null && !levelData.getMusicFile().isEmpty()) {
-            for (int i = 0; i < musicFiles.size(); i++) {
-                if (musicFiles.get(i).equals(levelData.getMusicFile())) {
-                    musicFileIdx = i;
-                    break;
-                }
-            }
-        }
-        if (levelData.getBgImage() != null && !levelData.getBgImage().isEmpty()) {
-            for (int i = 0; i < bgFiles.size(); i++) {
-                if (bgFiles.get(i).equals(levelData.getBgImage())) {
-                    bgFileIdx = i;
-                    break;
-                }
-            }
-        }
+        syncLevelAssetSelections();
 
         Gdx.input.setInputProcessor(new EditorInput());
     }
@@ -315,7 +310,7 @@ public class LevelEditorScreen extends AbstractScreen {
         float canvasW = sw - SIDEBAR_W;
         float canvasH = sh - TOPBAR_H;
 
-        drawTopBar(sw, sh);
+        drawEditorTopBar(sw, sh);
         drawCanvas(canvasW, canvasH);
         drawSidebar(sw, sh, canvasH);
 
@@ -328,6 +323,7 @@ public class LevelEditorScreen extends AbstractScreen {
 
         if (trailHasData) drawTrail(sh);
         if (propPanelOpen) drawPropertyPanel();
+        if (levelPanelOpen) drawLevelPanel(sw, sh);
         if (loadDialogOpen) drawLoadDialog(sw, sh);
     }
 
@@ -351,7 +347,8 @@ public class LevelEditorScreen extends AbstractScreen {
         drawBtn(offX + 160f, by, bw, bh, "Save", false);
         drawBtn(offX + 236f, by, bw, bh, playtesting ? "Stop" : "Play", playtesting);
         drawBtn(offX + 312f, by, bw, bh, "Props", false);
-        drawBtn(offX + 388f, by, bw, bh, "Menu", false);
+        drawBtn(offX + 388f, by, bw, bh, "Level", false);
+        drawBtn(offX + 464f, by, bw, bh, "Menu", false);
 
         float zbw = 36f;
         float canvasW = sw - SIDEBAR_W;
@@ -409,6 +406,63 @@ public class LevelEditorScreen extends AbstractScreen {
         String hint = "[ ]";
         layout.setText(font, hint);
         font.draw(getGame().getBatch(), hint, musicX - layout.width - 6f, y + TOPBAR_H / 2f + layout.height / 2f);
+
+        font.getData().setScale(1f);
+        getGame().getBatch().end();
+    }
+
+    private void drawEditorTopBar(int sw, int sh) {
+        float y = sh - TOPBAR_H;
+
+        shapes.setProjectionMatrix(uiCam.combined);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        shapes.setColor(C_TOPBAR);
+        shapes.rect(0, y, sw, TOPBAR_H);
+        shapes.end();
+
+        float bw = 68f;
+        float bh = TOPBAR_H - 12f;
+        float by = y + 6f;
+        boolean musPlaying = levelMusic != null && levelMusic.isPlaying();
+        drawBtn(8f, by, bw, bh, musPlaying ? "Pause" : "Music", musPlaying);
+        drawBtn(84f, by, bw, bh, "Stop", false);
+
+        float offX = 160f;
+        drawBtn(offX + 8f, by, bw, bh, "New", false);
+        drawBtn(offX + 84f, by, bw, bh, "Load", false);
+        drawBtn(offX + 160f, by, bw, bh, "Save", false);
+        drawBtn(offX + 236f, by, bw, bh, playtesting ? "Stop" : "Play", playtesting);
+        drawBtn(offX + 312f, by, bw, bh, "Props", false);
+        drawBtn(offX + 388f, by, bw, bh, "Level", false);
+        drawBtn(offX + 464f, by, bw, bh, "Menu", false);
+
+        float zbw = 36f;
+        float canvasW = sw - SIDEBAR_W;
+        drawBtn(canvasW - zbw * 2 - 16f, by, zbw, bh, "-", false);
+        drawBtn(canvasW - zbw - 8f, by, zbw, bh, "+", false);
+
+        getGame().getBatch().setProjectionMatrix(uiCam.combined);
+        getGame().getBatch().begin();
+
+        font.getData().setScale(0.72f);
+        font.setColor(Color.WHITE);
+        layout.setText(font, levelData.getName());
+        font.draw(getGame().getBatch(), levelData.getName(),
+            sw / 2f - layout.width / 2f, y + TOPBAR_H / 2f + layout.height / 2f);
+
+        if ("block".equals(placementId)) {
+            String btLabel = "Block: " + BlockType.values()[selectedBlockTypeIdx].getTextureName() + "  [TAB]";
+            font.getData().setScale(0.48f);
+            font.setColor(0.7f, 0.9f, 1f, 1f);
+            layout.setText(font, btLabel);
+            font.draw(getGame().getBatch(), btLabel, sw / 2f - layout.width / 2f, y + 10f);
+        }
+
+        String gridStatus = "Grid: " + (gridSnapping ? "ON" : "OFF") + " [G]";
+        font.getData().setScale(0.40f);
+        font.setColor(gridSnapping ? Color.CYAN : Color.GRAY);
+        layout.setText(font, gridStatus);
+        font.draw(getGame().getBatch(), gridStatus, 8f, y + 10f);
 
         font.getData().setScale(1f);
         getGame().getBatch().end();
@@ -678,7 +732,7 @@ public class LevelEditorScreen extends AbstractScreen {
     }
 
     private void handleKeys(float delta) {
-        if (propPanelOpen || loadDialogOpen) return;
+        if (propPanelOpen || levelPanelOpen || loadDialogOpen) return;
         if (playtesting) {
             boolean jump = Gdx.input.isKeyPressed(Input.Keys.SPACE) || Gdx.input.isKeyPressed(Input.Keys.UP) || Gdx.input.isTouched();
             if (jump != lastJump) {
@@ -693,30 +747,6 @@ public class LevelEditorScreen extends AbstractScreen {
             selectedBlockTypeIdx = (selectedBlockTypeIdx + 1) % BlockType.values().length;
 
         boolean shift = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
-        if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT_BRACKET)) {
-            if (shift) {
-                if (!bgFiles.isEmpty()) {
-                    bgFileIdx--;
-                    if (bgFileIdx < -1) bgFileIdx = bgFiles.size() - 1;
-                    levelData.setBgImage(bgFileIdx < 0 ? "" : bgFiles.get(bgFileIdx));
-                }
-            } else if (!musicFiles.isEmpty()) {
-                musicFileIdx = (musicFileIdx - 1 + musicFiles.size()) % musicFiles.size();
-                levelData.setMusicFile(musicFiles.get(musicFileIdx));
-            }
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT_BRACKET)) {
-            if (shift) {
-                if (!bgFiles.isEmpty()) {
-                    bgFileIdx++;
-                    if (bgFileIdx >= bgFiles.size()) bgFileIdx = -1;
-                    levelData.setBgImage(bgFileIdx < 0 ? "" : bgFiles.get(bgFileIdx));
-                }
-            } else if (!musicFiles.isEmpty()) {
-                musicFileIdx = (musicFileIdx + 1) % musicFiles.size();
-                levelData.setMusicFile(musicFiles.get(musicFileIdx));
-            }
-        }
         if (!selection.isEmpty()) {
             if (Gdx.input.isKeyJustPressed(Input.Keys.Q)) for (LevelData.ObjectEntry e : selection)
                 e.setRotation(((e.getRotation() + 90f) % 360f + 360f) % 360f);
@@ -857,7 +887,9 @@ public class LevelEditorScreen extends AbstractScreen {
         trailHasData = false;
         trailWX.clear();
         trailWY.clear();
+        levelPanelOpen = false;
         for (Tab t : tabs) t.selectedId = null;
+        syncLevelAssetSelections();
     }
 
     private void saveLevel() {
@@ -885,6 +917,30 @@ public class LevelEditorScreen extends AbstractScreen {
             }
         } catch (Exception ignored) {
         }
+    }
+
+    private void showLevelProperties() {
+        levelPanelOpen = true;
+        levelField = 0;
+        for (StringBuilder sb : levelBuffers) sb.setLength(0);
+        levelBuffers[0].append(levelData.getName() != null ? levelData.getName() : "");
+        levelBuffers[1].append(levelData.getDifficulty() != null ? levelData.getDifficulty() : "normal");
+        levelBuffers[2].append(levelData.getMusicFile() != null ? levelData.getMusicFile() : "");
+        levelBuffers[3].append(levelData.getBgImage() != null ? levelData.getBgImage() : "");
+        levelBuffers[4].append(levelData.getBgColor() != null ? levelData.getBgColor() : "1a1a2e");
+        levelBuffers[5].append(levelData.getGroundColor() != null ? levelData.getGroundColor() : "16213e");
+    }
+
+    private void confirmLevelProperties() {
+        levelData.setName(defaultIfBlank(levelBuffers[0].toString(), "Unnamed Level"));
+        levelData.setDifficulty(defaultIfBlank(levelBuffers[1].toString(), "normal"));
+        levelData.setMusicFile(levelBuffers[2].toString().trim());
+        levelData.setBgImage(levelBuffers[3].toString().trim());
+        levelData.setBgColor(normalizeHex(levelBuffers[4].toString(), "1a1a2e"));
+        levelData.setGroundColor(normalizeHex(levelBuffers[5].toString(), "16213e"));
+        syncLevelAssetSelections();
+        stopAndDisposeMusic();
+        levelPanelOpen = false;
     }
 
     private void drawLoadDialog(int sw, int sh) {
@@ -1090,7 +1146,58 @@ public class LevelEditorScreen extends AbstractScreen {
 
     private class EditorInput extends InputAdapter {
         @Override
+        public boolean keyDown(int keycode) {
+            if (!levelPanelOpen) return false;
+            if (keycode == Input.Keys.ENTER) {
+                confirmLevelProperties();
+                return true;
+            }
+            if (keycode == Input.Keys.ESCAPE) {
+                levelPanelOpen = false;
+                return true;
+            }
+            if (keycode == Input.Keys.TAB || keycode == Input.Keys.DOWN) {
+                boolean shift = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
+                levelField = (levelField + (shift ? LEVEL_LABELS.length - 1 : 1)) % LEVEL_LABELS.length;
+                return true;
+            }
+            if (keycode == Input.Keys.UP) {
+                levelField = (levelField + LEVEL_LABELS.length - 1) % LEVEL_LABELS.length;
+                return true;
+            }
+            if (keycode == Input.Keys.LEFT) {
+                cycleLevelFieldOption(-1);
+                return true;
+            }
+            if (keycode == Input.Keys.RIGHT) {
+                cycleLevelFieldOption(1);
+                return true;
+            }
+            return false;
+        }
+
+        @Override
         public boolean keyTyped(char c) {
+            if (levelPanelOpen) {
+                if (c == '\r' || c == '\n') {
+                    confirmLevelProperties();
+                    return true;
+                }
+                if (c == 27) {
+                    levelPanelOpen = false;
+                    return true;
+                }
+                if (c == '\t') {
+                    levelField = (levelField + 1) % LEVEL_LABELS.length;
+                    return true;
+                }
+                if (levelField == 1 || levelField == 2 || levelField == 3) return true;
+                StringBuilder activeLevel = levelBuffers[levelField];
+                if (c == '\b') {
+                    if (activeLevel.length() > 0) activeLevel.deleteCharAt(activeLevel.length() - 1);
+                } else if (c >= 32) activeLevel.append(c);
+                return true;
+            }
             if (!propPanelOpen) return false;
             if (c == '\r' || c == '\n') {
                 confirmPropertyEdit();
@@ -1113,6 +1220,7 @@ public class LevelEditorScreen extends AbstractScreen {
 
         @Override
         public boolean touchDown(int sx, int sy, int pointer, int button) {
+            if (levelPanelOpen) return handleLevelPanelTouch(sx, sy);
             if (propPanelOpen) return false;
             int sw = Gdx.graphics.getWidth(), sh = Gdx.graphics.getHeight();
             float canvasW = sw - SIDEBAR_W, canvasH = sh - TOPBAR_H;
@@ -1170,6 +1278,10 @@ public class LevelEditorScreen extends AbstractScreen {
                     return true;
                 }
                 if (ui.x >= offX + 388f && ui.x <= offX + 388f + bw) {
+                    showLevelProperties();
+                    return true;
+                }
+                if (ui.x >= offX + 464f && ui.x <= offX + 464f + bw) {
                     getGame().setScreen(new MainMenuScreen(getGame()));
                     return true;
                 }
@@ -1271,6 +1383,7 @@ public class LevelEditorScreen extends AbstractScreen {
             int sw = Gdx.graphics.getWidth(), sh = Gdx.graphics.getHeight();
             float canvasW = sw - SIDEBAR_W;
             Vector2 ui = new Vector2(Gdx.input.getX(), sh - Gdx.input.getY());
+            if (levelPanelOpen) return true;
             if (loadDialogOpen) {
                 loadScroll = MathUtils.clamp(loadScroll + ay * 24f, 0, Math.max(0, levelFiles.size() * 36f - 400f));
                 return true;
@@ -1338,22 +1451,7 @@ public class LevelEditorScreen extends AbstractScreen {
             trailHasData = false;
             trailWX.clear();
             trailWY.clear();
-            musicFileIdx = -1;
-            if (levelData.getMusicFile() != null && !levelData.getMusicFile().isEmpty()) {
-                for (int i = 0; i < musicFiles.size(); i++)
-                    if (musicFiles.get(i).equals(levelData.getMusicFile())) {
-                        musicFileIdx = i;
-                        break;
-                    }
-            }
-            bgFileIdx = -1;
-            if (levelData.getBgImage() != null && !levelData.getBgImage().isEmpty()) {
-                for (int i = 0; i < bgFiles.size(); i++)
-                    if (bgFiles.get(i).equals(levelData.getBgImage())) {
-                        bgFileIdx = i;
-                        break;
-                    }
-            }
+            syncLevelAssetSelections();
             Gdx.app.log("Editor", "Loaded: " + filename);
         } catch (Exception ex) {
             Gdx.app.error("Editor", "Load failed: " + ex.getMessage());
@@ -1463,6 +1561,54 @@ public class LevelEditorScreen extends AbstractScreen {
         getGame().getBatch().end();
     }
 
+    private void drawLevelPanel(int sw, int sh) {
+        float pw = 620f;
+        float ph = 340f;
+        float px = sw / 2f - pw / 2f;
+        float py = sh / 2f - ph / 2f;
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        shapes.setProjectionMatrix(uiCam.combined);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        shapes.setColor(C_PROP_BG);
+        shapes.rect(px, py, pw, ph);
+        shapes.end();
+        shapes.begin(ShapeRenderer.ShapeType.Line);
+        shapes.setColor(C_PROP_BORDER);
+        shapes.rect(px, py, pw, ph);
+        shapes.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+
+        getGame().getBatch().setProjectionMatrix(uiCam.combined);
+        getGame().getBatch().begin();
+        font.getData().setScale(0.66f);
+        font.setColor(C_PROP_BORDER);
+        font.draw(getGame().getBatch(), "Level Properties", px + 12f, py + ph - 12f);
+        font.getData().setScale(0.40f);
+        font.setColor(C_PROP_DIM);
+        font.draw(getGame().getBatch(), "Tab to move, Left/Right cycles difficulty, music and background, Enter saves", px + 12f, py + ph - 34f);
+
+        for (int i = 0; i < LEVEL_LABELS.length; i++) {
+            float fy = py + ph - 68f - i * 38f;
+            boolean active = i == levelField;
+            font.getData().setScale(0.54f);
+            font.setColor(active ? C_PROP_ACTIVE : C_PROP_DIM);
+            String label = LEVEL_LABELS[i] + ": ";
+            layout.setText(font, label);
+            font.draw(getGame().getBatch(), label, px + 18f, fy);
+            font.setColor(Color.WHITE);
+            String value = levelBuffers[i].toString();
+            if ((i == 2 || i == 3) && value.isEmpty()) value = "None";
+            font.draw(getGame().getBatch(), value + (active ? "_" : ""), px + 200f, fy);
+        }
+
+        font.getData().setScale(0.48f);
+        font.setColor(Color.WHITE);
+        font.draw(getGame().getBatch(), "[Save]", px + pw - 130f, py + 28f);
+        font.draw(getGame().getBatch(), "[Cancel]", px + pw - 220f, py + 28f);
+        font.getData().setScale(1f);
+        getGame().getBatch().end();
+    }
+
     private void startEditorMusic(boolean restart) {
         if (levelData.getMusicFile() == null || levelData.getMusicFile().isEmpty()) return;
         try {
@@ -1490,6 +1636,85 @@ public class LevelEditorScreen extends AbstractScreen {
             levelMusic.dispose();
             levelMusic = null;
         }
+    }
+
+    private boolean handleLevelPanelTouch(int sx, int sy) {
+        int sw = Gdx.graphics.getWidth();
+        int sh = Gdx.graphics.getHeight();
+        float pw = 620f;
+        float ph = 340f;
+        float px = sw / 2f - pw / 2f;
+        float py = sh / 2f - ph / 2f;
+        float uiY = sh - sy;
+        if (sx < px || sx > px + pw || uiY < py || uiY > py + ph) {
+            levelPanelOpen = false;
+            return true;
+        }
+        for (int i = 0; i < LEVEL_LABELS.length; i++) {
+            float rowTop = py + ph - 54f - i * 38f;
+            float rowBottom = rowTop - 28f;
+            if (uiY >= rowBottom && uiY <= rowTop) {
+                levelField = i;
+                return true;
+            }
+        }
+        if (sx >= px + pw - 150f && sx <= px + pw - 90f && uiY >= py + 10f && uiY <= py + 34f) {
+            confirmLevelProperties();
+            return true;
+        }
+        if (sx >= px + pw - 240f && sx <= px + pw - 150f && uiY >= py + 10f && uiY <= py + 34f) {
+            levelPanelOpen = false;
+            return true;
+        }
+        return true;
+    }
+
+    private void cycleLevelFieldOption(int direction) {
+        if (levelField == 1) {
+            int index = findOptionIndex(DIFFICULTY_OPTIONS, levelBuffers[1].toString().trim());
+            if (index < 0) index = 0;
+            index = (index + direction + DIFFICULTY_OPTIONS.length) % DIFFICULTY_OPTIONS.length;
+            levelBuffers[1].setLength(0);
+            levelBuffers[1].append(DIFFICULTY_OPTIONS[index]);
+        } else if (levelField == 2) {
+            cycleFileSelection(levelBuffers[2], musicFiles, true, direction);
+        } else if (levelField == 3) {
+            cycleFileSelection(levelBuffers[3], bgFiles, true, direction);
+        }
+    }
+
+    private void cycleFileSelection(StringBuilder buffer, List<String> options, boolean allowBlank, int direction) {
+        if (options.isEmpty()) {
+            if (allowBlank) buffer.setLength(0);
+            return;
+        }
+        int total = options.size() + (allowBlank ? 1 : 0);
+        int current = allowBlank && buffer.length() == 0 ? 0 : options.indexOf(buffer.toString().trim()) + (allowBlank ? 1 : 0);
+        if (current < 0) current = allowBlank ? 0 : 0;
+        current = (current + direction + total) % total;
+        buffer.setLength(0);
+        if (!(allowBlank && current == 0)) buffer.append(options.get(current - (allowBlank ? 1 : 0)));
+    }
+
+    private int findOptionIndex(String[] options, String value) {
+        for (int i = 0; i < options.length; i++)
+            if (options[i].equalsIgnoreCase(value)) return i;
+        return -1;
+    }
+
+    private void syncLevelAssetSelections() {
+        musicFileIdx = musicFiles.indexOf(levelData.getMusicFile());
+        bgFileIdx = bgFiles.indexOf(levelData.getBgImage());
+    }
+
+    private String defaultIfBlank(String value, String fallback) {
+        String trimmed = value == null ? "" : value.trim();
+        return trimmed.isEmpty() ? fallback : trimmed;
+    }
+
+    private String normalizeHex(String value, String fallback) {
+        String trimmed = defaultIfBlank(value, fallback).replace("#", "").trim();
+        return trimmed.isEmpty() ? fallback : trimmed.toLowerCase();
     }
 
     private FileHandle resolveWritableLevelFile(String filename) {
