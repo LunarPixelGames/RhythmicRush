@@ -167,7 +167,8 @@ public class LevelEditorScreen extends AbstractScreen {
     private static final String[] LEVEL_LABELS = {
         "Level Name", "Difficulty", "Music File", "Background Image", "Start BG Color", "Ground Color"
     };
-    private static final String[] DIFFICULTY_OPTIONS = {"easy", "normal", "hard", "harder", "insane", "demon"};
+    private static final String LEVEL_ID_LABEL = "Level ID";
+    private static final String[] DIFFICULTY_OPTIONS = {"easy", "normal", "hard", "insane", "extreme"};
 
     private static final Color C_PROP_BG = new Color(0.07f, 0.07f, 0.11f, 0.97f);
     private static final Color C_PROP_BORDER = new Color(0.35f, 0.65f, 1.00f, 1f);
@@ -879,6 +880,7 @@ public class LevelEditorScreen extends AbstractScreen {
         stopPlaytest();
         stopAndDisposeMusic();
         levelData = new LevelData();
+        levelData.setId(findNextLevelId());
         musicFileIdx = -1;
         bgFileIdx = -1;
         selection.clear();
@@ -896,6 +898,9 @@ public class LevelEditorScreen extends AbstractScreen {
         if (savePath == null)
             savePath = findNextLevelFileName();
         try {
+            if (levelData.getId() < 0) {
+                levelData.setId(findNextLevelId());
+            }
             FileHandle file = resolveWritableLevelFile(savePath);
             LevelSerializer.Companion.saveBinary(levelData, file);
             savePath = file.name();
@@ -1445,6 +1450,9 @@ public class LevelEditorScreen extends AbstractScreen {
             if (!fh.exists()) fh = Gdx.files.local("levels/" + filename);
             if (!fh.exists()) fh = Gdx.files.local("assets/levels/" + filename);
             levelData = LevelSerializer.Companion.load(fh);
+            if (levelData != null && levelData.getId() < 0) {
+                levelData.setId(findNextLevelId());
+            }
             savePath = fh.name();
             selection.clear();
             placementId = null;
@@ -1563,7 +1571,7 @@ public class LevelEditorScreen extends AbstractScreen {
 
     private void drawLevelPanel(int sw, int sh) {
         float pw = 620f;
-        float ph = 340f;
+        float ph = 378f;
         float px = sw / 2f - pw / 2f;
         float py = sh / 2f - ph / 2f;
         Gdx.gl.glEnable(GL20.GL_BLEND);
@@ -1600,6 +1608,16 @@ public class LevelEditorScreen extends AbstractScreen {
             if ((i == 2 || i == 3) && value.isEmpty()) value = "None";
             font.draw(getGame().getBatch(), value + (active ? "_" : ""), px + 200f, fy);
         }
+
+        float idY = py + ph - 68f - LEVEL_LABELS.length * 38f;
+        font.getData().setScale(0.54f);
+        font.setColor(C_PROP_DIM);
+        String idLabel = LEVEL_ID_LABEL + ": ";
+        layout.setText(font, idLabel);
+        font.draw(getGame().getBatch(), idLabel, px + 18f, idY);
+        font.setColor(Color.WHITE);
+        String idValue = levelData.getId() >= 0 ? Integer.toString(levelData.getId()) : "Unassigned";
+        font.draw(getGame().getBatch(), idValue, px + 200f, idY);
 
         font.getData().setScale(0.48f);
         font.setColor(Color.WHITE);
@@ -1642,7 +1660,7 @@ public class LevelEditorScreen extends AbstractScreen {
         int sw = Gdx.graphics.getWidth();
         int sh = Gdx.graphics.getHeight();
         float pw = 620f;
-        float ph = 340f;
+        float ph = 378f;
         float px = sw / 2f - pw / 2f;
         float py = sh / 2f - ph / 2f;
         float uiY = sh - sy;
@@ -1739,6 +1757,25 @@ public class LevelEditorScreen extends AbstractScreen {
             }
         }
         return nextIndex + ".ubj";
+    }
+
+    private int findNextLevelId() {
+        FileHandle dir = resolveLevelsDirectory();
+        int nextId = 0;
+        if (dir.exists()) {
+            for (FileHandle file : dir.list()) {
+                String extension = file.extension().toLowerCase();
+                if (!extension.equals("ubj") && !extension.equals("json")) continue;
+                try {
+                    LevelData existing = LevelSerializer.Companion.load(file);
+                    if (existing != null && existing.getId() >= nextId) {
+                        nextId = existing.getId() + 1;
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+        }
+        return nextId;
     }
 
     private FileHandle resolveLevelsDirectory() {
