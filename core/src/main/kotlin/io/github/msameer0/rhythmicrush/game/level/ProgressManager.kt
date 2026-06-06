@@ -2,16 +2,17 @@ package io.github.msameer0.rhythmicrush.game.level
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.utils.Json
-import com.badlogic.gdx.utils.JsonReader
 import com.badlogic.gdx.utils.JsonWriter
 import com.badlogic.gdx.utils.ObjectMap
+import com.badlogic.gdx.utils.UBJsonReader
+import com.badlogic.gdx.utils.UBJsonWriter
 
 /**
  * Manages the persistence of level completion progress and attempt counts.
  */
 class ProgressManager {
     companion object {
-        const val SAVE_PATH: String = "saves/progress.json"
+        const val SAVE_PATH: String = "saves/progress.ubj"
         const val COINS_KEY: String = "coins"
         const val POINTS_KEY: String = "points"
     }
@@ -34,54 +35,24 @@ class ProgressManager {
         return map.get(levelKey)
     }
 
-    fun migrateLegacyLevelKeys(levels: Iterable<LevelData?>) {
-        var changed = false
-        for (level in levels) {
-            if (level == null || level.id < 0) continue
-
-            val newKey = level.getProgressKey()
-            val legacyKeys = arrayOf(level.fileName, level.fileName.substringBeforeLast('.', ""), level.id.toString() + ".ubj", level.id.toString() + ".json")
-
-            var target = map.get(newKey)
-            for (legacyKey in legacyKeys) {
-                if (legacyKey.isEmpty() || legacyKey == newKey) continue
-                val legacy = map.get(legacyKey) ?: continue
-                if (target == null) {
-                    map.put(newKey, legacy)
-                    target = legacy
-                } else {
-                    target.bestPercent = maxOf(target.bestPercent, legacy.bestPercent)
-                    target.totalAttempts += legacy.totalAttempts
-                }
-                map.remove(legacyKey)
-                changed = true
-            }
-        }
-
-        if (changed) {
-            save()
-        }
-    }
-
     fun save() {
         Gdx.app.log("ProgressManager", "Saving progress...")
         try {
             val file = Gdx.files.local(SAVE_PATH)
             file.parent().mkdirs()
-
-            val sb = StringBuilder("{\n")
-            sb.append("  \"").append(COINS_KEY).append("\": ").append(coins)
-            sb.append(",\n")
-            sb.append("  \"").append(POINTS_KEY).append("\": ").append(points)
-            var first = false
-            for (entry in map) {
-                if (!first) sb.append(",\n")
-                sb.append("  \"").append(entry.key).append("\": ")
-                sb.append(json.toJson(entry.value))
-                first = false
+            val writer = UBJsonWriter(file.write(false))
+            try {
+                writer.`object`()
+                writer.set(COINS_KEY, coins)
+                writer.set(POINTS_KEY, points)
+                for (entry in map) {
+                    writer.name(entry.key)
+                    writer.value(com.badlogic.gdx.utils.JsonReader().parse(json.toJson(entry.value)))
+                }
+                writer.pop()
+            } finally {
+                writer.close()
             }
-            sb.append("\n}")
-            file.writeString(sb.toString(), false)
             Gdx.app.log("ProgressManager", "Progress saved successfully.")
         } catch (e: Exception) {
             Gdx.app.error("ProgressManager", "Failed to save progress: " + e.message)
@@ -97,7 +68,7 @@ class ProgressManager {
                 return
             }
 
-            val root = JsonReader().parse(file)
+            val root = UBJsonReader().parse(file)
             var entry = root.child
             while (entry != null) {
                 when (entry.name) {
