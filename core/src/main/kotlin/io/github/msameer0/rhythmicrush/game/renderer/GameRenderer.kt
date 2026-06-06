@@ -156,14 +156,6 @@ class GameRenderer(
             drawBackground(bgTexture, bgColor)
         }
 
-        if (showHitboxes) {
-            batch.end()
-            shape.begin(ShapeRenderer.ShapeType.Filled)
-            drawCameraDebug()
-            shape.end()
-            batch.begin()
-        }
-
         batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
         batch.color = Color.WHITE
 
@@ -688,15 +680,6 @@ class GameRenderer(
             shape.color = Color(burst.brightness, burst.brightness, burst.brightness, burst.alpha)
             shape.circle(burst.x, burst.y, burst.radius, 28)
         }
-    }
-
-    private fun drawCameraDebug() {
-        val player = world.player ?: return
-        val cam = customCamera ?: return
-        if (player.getType() != AbstractPlayer.PlayerType.CUBE) return
-
-        shape.color = Color(1f, 1f, 1f, 0.15f)
-        shape.rect(player.x, cam.getWindowBottom(), player.width, cam.getPaddingHeight())
     }
 
     private fun portalRegion(type: AbstractPortal.PortalType?): TextureRegion? {

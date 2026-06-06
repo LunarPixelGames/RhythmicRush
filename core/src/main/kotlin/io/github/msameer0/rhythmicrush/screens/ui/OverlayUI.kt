@@ -31,6 +31,10 @@ class OverlayUI(
 ) {
     enum class SliderKind { MUSIC, SFX }
 
+    private val pauseToggleW get() = 138f * uiScale
+    private val pauseToggleH get() = 52f * uiScale
+    private val pauseTogglePad get() = 18f * uiScale
+
     private var panelW = 520f
     private var panelH = 360f
     private var panelPadX = 40f
@@ -137,6 +141,34 @@ class OverlayUI(
             camLeft(camera, viewport), camBot(camera, viewport),
             viewport.worldWidth, viewport.worldHeight
         )
+    }
+
+    fun drawPauseToggleButtonShapes(camera: OrthographicCamera, viewport: Viewport, visible: Boolean) {
+        val x = pauseToggleX(camera, viewport)
+        val y = pauseToggleY(camera, viewport)
+        val w = pauseToggleW
+        val h = pauseToggleH
+        val r = h * 0.28f
+        shapes.color = if (visible) Color(0.16f, 0.16f, 0.24f, 0.92f) else Color(0.12f, 0.32f, 0.22f, 0.92f)
+        drawRoundedButton(x, y, w, h, r)
+    }
+
+    fun drawPauseToggleButtonText(camera: OrthographicCamera, viewport: Viewport, visible: Boolean) {
+        val x = pauseToggleX(camera, viewport)
+        val y = pauseToggleY(camera, viewport)
+        val w = pauseToggleW
+        val h = pauseToggleH
+        val label = if (visible) "Hide Menu" else "Show Menu"
+        pauseFont.data.setScale(smallScale)
+        layout.setText(pauseFont, label)
+        drawShadowText(
+            label,
+            x + w / 2f - layout.width / 2f,
+            y + h / 2f + layout.height / 2f,
+            Color.WHITE,
+            2f * uiScale
+        )
+        pauseFont.data.setScale(1f)
     }
 
     fun drawPauseOverlay(camera: OrthographicCamera, sessionAttempts: Int, levelKey: String?) {
@@ -318,6 +350,10 @@ class OverlayUI(
         return hits(tx, ty, resumeX(camera), backY(camera), btnSize, btnSize)
     }
 
+    fun hitsPauseToggleButton(tx: Float, ty: Float, camera: OrthographicCamera, viewport: Viewport): Boolean {
+        return hits(tx, ty, pauseToggleX(camera, viewport), pauseToggleY(camera, viewport), pauseToggleW, pauseToggleH)
+    }
+
     fun hitSlider(t: Vector2, camera: OrthographicCamera): SliderKind? {
         val tx = sliderTrackX(camera)
         val tw = sliderTrackW()
@@ -394,6 +430,14 @@ class OverlayUI(
         return if (kind == SliderKind.MUSIC) centerY + sliderGap * 0.5f else centerY - sliderGap * 0.5f
     }
 
+    private fun pauseToggleX(c: OrthographicCamera, v: Viewport): Float {
+        return camLeft(c, v) + game.settingsManager.uiPadding + pauseTogglePad
+    }
+
+    private fun pauseToggleY(c: OrthographicCamera, v: Viewport): Float {
+        return c.position.y - v.worldHeight / 2f + game.settingsManager.uiPadding + pauseTogglePad
+    }
+
     private fun drawSliderTrack(
         tx: Float,
         sliderY: Float,
@@ -409,6 +453,16 @@ class OverlayUI(
         if (fillW > 0) shapes.rect(tx, sliderY - trackH / 2f, fillW, trackH)
         shapes.color = COL_THUMB
         shapes.circle(tx + fillW, sliderY, thumbR, 24)
+    }
+
+    private fun drawRoundedButton(x: Float, y: Float, w: Float, h: Float, r: Float) {
+        shapes.rect(x + r, y, w - 2 * r, h)
+        shapes.rect(x, y + r, r, h - 2 * r)
+        shapes.rect(x + w - r, y + r, r, h - 2 * r)
+        shapes.circle(x + r, y + r, r, 18)
+        shapes.circle(x + w - r, y + r, r, 18)
+        shapes.circle(x + r, y + h - r, r, 18)
+        shapes.circle(x + w - r, y + h - r, r, 18)
     }
 
     private fun ensurePanel() {

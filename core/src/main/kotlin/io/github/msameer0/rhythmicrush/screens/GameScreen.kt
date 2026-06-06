@@ -71,6 +71,7 @@ class GameScreen @JvmOverloads constructor(
     private var levelEndingSequence = false
     private var levelEndTimer = 0f
     private var levelCompletedState = false
+    private var pauseOverlayVisible = true
     private var lastDelta = 0f
     private var lastJumpHeld = false
     private var ignoreInputUntilRelease = false
@@ -85,6 +86,11 @@ class GameScreen @JvmOverloads constructor(
             val ty = _unprojectTmp.y
 
             if (paused) {
+                if (overlay.hitsPauseToggleButton(tx, ty, gameCamera, gameViewport)) {
+                    pauseOverlayVisible = !pauseOverlayVisible
+                    return true
+                }
+                if (!pauseOverlayVisible) return true
                 if (overlay.hitsBackButton(tx, ty, gameCamera)) {
                     exitToLevelSelect()
                     return true
@@ -241,7 +247,7 @@ class GameScreen @JvmOverloads constructor(
             if (levelCompletedState) {
                 exitToLevelSelect()
             } else if (paused) {
-                setPaused(false)
+                exitToLevelSelect()
             } else {
                 setPaused(true)
             }
@@ -382,8 +388,11 @@ class GameScreen @JvmOverloads constructor(
             practice.drawCheckpoints(shapes, gameCamera)
         }
 
-        if (paused || levelCompletedState) {
+        if (levelCompletedState || (paused && pauseOverlayVisible)) {
             overlay.drawDimOverlay(gameCamera, gameViewport)
+        }
+        if (paused) {
+            overlay.drawPauseToggleButtonShapes(gameCamera, gameViewport, pauseOverlayVisible)
         }
 
         shapes.end()
@@ -398,14 +407,17 @@ class GameScreen @JvmOverloads constructor(
         if (isPracticeMode) drawPracticeButtonText()
 
         if (paused) {
-            overlay.drawPauseOverlay(gameCamera, sessionAttempts, levelKey)
+            overlay.drawPauseToggleButtonText(gameCamera, gameViewport, pauseOverlayVisible)
+            if (pauseOverlayVisible) {
+                overlay.drawPauseOverlay(gameCamera, sessionAttempts, levelKey)
+            }
         } else if (levelCompletedState) {
             overlay.drawCompleteOverlay(gameCamera, sessionAttempts, levelKey)
         }
 
         game.batch.end()
 
-        if (paused) overlay.drawPauseSliders(gameCamera)
+        if (paused && pauseOverlayVisible) overlay.drawPauseSliders(gameCamera)
     }
 
     private fun drawPracticeButtonText() {
@@ -436,6 +448,7 @@ class GameScreen @JvmOverloads constructor(
 
     private fun setPaused(p: Boolean) {
         paused = p
+        if (p) pauseOverlayVisible = true
         if (!p) overlay.endSliderDrag()
         if (p) music.pause() else music.resume()
         if (game.settingsManager.lockCursorInGame) {
