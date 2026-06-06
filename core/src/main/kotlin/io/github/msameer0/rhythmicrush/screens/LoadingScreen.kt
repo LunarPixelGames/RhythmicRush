@@ -77,6 +77,7 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             6 -> {
                 statusText = "Scanning Levels..."
                 game.levelManager = LevelManager()
+                game.progressManager.migrateLegacyLevelKeys(game.levelManager.getLevels())
             }
 
             7 -> {

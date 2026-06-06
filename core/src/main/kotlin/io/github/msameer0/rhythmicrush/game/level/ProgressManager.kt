@@ -12,10 +12,14 @@ import com.badlogic.gdx.utils.ObjectMap
 class ProgressManager {
     companion object {
         const val SAVE_PATH: String = "saves/progress.json"
+        const val COINS_KEY: String = "coins"
+        const val POINTS_KEY: String = "points"
     }
 
     val map = ObjectMap<String, LevelProgress>()
     var json: Json = Json()
+    var coins: Int = 0
+    var points: Int = 0
 
     constructor() {
         json.setOutputType(JsonWriter.OutputType.json)
@@ -30,6 +34,35 @@ class ProgressManager {
         return map.get(levelKey)
     }
 
+    fun migrateLegacyLevelKeys(levels: Iterable<LevelData?>) {
+        var changed = false
+        for (level in levels) {
+            if (level == null || level.id < 0) continue
+
+            val newKey = level.getProgressKey()
+            val legacyKeys = arrayOf(level.fileName, level.fileName.substringBeforeLast('.', ""), level.id.toString() + ".ubj", level.id.toString() + ".json")
+
+            var target = map.get(newKey)
+            for (legacyKey in legacyKeys) {
+                if (legacyKey.isEmpty() || legacyKey == newKey) continue
+                val legacy = map.get(legacyKey) ?: continue
+                if (target == null) {
+                    map.put(newKey, legacy)
+                    target = legacy
+                } else {
+                    target.bestPercent = maxOf(target.bestPercent, legacy.bestPercent)
+                    target.totalAttempts += legacy.totalAttempts
+                }
+                map.remove(legacyKey)
+                changed = true
+            }
+        }
+
+        if (changed) {
+            save()
+        }
+    }
+
     fun save() {
         Gdx.app.log("ProgressManager", "Saving progress...")
         try {
@@ -37,7 +70,10 @@ class ProgressManager {
             file.parent().mkdirs()
 
             val sb = StringBuilder("{\n")
-            var first = true
+            sb.append("  \"").append(COINS_KEY).append("\": ").append(coins)
+            sb.append(",\n")
+            sb.append("  \"").append(POINTS_KEY).append("\": ").append(points)
+            var first = false
             for (entry in map) {
                 if (!first) sb.append(",\n")
                 sb.append("  \"").append(entry.key).append("\": ")
@@ -64,8 +100,14 @@ class ProgressManager {
             val root = JsonReader().parse(file)
             var entry = root.child
             while (entry != null) {
-                val p = json.readValue<LevelProgress?>(LevelProgress::class.java, entry)
-                if (p != null) map.put(entry.name, p)
+                when (entry.name) {
+                    COINS_KEY -> coins = entry.asInt()
+                    POINTS_KEY -> points = entry.asInt()
+                    else -> {
+                        val p = json.readValue<LevelProgress?>(LevelProgress::class.java, entry)
+                        if (p != null) map.put(entry.name, p)
+                    }
+                }
                 entry = entry.next
             }
             Gdx.app.log("ProgressManager", "Progress loaded: " + map.size + " entries.")

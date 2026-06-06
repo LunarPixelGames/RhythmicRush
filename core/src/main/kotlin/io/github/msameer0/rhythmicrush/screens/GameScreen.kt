@@ -179,7 +179,7 @@ class GameScreen @JvmOverloads constructor(
 
         if (levelData != null) {
             world.loadLevel(levelData)
-            levelKey = levelData.fileName
+            levelKey = if (levelData.id >= 0) levelData.getProgressKey() else null
             recordAttempt()
             updateBgTexture()
         }
@@ -569,7 +569,39 @@ class GameScreen @JvmOverloads constructor(
         if (key == null || isPracticeMode) return
         val p = game.progressManager.getOrCreate(key)
         p.bestPercent = 100
+        awardCompletionRewards()
         game.progressManager.save()
+    }
+
+    private fun awardCompletionRewards() {
+        val difficulty = levelData?.difficulty?.lowercase() ?: "normal"
+        val progress = game.progressManager
+        when (difficulty) {
+            "easy" -> {
+                progress.coins += 50
+                progress.points += 2
+            }
+            "normal" -> {
+                progress.coins += 75
+                progress.points += 3
+            }
+            "hard", "harder" -> {
+                progress.coins += 125
+                progress.points += 5
+            }
+            "insane" -> {
+                progress.coins += 250
+                progress.points += 7
+            }
+            "extreme", "demon" -> {
+                progress.coins += 500
+                progress.points += 10
+            }
+            else -> {
+                progress.coins += 75
+                progress.points += 3
+            }
+        }
     }
 
     private fun handleInput() {

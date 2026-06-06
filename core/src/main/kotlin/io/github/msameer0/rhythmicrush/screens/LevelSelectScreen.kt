@@ -345,12 +345,15 @@ class LevelSelectScreen @JvmOverloads constructor(
         layout.setText(font, diffLabel)
         drawTextWithShadow(font, diffLabel, textX, textY - nameH - 4f, Color(1f, 1f, 1f, 0.55f))
 
-        val levelKey = current.fileName ?: "${current.name}.json"
-        val progress = game.progressManager.getOrCreate(levelKey)
+        val progress = if (current.id >= 0) {
+            game.progressManager.getOrCreate(current.getProgressKey())
+        } else {
+            null
+        }
 
         font.data.setScale(0.8f)
-        val bestText = "Best: ${progress.bestPercent}%"
-        val attemptsText = "Total Attempts: ${progress.totalAttempts}"
+        val bestText = "Best: ${progress?.bestPercent ?: 0}%"
+        val attemptsText = "Total Attempts: ${progress?.totalAttempts ?: 0}"
         val statsX = pX + panelW / 2f
 
         layout.setText(font, bestText)

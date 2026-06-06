@@ -64,7 +64,12 @@ class LevelSerializer {
                 }
             }
 
-            if (data != null) data.fileName = file.name()
+            if (data != null) {
+                data.fileName = file.name()
+                if (data.id < 0) {
+                    data.id = file.nameWithoutExtension().toIntOrNull() ?: -1
+                }
+            }
             return data
         }
 

@@ -8,6 +8,7 @@ import com.badlogic.gdx.utils.JsonValue
  * Container for all data defining a game level, including metadata and object layout.
  */
 class LevelData : Json.Serializable {
+    var id = -1
     var name = "Unnamed Level"
     var fileName = ""
     var musicFile = ""
@@ -94,6 +95,7 @@ class LevelData : Json.Serializable {
     }
 
     override fun write(json: Json) {
+        if (id >= 0) json.writeValue("id", id)
         if (name != "Unnamed Level") json.writeValue("name", name)
         if (musicFile.isNotEmpty()) json.writeValue("musicFile", musicFile)
         if (bgImage.isNotEmpty()) json.writeValue("bgImage", bgImage)
@@ -105,6 +107,7 @@ class LevelData : Json.Serializable {
     }
 
     override fun read(json: Json, jsonData: JsonValue) {
+        id = jsonData.getInt("id", -1)
         name = jsonData.getString("name", "Unnamed Level")
         musicFile = jsonData.getString("musicFile", "")
         bgImage = jsonData.getString("bgImage", "")
@@ -131,5 +134,9 @@ class LevelData : Json.Serializable {
             if (right > max) max = right
         }
         return max
+    }
+
+    fun getProgressKey(): String {
+        return id.toString()
     }
 }
