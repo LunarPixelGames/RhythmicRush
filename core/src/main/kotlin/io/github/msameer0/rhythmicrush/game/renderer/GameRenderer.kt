@@ -22,6 +22,7 @@ import io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs.Abstract
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.pads.AbstractPad
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.AbstractPortal
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
+import io.github.msameer0.rhythmicrush.game.level.PatternShape
 import io.github.msameer0.rhythmicrush.settings.SettingsManager
 import kotlin.math.min
 
@@ -47,6 +48,8 @@ class GameRenderer(
 
     private val shape = ShapeRenderer()
     private val hitboxRenderer = HitboxRenderer(world, shape)
+    private val proceduralBackground = ProceduralBackground()
+    private val proceduralGround = ProceduralGroundDecoration()
 
     private val blockRegionsByOrdinal: Array<TextureRegion?>
     private val slopeRegion: TextureRegion?
@@ -152,7 +155,11 @@ class GameRenderer(
         batch.projectionMatrix = camera.combined
         batch.begin()
 
-        if (bgTexture != null) {
+        if (world.bgShape != null) {
+            batch.end()
+            drawProceduralBackground(world.bgShape!!, bgColor)
+            batch.begin()
+        } else if (bgTexture != null) {
             drawBackground(bgTexture, bgColor)
         }
 
@@ -217,6 +224,30 @@ class GameRenderer(
         val y = camera.position.y - viewH / 2f
 
         batch.draw(texture, x, y, viewW, viewH)
+    }
+
+    private fun drawProceduralBackground(pattern: PatternShape, color: Color) {
+        val viewW = camera.viewportWidth
+        val viewH = camera.viewportHeight
+        val left = camera.position.x - viewW / 2f
+        val bottom = camera.position.y - viewH / 2f
+
+        Gdx.gl.glEnable(GL20.GL_BLEND)
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+        shape.projectionMatrix = camera.combined
+        shape.begin(ShapeRenderer.ShapeType.Filled)
+        proceduralBackground.render(
+            shape,
+            pattern,
+            color,
+            world.decorationSeed,
+            world.worldScrolled,
+            left,
+            bottom,
+            viewW,
+            viewH
+        )
+        shape.end()
     }
 
 
@@ -645,8 +676,7 @@ class GameRenderer(
         val isCorridor = player.isUsingCorridor()
 
         if (!isCorridor || bp < 0.99f) {
-            shape.color = world.groundColor
-            shape.rect(worldLeft, 0f, worldWidth, world.groundY)
+            drawGroundRegion(worldLeft, 0f, worldWidth, world.groundY, true)
         }
 
         if (bp > 0.001f) {
@@ -656,20 +686,44 @@ class GameRenderer(
 
                 val ceilingBottomY = screenTop - (screenTop - targetCeilingTop) * bp
                 val ceilingTopY = kotlin.math.max(screenTop, targetCeilingTop)
-                shape.color = world.groundColor
-                shape.rect(worldLeft, ceilingBottomY, worldWidth, ceilingTopY - ceilingBottomY)
+                drawGroundRegion(worldLeft, ceilingBottomY, worldWidth, ceilingTopY - ceilingBottomY, false)
 
                 val floorTopY = screenBottom + (targetFloorBottom - screenBottom) * bp
                 val floorBottomY = kotlin.math.min(screenBottom, targetFloorBottom)
-                shape.color = world.groundColor
-                shape.rect(worldLeft, floorBottomY, worldWidth, floorTopY - floorBottomY)
+                drawGroundRegion(worldLeft, floorBottomY, worldWidth, floorTopY - floorBottomY, true)
             } else {
                 val targetCeilingBottom = screenTop - 39f
                 val ceilingBottomY = screenTop - (screenTop - targetCeilingBottom) * bp
-                shape.color = world.groundColor
-                shape.rect(worldLeft, ceilingBottomY, worldWidth, 39f)
+                drawGroundRegion(worldLeft, ceilingBottomY, worldWidth, 39f, false)
             }
         }
+    }
+
+    private fun drawGroundRegion(
+        x: Float,
+        y: Float,
+        width: Float,
+        height: Float,
+        panelsExtendDown: Boolean
+    ) {
+        if (width <= 0f || height <= 0f) return
+        val pattern = world.groundShape
+        if (pattern == null) {
+            shape.color = world.groundColor
+            shape.rect(x, y, width, height)
+            return
+        }
+        proceduralGround.render(
+            shape,
+            pattern,
+            world.groundColor,
+            world.worldScrolled,
+            x,
+            y,
+            width,
+            height,
+            panelsExtendDown
+        )
     }
 
     private fun drawDeathBursts() {

@@ -33,6 +33,7 @@ import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.MiniP
 import io.github.msameer0.rhythmicrush.game.gameplay.interactables.portals.ShipPortal
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.game.level.LevelData
+import io.github.msameer0.rhythmicrush.game.level.PatternShape
 import io.github.msameer0.rhythmicrush.game.registries.Registries
 import io.github.msameer0.rhythmicrush.game.trigger.AbstractTrigger
 import io.github.msameer0.rhythmicrush.game.trigger.ColorTrigger
@@ -110,6 +111,12 @@ class GameWorld : Tickable {
     var targetLoudness: Float = 0f
 
     var bgImage: String = ""
+    var bgShape: PatternShape? = null
+        private set
+    var groundShape: PatternShape? = null
+        private set
+    var decorationSeed: Int = 0
+        private set
     var player: AbstractPlayer? = null
         private set
     val groundY = GameConstants.World.GROUND_Y
@@ -224,6 +231,9 @@ class GameWorld : Tickable {
         worldScrolled = startScrolled
         postEndTimer = -1f
         bgImage = data.bgImage ?: ""
+        bgShape = PatternShape.fromId(data.bgShape)
+        groundShape = PatternShape.fromId(data.groundShape)
+        decorationSeed = data.name.hashCode() xor (data.id * 0x45d9f3b)
         currentLoudness = 0f
         targetLoudness = 0f
 

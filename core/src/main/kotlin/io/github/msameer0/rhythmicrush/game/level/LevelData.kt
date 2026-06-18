@@ -15,6 +15,8 @@ class LevelData : Json.Serializable {
     var bgImage = ""
     var bgColor = "1a1a2e"
     var groundColor = "16213e"
+    var bgShape: String? = null
+    var groundShape: String? = null
     var difficulty = "normal"
     var youtubeLink: String = ""
 
@@ -101,6 +103,8 @@ class LevelData : Json.Serializable {
         if (bgImage.isNotEmpty()) json.writeValue("bgImage", bgImage)
         if (bgColor != "1a1a2e") json.writeValue("bgColor", bgColor)
         if (groundColor != "16213e") json.writeValue("groundColor", groundColor)
+        if (!bgShape.isNullOrEmpty()) json.writeValue("bgShape", bgShape)
+        if (!groundShape.isNullOrEmpty()) json.writeValue("groundShape", groundShape)
         if (difficulty != "normal") json.writeValue("difficulty", difficulty)
         if (youtubeLink.isNotEmpty()) json.writeValue("youtubeLink", youtubeLink)
         json.writeValue("objects", objects)
@@ -113,6 +117,8 @@ class LevelData : Json.Serializable {
         bgImage = jsonData.getString("bgImage", "")
         bgColor = jsonData.getString("bgColor", "1a1a2e")
         groundColor = jsonData.getString("groundColor", "16213e")
+        bgShape = jsonData.getString("bgShape", null)?.takeIf { it.isNotBlank() }
+        groundShape = jsonData.getString("groundShape", null)?.takeIf { it.isNotBlank() }
         difficulty = jsonData.getString("difficulty", "normal")
         youtubeLink = jsonData.getString("youtubeLink", "")
 

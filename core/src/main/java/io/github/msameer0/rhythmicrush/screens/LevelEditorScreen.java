@@ -162,13 +162,16 @@ public class LevelEditorScreen extends AbstractScreen {
     private int levelField = 0;
     private final StringBuilder[] levelBuffers = {
         new StringBuilder(), new StringBuilder(), new StringBuilder(),
-        new StringBuilder(), new StringBuilder(), new StringBuilder()
+        new StringBuilder(), new StringBuilder(), new StringBuilder(),
+        new StringBuilder(), new StringBuilder()
     };
     private static final String[] LEVEL_LABELS = {
-        "Level Name", "Difficulty", "Music File", "Background Image", "Start BG Color", "Ground Color"
+        "Level Name", "Difficulty", "Music File", "Background Image", "Start BG Color", "Ground Color",
+        "Background Shape", "Ground Shape"
     };
     private static final String LEVEL_ID_LABEL = "Level ID";
     private static final String[] DIFFICULTY_OPTIONS = {"easy", "normal", "hard", "insane", "extreme"};
+    private static final String[] SHAPE_OPTIONS = {"", "square", "rectangle", "triangle", "circle", "hexagon"};
 
     private static final Color C_PROP_BG = new Color(0.07f, 0.07f, 0.11f, 0.97f);
     private static final Color C_PROP_BORDER = new Color(0.35f, 0.65f, 1.00f, 1f);
@@ -934,6 +937,8 @@ public class LevelEditorScreen extends AbstractScreen {
         levelBuffers[3].append(levelData.getBgImage() != null ? levelData.getBgImage() : "");
         levelBuffers[4].append(levelData.getBgColor() != null ? levelData.getBgColor() : "1a1a2e");
         levelBuffers[5].append(levelData.getGroundColor() != null ? levelData.getGroundColor() : "16213e");
+        levelBuffers[6].append(levelData.getBgShape() != null ? levelData.getBgShape() : "");
+        levelBuffers[7].append(levelData.getGroundShape() != null ? levelData.getGroundShape() : "");
     }
 
     private void confirmLevelProperties() {
@@ -943,6 +948,8 @@ public class LevelEditorScreen extends AbstractScreen {
         levelData.setBgImage(levelBuffers[3].toString().trim());
         levelData.setBgColor(normalizeHex(levelBuffers[4].toString(), "1a1a2e"));
         levelData.setGroundColor(normalizeHex(levelBuffers[5].toString(), "16213e"));
+        levelData.setBgShape(nullIfBlank(levelBuffers[6].toString()));
+        levelData.setGroundShape(nullIfBlank(levelBuffers[7].toString()));
         syncLevelAssetSelections();
         stopAndDisposeMusic();
         levelPanelOpen = false;
@@ -1196,7 +1203,7 @@ public class LevelEditorScreen extends AbstractScreen {
                     levelField = (levelField + 1) % LEVEL_LABELS.length;
                     return true;
                 }
-                if (levelField == 1 || levelField == 2 || levelField == 3) return true;
+                if (levelField == 1 || levelField == 2 || levelField == 3 || levelField == 6 || levelField == 7) return true;
                 StringBuilder activeLevel = levelBuffers[levelField];
                 if (c == '\b') {
                     if (activeLevel.length() > 0) activeLevel.deleteCharAt(activeLevel.length() - 1);
@@ -1571,7 +1578,7 @@ public class LevelEditorScreen extends AbstractScreen {
 
     private void drawLevelPanel(int sw, int sh) {
         float pw = 620f;
-        float ph = 378f;
+        float ph = 454f;
         float px = sw / 2f - pw / 2f;
         float py = sh / 2f - ph / 2f;
         Gdx.gl.glEnable(GL20.GL_BLEND);
@@ -1593,7 +1600,7 @@ public class LevelEditorScreen extends AbstractScreen {
         font.draw(getGame().getBatch(), "Level Properties", px + 12f, py + ph - 12f);
         font.getData().setScale(0.40f);
         font.setColor(C_PROP_DIM);
-        font.draw(getGame().getBatch(), "Tab to move, Left/Right cycles difficulty, music and background, Enter saves", px + 12f, py + ph - 34f);
+        font.draw(getGame().getBatch(), "Tab to move, Left/Right cycles choices, Enter saves", px + 12f, py + ph - 34f);
 
         for (int i = 0; i < LEVEL_LABELS.length; i++) {
             float fy = py + ph - 68f - i * 38f;
@@ -1605,7 +1612,7 @@ public class LevelEditorScreen extends AbstractScreen {
             font.draw(getGame().getBatch(), label, px + 18f, fy);
             font.setColor(Color.WHITE);
             String value = levelBuffers[i].toString();
-            if ((i == 2 || i == 3) && value.isEmpty()) value = "None";
+            if ((i == 2 || i == 3 || i == 6 || i == 7) && value.isEmpty()) value = "None";
             font.draw(getGame().getBatch(), value + (active ? "_" : ""), px + 200f, fy);
         }
 
@@ -1660,7 +1667,7 @@ public class LevelEditorScreen extends AbstractScreen {
         int sw = Gdx.graphics.getWidth();
         int sh = Gdx.graphics.getHeight();
         float pw = 620f;
-        float ph = 378f;
+        float ph = 454f;
         float px = sw / 2f - pw / 2f;
         float py = sh / 2f - ph / 2f;
         float uiY = sh - sy;
@@ -1698,7 +1705,17 @@ public class LevelEditorScreen extends AbstractScreen {
             cycleFileSelection(levelBuffers[2], musicFiles, true, direction);
         } else if (levelField == 3) {
             cycleFileSelection(levelBuffers[3], bgFiles, true, direction);
+        } else if (levelField == 6 || levelField == 7) {
+            cycleTextOption(levelBuffers[levelField], SHAPE_OPTIONS, direction);
         }
+    }
+
+    private void cycleTextOption(StringBuilder buffer, String[] options, int direction) {
+        int index = findOptionIndex(options, buffer.toString().trim());
+        if (index < 0) index = 0;
+        index = (index + direction + options.length) % options.length;
+        buffer.setLength(0);
+        buffer.append(options[index]);
     }
 
     private void cycleFileSelection(StringBuilder buffer, List<String> options, boolean allowBlank, int direction) {
@@ -1728,6 +1745,11 @@ public class LevelEditorScreen extends AbstractScreen {
     private String defaultIfBlank(String value, String fallback) {
         String trimmed = value == null ? "" : value.trim();
         return trimmed.isEmpty() ? fallback : trimmed;
+    }
+
+    private String nullIfBlank(String value) {
+        String trimmed = value == null ? "" : value.trim().toLowerCase();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private String normalizeHex(String value, String fallback) {
