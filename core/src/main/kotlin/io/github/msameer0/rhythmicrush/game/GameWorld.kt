@@ -75,6 +75,7 @@ class GameWorld : Tickable {
     companion object {
         private const val COLLISION_LOOKAHEAD = 2800f
         private const val POST_END_DELAY = 2f
+        private const val UPPER_DEATH_MARGIN_BLOCKS = 25f
 
         private fun parseOptionalHex(hex: String?): Color? {
             return if (!hex.isNullOrEmpty()) hexToColor(hex) else null
@@ -119,6 +120,8 @@ class GameWorld : Tickable {
     var worldScrolled = 0f
     private var levelEndX = 0f
     private var postEndTimer = -1f
+    private var upperDeathY = GameConstants.World.GROUND_Y +
+        UPPER_DEATH_MARGIN_BLOCKS * GameConstants.Editor.GRID_SIZE
     var cullX = 0f
     var boundaryBottom: Float = -Float.MAX_VALUE
     var boundaryTop: Float = Float.MAX_VALUE
@@ -237,6 +240,7 @@ class GameWorld : Tickable {
         }
 
         levelEndX = data.getLevelEndX()
+        upperDeathY = calculateUpperDeathY(data)
 
         blocks.sort { a, b2 -> a.x.compareTo(b2.x) }
         hazards.sort { a, b2 -> a.x.compareTo(b2.x) }
@@ -257,6 +261,28 @@ class GameWorld : Tickable {
             player?.worldX = GameConstants.Player.START_X + worldScrolled
             player?.setWorld(this)
         }
+    }
+
+    private fun calculateUpperDeathY(data: LevelData): Float {
+        var highestObjectTop = groundY
+
+        for (e in data.objects) {
+            if (Registries.TRIGGERS.has(e.type)) continue
+
+            val objectHeight = when {
+                Registries.PORTALS.has(e.type) -> {
+                    val snappedRotation = (Math.round(e.rotation / 90f) * 90 % 360 + 360) % 360
+                    if (snappedRotation == 90 || snappedRotation == 270) 100f else 250f
+                }
+                Registries.ORBS.has(e.type) -> 110f
+                e.type == "spike" || e.type == "half_spike" -> 100f
+                else -> e.size
+            }
+
+            highestObjectTop = maxOf(highestObjectTop, e.y + objectHeight)
+        }
+
+        return highestObjectTop + UPPER_DEATH_MARGIN_BLOCKS * GameConstants.Editor.GRID_SIZE
     }
 
     private fun spawnObject(e: LevelData.ObjectEntry, rx: Float, startScrolled: Float) {
@@ -441,12 +467,9 @@ class GameWorld : Tickable {
         val p = player ?: return
         p.update(delta, maxOf(groundY, boundaryBottom), boundaryTop)
 
-        // Check if player went offscreen using the viewport height
-        // The ExtendViewport uses 1080f as its virtual height
-        val viewportHeight = 1080f  // This matches your ExtendViewport(1920f, 1080f, camera)
-        val killZoneMargin = p.height + 700f  // Extra buffer to ensure player is fully offscreen
+        val lowerKillZoneMargin = p.height + 700f
 
-        if (p.y < -killZoneMargin || p.y > viewportHeight + killZoneMargin) {
+        if (p.y < -lowerKillZoneMargin || p.y > upperDeathY) {
             playerDied()
             return
         }
