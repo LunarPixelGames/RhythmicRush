@@ -11,8 +11,8 @@ class AnimatedButton(
     private var region: TextureRegion?,
     var x: Float,
     var y: Float,
-    var w: Float,
-    var h: Float,
+    var width: Float,
+    var height: Float,
     private val action: Runnable?
 ) {
 
@@ -51,19 +51,19 @@ class AnimatedButton(
         }
     }
 
-    fun onTouchDown(tx: Float, ty: Float) {
-        if (!hits(tx, ty)) return
+    fun onTouchDown(touchX: Float, touchY: Float) {
+        if (!hits(touchX, touchY)) return
         this.isPressed = true
         target = PRESS_SCALE
         velocity = 0f
         pendingFire = false
     }
 
-    fun onTouchUp(tx: Float, ty: Float) {
+    fun onTouchUp(touchX: Float, touchY: Float) {
         if (!this.isPressed) return
         this.isPressed = false
         target = 1f
-        if (hits(tx, ty)) pendingFire = true
+        if (hits(touchX, touchY)) pendingFire = true
     }
 
     fun cancel() {
@@ -73,28 +73,31 @@ class AnimatedButton(
     }
 
     fun draw(batch: SpriteBatch) {
-        val r = region ?: return
-        val sw = w * scale
-        val sh = h * scale
-        val sx = x + w / 2f - sw / 2f
-        val sy = y + h / 2f - sh / 2f
-        batch.draw(r, sx, sy, sw, sh)
+        val textureRegion = region ?: return
+        val scaledWidth = width * scale
+        val scaledHeight = height * scale
+        val scaledX = x + width / 2f - scaledWidth / 2f
+        val scaledY = y + height / 2f - scaledHeight / 2f
+        batch.draw(textureRegion, scaledX, scaledY, scaledWidth, scaledHeight)
     }
 
-    fun hits(tx: Float, ty: Float): Boolean {
-        val pad = if (this.isPressed) w * 0.1f else 0f
-        return tx >= x - pad && tx <= x + w + pad && ty >= y - pad && ty <= y + h + pad
+    fun hits(touchX: Float, touchY: Float): Boolean {
+        val padding = if (isPressed) width * 0.1f else 0f
+        return touchX >= x - padding &&
+            touchX <= x + width + padding &&
+            touchY >= y - padding &&
+            touchY <= y + height + padding
     }
 
     fun setRegion(r: TextureRegion?) {
         region = r
     }
 
-    fun setBounds(x: Float, y: Float, w: Float, h: Float) {
+    fun setBounds(x: Float, y: Float, width: Float, height: Float) {
         this.x = x
         this.y = y
-        this.w = w
-        this.h = h
+        this.width = width
+        this.height = height
     }
 
     companion object {

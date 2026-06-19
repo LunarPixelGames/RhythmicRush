@@ -37,8 +37,8 @@ class SawBlade : AbstractHazard {
         this.degreesPerSecond = degreesPerSec
         this.visualRotation = 0f
         this.type = HazardType.SAW_BLADE
-        val d = min(max(1f, diameter), 1000f)
-        bounds.set(x, y, d, d)
+        val clampedDiameter = min(max(1f, diameter), 1000f)
+        bounds.set(x, y, clampedDiameter, clampedDiameter)
         return this
     }
 
@@ -53,10 +53,8 @@ class SawBlade : AbstractHazard {
 
         val pPoly = player.getPlayerPolygon()
 
-        // Broad phase using bounding box
         if (!pPoly.boundingRectangle.overlaps(bounds)) return
 
-        // Precise phase: Circle vs Rotated Polygon
         if (circleOverlapsPolygon(cx, cy, radius, pPoly)) {
             onTouch(player)
         }
@@ -68,19 +66,34 @@ class SawBlade : AbstractHazard {
         val vertices = poly.transformedVertices
         val squareRadius = radius * radius
 
-        for (i in 0 until vertices.size step 2) {
-            val x1 = vertices[i]
-            val y1 = vertices[i + 1]
-            val x2 = if (i + 2 < vertices.size) vertices[i + 2] else vertices[0]
-            val y2 = if (i + 3 < vertices.size) vertices[i + 3] else vertices[1]
+        for (vertexIndex in 0 until vertices.size step 2) {
+            val x1 = vertices[vertexIndex]
+            val y1 = vertices[vertexIndex + 1]
+            val x2 =
+                if (vertexIndex + 2 < vertices.size) {
+                    vertices[vertexIndex + 2]
+                } else {
+                    vertices[0]
+                }
+            val y2 =
+                if (vertexIndex + 3 < vertices.size) {
+                    vertices[vertexIndex + 3]
+                } else {
+                    vertices[1]
+                }
 
             val dx = x2 - x1
             val dy = y2 - y1
             val lengthSquared = dx * dx + dy * dy
-            val t = if (lengthSquared == 0f) 0f
-            else (((cx - x1) * dx + (cy - y1) * dy) / lengthSquared).coerceIn(0f, 1f)
-            val nearestX = x1 + t * dx
-            val nearestY = y1 + t * dy
+            val segmentProgress =
+                if (lengthSquared == 0f) {
+                    0f
+                } else {
+                    (((cx - x1) * dx + (cy - y1) * dy) / lengthSquared)
+                        .coerceIn(0f, 1f)
+                }
+            val nearestX = x1 + segmentProgress * dx
+            val nearestY = y1 + segmentProgress * dy
             val offsetX = cx - nearestX
             val offsetY = cy - nearestY
             if (offsetX * offsetX + offsetY * offsetY <= squareRadius) return true

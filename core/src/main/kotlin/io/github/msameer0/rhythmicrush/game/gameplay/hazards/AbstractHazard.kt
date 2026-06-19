@@ -41,11 +41,9 @@ abstract class AbstractHazard(
     }
 
     open fun tryTouch(player: AbstractPlayer) {
-        // Broad phase check using polygons' bounding rectangles (accounts for rotation)
         val pPoly = player.getPlayerPolygon()
         if (!pPoly.boundingRectangle.overlaps(hazardPolygon.boundingRectangle)) return
         
-        // Precise phase check (rotated)
         if (Intersector.overlapConvexPolygons(pPoly, hazardPolygon)) {
             onTouch(player)
         }

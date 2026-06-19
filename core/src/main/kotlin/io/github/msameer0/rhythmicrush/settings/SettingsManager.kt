@@ -28,9 +28,7 @@ class SettingsManager {
     var practiceButtonOpacity: Float = 0.5f
     var pulseOrbs: Boolean = true
 
-    /**
-     * DTO for persisting settings data to JSON.
-     */
+    /** Stores the serializable representation of game settings. */
     class Data {
         var menuMusicEnabled: Boolean = true
         var musicVolume: Float = 1f
@@ -86,8 +84,8 @@ class SettingsManager {
             file.parent().mkdirs()
             file.writeString(json.prettyPrint(snapshot), false)
             Gdx.app.log("SettingsManager", "Settings saved successfully.")
-        } catch (e: Exception) {
-            Gdx.app.error("SettingsManager", "Failed to save: " + e.message)
+        } catch (exception: Exception) {
+            Gdx.app.error("SettingsManager", "Failed to save: ${exception.message}")
         }
     }
 
@@ -99,29 +97,28 @@ class SettingsManager {
                 Gdx.app.log("SettingsManager", "No settings file found. Using defaults.")
                 return
             }
-            val d = json.fromJson<Data?>(Data::class.java, file)
-            if (d == null) return
-            menuMusicEnabled = d.menuMusicEnabled
-            musicVolume = d.musicVolume
-            sfxVolume = d.sfxVolume
-            deathEffectEnabled = d.deathEffectEnabled
-            showHitboxes = d.showHitboxes
-            showHitboxesOnDeath = d.showHitboxesOnDeath
-            lockCursorInGame = d.lockCursorInGame
-            showFps = d.showFps
-            capFps = d.capFps
-            fpsCapValue = d.fpsCapValue
-            enableVsync = d.enableVsync
-            showPercentage = d.showPercentage
-            showProgressBar = d.showProgressBar
-            showAttempts = d.showAttempts
-            showBest = d.showBest
-            uiPadding = d.uiPadding
-            practiceButtonOpacity = d.practiceButtonOpacity
-            pulseOrbs = d.pulseOrbs
+            val savedSettings = json.fromJson<Data?>(Data::class.java, file) ?: return
+            menuMusicEnabled = savedSettings.menuMusicEnabled
+            musicVolume = savedSettings.musicVolume
+            sfxVolume = savedSettings.sfxVolume
+            deathEffectEnabled = savedSettings.deathEffectEnabled
+            showHitboxes = savedSettings.showHitboxes
+            showHitboxesOnDeath = savedSettings.showHitboxesOnDeath
+            lockCursorInGame = savedSettings.lockCursorInGame
+            showFps = savedSettings.showFps
+            capFps = savedSettings.capFps
+            fpsCapValue = savedSettings.fpsCapValue
+            enableVsync = savedSettings.enableVsync
+            showPercentage = savedSettings.showPercentage
+            showProgressBar = savedSettings.showProgressBar
+            showAttempts = savedSettings.showAttempts
+            showBest = savedSettings.showBest
+            uiPadding = savedSettings.uiPadding
+            practiceButtonOpacity = savedSettings.practiceButtonOpacity
+            pulseOrbs = savedSettings.pulseOrbs
             Gdx.app.log("SettingsManager", "Settings loaded successfully.")
-        } catch (e: Exception) {
-            Gdx.app.error("SettingsManager", "Failed to load: " + e.message)
+        } catch (exception: Exception) {
+            Gdx.app.error("SettingsManager", "Failed to load: ${exception.message}")
         }
     }
 

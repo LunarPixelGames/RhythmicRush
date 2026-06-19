@@ -34,8 +34,13 @@ class OverlayUI(
         val TOGGLE_ACTIVE = Color(UI.LIME.r, UI.LIME.g, UI.LIME.b, 0.8f)
     }
 
+    /** Identifies the audio setting controlled by a pause-menu slider. */
     enum class SliderKind { MUSIC, SFX }
+
+    /** Identifies an action available from the pause menu. */
     enum class PauseAction { RESTART, RESUME, PRACTICE, LEVEL_SELECT }
+
+    /** Identifies an action available after completing a level. */
     enum class CompleteAction { MENU, PRIMARY, REPLAY }
 
     private val layout = GlyphLayout()
@@ -217,26 +222,49 @@ class OverlayUI(
         font.data.setScale(scale * uiScale)
         layout.setText(font, value)
         val drawX = if (centered) x - layout.width / 2f else x
-        font.setColor(0f, 0f, 0f, color.a * 0.45f); font.draw(batch, value, drawX + 2f, y - 2f)
-        font.color = color; font.draw(batch, value, drawX, y)
+        font.setColor(0f, 0f, 0f, color.a * 0.45f)
+        font.draw(batch, value, drawX + 2f, y - 2f)
+        font.color = color
+        font.draw(batch, value, drawX, y)
         font.data.setScale(1f)
     }
 
-    fun hitPauseAction(tx: Float, ty: Float, camera: OrthographicCamera): PauseAction? {
+    fun hitPauseAction(
+        touchX: Float,
+        touchY: Float,
+        camera: OrthographicCamera
+    ): PauseAction? {
         place(camera)
         for (action in PauseAction.entries) {
-            val x = panelX + pad + action.ordinal * (buttonW + buttonGap)
-            if (hits(tx, ty, x, buttonY, buttonW, buttonH)) return action
+            val buttonX = panelX + pad + action.ordinal * (buttonW + buttonGap)
+            if (hits(touchX, touchY, buttonX, buttonY, buttonW, buttonH)) {
+                return action
+            }
         }
         return null
     }
 
-    fun hitCompleteAction(tx: Float, ty: Float, camera: OrthographicCamera): CompleteAction? {
+    fun hitCompleteAction(
+        touchX: Float,
+        touchY: Float,
+        camera: OrthographicCamera
+    ): CompleteAction? {
         place(camera)
-        val w = (panelW - pad * 2f - buttonGap * 2f) / 3f
+        val buttonWidth = (panelW - pad * 2f - buttonGap * 2f) / 3f
         for (action in CompleteAction.entries) {
-            val x = panelX + pad + action.ordinal * (w + buttonGap)
-            if (hits(tx, ty, x, buttonY, w, buttonH)) return action
+            val buttonX = panelX + pad + action.ordinal * (buttonWidth + buttonGap)
+            if (
+                hits(
+                    touchX,
+                    touchY,
+                    buttonX,
+                    buttonY,
+                    buttonWidth,
+                    buttonH
+                )
+            ) {
+                return action
+            }
         }
         return null
     }
@@ -259,14 +287,29 @@ class OverlayUI(
         place(camera)
         val value = MathUtils.clamp((worldX - sliderX()) / sliderW, 0f, 1f)
         when (activeSlider) {
-            SliderKind.MUSIC -> { game.settingsManager.musicVolume = value; game.soundManager.setMusicVolume(value) }
-            SliderKind.SFX -> { game.settingsManager.sfxVolume = value; game.soundManager.setSfxVolume(value) }
+            SliderKind.MUSIC -> {
+                game.settingsManager.musicVolume = value
+                game.soundManager.setMusicVolume(value)
+            }
+            SliderKind.SFX -> {
+                game.settingsManager.sfxVolume = value
+                game.soundManager.setSfxVolume(value)
+            }
             null -> Unit
         }
     }
 
     private fun sliderX() = panelX + panelW - pad - sliderW - panelW * 0.10f
-    private fun hits(tx: Float, ty: Float, x: Float, y: Float, w: Float, h: Float) = tx in x..(x + w) && ty in y..(y + h)
+    private fun hits(
+        touchX: Float,
+        touchY: Float,
+        x: Float,
+        y: Float,
+        width: Float,
+        height: Float
+    ): Boolean {
+        return touchX in x..(x + width) && touchY in y..(y + height)
+    }
 
     fun drawPauseToggleButtonShapes(camera: OrthographicCamera, viewport: Viewport, visible: Boolean) {
         val x = camera.position.x - viewport.worldWidth / 2f + 20f * uiScale
@@ -280,10 +323,15 @@ class OverlayUI(
         text(if (visible) "Hide Menu" else "Show Menu", x, y, if (visible) UI.TEXT else UI.BACKGROUND, 0.48f, true)
     }
 
-    fun hitsPauseToggleButton(tx: Float, ty: Float, camera: OrthographicCamera, viewport: Viewport): Boolean {
+    fun hitsPauseToggleButton(
+        touchX: Float,
+        touchY: Float,
+        camera: OrthographicCamera,
+        viewport: Viewport
+    ): Boolean {
         val x = camera.position.x - viewport.worldWidth / 2f + 20f * uiScale
         val y = camera.position.y - viewport.worldHeight / 2f + 20f * uiScale
-        return hits(tx, ty, x, y, pauseToggleW, pauseToggleH)
+        return hits(touchX, touchY, x, y, pauseToggleW, pauseToggleH)
     }
 
     fun drawPauseSliders(@Suppress("UNUSED_PARAMETER") camera: OrthographicCamera) = Unit

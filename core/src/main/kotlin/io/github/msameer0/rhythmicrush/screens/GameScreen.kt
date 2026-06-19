@@ -18,6 +18,7 @@ import io.github.msameer0.rhythmicrush.font.FontManager
 import io.github.msameer0.rhythmicrush.game.GameCamera
 import io.github.msameer0.rhythmicrush.game.GameWorld
 import io.github.msameer0.rhythmicrush.game.engine.FixedTickEngine
+import io.github.msameer0.rhythmicrush.game.engine.LoudnessAnalyzer
 import io.github.msameer0.rhythmicrush.game.level.LevelData
 import io.github.msameer0.rhythmicrush.game.renderer.GameRenderer
 import io.github.msameer0.rhythmicrush.screens.ui.HudRenderer
@@ -77,37 +78,53 @@ class GameScreen @JvmOverloads constructor(
     private var lastJumpHeld = false
     private var ignoreInputUntilRelease = false
 
-    private val _unprojectTmp = Vector3()
+    private val unprojectPosition = Vector3()
+    private val sliderTouchPosition = Vector2()
 
     private val gameInputProcessor = object : InputAdapter() {
         override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-            _unprojectTmp.set(screenX.toFloat(), screenY.toFloat(), 0f)
-            gameCamera.unproject(_unprojectTmp)
-            val tx = _unprojectTmp.x
-            val ty = _unprojectTmp.y
+            unprojectPosition.set(screenX.toFloat(), screenY.toFloat(), 0f)
+            gameCamera.unproject(unprojectPosition)
+            val touchX = unprojectPosition.x
+            val touchY = unprojectPosition.y
 
             if (paused) {
-                if (overlay.hitsPauseToggleButton(tx, ty, gameCamera, gameViewport)) {
+                if (
+                    overlay.hitsPauseToggleButton(
+                        touchX,
+                        touchY,
+                        gameCamera,
+                        gameViewport
+                    )
+                ) {
                     pauseOverlayVisible = !pauseOverlayVisible
                     return true
                 }
                 if (!pauseOverlayVisible) return true
-                when (overlay.hitPauseAction(tx, ty, gameCamera)) {
+                when (overlay.hitPauseAction(touchX, touchY, gameCamera)) {
                     OverlayUI.PauseAction.RESTART -> {
-                        triggerRestart(); ignoreInputUntilRelease = true; return true
+                        triggerRestart()
+                        ignoreInputUntilRelease = true
+                        return true
                     }
                     OverlayUI.PauseAction.RESUME -> {
-                        setPaused(false); ignoreInputUntilRelease = true; return true
+                        setPaused(false)
+                        ignoreInputUntilRelease = true
+                        return true
                     }
                     OverlayUI.PauseAction.PRACTICE -> {
-                        togglePracticeMode(); ignoreInputUntilRelease = true; return true
+                        togglePracticeMode()
+                        ignoreInputUntilRelease = true
+                        return true
                     }
                     OverlayUI.PauseAction.LEVEL_SELECT -> {
-                        exitToLevelSelect(); return true
+                        exitToLevelSelect()
+                        return true
                     }
                     null -> Unit
                 }
-                val slider = overlay.hitSlider(Vector2(tx, ty), gameCamera)
+                sliderTouchPosition.set(touchX, touchY)
+                val slider = overlay.hitSlider(sliderTouchPosition, gameCamera)
                 if (slider != null) {
                     overlay.beginSliderDrag(slider)
                     return true
@@ -116,18 +133,26 @@ class GameScreen @JvmOverloads constructor(
             }
 
             if (levelCompletedState) {
-                when (overlay.hitCompleteAction(tx, ty, gameCamera)) {
-                    OverlayUI.CompleteAction.MENU -> { exitToLevelSelect(); return true }
-                    OverlayUI.CompleteAction.PRIMARY -> { launchNextLevel(); return true }
+                when (overlay.hitCompleteAction(touchX, touchY, gameCamera)) {
+                    OverlayUI.CompleteAction.MENU -> {
+                        exitToLevelSelect()
+                        return true
+                    }
+                    OverlayUI.CompleteAction.PRIMARY -> {
+                        launchNextLevel()
+                        return true
+                    }
                     OverlayUI.CompleteAction.REPLAY -> {
-                        triggerRestart(); ignoreInputUntilRelease = true; return true
+                        triggerRestart()
+                        ignoreInputUntilRelease = true
+                        return true
                     }
                     null -> Unit
                 }
                 return false
             }
 
-            if (hud.hitsPauseButton(tx, ty, gameCamera, gameViewport)) {
+            if (hud.hitsPauseButton(touchX, touchY, gameCamera, gameViewport)) {
                 setPaused(true)
                 return true
             }
@@ -140,12 +165,12 @@ class GameScreen @JvmOverloads constructor(
                     overlay.uiScale,
                     72f * overlay.uiScale
                 )
-                if (currentPractice.hitsPlus(tx, ty)) {
+                if (currentPractice.hitsPlus(touchX, touchY)) {
                     placeCheckpoint()
                     ignoreInputUntilRelease = true
                     return true
                 }
-                if (currentPractice.hitsMinus(tx, ty)) {
+                if (currentPractice.hitsMinus(touchX, touchY)) {
                     removeLastCheckpoint()
                     ignoreInputUntilRelease = true
                     return true
@@ -156,9 +181,9 @@ class GameScreen @JvmOverloads constructor(
 
         override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
             if (paused && overlay.activeSlider != null) {
-                _unprojectTmp.set(screenX.toFloat(), screenY.toFloat(), 0f)
-                gameCamera.unproject(_unprojectTmp)
-                overlay.updateSliderFromDrag(_unprojectTmp.x, gameCamera)
+                unprojectPosition.set(screenX.toFloat(), screenY.toFloat(), 0f)
+                gameCamera.unproject(unprojectPosition)
+                overlay.updateSliderFromDrag(unprojectPosition.x, gameCamera)
                 if (music.getMusic() != null) {
                     music.setVolume(game.settingsManager.musicVolume)
                 }
@@ -207,18 +232,24 @@ class GameScreen @JvmOverloads constructor(
         overlay.updateScale(gameViewport)
         game.soundManager.stopMenuMusic()
         
-        val mFile = levelData?.musicFile
-        if (mFile != null && mFile.isNotEmpty()) {
+        val musicFile = levelData?.musicFile
+        if (!musicFile.isNullOrEmpty()) {
             try {
-                var fh = Gdx.files.internal("musics/$mFile")
-                if (!fh.exists()) fh = Gdx.files.local("assets/musics/$mFile")
-                if (fh.exists()) {
+                var fileHandle = Gdx.files.internal("musics/$musicFile")
+                if (!fileHandle.exists()) {
+                    fileHandle = Gdx.files.local("assets/musics/$musicFile")
+                }
+                if (fileHandle.exists()) {
                     Gdx.app.log("GameScreen", "Analyzing audio loudness map...")
-                    loudnessMap = io.github.msameer0.rhythmicrush.game.engine.LoudnessAnalyzer().analyze(fh, loudnessSampleRate)
+                    loudnessMap =
+                        LoudnessAnalyzer().analyze(fileHandle, loudnessSampleRate)
                     Gdx.app.log("GameScreen", "Analysis complete (size: ${loudnessMap?.size})")
                 }
-            } catch (e: Exception) {
-                Gdx.app.error("GameScreen", "Failed to analyze audio: ${e.message}")
+            } catch (exception: Exception) {
+                Gdx.app.error(
+                    "GameScreen",
+                    "Failed to analyze audio: ${exception.message}"
+                )
             }
         }
 
@@ -345,17 +376,18 @@ class GameScreen @JvmOverloads constructor(
             }
         }
 
-        // Keep visuals and camera in sync before drawing
-        val musicPos = music.levelMusic?.position ?: 0f
+        val musicPosition = music.levelMusic?.position ?: 0f
         
-        // Update loudness tracking
         if (loudnessMap != null) {
-            val idx = (musicPos * loudnessSampleRate).toInt()
-            if (idx >= 0 && idx < (loudnessMap?.size ?: 0)) {
-                val intensity = loudnessMap!![idx]
+            val sampleIndex = (musicPosition * loudnessSampleRate).toInt()
+            if (sampleIndex >= 0 && sampleIndex < (loudnessMap?.size ?: 0)) {
+                val intensity = loudnessMap!![sampleIndex]
                 world.updateLoudness(intensity)
                 if (Gdx.graphics.frameId % 60L == 0L) {
-                    Gdx.app.log("GameScreen", "Pos: $musicPos, Idx: $idx, Intensity: $intensity")
+                    Gdx.app.log(
+                        "GameScreen",
+                        "Pos: $musicPosition, Idx: $sampleIndex, Intensity: $intensity"
+                    )
                 }
             } else {
                 world.updateLoudness(0f)
@@ -518,9 +550,9 @@ class GameScreen @JvmOverloads constructor(
         bgTexture?.dispose()
         bgTexture = null
         if (world.bgImage.isNotEmpty()) {
-            val fh = Gdx.files.internal("game/bg/${world.bgImage}")
-            if (fh.exists()) {
-                bgTexture = Texture(fh)
+            val fileHandle = Gdx.files.internal("game/bg/${world.bgImage}")
+            if (fileHandle.exists()) {
+                bgTexture = Texture(fileHandle)
                 bgTexture?.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear)
             } else {
                 val localFh = Gdx.files.local("assets/game/bg/${world.bgImage}")
@@ -608,29 +640,29 @@ class GameScreen @JvmOverloads constructor(
     private fun recordAttempt() {
         sessionAttempts++
         val key = levelKey ?: return
-        val p = game.progressManager.getOrCreate(key)
-        p.totalAttempts = p.totalAttempts + 1
+        val levelProgress = game.progressManager.getOrCreate(key)
+        levelProgress.totalAttempts++
         game.progressManager.save()
     }
 
     private fun recordDeath() {
         val key = levelKey
         if (key == null || practiceMode) return
-        val pct = MathUtils.round(world.progress * 100f)
-        val p = game.progressManager.getOrCreate(key)
-        if (pct > p.bestPercent) {
-            p.bestPercent = pct
+        val percentage = MathUtils.round(world.progress * 100f)
+        val levelProgress = game.progressManager.getOrCreate(key)
+        if (percentage > levelProgress.bestPercent) {
+            levelProgress.bestPercent = percentage
             game.progressManager.save()
-            hud.showNewBestPopup(pct)
-            checkAndShowAd(pct / 100f)
+            hud.showNewBestPopup(percentage)
+            checkAndShowAd(percentage / 100f)
         }
     }
 
     private fun recordComplete() {
         val key = levelKey
         if (key == null || practiceMode) return
-        val p = game.progressManager.getOrCreate(key)
-        p.bestPercent = 100
+        val levelProgress = game.progressManager.getOrCreate(key)
+        levelProgress.bestPercent = 100
         awardCompletionRewards()
         game.progressManager.save()
     }
@@ -685,7 +717,6 @@ class GameScreen @JvmOverloads constructor(
     private fun checkAndShowAd(adChance: Float) {
         if (TimeUtils.timeSinceMillis(lastAdTimeMillis) < AD_COOLDOWN_MS) return
         if (MathUtils.randomBoolean(adChance) && game.adController != null) {
-            // game.getAdController().showInterstitialAd(); // TODO: ADS
             lastAdTimeMillis = TimeUtils.millis()
         }
     }

@@ -100,7 +100,6 @@ class Ship : AbstractPlayer {
 
         updateBounds()
 
-        // Update Tilt Rotation with exaggeration and smoothing to prevent snapping
         val scrollSpeed = world?.scrollSpeed ?: GameConstants.World.SCROLL_SPEED
         var targetAngle = MathUtils.atan2(velocityY, scrollSpeed) *
             MathUtils.radiansToDegrees *
@@ -134,21 +133,18 @@ class Ship : AbstractPlayer {
         lastPortalBottomY = other.lastPortalBottomY
     }
 
-    // Camera and Boundary management
     override fun getCameraMode(): CameraMode = CameraMode.RESTRICTED
 
     override fun onCameraModeEnter(cameraY: Float, worldGroundY: Float) {
         val distToGround = lastPortalBottomY - worldGroundY
 
         if (distToGround in 0f..400f) {
-            // Case 1: Near Ground (0-4 grids) - Use real ground with padding
-            restrictedCameraY = worldGroundY + 501f // 540 - 39 padding
+            restrictedCameraY = worldGroundY + 501f
             isUsingCorridor = false
         } else {
-            // Case 2: High Air - Use dynamic corridor centered on portal
-            restrictedCameraY = lastPortalBottomY + 100f // Portal center (assuming 200px height)
-            corridorBottom = lastPortalBottomY - 400f // 4 grids below
-            corridorTop = lastPortalBottomY + 600f    // 4 grids above (200 portal + 400)
+            restrictedCameraY = lastPortalBottomY + 100f
+            corridorBottom = lastPortalBottomY - 400f
+            corridorTop = lastPortalBottomY + 600f
             isUsingCorridor = true
         }
     }
@@ -160,7 +156,6 @@ class Ship : AbstractPlayer {
     }
 
     override fun getCameraCeilingY(): Float {
-        // Ceiling surface is at the bottom of the 39px ceiling bar
         return if (isUsingCorridor) corridorTop else (restrictedCameraY + 540f - 39f)
     }
 

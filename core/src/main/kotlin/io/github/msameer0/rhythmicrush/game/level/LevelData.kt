@@ -46,7 +46,7 @@ class LevelData : Json.Serializable {
 
         constructor()
 
-        constructor (type: String, x: Float, y: Float, size: Float) {
+        constructor(type: String, x: Float, y: Float, size: Float) {
             this.type = type
             this.x = x
             this.y = y
@@ -134,9 +134,9 @@ class LevelData : Json.Serializable {
 
     fun getLevelEndX(): Float {
         var max = 0f
-        for (e in objects) {
-            if ("color_trigger" == e.type) continue
-            val right = e.x + e.size
+        for (objectEntry in objects) {
+            if (objectEntry.type == "color_trigger") continue
+            val right = objectEntry.x + objectEntry.size
             if (right > max) max = right
         }
         return max

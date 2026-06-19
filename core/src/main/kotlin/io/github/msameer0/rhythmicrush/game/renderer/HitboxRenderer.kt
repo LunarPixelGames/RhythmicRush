@@ -49,45 +49,44 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
         shape.begin(ShapeRenderer.ShapeType.Filled)
 
         shape.color = HB_BLOCK_FILL
-        for (i in world.blockCull until world.blocks.size) {
-            val b = world.blocks.get(i)
-            if (b.x > rightEdge) break
-            if (b is Slope) drawFilledSlope(b)
-            else shape.rect(b.x, b.y, b.width, b.height)
+        for (blockIndex in world.blockCull until world.blocks.size) {
+            val block = world.blocks.get(blockIndex)
+            if (block.x > rightEdge) break
+            if (block is Slope) drawFilledSlope(block)
+            else shape.rect(block.x, block.y, block.width, block.height)
         }
 
         shape.color = HB_PORTAL_FILL
-        for (i in world.portalCull until world.portals.size) {
-            val p = world.portals.get(i)
-            if (p.x > rightEdge) break
-            val r = p.bounds
-            shape.rect(r.x, r.y, r.width, r.height)
+        for (portalIndex in world.portalCull until world.portals.size) {
+            val portal = world.portals.get(portalIndex)
+            if (portal.x > rightEdge) break
+            val bounds = portal.bounds
+            shape.rect(bounds.x, bounds.y, bounds.width, bounds.height)
         }
 
         shape.color = HB_HAZARD_FILL
-        for (i in world.hazardCull until world.hazards.size) {
-            val h = world.hazards.get(i)
-            if (h.x > rightEdge) break
+        for (hazardIndex in world.hazardCull until world.hazards.size) {
+            val hazard = world.hazards.get(hazardIndex)
+            if (hazard.x > rightEdge) break
             
-            val poly = h.hazardPolygon
-            drawFilledPolygon(poly)
+            drawFilledPolygon(hazard.hazardPolygon)
         }
 
         shape.color = HB_ORB_FILL
         val cullStart = world.orbCull
-        for (i in cullStart until world.orbs.size) {
-            val orb = world.orbs.get(i)
+        for (orbIndex in cullStart until world.orbs.size) {
+            val orb = world.orbs.get(orbIndex)
             if (orb.x > rightEdge) break
-            val r = orb.bounds
-            shape.rect(r.x, r.y, r.width, r.height)
+            val bounds = orb.bounds
+            shape.rect(bounds.x, bounds.y, bounds.width, bounds.height)
         }
 
         shape.color = HB_ORB_FILL
-        for (i in world.padCull until world.pads.size) {
-            val pad = world.pads.get(i)
+        for (padIndex in world.padCull until world.pads.size) {
+            val pad = world.pads.get(padIndex)
             if (pad.x > rightEdge) break
-            val r = pad.hitbox
-            shape.rect(r.x, r.y, r.width, r.height)
+            val hitbox = pad.hitbox
+            shape.rect(hitbox.x, hitbox.y, hitbox.width, hitbox.height)
         }
 
         drawFilledPolygon(player.getPlayerPolygon())
@@ -103,18 +102,25 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
         shape.end()
     }
 
-    private fun drawFilledSlope(s: Slope) {
-        val rot = (s.rotation.toInt() % 360 + 360) % 360
-        val x = s.x
-        val y = s.y
-        val w = s.width
-        val h = s.height
-        when (rot) {
-            0 -> shape.triangle(x, y, x + w, y, x + w, y + h)
-            90 -> shape.triangle(x, y + h, x + w, y + h, x + w, y)
-            180 -> shape.triangle(x, y, x, y + h, x + w, y + h)
-            270 -> shape.triangle(x, y, x, y + h, x + w, y)
-            else -> shape.rect(x, y, w, h)
+    private fun drawFilledSlope(slope: Slope) {
+        val rotation = (slope.rotation.toInt() % 360 + 360) % 360
+        val x = slope.x
+        val y = slope.y
+        val width = slope.width
+        val height = slope.height
+        when (rotation) {
+            0 -> shape.triangle(x, y, x + width, y, x + width, y + height)
+            90 -> shape.triangle(
+                x,
+                y + height,
+                x + width,
+                y + height,
+                x + width,
+                y
+            )
+            180 -> shape.triangle(x, y, x, y + height, x + width, y + height)
+            270 -> shape.triangle(x, y, x, y + height, x + width, y)
+            else -> shape.rect(x, y, width, height)
         }
     }
 
@@ -122,31 +128,30 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
         shape.begin(ShapeRenderer.ShapeType.Line)
 
         shape.color = HB_BLOCK_LINE
-        for (i in world.blockCull until world.blocks.size) {
-            val b = world.blocks.get(i)
-            if (b.x > rightEdge) break
-            if (b is Slope) drawOutlineSlope(b)
-            else shape.rect(b.x, b.y, b.width, b.height)
+        for (blockIndex in world.blockCull until world.blocks.size) {
+            val block = world.blocks.get(blockIndex)
+            if (block.x > rightEdge) break
+            if (block is Slope) drawOutlineSlope(block)
+            else shape.rect(block.x, block.y, block.width, block.height)
         }
 
         shape.color = HB_PORTAL_LINE
-        for (i in world.portalCull until world.portals.size) {
-            val p = world.portals.get(i)
-            if (p.x > rightEdge) break
-            val r = p.bounds
-            shape.rect(r.x, r.y, r.width, r.height)
+        for (portalIndex in world.portalCull until world.portals.size) {
+            val portal = world.portals.get(portalIndex)
+            if (portal.x > rightEdge) break
+            val bounds = portal.bounds
+            shape.rect(bounds.x, bounds.y, bounds.width, bounds.height)
         }
 
         shape.color = HB_HAZARD_LINE
-        for (i in world.hazardCull until world.hazards.size) {
-            val h = world.hazards.get(i)
-            if (h.x > rightEdge) break
+        for (hazardIndex in world.hazardCull until world.hazards.size) {
+            val hazard = world.hazards.get(hazardIndex)
+            if (hazard.x > rightEdge) break
             
-            val poly = h.hazardPolygon
-            shape.polygon(poly.transformedVertices)
+            shape.polygon(hazard.hazardPolygon.transformedVertices)
 
-            if (h.type == AbstractHazard.HazardType.SAW_BLADE) {
-                val saw = h as SawBlade
+            if (hazard.type == AbstractHazard.HazardType.SAW_BLADE) {
+                val saw = hazard as SawBlade
                 shape.color = Color.WHITE
                 shape.circle(
                     saw.x + saw.diameter / 2f,
@@ -159,19 +164,19 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
 
         shape.color = HB_ORB_LINE
         val cullStart = world.orbCull
-        for (i in cullStart until world.orbs.size) {
-            val orb = world.orbs.get(i)
+        for (orbIndex in cullStart until world.orbs.size) {
+            val orb = world.orbs.get(orbIndex)
             if (orb.x > rightEdge) break
-            val r = orb.bounds
-            shape.rect(r.x, r.y, r.width, r.height)
+            val bounds = orb.bounds
+            shape.rect(bounds.x, bounds.y, bounds.width, bounds.height)
         }
 
         shape.color = HB_ORB_LINE
-        for (i in world.padCull until world.pads.size) {
-            val pad = world.pads.get(i)
+        for (padIndex in world.padCull until world.pads.size) {
+            val pad = world.pads.get(padIndex)
             if (pad.x > rightEdge) break
-            val r = pad.hitbox
-            shape.rect(r.x, r.y, r.width, r.height)
+            val hitbox = pad.hitbox
+            shape.rect(hitbox.x, hitbox.y, hitbox.width, hitbox.height)
         }
 
         shape.color = HB_PLAYER_LINE
@@ -187,29 +192,29 @@ class HitboxRenderer(private val world: GameWorld, private val shape: ShapeRende
         shape.end()
     }
 
-    private fun drawOutlineSlope(s: Slope) {
-        val rot = (s.rotation.toInt() % 360 + 360) % 360
-        val x = s.x
-        val y = s.y
-        val w = s.width
-        val h = s.height
-        val line = s.getSlopeLine()
+    private fun drawOutlineSlope(slope: Slope) {
+        val rotation = (slope.rotation.toInt() % 360 + 360) % 360
+        val x = slope.x
+        val y = slope.y
+        val width = slope.width
+        val height = slope.height
+        val line = slope.getSlopeLine()
         val solidCX: Float
         val solidCY: Float
-        when (rot) {
+        when (rotation) {
             0 -> {
-                solidCX = x + w
+                solidCX = x + width
                 solidCY = y
             }
 
             90 -> {
-                solidCX = x + w
-                solidCY = y + h
+                solidCX = x + width
+                solidCY = y + height
             }
 
             180 -> {
                 solidCX = x
-                solidCY = y + h
+                solidCY = y + height
             }
 
             else -> {

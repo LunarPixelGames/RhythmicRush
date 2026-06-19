@@ -90,7 +90,7 @@ class FixedTickEngine(private val tickable: Tickable) {
             accumulator -= TICK_DELTA
 
             var ptr = eventHead
-            for (i in 0 until eventCount) {
+            repeat(eventCount) {
                 eventOffset[ptr] -= TICK_DELTA
                 ptr = (ptr + 1) % QUEUE_CAPACITY
             }

@@ -128,33 +128,44 @@ class LevelSelectScreen @JvmOverloads constructor(
     }
 
     override fun update(delta: Float) {
-        back.update(delta); left.update(delta); right.update(delta); practice.update(delta); play.update(delta)
+        back.update(delta)
+        left.update(delta)
+        right.update(delta)
+        practice.update(delta)
+        play.update(delta)
         updateCarouselMotion(delta)
 
         touch.set(Gdx.input.x.toFloat(), Gdx.input.y.toFloat())
-        val t = viewport.unproject(touch)
+        val touchPosition = viewport.unproject(touch)
         if (Gdx.input.justTouched()) {
-            back.onTouchDown(t.x, t.y); left.onTouchDown(t.x, t.y); right.onTouchDown(t.x, t.y)
-            practice.onTouchDown(t.x, t.y); play.onTouchDown(t.x, t.y)
-            if (levels.size > 1 && hitsCard(t.x, t.y)) {
+            back.onTouchDown(touchPosition.x, touchPosition.y)
+            left.onTouchDown(touchPosition.x, touchPosition.y)
+            right.onTouchDown(touchPosition.x, touchPosition.y)
+            practice.onTouchDown(touchPosition.x, touchPosition.y)
+            play.onTouchDown(touchPosition.x, touchPosition.y)
+            if (levels.size > 1 && hitsCard(touchPosition.x, touchPosition.y)) {
                 draggingCard = true
-                dragStartX = t.x
+                dragStartX = touchPosition.x
                 dragStartPosition = carouselPosition
                 carouselTarget = carouselPosition
                 carouselVelocity = 0f
             }
         }
         if (Gdx.input.isTouched && draggingCard) {
-            carouselPosition = dragStartPosition - (t.x - dragStartX) / cardStride
+            carouselPosition =
+                dragStartPosition - (touchPosition.x - dragStartX) / cardStride
             carouselTarget = carouselPosition
         }
         if (!Gdx.input.isTouched) {
             val leftPressed = left.isPressed
             val rightPressed = right.isPressed
-            back.onTouchUp(t.x, t.y); left.onTouchUp(t.x, t.y); right.onTouchUp(t.x, t.y)
-            practice.onTouchUp(t.x, t.y); play.onTouchUp(t.x, t.y)
-            if (leftPressed && left.hits(t.x, t.y)) navigate(-1)
-            if (rightPressed && right.hits(t.x, t.y)) navigate(1)
+            back.onTouchUp(touchPosition.x, touchPosition.y)
+            left.onTouchUp(touchPosition.x, touchPosition.y)
+            right.onTouchUp(touchPosition.x, touchPosition.y)
+            practice.onTouchUp(touchPosition.x, touchPosition.y)
+            play.onTouchUp(touchPosition.x, touchPosition.y)
+            if (leftPressed && left.hits(touchPosition.x, touchPosition.y)) navigate(-1)
+            if (rightPressed && right.hits(touchPosition.x, touchPosition.y)) navigate(1)
             if (draggingCard) finishCardDrag()
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT)) navigate(-1)
@@ -178,7 +189,9 @@ class LevelSelectScreen @JvmOverloads constructor(
 
         game.batch.projectionMatrix = camera.combined
         game.batch.begin()
-        back.draw(game.batch); left.draw(game.batch); right.draw(game.batch)
+        back.draw(game.batch)
+        left.draw(game.batch)
+        right.draw(game.batch)
         drawTitle("Level Select", viewport.worldWidth / 2f, viewport.worldHeight * 0.91f, 1.05f)
         drawCarouselCardContents()
         drawButtonText(practice, "PRACTICE MODE", UI.TEXT)
@@ -207,7 +220,8 @@ class LevelSelectScreen @JvmOverloads constructor(
         titleFont.data.setScale(0.76f)
         drawShadow(titleFont, "${progress?.bestPercent ?: 0}%", textX, lineY - cardH * 0.13f, statBlue)
         drawShadow(titleFont, "${progress?.totalAttempts ?: 0}", textX + cardW * 0.25f, lineY - cardH * 0.13f, statBlue)
-        titleFont.data.setScale(1f); bodyFont.data.setScale(1f)
+        titleFont.data.setScale(1f)
+        bodyFont.data.setScale(1f)
     }
 
     private fun drawBestProgressBar(level: LevelData, x: Float) {
@@ -238,17 +252,17 @@ class LevelSelectScreen @JvmOverloads constructor(
     }
 
     private fun drawButtonShape(button: AnimatedButton, primary: Boolean) {
-        val s = button.scale
-        val w = button.w * s
-        val h = button.h * s
-        val x = button.x + (button.w - w) / 2f
-        val y = button.y + (button.h - h) / 2f
+        val scale = button.scale
+        val scaledWidth = button.width * scale
+        val scaledHeight = button.height * scale
+        val scaledX = button.x + (button.width - scaledWidth) / 2f
+        val scaledY = button.y + (button.height - scaledHeight) / 2f
         drawSimplePanel(
-            x,
-            y,
-            w,
-            h,
-            h * 0.18f,
+            scaledX,
+            scaledY,
+            scaledWidth,
+            scaledHeight,
+            scaledHeight * 0.18f,
             if (primary) primaryColor else secondaryColor,
             if (primary) darkOutline else subtleBorder,
             if (primary) 4f else 3f
@@ -258,17 +272,29 @@ class LevelSelectScreen @JvmOverloads constructor(
     private fun drawButtonText(button: AnimatedButton, text: String, color: Color) {
         titleFont.data.setScale(0.52f * button.scale)
         layout.setText(titleFont, text)
-        drawShadow(titleFont, text, button.x + button.w / 2f - layout.width / 2f, button.y + button.h / 2f + layout.height / 2f, color)
+        drawShadow(
+            titleFont,
+            text,
+            button.x + button.width / 2f - layout.width / 2f,
+            button.y + button.height / 2f + layout.height / 2f,
+            color
+        )
         titleFont.data.setScale(1f)
     }
 
     private fun drawShadow(font: BitmapFont, text: String, x: Float, y: Float, color: Color) {
-        font.setColor(0f, 0f, 0f, color.a * 0.42f); font.draw(game.batch, text, x + 2f, y - 2f)
-        font.color = color; font.draw(game.batch, text, x, y)
+        font.setColor(0f, 0f, 0f, color.a * 0.42f)
+        font.draw(game.batch, text, x + 2f, y - 2f)
+        font.color = color
+        font.draw(game.batch, text, x, y)
     }
 
     private fun difficultyIndex(value: String?) = when (value?.lowercase()) {
-        "easy" -> 0; "hard" -> 2; "insane" -> 3; "extreme", "demon" -> 4; else -> 1
+        "easy" -> 0
+        "hard" -> 2
+        "insane" -> 3
+        "extreme", "demon" -> 4
+        else -> 1
     }
 
     private fun navigate(direction: Int) {

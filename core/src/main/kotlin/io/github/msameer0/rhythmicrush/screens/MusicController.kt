@@ -35,20 +35,23 @@ class MusicController(
         if (musicFile.isEmpty()) return
 
         try {
-            var fh = Gdx.files.internal("musics/$musicFile")
-            if (!fh.exists()) {
-                fh = Gdx.files.local("assets/musics/$musicFile")
+            var fileHandle = Gdx.files.internal("musics/$musicFile")
+            if (!fileHandle.exists()) {
+                fileHandle = Gdx.files.local("assets/musics/$musicFile")
             }
-            if (fh.exists()) {
-                levelMusic = Gdx.audio.newMusic(fh)?.apply {
+            if (fileHandle.exists()) {
+                levelMusic = Gdx.audio.newMusic(fileHandle)?.apply {
                     volume = game.settingsManager.musicVolume
                     isLooping = false
                     play()
                     if (startTime > 0f) position = startTime
                 }
             }
-        } catch (e: Exception) {
-            Gdx.app.error("MusicController", "Could not load music: ${e.message}")
+        } catch (exception: Exception) {
+            Gdx.app.error(
+                "MusicController",
+                "Could not load music: ${exception.message}"
+            )
         }
     }
 

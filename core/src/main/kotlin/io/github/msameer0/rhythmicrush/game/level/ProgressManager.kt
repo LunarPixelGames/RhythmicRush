@@ -18,21 +18,21 @@ class ProgressManager {
     }
 
     val map = ObjectMap<String, LevelProgress>()
-    var json: Json = Json()
+    private val json = Json()
     var coins: Int = 0
     var points: Int = 0
 
-    constructor() {
+    init {
         json.setOutputType(JsonWriter.OutputType.json)
         json.setUsePrototypes(false)
         load()
     }
 
     fun getOrCreate(levelKey: String): LevelProgress {
-        if (!map.containsKey(levelKey)) {
-            map.put(levelKey, LevelProgress())
-        }
-        return map.get(levelKey)
+        val existingProgress = map.get(levelKey)
+        if (existingProgress != null) return existingProgress
+
+        return LevelProgress().also { map.put(levelKey, it) }
     }
 
     fun save() {
@@ -54,8 +54,11 @@ class ProgressManager {
                 writer.close()
             }
             Gdx.app.log("ProgressManager", "Progress saved successfully.")
-        } catch (e: Exception) {
-            Gdx.app.error("ProgressManager", "Failed to save progress: " + e.message)
+        } catch (exception: Exception) {
+            Gdx.app.error(
+                "ProgressManager",
+                "Failed to save progress: ${exception.message}"
+            )
         }
     }
 
@@ -75,15 +78,22 @@ class ProgressManager {
                     COINS_KEY -> coins = entry.asInt()
                     POINTS_KEY -> points = entry.asInt()
                     else -> {
-                        val p = json.readValue<LevelProgress?>(LevelProgress::class.java, entry)
-                        if (p != null) map.put(entry.name, p)
+                        val levelProgress =
+                            json.readValue<LevelProgress?>(
+                                LevelProgress::class.java,
+                                entry
+                            )
+                        if (levelProgress != null) map.put(entry.name, levelProgress)
                     }
                 }
                 entry = entry.next
             }
             Gdx.app.log("ProgressManager", "Progress loaded: " + map.size + " entries.")
-        } catch (e: java.lang.Exception) {
-            Gdx.app.error("ProgressManager", "Failed to load progress: " + e.message)
+        } catch (exception: Exception) {
+            Gdx.app.error(
+                "ProgressManager",
+                "Failed to load progress: ${exception.message}"
+            )
         }
     }
 }

@@ -38,7 +38,6 @@ class HalfSpike : AbstractHazard, Rotatable {
     }
 
     private fun updateHitbox() {
-        // Revert to original forgiving rectangular hitbox (25x20 centered)
         val xMin = (TEXTURE_SIZE - HITBOX_W) / 2f
         val xMax = xMin + HITBOX_W
         val yMin = 0f

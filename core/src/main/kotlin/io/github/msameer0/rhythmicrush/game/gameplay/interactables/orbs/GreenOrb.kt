@@ -1,5 +1,6 @@
 package io.github.msameer0.rhythmicrush.game.gameplay.interactables.orbs
 
+import io.github.msameer0.rhythmicrush.GameConstants
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.game.registries.Registry
 
@@ -25,11 +26,7 @@ class GreenOrb : AbstractOrb {
 
     override fun onClick(player: AbstractPlayer) {
         player.setGravityFlipped(!player.isGravityFlipped())
-        val v = io.github.msameer0.rhythmicrush.GameConstants.Interactables.Orbs.GREEN_VELOCITY
-        if (player.isGravityFlipped()) {
-            player.setVelocityY(-v)
-        } else {
-            player.setVelocityY(v)
-        }
+        val velocity = GameConstants.Interactables.Orbs.GREEN_VELOCITY
+        player.setVelocityY(if (player.isGravityFlipped()) -velocity else velocity)
     }
 }

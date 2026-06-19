@@ -53,6 +53,7 @@ class ProceduralBackground {
     }
 }
 
+/** Renders one deterministic parallax layer of procedural background shapes. */
 class BackgroundSlabLayer(
     private val seedSalt: Int,
     private val parallaxFactor: Float,
@@ -127,6 +128,7 @@ class BackgroundSlabLayer(
     }
 }
 
+/** Renders procedural decorative panels inside ground regions. */
 class ProceduralGroundDecoration {
     private val panelColor = Color()
 

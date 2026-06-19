@@ -33,25 +33,20 @@ class GameCamera(val camera: OrthographicCamera, private val world: GameWorld) {
     }
 
     fun update(player: AbstractPlayer, delta: Float) {
-        // Horizontal Movement (X-axis follow)
         var targetX = player.x + CAMERA_X_OFFSET
         if (player.isMini()) targetX -= 25f
         camera.position.x = targetX
 
-        // Vertical Movement (Y-axis logic)
         if (player != lastPlayer) {
-            // Only handle as a "transition" if we were already playing a different mode
             if (lastPlayer != null) {
                 player.onCameraModeEnter(camera.position.y, world.groundY)
                 
                 if (player.getCameraMode() == AbstractPlayer.CameraMode.FREE) {
-                    // When transitioning back to a FREE mode, try to maintain current camera Y if possible
                     val idealBottom = camera.position.y - 250f
                     windowBottom = MathUtils.clamp(idealBottom, player.y + player.height - 500f, player.y)
                     cameraTargetY = windowBottom + 250f
                 }
             } else {
-                // First spawn: Initialize camera mode
                 player.onCameraModeEnter(camera.position.y, world.groundY)
             }
             lastPlayer = player
@@ -71,7 +66,6 @@ class GameCamera(val camera: OrthographicCamera, private val world: GameWorld) {
             } else {
                 val windowTop = windowBottom + paddingHeight
 
-                // Adjust window if player moves outside (only by the amount they moved out)
                 if (player.y + player.height > windowTop) {
                     windowBottom = (player.y + player.height) - paddingHeight
                 } else if (player.y < windowBottom) {
@@ -79,7 +73,6 @@ class GameCamera(val camera: OrthographicCamera, private val world: GameWorld) {
                 }
 
                 cameraTargetY = windowBottom + (paddingHeight / 2f)
-                // Pan smoothly towards the window center
                 camera.position.y = MathUtils.lerp(camera.position.y, cameraTargetY, min(delta * GameConstants.Camera.SMOOTH_LERP, 1f))
             }
         } else {
@@ -88,13 +81,11 @@ class GameCamera(val camera: OrthographicCamera, private val world: GameWorld) {
                 camera.position.y = cameraTargetY
                 shouldSnap = false
             }
-            // Pan smoothly towards the locked height
             camera.position.y = MathUtils.lerp(camera.position.y, cameraTargetY, min(delta * GameConstants.Camera.SMOOTH_LERP, 1f))
         }
 
         camera.update()
 
-        // Update world culling based on camera position
         val worldLeft = camera.position.x - camera.viewportWidth / 2f
         world.cullX = worldLeft
     }

@@ -6,7 +6,7 @@ import io.github.msameer0.rhythmicrush.game.GameWorld
 /**
  * Base class for all player modes, handling common movement, input, and state properties.
  */
-abstract class AbstractPlayer() {
+abstract class AbstractPlayer {
 
     /**
      * Enumeration of available player game modes.
@@ -20,8 +20,8 @@ abstract class AbstractPlayer() {
      * Defines how the camera should follow the player.
      */
     enum class CameraMode {
-        FREE,       // Cube-like: pans within a vertical window
-        RESTRICTED  // Ship-like: follows a locked height or corridor
+        FREE,
+        RESTRICTED
     }
 
     @JvmField
@@ -219,7 +219,6 @@ abstract class AbstractPlayer() {
         currentSlopeRotation = rot
     }
 
-    // Camera and Boundary management
     open fun getCameraMode(): CameraMode = CameraMode.FREE
 
     /**
@@ -244,7 +243,6 @@ abstract class AbstractPlayer() {
      */
     open fun getCameraCeilingY(): Float = Float.MAX_VALUE
 
-    // Corridor management (for visual rendering)
     open fun isUsingCorridor(): Boolean = false
     open fun getCorridorTop(): Float? = null
     open fun getCorridorBottom(): Float? = null

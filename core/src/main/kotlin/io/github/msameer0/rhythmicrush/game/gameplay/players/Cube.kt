@@ -77,14 +77,12 @@ class Cube : AbstractPlayer {
         if (wasGrounded) {
             coyoteTimer = COYOTE_TIME
 
-            // Snap rotation to nearest 90 degrees relative to slope
             val currentRot = getRotation()
             val nearest90 = MathUtils.round((currentRot - lastSlopeRotation) / 90f) * 90f
             setRotation(MathUtils.lerp(currentRot, nearest90 + lastSlopeRotation, MathUtils.clamp(delta * 15f, 0f, 1f)))
         } else {
             coyoteTimer = kotlin.math.max(0f, coyoteTimer - delta)
 
-            // Rotate in air
             val spinAmount = GameConstants.Player.Cube.SPIN_SPEED * delta
             if (gravityFlipped) setRotation(getRotation() + spinAmount)
             else setRotation(getRotation() - spinAmount)
@@ -97,8 +95,10 @@ class Cube : AbstractPlayer {
 
     override fun jump() {
         if (canJump()) {
-            val v = if (mini) jumpVelocity * 0.75f else jumpVelocity
-            velocityY = if (gravityFlipped) -v else v
+            val effectiveJumpVelocity =
+                if (mini) jumpVelocity * 0.75f else jumpVelocity
+            velocityY =
+                if (gravityFlipped) -effectiveJumpVelocity else effectiveJumpVelocity
             isGrounded = false
             coyoteTimer = 0f
             jumpConsumed = true

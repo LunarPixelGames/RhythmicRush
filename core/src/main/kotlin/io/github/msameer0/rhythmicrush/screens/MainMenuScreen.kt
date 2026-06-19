@@ -139,6 +139,7 @@ class MainMenuScreen @JvmOverloads constructor(
     private var settingsFontScale = 0f
     private var settingsHeadingScale = 0f
 
+    /** Stores one clickable information line and its rendered position. */
     private class InfoLine(val text: String, val url: String, var y: Float = 0f)
 
     private val creditLines = arrayOf(
@@ -177,7 +178,10 @@ class MainMenuScreen @JvmOverloads constructor(
     private var lastPanelW = -1
     private var lastPanelH = -1
 
+    /** Identifies the control used by a settings row. */
     private enum class RowType { TOGGLE, SLIDER, INT_FIELD }
+
+    /** Describes one configurable row in the settings panel. */
     private class SettingRow(val type: RowType, val label: String, val id: String)
 
     init {
@@ -224,22 +228,22 @@ class MainMenuScreen @JvmOverloads constructor(
         updateScaledSizes()
     }
 
-    private fun buildAllRows(cat: Int): Array<SettingRow> {
-        val s = game.settingsManager
+    private fun buildAllRows(category: Int): Array<SettingRow> {
+        val settings = game.settingsManager
         val desktop = Gdx.app.type == com.badlogic.gdx.Application.ApplicationType.Desktop
         val rows = Array<SettingRow>()
 
-        if (cat == CAT_AUDIO) {
+        if (category == CAT_AUDIO) {
             rows.add(SettingRow(RowType.TOGGLE, "Menu Music", "menuMusic"))
             rows.add(SettingRow(RowType.SLIDER, "Music Volume", "volume"))
             rows.add(SettingRow(RowType.SLIDER, "SFX Volume", "sfxVolume"))
-        } else if (cat == CAT_GAMEPLAY) {
+        } else if (category == CAT_GAMEPLAY) {
             rows.add(SettingRow(RowType.TOGGLE, "Death Effect", "deathEffect"))
             rows.add(SettingRow(RowType.TOGGLE, "Show Hitboxes", "hitboxes"))
             rows.add(SettingRow(RowType.TOGGLE, "Show Hitboxes on Death", "hitboxesDeath"))
             rows.add(SettingRow(RowType.TOGGLE, "Pulse Orbs", "pulseOrbs"))
             if (desktop) rows.add(SettingRow(RowType.TOGGLE, "Lock Cursor in Game", "lockCursor"))
-        } else if (cat == CAT_INTERFACE) {
+        } else if (category == CAT_INTERFACE) {
             rows.add(SettingRow(RowType.TOGGLE, "Show Percentage", "showPercentage"))
             rows.add(SettingRow(RowType.TOGGLE, "Show Progress Bar", "showProgressBar"))
             rows.add(SettingRow(RowType.TOGGLE, "Show Attempts", "showAttempts"))
@@ -249,7 +253,9 @@ class MainMenuScreen @JvmOverloads constructor(
             rows.add(SettingRow(RowType.TOGGLE, "Show FPS", "showFps"))
             if (desktop) {
                 rows.add(SettingRow(RowType.TOGGLE, "Cap FPS", "capFps"))
-                if (s.capFps) rows.add(SettingRow(RowType.INT_FIELD, "FPS Limit", "fpsValue"))
+                if (settings.capFps) {
+                    rows.add(SettingRow(RowType.INT_FIELD, "FPS Limit", "fpsValue"))
+                }
                 rows.add(SettingRow(RowType.TOGGLE, "VSync", "vsync"))
             }
             rows.add(SettingRow(RowType.SLIDER, "UI Padding", "uiPadding"))
@@ -258,13 +264,15 @@ class MainMenuScreen @JvmOverloads constructor(
     }
 
     private fun getPageRows(page: Int): Array<SettingRow> {
-        val (cat, sub) = settingsPageToCatSub(page)
-        val all = buildAllRows(cat)
-        val start = sub * MAX_ROWS_PER_PAGE
-        val end = min(start + MAX_ROWS_PER_PAGE, all.size)
-        if (start >= all.size) return Array()
+        val (category, subPage) = settingsPageToCatSub(page)
+        val allRows = buildAllRows(category)
+        val startIndex = subPage * MAX_ROWS_PER_PAGE
+        val endIndex = min(startIndex + MAX_ROWS_PER_PAGE, allRows.size)
+        if (startIndex >= allRows.size) return Array()
         val pageRows = Array<SettingRow>()
-        for (i in start until end) pageRows.add(all.get(i))
+        for (rowIndex in startIndex until endIndex) {
+            pageRows.add(allRows.get(rowIndex))
+        }
         return pageRows
     }
 
@@ -284,8 +292,8 @@ class MainMenuScreen @JvmOverloads constructor(
         return Pair(CAT_COUNT - 1, 0)
     }
 
-    private fun subPageCount(cat: Int): Int {
-        val total = buildAllRows(cat).size
+    private fun subPageCount(category: Int): Int {
+        val total = buildAllRows(category).size
         return max(1, ceil(total.toFloat() / MAX_ROWS_PER_PAGE).toInt())
     }
 
@@ -331,7 +339,6 @@ class MainMenuScreen @JvmOverloads constructor(
         val targetH = min(vh * 0.86f, 920f)
         panelPadX = panelW * 0.07f
         panelPadY = targetH * 0.065f
-        // Header includes both the title and tab strip; footer is reserved for page dots/hints.
         panelPadT = targetH * 0.23f
         panelPadB = targetH * 0.13f
         rowStep = (targetH - panelPadT - panelPadB) / MAX_ROWS_PER_PAGE
@@ -526,7 +533,7 @@ class MainMenuScreen @JvmOverloads constructor(
     }
 
     private fun drawSettingsRows(rows: Array<SettingRow>) {
-        val s = game.settingsManager
+        val settings = game.settingsManager
         shapes.begin(ShapeRenderer.ShapeType.Filled)
         for (i in 0 until rows.size) {
             val ry = rowY(i)
@@ -538,18 +545,22 @@ class MainMenuScreen @JvmOverloads constructor(
             val row = rows.get(i)
             val ry = rowY(i)
             when (row.type) {
-                RowType.TOGGLE -> drawToggleRow(ry, row.label, getToggleValue(row.id, s), 45f)
+                RowType.TOGGLE -> {
+                    drawToggleRow(ry, row.label, getToggleValue(row.id, settings))
+                }
                 RowType.SLIDER -> {
-                    val v = when (row.id) {
-                        "uiPadding" -> s.uiPadding / 50f
-                        "practiceOpacity" -> s.practiceButtonOpacity
-                        "sfxVolume" -> s.sfxVolume
-                        else -> s.musicVolume
+                    val value = when (row.id) {
+                        "uiPadding" -> settings.uiPadding / 50f
+                        "practiceOpacity" -> settings.practiceButtonOpacity
+                        "sfxVolume" -> settings.sfxVolume
+                        else -> settings.musicVolume
                     }
-                    drawSliderRow(ry, row.label, v, 45f)
+                    drawSliderRow(ry, row.label, value)
                 }
 
-                RowType.INT_FIELD -> drawIntFieldRow(ry, row.label, s.fpsCapValue, 45f)
+                RowType.INT_FIELD -> {
+                    drawIntFieldRow(ry, row.label, settings.fpsCapValue)
+                }
             }
             game.batch.begin()
             font.data.setScale(settingsFontScale * 0.90f)
@@ -580,38 +591,43 @@ class MainMenuScreen @JvmOverloads constructor(
         else -> ""
     }
 
-    private fun getToggleValue(id: String, s: SettingsManager): Boolean {
+    private fun getToggleValue(id: String, settings: SettingsManager): Boolean {
         return when (id) {
-            "menuMusic" -> s.menuMusicEnabled
-            "deathEffect" -> s.deathEffectEnabled
-            "hitboxes" -> s.showHitboxes
-            "hitboxesDeath" -> s.showHitboxesOnDeath
-            "lockCursor" -> s.lockCursorInGame
-            "pulseOrbs" -> s.pulseOrbs
-            "showFps" -> s.showFps
-            "capFps" -> s.capFps
-            "vsync" -> s.enableVsync
-            "showPercentage" -> s.showPercentage
-            "showProgressBar" -> s.showProgressBar
-            "showAttempts" -> s.showAttempts
-            "showBest" -> s.showBest
+            "menuMusic" -> settings.menuMusicEnabled
+            "deathEffect" -> settings.deathEffectEnabled
+            "hitboxes" -> settings.showHitboxes
+            "hitboxesDeath" -> settings.showHitboxesOnDeath
+            "lockCursor" -> settings.lockCursorInGame
+            "pulseOrbs" -> settings.pulseOrbs
+            "showFps" -> settings.showFps
+            "capFps" -> settings.capFps
+            "vsync" -> settings.enableVsync
+            "showPercentage" -> settings.showPercentage
+            "showProgressBar" -> settings.showProgressBar
+            "showAttempts" -> settings.showAttempts
+            "showBest" -> settings.showBest
             else -> false
         }
     }
 
-    private fun drawToggleRow(ry: Float, label: String, value: Boolean, hp: Float) {
+    private fun drawToggleRow(ry: Float, label: String, value: Boolean) {
         val pillH = rowStep * 0.35f
         val pillW = pillH * 2.1f
         val pillX = controlRightX - pillW
         val pillY = ry - pillH / 2f
-        val r = pillH / 2f
+        val radius = pillH / 2f
         shapes.begin(ShapeRenderer.ShapeType.Filled)
         shapes.color = if (value) COL_ON else COL_OFF
-        shapes.circle(pillX + r, pillY + r, r, 24)
-        shapes.circle(pillX + pillW - r, pillY + r, r, 24)
-        shapes.rect(pillX + r, pillY, pillW - pillH, pillH)
+        shapes.circle(pillX + radius, pillY + radius, radius, 24)
+        shapes.circle(pillX + pillW - radius, pillY + radius, radius, 24)
+        shapes.rect(pillX + radius, pillY, pillW - pillH, pillH)
         shapes.color = COL_THUMB
-        shapes.circle(if (value) (pillX + pillW - r) else (pillX + r), pillY + r, r * 0.7f, 24)
+        shapes.circle(
+            if (value) pillX + pillW - radius else pillX + radius,
+            pillY + radius,
+            radius * 0.7f,
+            24
+        )
         shapes.end()
         game.batch.begin()
         font.data.setScale(settingsFontScale)
@@ -619,7 +635,7 @@ class MainMenuScreen @JvmOverloads constructor(
         game.batch.end()
     }
 
-    private fun drawSliderRow(ry: Float, label: String, value: Float, hp: Float) {
+    private fun drawSliderRow(ry: Float, label: String, value: Float) {
         val trackW = sliderTrackW
         val trackH = rowStep * 0.06f
         val trackX = controlRightX - trackW
@@ -649,7 +665,7 @@ class MainMenuScreen @JvmOverloads constructor(
         game.batch.end()
     }
 
-    private fun drawIntFieldRow(ry: Float, label: String, value: Int, hp: Float) {
+    private fun drawIntFieldRow(ry: Float, label: String, value: Int) {
         val boxH = rowStep * 0.40f
         val boxW = boxH * 3.0f
         val boxX = controlRightX - boxW
@@ -684,79 +700,100 @@ class MainMenuScreen @JvmOverloads constructor(
         if (Gdx.input.isKeyJustPressed(Input.Keys.P) && System.getProperty("devMode") != null) {
             game.screen = LevelEditorScreen(game)
         }
-        val t = unproject()
+        val touchPosition = unproject()
         if (Gdx.input.justTouched()) {
-            btnPlay.onTouchDown(t.x, t.y)
-            btnSettings.onTouchDown(t.x, t.y)
-            btnInfo.onTouchDown(t.x, t.y)
+            btnPlay.onTouchDown(touchPosition.x, touchPosition.y)
+            btnSettings.onTouchDown(touchPosition.x, touchPosition.y)
+            btnInfo.onTouchDown(touchPosition.x, touchPosition.y)
         }
         if (!Gdx.input.isTouched) {
-            btnPlay.onTouchUp(t.x, t.y)
-            btnSettings.onTouchUp(t.x, t.y)
-            btnInfo.onTouchUp(t.x, t.y)
+            btnPlay.onTouchUp(touchPosition.x, touchPosition.y)
+            btnSettings.onTouchUp(touchPosition.x, touchPosition.y)
+            btnInfo.onTouchUp(touchPosition.x, touchPosition.y)
         }
     }
 
     private fun handleSettingsInput() {
-        val s = game.settingsManager
-        val t = unproject()
+        val settings = game.settingsManager
+        val touchPosition = unproject()
         if (Gdx.input.justTouched()) {
-            btnOverlayBack.onTouchDown(t.x, t.y)
-            btnOverlayLeft.onTouchDown(t.x, t.y)
-            btnOverlayRight.onTouchDown(t.x, t.y)
+            btnOverlayBack.onTouchDown(touchPosition.x, touchPosition.y)
+            btnOverlayLeft.onTouchDown(touchPosition.x, touchPosition.y)
+            btnOverlayRight.onTouchDown(touchPosition.x, touchPosition.y)
         }
         if (!Gdx.input.isTouched) {
             val backPressed = btnOverlayBack.isPressed
             val leftPressed = btnOverlayLeft.isPressed
             val rightPressed = btnOverlayRight.isPressed
-            btnOverlayBack.onTouchUp(t.x, t.y)
-            btnOverlayLeft.onTouchUp(t.x, t.y)
-            btnOverlayRight.onTouchUp(t.x, t.y)
-            if (backPressed && btnOverlayBack.hits(t.x, t.y)) {
-                closeSettings(); return
+            btnOverlayBack.onTouchUp(touchPosition.x, touchPosition.y)
+            btnOverlayLeft.onTouchUp(touchPosition.x, touchPosition.y)
+            btnOverlayRight.onTouchUp(touchPosition.x, touchPosition.y)
+            if (backPressed && btnOverlayBack.hits(touchPosition.x, touchPosition.y)) {
+                closeSettings()
+                return
             }
-            if (leftPressed && btnOverlayLeft.hits(t.x, t.y)) {
-                navigateSettings(-1); return
+            if (leftPressed && btnOverlayLeft.hits(touchPosition.x, touchPosition.y)) {
+                navigateSettings(-1)
+                return
             }
-            if (rightPressed && btnOverlayRight.hits(t.x, t.y)) {
-                navigateSettings(1); return
+            if (rightPressed && btnOverlayRight.hits(touchPosition.x, touchPosition.y)) {
+                navigateSettings(1)
+                return
             }
         }
         if (fpsInputActive) {
-            for (k in Input.Keys.NUM_0..Input.Keys.NUM_9) if (Gdx.input.isKeyJustPressed(k)) fpsInputBuffer.append(
-                (k - Input.Keys.NUM_0).toString()
-            )
-            for (k in Input.Keys.NUMPAD_0..Input.Keys.NUMPAD_9) if (Gdx.input.isKeyJustPressed(k)) fpsInputBuffer.append(
-                (k - Input.Keys.NUM_0).toString()
-            )
-            if (Gdx.input.isKeyJustPressed(Input.Keys.BACKSPACE) && fpsInputBuffer.isNotEmpty()) fpsInputBuffer.deleteCharAt(
-                fpsInputBuffer.length - 1
-            )
-            if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) confirmFpsInput(s)
+            for (keyCode in Input.Keys.NUM_0..Input.Keys.NUM_9) {
+                if (Gdx.input.isKeyJustPressed(keyCode)) {
+                    fpsInputBuffer.append((keyCode - Input.Keys.NUM_0).toString())
+                }
+            }
+            for (keyCode in Input.Keys.NUMPAD_0..Input.Keys.NUMPAD_9) {
+                if (Gdx.input.isKeyJustPressed(keyCode)) {
+                    fpsInputBuffer.append((keyCode - Input.Keys.NUM_0).toString())
+                }
+            }
+            if (
+                Gdx.input.isKeyJustPressed(Input.Keys.BACKSPACE) &&
+                fpsInputBuffer.isNotEmpty()
+            ) {
+                fpsInputBuffer.deleteCharAt(fpsInputBuffer.length - 1)
+            }
+            if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) confirmFpsInput(settings)
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            if (fpsInputActive) confirmFpsInput(s) else closeSettings()
+            if (fpsInputActive) confirmFpsInput(settings) else closeSettings()
         }
         if (Gdx.input.isTouched && draggingSlider) {
             val sliderX = settingsSliderX()
-            val norm = MathUtils.clamp(
+            val normalizedValue = MathUtils.clamp(
                 (unproject().x - sliderX) / sliderTrackW,
                 0f,
                 1f
             )
             val rows = getPageRows(currentSettingsPage)
             if (draggingSliderRow in 0 until rows.size) {
-                val r = rows.get(draggingSliderRow)
-                if (r.id == "volume") {
-                    s.musicVolume = norm; game.soundManager.setMusicVolume(norm)
-                } else if (r.id == "sfxVolume") {
-                    s.sfxVolume = norm; game.soundManager.setSfxVolume(norm)
-                } else if (r.id == "uiPadding") s.uiPadding = norm * 50f
-                else if (r.id == "practiceOpacity") s.practiceButtonOpacity = norm
+                val row = rows.get(draggingSliderRow)
+                when (row.id) {
+                    "volume" -> {
+                        settings.musicVolume = normalizedValue
+                        game.soundManager.setMusicVolume(normalizedValue)
+                    }
+                    "sfxVolume" -> {
+                        settings.sfxVolume = normalizedValue
+                        game.soundManager.setSfxVolume(normalizedValue)
+                    }
+                    "uiPadding" -> settings.uiPadding = normalizedValue * 50f
+                    "practiceOpacity" -> {
+                        settings.practiceButtonOpacity = normalizedValue
+                    }
+                    else -> Unit
+                }
             }
         }
         if (!Gdx.input.isTouched) {
-            if (draggingSlider) s.save(); draggingSlider = false; draggingSliderRow = -1
+            if (draggingSlider) settings.save()
+            draggingSlider = false
+            draggingSliderRow = -1
         }
         if (!Gdx.input.justTouched()) return
 
@@ -766,52 +803,80 @@ class MainMenuScreen @JvmOverloads constructor(
         val tabH = rowStep * 0.48f
         val tabY = settingsTabY()
         for (i in TAB_CATEGORIES.indices) {
-            if (hits(t, tabX + i * (tabW + tabGap), tabY, tabW, tabH)) {
+            if (
+                hits(
+                    touchPosition,
+                    tabX + i * (tabW + tabGap),
+                    tabY,
+                    tabW,
+                    tabH
+                )
+            ) {
                 currentSettingsPage = firstPageForCategory(TAB_CATEGORIES[i])
                 return
             }
         }
 
-        val pRows = getPageRows(currentSettingsPage)
-        for (i in 0 until pRows.size) {
-            val ry = rowY(i)
-            val r = pRows.get(i)
-            if (r.type == RowType.TOGGLE && hitPill(t, ry)) handleToggle(r.id, s)
-            else if (r.type == RowType.SLIDER && hitSliderThumb(t, ry, 0.5f)) {
-                draggingSlider = true; draggingSliderRow = i
-            } else if (r.type == RowType.INT_FIELD && hitIntBox(t, ry)) {
-                fpsInputActive =
-                    true; fpsInputBuffer.setLength(0); fpsInputBuffer.append(s.fpsCapValue)
+        val pageRows = getPageRows(currentSettingsPage)
+        for (rowIndex in 0 until pageRows.size) {
+            val rowCenterY = rowY(rowIndex)
+            val row = pageRows.get(rowIndex)
+            if (
+                row.type == RowType.TOGGLE &&
+                hitPill(touchPosition, rowCenterY)
+            ) {
+                handleToggle(row.id, settings)
+            } else if (
+                row.type == RowType.SLIDER &&
+                hitSliderThumb(touchPosition, rowCenterY, 0.5f)
+            ) {
+                draggingSlider = true
+                draggingSliderRow = rowIndex
+            } else if (
+                row.type == RowType.INT_FIELD &&
+                hitIntBox(touchPosition, rowCenterY)
+            ) {
+                fpsInputActive = true
+                fpsInputBuffer.setLength(0)
+                fpsInputBuffer.append(settings.fpsCapValue)
             }
         }
     }
 
-    private fun handleToggle(id: String, s: SettingsManager) {
+    private fun handleToggle(id: String, settings: SettingsManager) {
         when (id) {
             "menuMusic" -> {
-                s.menuMusicEnabled =
-                    !s.menuMusicEnabled; if (s.menuMusicEnabled) game.soundManager.playMenuMusic() else game.soundManager.stopMenuMusic()
+                settings.menuMusicEnabled = !settings.menuMusicEnabled
+                if (settings.menuMusicEnabled) {
+                    game.soundManager.playMenuMusic()
+                } else {
+                    game.soundManager.stopMenuMusic()
+                }
             }
 
-            "hitboxes" -> s.showHitboxes = !s.showHitboxes
-            "deathEffect" -> s.deathEffectEnabled = !s.deathEffectEnabled
-            "hitboxesDeath" -> s.showHitboxesOnDeath = !s.showHitboxesOnDeath
-            "pulseOrbs" -> s.pulseOrbs = !s.pulseOrbs
-            "showFps" -> s.showFps = !s.showFps
+            "hitboxes" -> settings.showHitboxes = !settings.showHitboxes
+            "deathEffect" -> settings.deathEffectEnabled = !settings.deathEffectEnabled
+            "hitboxesDeath" -> {
+                settings.showHitboxesOnDeath = !settings.showHitboxesOnDeath
+            }
+            "pulseOrbs" -> settings.pulseOrbs = !settings.pulseOrbs
+            "showFps" -> settings.showFps = !settings.showFps
             "capFps" -> {
-                s.capFps = !s.capFps; s.applyFpsCap()
+                settings.capFps = !settings.capFps
+                settings.applyFpsCap()
             }
 
             "vsync" -> {
-                s.enableVsync = !s.enableVsync; s.applyVsync()
+                settings.enableVsync = !settings.enableVsync
+                settings.applyVsync()
             }
 
-            "showPercentage" -> s.showPercentage = !s.showPercentage
-            "showProgressBar" -> s.showProgressBar = !s.showProgressBar
-            "showAttempts" -> s.showAttempts = !s.showAttempts
-            "showBest" -> s.showBest = !s.showBest
+            "showPercentage" -> settings.showPercentage = !settings.showPercentage
+            "showProgressBar" -> settings.showProgressBar = !settings.showProgressBar
+            "showAttempts" -> settings.showAttempts = !settings.showAttempts
+            "showBest" -> settings.showBest = !settings.showBest
         }
-        s.save()
+        settings.save()
     }
 
     private fun navigateSettings(dir: Int) {
@@ -833,12 +898,12 @@ class MainMenuScreen @JvmOverloads constructor(
         game.settingsManager.save()
     }
 
-    private fun confirmFpsInput(s: SettingsManager) {
-        try {
-            val v = fpsInputBuffer.toString().toInt(); if (v > 0) {
-                s.fpsCapValue = v; s.applyFpsCap(); s.save()
-            }
-        } catch (e: Exception) {
+    private fun confirmFpsInput(settings: SettingsManager) {
+        val fpsCap = fpsInputBuffer.toString().toIntOrNull()
+        if (fpsCap != null && fpsCap > 0) {
+            settings.fpsCapValue = fpsCap
+            settings.applyFpsCap()
+            settings.save()
         }
         fpsInputActive = false
     }
@@ -1006,28 +1071,30 @@ class MainMenuScreen @JvmOverloads constructor(
             return
         }
 
-        val t = unproject()
+        val touchPosition = unproject()
         if (Gdx.input.justTouched()) {
-            btnOverlayBack.onTouchDown(t.x, t.y)
-            btnOverlayLeft.onTouchDown(t.x, t.y)
-            btnOverlayRight.onTouchDown(t.x, t.y)
+            btnOverlayBack.onTouchDown(touchPosition.x, touchPosition.y)
+            btnOverlayLeft.onTouchDown(touchPosition.x, touchPosition.y)
+            btnOverlayRight.onTouchDown(touchPosition.x, touchPosition.y)
         }
         if (!Gdx.input.isTouched) {
             val backPressed = btnOverlayBack.isPressed
             val leftPressed = btnOverlayLeft.isPressed
             val rightPressed = btnOverlayRight.isPressed
-            btnOverlayBack.onTouchUp(t.x, t.y)
-            btnOverlayLeft.onTouchUp(t.x, t.y)
-            btnOverlayRight.onTouchUp(t.x, t.y)
-            if (backPressed && btnOverlayBack.hits(t.x, t.y)) {
+            btnOverlayBack.onTouchUp(touchPosition.x, touchPosition.y)
+            btnOverlayLeft.onTouchUp(touchPosition.x, touchPosition.y)
+            btnOverlayRight.onTouchUp(touchPosition.x, touchPosition.y)
+            if (backPressed && btnOverlayBack.hits(touchPosition.x, touchPosition.y)) {
                 closeInfo()
                 return
             }
-            if (leftPressed && btnOverlayLeft.hits(t.x, t.y)) {
-                navigateInfo(-1); return
+            if (leftPressed && btnOverlayLeft.hits(touchPosition.x, touchPosition.y)) {
+                navigateInfo(-1)
+                return
             }
-            if (rightPressed && btnOverlayRight.hits(t.x, t.y)) {
-                navigateInfo(1); return
+            if (rightPressed && btnOverlayRight.hits(touchPosition.x, touchPosition.y)) {
+                navigateInfo(1)
+                return
             }
         }
 
@@ -1044,8 +1111,11 @@ class MainMenuScreen @JvmOverloads constructor(
             val lineH = rowStep * 0.42f
             for (i in 0 until lines.size) {
                 val line = lines.get(i)
-                if (t.x >= panelX + panelPadX && t.x <= panelX + panelW - panelPadX &&
-                    t.y >= line.y - lineH && t.y <= line.y
+                if (
+                    touchPosition.x >= panelX + panelPadX &&
+                    touchPosition.x <= panelX + panelW - panelPadX &&
+                    touchPosition.y >= line.y - lineH &&
+                    touchPosition.y <= line.y
                 ) {
                     Gdx.net.openURI(line.url)
                     return
@@ -1055,8 +1125,11 @@ class MainMenuScreen @JvmOverloads constructor(
 
         if (currentInfoPage == INFO_TAB_SOCIALS) {
             val lineH = rowStep * 0.42f
-            if (t.x >= panelX + panelW / 2f - 120f && t.x <= panelX + panelW / 2f + 120f &&
-                t.y >= privacyPolicyLine.y - lineH && t.y <= privacyPolicyLine.y
+            if (
+                touchPosition.x >= panelX + panelW / 2f - 120f &&
+                touchPosition.x <= panelX + panelW / 2f + 120f &&
+                touchPosition.y >= privacyPolicyLine.y - lineH &&
+                touchPosition.y <= privacyPolicyLine.y
             ) {
                 Gdx.net.openURI(privacyPolicyLine.url)
             }
@@ -1101,11 +1174,14 @@ class MainMenuScreen @JvmOverloads constructor(
     }
 
     override fun resize(width: Int, height: Int) {
-        super.resize(width, height); updateScaledSizes()
+        super.resize(width, height)
+        updateScaledSizes()
     }
 
     override fun dispose() {
-        shapes.dispose(); panelTexture?.dispose(); super.dispose()
+        shapes.dispose()
+        panelTexture?.dispose()
+        super.dispose()
     }
 
     private fun drawShadowText(f: BitmapFont, text: String, x: Float, y: Float, color: Color) {
@@ -1127,16 +1203,22 @@ class MainMenuScreen @JvmOverloads constructor(
         f.draw(game.batch, text, x, y)
     }
 
-    private fun createRoundedRect(w: Int, h: Int, r: Int, color: Color): Texture {
-        val pm = Pixmap(w, h, Pixmap.Format.RGBA8888)
-        pm.setColor(color)
-        pm.fillRectangle(r, 0, w - 2 * r, h)
-        pm.fillRectangle(0, r, w, h - 2 * r)
-        pm.fillCircle(r, r, r); pm.fillCircle(w - r, r, r); pm.fillCircle(
-            r,
-            h - r,
-            r
-        ); pm.fillCircle(w - r, h - r, r)
-        val t = Texture(pm); pm.dispose(); return t
+    private fun createRoundedRect(
+        width: Int,
+        height: Int,
+        radius: Int,
+        color: Color
+    ): Texture {
+        val pixmap = Pixmap(width, height, Pixmap.Format.RGBA8888)
+        pixmap.setColor(color)
+        pixmap.fillRectangle(radius, 0, width - 2 * radius, height)
+        pixmap.fillRectangle(0, radius, width, height - 2 * radius)
+        pixmap.fillCircle(radius, radius, radius)
+        pixmap.fillCircle(width - radius, radius, radius)
+        pixmap.fillCircle(radius, height - radius, radius)
+        pixmap.fillCircle(width - radius, height - radius, radius)
+        val texture = Texture(pixmap)
+        pixmap.dispose()
+        return texture
     }
 }

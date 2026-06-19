@@ -44,6 +44,7 @@ import kotlin.math.min
  * Represents the core game state, including the player, level objects, and world simulation logic.
  */
 class GameWorld : Tickable {
+    /** Represents one expanding ring in the player death effect. */
     data class DeathBurst(
         val x: Float,
         val y: Float,
@@ -87,17 +88,17 @@ class GameWorld : Tickable {
             var hex = hexStr
             if (hex.isNullOrEmpty()) return Color(0f, 0f, 0f, 1f)
             if (hex.startsWith("#")) hex = hex.substring(1)
-            val `val` = hex.toLong(16)
-            val r = (`val` shr 16 and 0xFF).toFloat() / 255f
-            val g = (`val` shr 8 and 0xFF).toFloat() / 255f
-            val b = (`val` and 0xFF).toFloat() / 255f
-            return Color(r, g, b, 1f)
+            val colorValue = hex.toLong(16)
+            val red = (colorValue shr 16 and 0xFF).toFloat() / 255f
+            val green = (colorValue shr 8 and 0xFF).toFloat() / 255f
+            val blue = (colorValue and 0xFF).toFloat() / 255f
+            return Color(red, green, blue, 1f)
         }
 
         private fun resolveBlockType(textureName: String?): BlockType {
             if (textureName != null) {
-                for (t in BlockType.entries) {
-                    if (t.textureName == textureName) return t
+                for (blockType in BlockType.entries) {
+                    if (blockType.textureName == textureName) return blockType
                 }
             }
             return BlockType.DEFAULT
@@ -246,9 +247,9 @@ class GameWorld : Tickable {
         colors.backgroundColor.set(bgColor)
         colors.groundColor.set(groundColor)
 
-        for (e in data.objects) {
-            val rx = e.x - startScrolled
-            spawnObject(e, rx, startScrolled)
+        for (objectEntry in data.objects) {
+            val renderedX = objectEntry.x - startScrolled
+            spawnObject(objectEntry, renderedX, startScrolled)
         }
 
         levelEndX = data.getLevelEndX()
@@ -278,20 +279,21 @@ class GameWorld : Tickable {
     private fun calculateUpperDeathY(data: LevelData): Float {
         var highestObjectTop = groundY
 
-        for (e in data.objects) {
-            if (Registries.TRIGGERS.has(e.type)) continue
+        for (objectEntry in data.objects) {
+            if (Registries.TRIGGERS.has(objectEntry.type)) continue
 
             val objectHeight = when {
-                Registries.PORTALS.has(e.type) -> {
-                    val snappedRotation = (Math.round(e.rotation / 90f) * 90 % 360 + 360) % 360
+                Registries.PORTALS.has(objectEntry.type) -> {
+                    val snappedRotation =
+                        (Math.round(objectEntry.rotation / 90f) * 90 % 360 + 360) % 360
                     if (snappedRotation == 90 || snappedRotation == 270) 100f else 250f
                 }
-                Registries.ORBS.has(e.type) -> 110f
-                e.type == "spike" || e.type == "half_spike" -> 100f
-                else -> e.size
+                Registries.ORBS.has(objectEntry.type) -> 110f
+                objectEntry.type == "spike" || objectEntry.type == "half_spike" -> 100f
+                else -> objectEntry.size
             }
 
-            highestObjectTop = maxOf(highestObjectTop, e.y + objectHeight)
+            highestObjectTop = maxOf(highestObjectTop, objectEntry.y + objectHeight)
         }
 
         return highestObjectTop + UPPER_DEATH_MARGIN_BLOCKS * GameConstants.Editor.GRID_SIZE
@@ -327,72 +329,59 @@ class GameWorld : Tickable {
     private fun spawnHazard(e: LevelData.ObjectEntry, rx: Float) {
         when (e.type) {
             "spike" -> {
-                val s = pools.obtainSpike().init(rx, e.y, e.rotation)
-                hazards.add(s)
+                val spike = pools.obtainSpike().init(rx, e.y, e.rotation)
+                hazards.add(spike)
             }
 
             "half_spike" -> {
-                val hs = pools.obtainHalfSpike().init(rx, e.y, e.rotation)
-                hazards.add(hs)
+                val halfSpike = pools.obtainHalfSpike().init(rx, e.y, e.rotation)
+                hazards.add(halfSpike)
             }
 
             "saw_blade" -> {
-                val sb = pools.obtainSawBlade().init(rx, e.y, e.size, e.rotation)
-                hazards.add(sb)
+                val sawBlade = pools.obtainSawBlade().init(rx, e.y, e.size, e.rotation)
+                hazards.add(sawBlade)
             }
         }
     }
 
     private fun spawnPortal(e: LevelData.ObjectEntry, rx: Float) {
-        var p: AbstractPortal? = null
-        when (e.type) {
-            "cube_portal" -> {
-                p = pools.obtainCubePortal()
-            }
-
-            "ship_portal" -> {
-                p = pools.obtainShipPortal()
-            }
-
-            "gravity_portal" -> {
-                p = pools.obtainGravityPortal()
-            }
-
-            "mini_portal" -> {
-                p = pools.obtainMiniPortal()
-            }
-        }
-        if (p != null) {
-            p.init(rx, e.y, e.rotation)
-            portals.add(p)
-        }
+        val portal = when (e.type) {
+            "cube_portal" -> pools.obtainCubePortal()
+            "ship_portal" -> pools.obtainShipPortal()
+            "gravity_portal" -> pools.obtainGravityPortal()
+            "mini_portal" -> pools.obtainMiniPortal()
+            else -> null
+        } ?: return
+        portal.init(rx, e.y, e.rotation)
+        portals.add(portal)
     }
 
     private fun spawnOrb(e: LevelData.ObjectEntry, rx: Float) {
         var orb: AbstractOrb? = null
         when (e.type) {
             "yellow_orb" -> {
-                val o = pools.obtainYellowOrb(); o.init(rx, e.y); orb = o
+                orb = pools.obtainYellowOrb().init(rx, e.y)
             }
 
             "blue_orb" -> {
-                val o = pools.obtainBlueOrb(); o.init(rx, e.y); orb = o
+                orb = pools.obtainBlueOrb().init(rx, e.y)
             }
 
             "pink_orb" -> {
-                val o = pools.obtainPinkOrb(); o.init(rx, e.y); orb = o
+                orb = pools.obtainPinkOrb().init(rx, e.y)
             }
 
             "red_orb" -> {
-                val o = pools.obtainRedOrb(); o.init(rx, e.y); orb = o
+                orb = pools.obtainRedOrb().init(rx, e.y)
             }
 
             "black_orb" -> {
-                val o = pools.obtainBlackOrb(); o.init(rx, e.y); orb = o
+                orb = pools.obtainBlackOrb().init(rx, e.y)
             }
 
             "green_orb" -> {
-                val o = pools.obtainGreenOrb(); o.init(rx, e.y); orb = o
+                orb = pools.obtainGreenOrb().init(rx, e.y)
             }
         }
         if (orb != null) orbs.add(orb)
@@ -402,27 +391,27 @@ class GameWorld : Tickable {
         var pad: AbstractPad? = null
         when (e.type) {
             "yellow_pad" -> {
-                val p = pools.obtainYellowPad(); p.init(rx, e.y, e.rotation); pad = p
+                pad = pools.obtainYellowPad().init(rx, e.y, e.rotation)
             }
 
             "blue_pad" -> {
-                val p = pools.obtainBluePad(); p.init(rx, e.y, e.rotation); pad = p
+                pad = pools.obtainBluePad().init(rx, e.y, e.rotation)
             }
 
             "pink_pad" -> {
-                val p = pools.obtainPinkPad(); p.init(rx, e.y, e.rotation); pad = p
+                pad = pools.obtainPinkPad().init(rx, e.y, e.rotation)
             }
 
             "red_pad" -> {
-                val p = pools.obtainRedPad(); p.init(rx, e.y, e.rotation); pad = p
+                pad = pools.obtainRedPad().init(rx, e.y, e.rotation)
             }
 
             "black_pad" -> {
-                val p = pools.obtainBlackPad(); p.init(rx, e.y, e.rotation); pad = p
+                pad = pools.obtainBlackPad().init(rx, e.y, e.rotation)
             }
 
             "green_pad" -> {
-                val p = pools.obtainGreenPad(); p.init(rx, e.y, e.rotation); pad = p
+                pad = pools.obtainGreenPad().init(rx, e.y, e.rotation)
             }
         }
         if (pad != null) pads.add(pad)
@@ -476,12 +465,12 @@ class GameWorld : Tickable {
     fun update(delta: Float) {
         if (isPlayerDead || isLevelComplete) return
 
-        val p = player ?: return
-        p.update(delta, maxOf(groundY, boundaryBottom), boundaryTop)
+        val currentPlayer = player ?: return
+        currentPlayer.update(delta, maxOf(groundY, boundaryBottom), boundaryTop)
 
-        val lowerKillZoneMargin = p.height + 700f
+        val lowerKillZoneMargin = currentPlayer.height + 700f
 
-        if (p.y < -lowerKillZoneMargin || p.y > upperDeathY) {
+        if (currentPlayer.y < -lowerKillZoneMargin || currentPlayer.y > upperDeathY) {
             playerDied()
             return
         }
@@ -492,9 +481,9 @@ class GameWorld : Tickable {
         for (i in orbCull until orbs.size) orbs.get(i).updatePosition(scrollSpeed, delta)
         for (i in padCull until pads.size) pads.get(i).updatePosition(scrollSpeed, delta)
 
-        val px = p.x
-        val rangeMin = px - 600f
-        val rangeMax = px + COLLISION_LOOKAHEAD
+        val playerX = currentPlayer.x
+        val rangeMin = playerX - 600f
+        val rangeMax = playerX + COLLISION_LOOKAHEAD
 
         if (blockStart < blockCull) blockStart = blockCull
         if (hazardStart < hazardCull) hazardStart = hazardCull
@@ -508,29 +497,31 @@ class GameWorld : Tickable {
         while (padStart < pads.size && pads.get(padStart).x + pads.get(padStart).width < rangeMin) padStart++
 
         for (i in blockStart until blocks.size) {
-            val b = blocks.get(i)
-            if (b.x > rangeMax) break
-            b.tryTouch(p)
+            val block = blocks.get(i)
+            if (block.x > rangeMax) break
+            block.tryTouch(currentPlayer)
         }
 
         for (i in portalStart until portals.size) {
             val portal = portals.get(i)
             if (portal.x > rangeMax) break
-            if (!portal.tryTouch(p)) continue
+            if (!portal.tryTouch(currentPlayer)) continue
             handlePortalActivation(portal)
         }
 
         for (i in hazardStart until hazards.size) {
-            val h = hazards.get(i)
-            if (h.x > rangeMax) break
-            h.tryTouch(p)
+            val hazard = hazards.get(i)
+            if (hazard.x > rangeMax) break
+            hazard.tryTouch(currentPlayer)
         }
 
         for (i in orbStart until orbs.size) {
             val orb = orbs.get(i)
             if (orb.x > rangeMax) break
-            if (orb.bounds.overlaps(p.bounds)) {
-                if (p.isJumpHeld() && !p.isJumpConsumed()) orb.tryActivate(p)
+            if (orb.bounds.overlaps(currentPlayer.bounds)) {
+                if (currentPlayer.isJumpHeld() && !currentPlayer.isJumpConsumed()) {
+                    orb.tryActivate(currentPlayer)
+                }
             } else {
                 orb.resetOverlap()
             }
@@ -539,23 +530,23 @@ class GameWorld : Tickable {
         for (i in padStart until pads.size) {
             val pad = pads.get(i)
             if (pad.x > rangeMax) break
-            pad.tryTouch(p)
+            pad.tryTouch(currentPlayer)
         }
 
-        p.tryJump()
+        currentPlayer.tryJump()
 
         worldScrolled += scrollSpeed * delta
-        p.worldX = GameConstants.Player.START_X + worldScrolled
+        currentPlayer.worldX = GameConstants.Player.START_X + worldScrolled
 
         while (triggerIdx < triggers.size) {
-            val t = triggers.get(triggerIdx)
-            if (p.worldX < t.worldX) break
-            t.fired = true
-            t.fire(this)
+            val trigger = triggers.get(triggerIdx)
+            if (currentPlayer.worldX < trigger.worldX) break
+            trigger.fired = true
+            trigger.fire(this)
             triggerIdx++
         }
 
-        p.postUpdate()
+        currentPlayer.postUpdate()
 
         if (levelEndX > 0 && worldScrolled >= levelEndX && postEndTimer < 0) postEndTimer = 0f
         if (postEndTimer >= 0) {
@@ -568,23 +559,23 @@ class GameWorld : Tickable {
     }
 
     private fun handlePortalActivation(portal: AbstractPortal) {
-        val p = player ?: return
+        val currentPlayer = player ?: return
         if (portal is GravityPortal) {
-            p.setGravityFlipped(!p.isGravityFlipped())
+            currentPlayer.setGravityFlipped(!currentPlayer.isGravityFlipped())
         } else if (portal is MiniPortal) {
-            p.setMini(!p.isMini())
+            currentPlayer.setMini(!currentPlayer.isMini())
         } else {
             var next: AbstractPlayer? = null
             if (portal is CubePortal) {
-                next = obtainPlayer("cube").init(p.x, p.y)
+                next = obtainPlayer("cube").init(currentPlayer.x, currentPlayer.y)
             } else if (portal is ShipPortal) {
-                next = obtainPlayer("ship").init(p.x, p.y)
+                next = obtainPlayer("ship").init(currentPlayer.x, currentPlayer.y)
             }
             if (next != null) {
                 next.setWorld(this)
-                next.copyState(p)
-                next.x = p.x
-                next.setY(p.y)
+                next.copyState(currentPlayer)
+                next.x = currentPlayer.x
+                next.setY(currentPlayer.y)
                 next.lastPortalCenterY = portal.y + portal.height / 2f
                 next.lastPortalBottomY = portal.y
                 freePlayer()
@@ -594,20 +585,20 @@ class GameWorld : Tickable {
     }
 
     fun cull() {
-        val p = player ?: return
-        val threshold = p.x - 1000f
+        val currentPlayer = player ?: return
+        val threshold = currentPlayer.x - 1000f
 
         while (blockCull < blocks.size) {
-            val b = blocks.get(blockCull)
-            if (b.x + b.width >= threshold - 400) break
-            pools.freeBlock(b)
+            val block = blocks.get(blockCull)
+            if (block.x + block.width >= threshold - 400) break
+            pools.freeBlock(block)
             blockCull++
         }
 
         while (hazardCull < hazards.size) {
-            val h = hazards.get(hazardCull)
-            if (h.x + h.width >= threshold) break
-            pools.freeHazard(h)
+            val hazard = hazards.get(hazardCull)
+            if (hazard.x + hazard.width >= threshold) break
+            pools.freeHazard(hazard)
             hazardCull++
         }
 
@@ -619,9 +610,9 @@ class GameWorld : Tickable {
         }
 
         while (orbCull < orbs.size) {
-            val o = orbs.get(orbCull)
-            if (o.x + o.width >= threshold) break
-            pools.freeOrb(o)
+            val orb = orbs.get(orbCull)
+            if (orb.x + orb.width >= threshold) break
+            pools.freeOrb(orb)
             orbCull++
         }
 
@@ -643,9 +634,9 @@ class GameWorld : Tickable {
 
     private fun spawnDeathBursts() {
         deathBursts.clear()
-        val p = player ?: return
-        val centerX = p.x + p.width / 2f
-        val centerY = p.y + p.height / 2f
+        val currentPlayer = player ?: return
+        val centerX = currentPlayer.x + currentPlayer.width / 2f
+        val centerY = currentPlayer.y + currentPlayer.height / 2f
         val burstCount = 3
         for (i in 0 until burstCount) {
             deathBursts.add(
@@ -675,11 +666,16 @@ class GameWorld : Tickable {
             blocks, hazards, portals, orbs, pads,
             blockCull, hazardCull, portalCull, orbCull, padCull
         )
-        blockCull = 0; blockStart = 0
-        hazardCull = 0; hazardStart = 0
-        portalCull = 0; portalStart = 0
-        orbCull = 0; orbStart = 0
-        padCull = 0; padStart = 0
+        blockCull = 0
+        blockStart = 0
+        hazardCull = 0
+        hazardStart = 0
+        portalCull = 0
+        portalStart = 0
+        orbCull = 0
+        orbStart = 0
+        padCull = 0
+        padStart = 0
     }
 
     val progress: Float

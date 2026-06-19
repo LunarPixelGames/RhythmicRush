@@ -3,15 +3,7 @@ package io.github.msameer0.rhythmicrush.ui
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 
-/**
- * Shared visual language for menu and gameplay overlays.
- *
- * Optional font assets:
- * assets/fonts/Orbitron-Bold.ttf
- * assets/fonts/Orbitron-SemiBold.ttf
- * assets/fonts/Rajdhani-Medium.ttf
- * assets/fonts/Rajdhani-SemiBold.ttf
- */
+/** Provides shared colors and shape helpers for game interfaces. */
 object UI {
     val BACKGROUND = Color.valueOf("121323")
     val BACKGROUND_SECONDARY = Color.valueOf("171827")
@@ -37,14 +29,24 @@ object UI {
         h: Float,
         radius: Float
     ) {
-        val r = radius.coerceAtMost(minOf(w, h) / 2f)
-        shapes.rect(x + r, y, w - r * 2f, h)
-        shapes.rect(x, y + r, r, h - r * 2f)
-        shapes.rect(x + w - r, y + r, r, h - r * 2f)
-        shapes.circle(x + r, y + r, r, 20)
-        shapes.circle(x + w - r, y + r, r, 20)
-        shapes.circle(x + r, y + h - r, r, 20)
-        shapes.circle(x + w - r, y + h - r, r, 20)
+        val cornerRadius = radius.coerceAtMost(minOf(w, h) / 2f)
+        shapes.rect(x + cornerRadius, y, w - cornerRadius * 2f, h)
+        shapes.rect(x, y + cornerRadius, cornerRadius, h - cornerRadius * 2f)
+        shapes.rect(
+            x + w - cornerRadius,
+            y + cornerRadius,
+            cornerRadius,
+            h - cornerRadius * 2f
+        )
+        shapes.circle(x + cornerRadius, y + cornerRadius, cornerRadius, 20)
+        shapes.circle(x + w - cornerRadius, y + cornerRadius, cornerRadius, 20)
+        shapes.circle(x + cornerRadius, y + h - cornerRadius, cornerRadius, 20)
+        shapes.circle(
+            x + w - cornerRadius,
+            y + h - cornerRadius,
+            cornerRadius,
+            20
+        )
     }
 
     fun filled(

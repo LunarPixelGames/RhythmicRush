@@ -77,7 +77,6 @@ abstract class AbstractPortal : Rotatable {
         if (rotSnapped == 90 || rotSnapped == 270) {
             val cx = x + width / 2f
             val cy = y + height / 2f
-            // Swap width and height and offset by center
             bounds.set(cx - height / 2f, cy - width / 2f, height, width)
         } else {
             bounds.set(x, y, width, height)

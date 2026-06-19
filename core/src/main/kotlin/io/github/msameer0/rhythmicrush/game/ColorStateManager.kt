@@ -92,24 +92,36 @@ class ColorStateManager {
     fun update(delta: Float) {
         if (bgFade.active) {
             bgFade.elapsed += delta
-            val t = if (bgFade.duration <= 0f) 1f else min(bgFade.elapsed / bgFade.duration, 1f)
+            val progress =
+                if (bgFade.duration <= 0f) {
+                    1f
+                } else {
+                    min(bgFade.elapsed / bgFade.duration, 1f)
+                }
             baseBgColor.set(
-                lerp(bgFade.from.r, bgFade.to.r, t),
-                lerp(bgFade.from.g, bgFade.to.g, t),
-                lerp(bgFade.from.b, bgFade.to.b, t), 1f
+                lerp(bgFade.from.r, bgFade.to.r, progress),
+                lerp(bgFade.from.g, bgFade.to.g, progress),
+                lerp(bgFade.from.b, bgFade.to.b, progress),
+                1f
             )
-            if (t >= 1f) bgFade.active = false
+            if (progress >= 1f) bgFade.active = false
         }
 
         if (groundFade.active) {
             groundFade.elapsed += delta
-            val t = if (groundFade.duration <= 0f) 1f else min(groundFade.elapsed / groundFade.duration, 1f)
+            val progress =
+                if (groundFade.duration <= 0f) {
+                    1f
+                } else {
+                    min(groundFade.elapsed / groundFade.duration, 1f)
+                }
             baseGroundColor.set(
-                lerp(groundFade.from.r, groundFade.to.r, t),
-                lerp(groundFade.from.g, groundFade.to.g, t),
-                lerp(groundFade.from.b, groundFade.to.b, t), 1f
+                lerp(groundFade.from.r, groundFade.to.r, progress),
+                lerp(groundFade.from.g, groundFade.to.g, progress),
+                lerp(groundFade.from.b, groundFade.to.b, progress),
+                1f
             )
-            if (t >= 1f) groundFade.active = false
+            if (progress >= 1f) groundFade.active = false
         }
 
         bgPulse.update(delta)

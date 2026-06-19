@@ -14,6 +14,6 @@ enum class BlockType(
         6,
         "right_default"
     ),
-    DEFAULT_NO_OUTLINE(7, "default_no_outline");
+    DEFAULT_NO_OUTLINE(7, "default_no_outline")
 
 }

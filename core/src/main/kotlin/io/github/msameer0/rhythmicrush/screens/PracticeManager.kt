@@ -14,17 +14,18 @@ class PracticeManager(private val world: GameWorld) {
     private val checkpointOutlineColor = Color(0.1f, 0.4f, 0.1f, 0.8f)
     private val checkpointColor = Color(0.6f, 1.0f, 0.2f, 0.9f)
 
+    /** Captures the world and player values restored by a practice checkpoint. */
     private class CheckpointState {
         var worldScrolled = 0f
         var playerX = 0f
         var playerWorldX = 0f
         var playerType: AbstractPlayer.PlayerType? = null
         var playerY = 0f
-        var playerVY = 0f
+        var playerVelocityY = 0f
         var gravityFlipped = false
         var mini = false
         var slopeRotation = 0f
-        var triggerIdx = 0
+        var triggerIndex = 0
         val baseBgColor = Color()
         val baseGroundColor = Color()
         val backgroundColor = Color()
@@ -34,28 +35,28 @@ class PracticeManager(private val world: GameWorld) {
     private val checkpoints = Array<CheckpointState>()
 
     fun placeCheckpoint() {
-        val s = CheckpointState()
-        s.worldScrolled = world.worldScrolled
+        val checkpoint = CheckpointState()
+        checkpoint.worldScrolled = world.worldScrolled
 
-        val p = world.player
-        if (p != null) {
-            s.playerX = p.x
-            s.playerWorldX = p.worldX
-            s.playerType = p.getType()
-            s.playerY = p.y
-            s.playerVY = p.velocityY
-            s.gravityFlipped = p.isGravityFlipped()
-            s.mini = p.isMini()
-            s.slopeRotation = p.getCurrentSlopeRotation()
+        val player = world.player
+        if (player != null) {
+            checkpoint.playerX = player.x
+            checkpoint.playerWorldX = player.worldX
+            checkpoint.playerType = player.getType()
+            checkpoint.playerY = player.y
+            checkpoint.playerVelocityY = player.velocityY
+            checkpoint.gravityFlipped = player.isGravityFlipped()
+            checkpoint.mini = player.isMini()
+            checkpoint.slopeRotation = player.getCurrentSlopeRotation()
         }
-        s.triggerIdx = world.triggerIdx
+        checkpoint.triggerIndex = world.triggerIdx
 
-        s.baseBgColor.set(world.baseBgColor)
-        s.baseGroundColor.set(world.baseGroundColor)
-        s.backgroundColor.set(world.backgroundColor)
-        s.groundColor.set(world.groundColor)
+        checkpoint.baseBgColor.set(world.baseBgColor)
+        checkpoint.baseGroundColor.set(world.baseGroundColor)
+        checkpoint.backgroundColor.set(world.backgroundColor)
+        checkpoint.groundColor.set(world.groundColor)
 
-        checkpoints.add(s)
+        checkpoints.add(checkpoint)
     }
 
     fun removeLastCheckpoint(): Boolean {
@@ -69,45 +70,51 @@ class PracticeManager(private val world: GameWorld) {
 
     fun applyLatestCheckpoint(): Float {
         if (checkpoints.size == 0) return 0f
-        val s = checkpoints.peek()
+        val checkpoint = checkpoints.peek()
 
-        world.fastForwardTo(s.worldScrolled)
-        world.worldScrolled = s.worldScrolled
-        world.baseBgColor = s.baseBgColor
-        world.baseGroundColor = s.baseGroundColor
-        world.backgroundColor = s.backgroundColor
-        world.groundColor = s.groundColor
-        world.triggerIdx = s.triggerIdx
+        world.fastForwardTo(checkpoint.worldScrolled)
+        world.worldScrolled = checkpoint.worldScrolled
+        world.baseBgColor = checkpoint.baseBgColor
+        world.baseGroundColor = checkpoint.baseGroundColor
+        world.backgroundColor = checkpoint.backgroundColor
+        world.groundColor = checkpoint.groundColor
+        world.triggerIdx = checkpoint.triggerIndex
 
-        val p = world.obtainPlayer(
-            if (s.playerType == AbstractPlayer.PlayerType.CUBE) "cube" else "ship"
+        val player = world.obtainPlayer(
+            if (checkpoint.playerType == AbstractPlayer.PlayerType.CUBE) "cube" else "ship"
         )
-        p.init(s.playerX, s.playerY, s.playerVY, false)
-        p.worldX = s.playerWorldX
-        p.setGravityFlipped(s.gravityFlipped)
-        p.setMini(s.mini)
-        p.setCurrentSlopeRotation(s.slopeRotation)
-        world.setPlayer(p)
+        player.init(
+            checkpoint.playerX,
+            checkpoint.playerY,
+            checkpoint.playerVelocityY,
+            false
+        )
+        player.worldX = checkpoint.playerWorldX
+        player.setGravityFlipped(checkpoint.gravityFlipped)
+        player.setMini(checkpoint.mini)
+        player.setCurrentSlopeRotation(checkpoint.slopeRotation)
+        world.setPlayer(player)
 
-        return s.worldScrolled / world.scrollSpeed
+        return checkpoint.worldScrolled / world.scrollSpeed
     }
 
     fun drawCheckpoints(shapes: ShapeRenderer, camera: OrthographicCamera) {
         if (checkpoints.size == 0) return
 
-        val scroll = world.worldScrolled
-        val hw = 12f
-        val hh = 18f
+        val currentScroll = world.worldScrolled
+        val halfWidth = 12f
+        val halfHeight = 18f
 
-        for (s in checkpoints) {
-            val dx = s.playerX - (scroll - s.worldScrolled)
-            val dy = s.playerY + 25f
+        for (checkpoint in checkpoints) {
+            val drawX =
+                checkpoint.playerX - (currentScroll - checkpoint.worldScrolled)
+            val drawY = checkpoint.playerY + 25f
 
             shapes.color = checkpointOutlineColor
-            drawDiamond(shapes, dx, dy, hw + 2f, hh + 2f)
+            drawDiamond(shapes, drawX, drawY, halfWidth + 2f, halfHeight + 2f)
 
             shapes.color = checkpointColor
-            drawDiamond(shapes, dx, dy, hw, hh)
+            drawDiamond(shapes, drawX, drawY, halfWidth, halfHeight)
         }
     }
 
@@ -142,12 +149,12 @@ class PracticeManager(private val world: GameWorld) {
         shapes.rect(minusX, minusY, btnSize, btnSize)
     }
 
-    fun hitsPlus(tx: Float, ty: Float): Boolean {
-        return hits(tx, ty, plusX, plusY, btnSize, btnSize)
+    fun hitsPlus(touchX: Float, touchY: Float): Boolean {
+        return hits(touchX, touchY, plusX, plusY, btnSize, btnSize)
     }
 
-    fun hitsMinus(tx: Float, ty: Float): Boolean {
-        return hits(tx, ty, minusX, minusY, btnSize, btnSize)
+    fun hitsMinus(touchX: Float, touchY: Float): Boolean {
+        return hits(touchX, touchY, minusX, minusY, btnSize, btnSize)
     }
 
     companion object {
@@ -156,8 +163,15 @@ class PracticeManager(private val world: GameWorld) {
             shapes.triangle(x, y - hh, x - hw, y, x + hw, y)
         }
 
-        private fun hits(tx: Float, ty: Float, x: Float, y: Float, w: Float, h: Float): Boolean {
-            return tx in x..(x + w) && ty in y..(y + h)
+        private fun hits(
+            touchX: Float,
+            touchY: Float,
+            x: Float,
+            y: Float,
+            width: Float,
+            height: Float
+        ): Boolean {
+            return touchX in x..(x + width) && touchY in y..(y + height)
         }
     }
 }
