@@ -17,6 +17,7 @@ import io.github.msameer0.rhythmicrush.RhythmicRushGame
 import io.github.msameer0.rhythmicrush.font.FontManager
 import io.github.msameer0.rhythmicrush.settings.SettingsManager
 import io.github.msameer0.rhythmicrush.ui.AnimatedButton
+import io.github.msameer0.rhythmicrush.ui.NeonUI
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
@@ -25,7 +26,10 @@ import kotlin.math.round
 /**
  * The main menu screen providing navigation to level selection, settings, and information.
  */
-class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
+class MainMenuScreen @JvmOverloads constructor(
+    game: RhythmicRushGame,
+    private val startInSettings: Boolean = false
+) : AbstractScreen(game) {
 
     private lateinit var title: TextureRegion
     private lateinit var startButton: TextureRegion
@@ -50,6 +54,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
     private var infoOpen = false
     private lateinit var shapes: ShapeRenderer
     private lateinit var font: BitmapFont
+    private lateinit var headingFont: BitmapFont
     private val layout = GlyphLayout()
 
     companion object {
@@ -58,35 +63,37 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         private const val CAT_INTERFACE = 2
         private const val CAT_GRAPHICS = 3
         private const val CAT_COUNT = 4
-        private val CAT_NAMES = arrayOf("Audio", "Gameplay", "Interface", "Graphics")
+        private val CAT_NAMES = arrayOf("Audio", "Gameplay", "Controls", "Video")
+        private val TAB_CATEGORIES = intArrayOf(CAT_GAMEPLAY, CAT_INTERFACE, CAT_AUDIO, CAT_GRAPHICS)
+        private val TAB_NAMES = arrayOf("Gameplay", "Controls", "Audio", "Video")
 
         private const val INFO_TAB_HOWTOPLAY = 0
-        private const val INFO_TAB_CONTROLS = 1
-        private const val INFO_TAB_CREDITS_A = 2
-        private const val INFO_TAB_CREDITS_B = 3
-        private const val INFO_TAB_SOCIALS = 4
-        private const val INFO_TAB_COUNT = 5
-        private val INFO_TAB_NAMES = arrayOf("How to Play", "Controls", "Credits I", "Credits II", "Socials")
+        private const val INFO_TAB_CREDITS_A = 1
+        private const val INFO_TAB_CREDITS_B = 2
+        private const val INFO_TAB_SOCIALS = 3
+        private const val INFO_TAB_COUNT = 4
+        private val INFO_TAB_NAMES = arrayOf("How to Play", "Credits I", "Credits II", "Socials")
 
-        private const val MAX_ROWS_PER_PAGE = 5
+        // Four rows leaves a dedicated footer band for navigation dots at 720p and 1080p.
+        private const val MAX_ROWS_PER_PAGE = 4
         private const val PANEL_HEIGHT_FRACTION = 0.88f
 
-        private val COL_OVERLAY = Color(0f, 0f, 0f, 0.62f)
-        private val COL_PANEL = Color(0.13f, 0.13f, 0.19f, 1f)
+        private val COL_OVERLAY = NeonUI.OVERLAY
+        private val COL_PANEL = NeonUI.PANEL
         private val COL_PANEL_SHADOW = Color(0f, 0f, 0f, 0.22f)
-        private val COL_LABEL = Color(1f, 1f, 1f, 0.90f)
-        private val COL_DIM = Color(1f, 1f, 1f, 0.45f)
-        private val COL_ON = Color(0.35f, 0.85f, 0.55f, 1f)
+        private val COL_LABEL = NeonUI.TEXT
+        private val COL_DIM = NeonUI.TEXT_SECONDARY
+        private val COL_ON = NeonUI.LIME
         private val COL_OFF = Color(0.50f, 0.50f, 0.55f, 1f)
         private val COL_TRACK = Color(0.28f, 0.28f, 0.35f, 1f)
-        private val COL_FILL = Color(0.35f, 0.65f, 1.00f, 1f)
+        private val COL_FILL = NeonUI.BLUE
         private val COL_THUMB = Color(1f, 1f, 1f, 1f)
-        private val COL_HEADING = Color(1f, 0.85f, 0.35f, 1f)
-        private val COL_TAB_ACT = Color(0.35f, 0.65f, 1.00f, 1f)
+        private val COL_HEADING = NeonUI.YELLOW
+        private val COL_TAB_ACT = NeonUI.LIME
         private val COL_TAB_INACT = Color(0.35f, 0.35f, 0.45f, 1f)
         private val COL_INPUT_BG = Color(0.18f, 0.18f, 0.26f, 1f)
-        private val COL_INPUT_BD = Color(0.35f, 0.65f, 1.00f, 1f)
-        private val COL_DOT_ACT = Color(0.35f, 0.65f, 1.00f, 1f)
+        private val COL_INPUT_BD = NeonUI.BLUE
+        private val COL_DOT_ACT = NeonUI.LIME
         private val COL_DOT_INACT = Color(0.35f, 0.35f, 0.45f, 1f)
 
         private fun hits(t: Vector2, x: Float, y: Float, w: Float, h: Float): Boolean {
@@ -139,27 +146,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         InfoLine("Geometry Bounce by DJ Nate", "https://www.newgrounds.com/audio/listen/770546")
     )
 
-    private val howToLines = arrayOf(
-        "Rhythmic Rush is built around committed timing.",
-        "Read the lane early and jump before the obstacle reaches you.",
-        "The level camera and color changes also telegraph upcoming pressure.",
-        "Short clicks are safer than holding unless you are in ship mode."
-    )
-
-    private val controlLines = arrayOf(
-        "Space / Click",
-        "Jump as cube, rise as ship",
-        "",
-        "Esc",
-        "Pause gameplay or close menu overlays",
-        "",
-        "R",
-        "Restart the level",
-        "",
-        "Practice: Z / X",
-        "Place or remove checkpoint"
-    )
-    private val controlEntries = arrayOf(
+    private val howToEntries = arrayOf(
         Pair("Space / Click", "Jump as cube, rise as ship"),
         Pair("Esc", "Pause gameplay or close menu overlays"),
         Pair("R", "Restart the level"),
@@ -209,7 +196,8 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         )
 
         shapes = ShapeRenderer()
-        font = game.fontManager.get(FontManager.SIZE_LARGE)
+        font = game.fontManager.getBody(FontManager.SIZE_LARGE)
+        headingFont = game.fontManager.getTitle(FontManager.SIZE_XLARGE)
 
         btnPlay =
             AnimatedButton(startButton, 0f, 0f, 0f, 0f) { game.screen = LevelSelectScreen(game) }
@@ -218,6 +206,8 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         btnOverlayBack = AnimatedButton(backArrow, 0f, 0f, 0f, 0f, null)
         btnOverlayLeft = AnimatedButton(null, 0f, 0f, 0f, 0f, null)
         btnOverlayRight = AnimatedButton(null, 0f, 0f, 0f, 0f, null)
+        settingsOpen = startInSettings
+        if (startInSettings) currentSettingsPage = 0
 
         if (game.settingsManager.menuMusicEnabled) {
             game.soundManager.playMenuMusic()
@@ -331,12 +321,13 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             settingsH
         )
 
-        panelW = min(vw * 0.74f, 1380f)
-        val targetH = min(vh * 0.82f, 900f)
+        panelW = min(vw * 0.80f, 1460f)
+        val targetH = min(vh * 0.86f, 920f)
         panelPadX = panelW * 0.07f
         panelPadY = targetH * 0.065f
-        panelPadT = targetH * 0.15f
-        panelPadB = targetH * 0.12f
+        // Header includes both the title and tab strip; footer is reserved for page dots/hints.
+        panelPadT = targetH * 0.23f
+        panelPadB = targetH * 0.13f
         rowStep = (targetH - panelPadT - panelPadB) / MAX_ROWS_PER_PAGE
         sliderTrackW = panelW * 0.28f
         val scaleRef = targetH / 760f
@@ -352,17 +343,17 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         panelX = vw / 2f - panelW / 2f
         panelY = vh / 2f - panelH / 2f
 
-        backW = 78f
-        backH = 78f
-        backX = panelX + panelPadX - 8f
-        backY = panelY + panelH - panelPadY - backH + 2f
+        backW = min(vw * 0.065f, vh * 0.105f)
+        backH = backW
+        backX = vw * 0.028f
+        backY = vh - backH - vh * 0.04f
 
         headerY = panelY + panelH - panelPadY - 18f
         contentTopY = panelY + panelH - panelPadT
         footerY = panelY + panelPadB * 0.78f
         footerDotY = panelY + panelPadB * 0.28f
         arrowSize = 52f
-        rowStartY = contentTopY
+        rowStartY = contentTopY - rowStep * 0.55f
         rowLabelX = panelX + panelPadX + arrowSize + 28f
         controlRightX = panelX + panelW - panelPadX - arrowSize - 28f
 
@@ -432,24 +423,27 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         }
         game.batch.draw(backArrow, backX, backY, backW, backH)
         game.batch.end()
-        shapes.begin(ShapeRenderer.ShapeType.Filled)
-        shapes.color = Color(COL_DIM.r, COL_DIM.g, COL_DIM.b, 0.16f)
-        val dividerStartX = backX + backW + 16f
-        shapes.rect(dividerStartX, contentTopY + 18f, panelX + panelW - panelPadX - dividerStartX, 2f)
-        shapes.end()
+        drawSettingsTabs()
         drawSettingsHeading()
         drawSettingsRows(getPageRows(currentSettingsPage))
         drawSettingsDots()
+        if (settingsPageToCatSub(currentSettingsPage).first == CAT_AUDIO) {
+            game.batch.begin()
+            font.data.setScale(settingsFontScale * 0.56f)
+            val hint = "TIP  Adjust the audio settings to your preference."
+            layout.setText(font, hint)
+            drawTextWithShadow(font, hint, panelX + panelW / 2f - layout.width / 2f, footerY, NeonUI.TEXT_MUTED)
+            game.batch.end()
+        }
     }
 
     private fun drawSettingsHeading() {
         game.batch.begin()
-        font.data.setScale(settingsHeadingScale)
-        val (cat, _) = settingsPageToCatSub(currentSettingsPage)
-        val titleText = CAT_NAMES[cat]
-        layout.setText(font, titleText)
+        headingFont.data.setScale(settingsHeadingScale)
+        val titleText = "Settings"
+        layout.setText(headingFont, titleText)
         drawTextWithShadow(
-            font,
+            headingFont,
             titleText,
             (panelX + panelW / 2f) - (layout.width / 2f),
             headerY,
@@ -460,6 +454,39 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         drawArrow(arrowLeftX, arrowY, arrowSize, true)
         drawArrow(arrowRightX, arrowY, arrowSize, false)
     }
+
+    private fun drawSettingsTabs() {
+        val activeCat = settingsPageToCatSub(currentSettingsPage).first
+        val tabX = panelX + panelW * 0.16f
+        val tabW = panelW * 0.17f
+        val tabGap = panelW * 0.012f
+        val tabH = rowStep * 0.48f
+        val tabY = settingsTabY()
+        shapes.begin(ShapeRenderer.ShapeType.Filled)
+        for (i in TAB_CATEGORIES.indices) {
+            val x = tabX + i * (tabW + tabGap)
+            if (TAB_CATEGORIES[i] == activeCat) {
+                shapes.color = COL_TAB_ACT
+                shapes.rect(x + tabW * 0.12f, tabY, tabW * 0.76f, 3f)
+            }
+        }
+        shapes.end()
+        game.batch.begin()
+        font.data.setScale(settingsFontScale * 1.00f)
+        for (i in TAB_CATEGORIES.indices) {
+            val x = tabX + i * (tabW + tabGap)
+            layout.setText(font, TAB_NAMES[i].uppercase())
+            drawTextWithShadow(
+                font, TAB_NAMES[i].uppercase(),
+                x + tabW / 2f - layout.width / 2f,
+                tabY + tabH / 2f + layout.height / 2f,
+                if (TAB_CATEGORIES[i] == activeCat) NeonUI.LIME else NeonUI.TEXT_SECONDARY
+            )
+        }
+        game.batch.end()
+    }
+
+    private fun settingsTabY(): Float = contentTopY - rowStep * 0.10f
 
     private fun drawSettingsDots() {
         val total = totalSettingsPages()
@@ -494,6 +521,13 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
     private fun drawSettingsRows(rows: Array<SettingRow>) {
         val s = game.settingsManager
+        shapes.begin(ShapeRenderer.ShapeType.Filled)
+        for (i in 0 until rows.size) {
+            val ry = rowY(i)
+            shapes.color = Color(COL_DIM.r, COL_DIM.g, COL_DIM.b, 0.12f)
+            shapes.rect(rowLabelX, ry - rowStep * 0.40f, controlRightX - rowLabelX, 1.5f)
+        }
+        shapes.end()
         for (i in 0 until rows.size) {
             val row = rows.get(i)
             val ry = rowY(i)
@@ -511,7 +545,33 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
                 RowType.INT_FIELD -> drawIntFieldRow(ry, row.label, s.fpsCapValue, 45f)
             }
+            game.batch.begin()
+            font.data.setScale(settingsFontScale * 0.90f)
+            drawTextWithShadow(font, settingDescription(row.id), rowLabelX, ry - rowStep * 0.18f, NeonUI.TEXT_SECONDARY)
+            game.batch.end()
         }
+    }
+
+    private fun settingDescription(id: String): String = when (id) {
+        "menuMusic" -> "Enable or disable menu background music."
+        "volume" -> "Adjust the volume of background music."
+        "sfxVolume" -> "Adjust the volume of sound effects."
+        "deathEffect" -> "Show the impact animation after a failed attempt."
+        "hitboxes" -> "Display collision shapes while playing."
+        "hitboxesDeath" -> "Keep collision shapes visible after a crash."
+        "lockCursor" -> "Keep the pointer captured during gameplay."
+        "pulseOrbs" -> "Animate interactive orbs with the beat."
+        "showPercentage" -> "Display live completion percentage."
+        "showProgressBar" -> "Display the level progress track."
+        "showAttempts" -> "Show the current session attempt."
+        "showBest" -> "Show your saved personal best."
+        "practiceOpacity" -> "Adjust practice checkpoint control visibility."
+        "showFps" -> "Display the current frame rate."
+        "capFps" -> "Limit the maximum frame rate."
+        "fpsValue" -> "Choose the frame-rate limit."
+        "vsync" -> "Synchronize frames with the display."
+        "uiPadding" -> "Adjust HUD spacing from the screen edges."
+        else -> ""
     }
 
     private fun getToggleValue(id: String, s: SettingsManager): Boolean {
@@ -573,7 +633,13 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         val pct = "${round(value * 100f).toInt()}%"
         font.data.setScale(settingsFontScale * 0.77f)
         layout.setText(font, pct)
-        drawTextWithShadow(font, pct, trackX + trackW - layout.width, ry + layout.height / 2f + rowStep * 0.34f, COL_DIM)
+        drawTextWithShadow(
+            font,
+            pct,
+            controlRightX - layout.width,
+            ry + layout.height / 2f + rowStep * 0.28f,
+            COL_DIM
+        )
         game.batch.end()
     }
 
@@ -671,7 +737,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             if (fpsInputActive) confirmFpsInput(s) else closeSettings()
         }
         if (Gdx.input.isTouched && draggingSlider) {
-            val sliderX = controlRightX - sliderTrackW
+            val sliderX = settingsSliderX()
             val norm = MathUtils.clamp(
                 (unproject().x - sliderX) / sliderTrackW,
                 0f,
@@ -692,6 +758,18 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             if (draggingSlider) s.save(); draggingSlider = false; draggingSliderRow = -1
         }
         if (!Gdx.input.justTouched()) return
+
+        val tabX = panelX + panelW * 0.16f
+        val tabW = panelW * 0.17f
+        val tabGap = panelW * 0.012f
+        val tabH = rowStep * 0.48f
+        val tabY = settingsTabY()
+        for (i in TAB_CATEGORIES.indices) {
+            if (hits(t, tabX + i * (tabW + tabGap), tabY, tabW, tabH)) {
+                currentSettingsPage = firstPageForCategory(TAB_CATEGORIES[i])
+                return
+            }
+        }
 
         val pRows = getPageRows(currentSettingsPage)
         for (i in 0 until pRows.size) {
@@ -740,6 +818,12 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         currentSettingsPage = (currentSettingsPage + dir + total) % total
     }
 
+    private fun firstPageForCategory(category: Int): Int {
+        var page = 0
+        for (i in 0 until category) page += subPageCount(i)
+        return page
+    }
+
     private fun closeSettings() {
         settingsOpen = false
         btnOverlayBack.cancel()
@@ -763,7 +847,11 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         t.x >= controlRightX - rowStep * 0.9f && t.x <= controlRightX + 8f && t.y in (ry - rowStep * 0.3f)..(ry + rowStep * 0.3f)
 
     private fun hitSliderThumb(t: Vector2, ry: Float, v: Float): Boolean =
-        t.y in (ry - rowStep * 0.3f)..(ry + rowStep * 0.3f) && t.x in (controlRightX - sliderTrackW - 8f)..(controlRightX + 8f)
+        t.y in (ry - rowStep * 0.3f)..(ry + rowStep * 0.3f) &&
+            t.x in (settingsSliderX() - 8f)..(settingsSliderX() + sliderTrackW + 8f)
+
+    private fun settingsSliderX(): Float =
+        controlRightX - sliderTrackW
 
     private fun hitIntBox(t: Vector2, ry: Float): Boolean =
         t.x >= controlRightX - rowStep * 1.3f && t.x <= controlRightX + 8f && t.y in (ry - rowStep * 0.3f)..(ry + rowStep * 0.3f)
@@ -796,11 +884,11 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             game.batch.draw(it, panelX, panelY)
         }
 
-        val titleText = INFO_TAB_NAMES[currentInfoPage]
-        font.data.setScale(settingsHeadingScale)
-        layout.setText(font, titleText)
+        val titleText = "Info Menu"
+        headingFont.data.setScale(settingsHeadingScale)
+        layout.setText(headingFont, titleText)
         drawTextWithShadow(
-            font,
+            headingFont,
             titleText,
             (panelX + panelW / 2f) - (layout.width / 2f),
             headerY,
@@ -813,40 +901,39 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         drawArrow(arrowRightX, arrowY, arrowSize, false)
         shapes.begin(ShapeRenderer.ShapeType.Filled)
         shapes.color = Color(COL_DIM.r, COL_DIM.g, COL_DIM.b, 0.16f)
-        val dividerStartX = backX + backW + 16f
+        val dividerStartX = panelX + panelPadX
         shapes.rect(dividerStartX, contentTopY + 18f, panelX + panelW - panelPadX - dividerStartX, 2f)
         shapes.end()
-
         game.batch.begin()
         val contentX = rowLabelX
         val contentY = contentTopY - 18f
-        val lineSpacing = rowStep * 0.64f
-        font.data.setScale(settingsFontScale * 0.84f)
+        val infoStep = infoRowStep()
+        val lineSpacing = infoStep * 0.64f
+        val pageContentY = contentY - lineSpacing * 0.78f
+        font.data.setScale(settingsFontScale * 1.16f)
+        font.color = COL_HEADING
+        font.draw(game.batch, INFO_TAB_NAMES[currentInfoPage], contentX, contentY)
 
         if (currentInfoPage == INFO_TAB_HOWTOPLAY) {
-            font.color = COL_HEADING
-            font.draw(game.batch, "Read Ahead", contentX, contentY)
             font.color = COL_LABEL
-            for (i in howToLines.indices) {
-                font.draw(game.batch, howToLines[i], contentX, contentY - (i + 1.2f) * lineSpacing)
-            }
-        } else if (currentInfoPage == INFO_TAB_CONTROLS) {
-            val blockGap = rowStep * 0.86f
-            val descriptionOffset = rowStep * 0.34f
-            for (i in controlEntries.indices) {
-                val entry = controlEntries[i]
-                val y = contentY - i * blockGap
-                font.color = COL_HEADING
+            font.draw(game.batch, "Click to jump over spikes. It's that simple.", contentX, pageContentY)
+            val blockGap = infoStep * 0.86f
+            for (i in howToEntries.indices) {
+                val entry = howToEntries[i]
+                val y = pageContentY - (i + 1) * blockGap
+                font.data.setScale(settingsFontScale * 1.00f)
+                font.color = NeonUI.LIME
                 font.draw(game.batch, entry.first, contentX, y)
+                font.data.setScale(settingsFontScale * 1.02f)
                 font.color = COL_LABEL
-                font.draw(game.batch, entry.second, contentX + 18f, y - descriptionOffset)
+                font.draw(game.batch, entry.second, contentX + infoStep * 1.72f, y)
             }
         } else if (currentInfoPage == INFO_TAB_CREDITS_A) {
             font.color = COL_HEADING
-            font.draw(game.batch, "Music Credits", contentX, contentY)
+            font.draw(game.batch, "Music Credits", contentX, pageContentY)
             for (i in 0 until 4) {
                 val line = creditLines[i]
-                line.y = contentY - (i + 1.15f) * lineSpacing
+                line.y = pageContentY - (i + 1.15f) * lineSpacing
                 font.color = COL_TAB_ACT
                 font.draw(game.batch, "- " + line.text, contentX, line.y)
             }
@@ -854,20 +941,20 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             font.draw(game.batch, "More tracks on the next page.", contentX, footerY + 18f)
         } else if (currentInfoPage == INFO_TAB_CREDITS_B) {
             font.color = COL_HEADING
-            font.draw(game.batch, "Music Credits", contentX, contentY)
+            font.draw(game.batch, "Music Credits", contentX, pageContentY)
             for (i in 4 until creditLines.size) {
                 val line = creditLines[i]
                 val lineIndex = i - 4
-                line.y = contentY - (lineIndex + 1.15f) * lineSpacing
+                line.y = pageContentY - (lineIndex + 1.15f) * lineSpacing
                 font.color = COL_TAB_ACT
                 font.draw(game.batch, "- " + line.text, contentX, line.y)
             }
         } else if (currentInfoPage == INFO_TAB_SOCIALS) {
             font.color = COL_HEADING
-            font.draw(game.batch, "Follow Us", contentX, contentY)
+            font.draw(game.batch, "Follow Us", contentX, pageContentY)
             for (i in socialLines.indices) {
                 val line = socialLines[i]
-                line.y = contentY - (i + 1.15f) * lineSpacing
+                line.y = pageContentY - (i + 1.15f) * lineSpacing
                 font.color = COL_TAB_ACT
                 font.draw(game.batch, line.text, contentX, line.y)
             }
@@ -876,7 +963,7 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
                 game.batch,
                 "Thanks for playing Rhythmic Rush!",
                 contentX,
-                contentY - 3.9f * lineSpacing
+                pageContentY - 3.9f * lineSpacing
             )
 
             font.color = COL_TAB_ACT
@@ -894,6 +981,8 @@ class MainMenuScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         game.batch.end()
         drawInfoDots()
     }
+
+    private fun infoRowStep(): Float = rowStep * MAX_ROWS_PER_PAGE / 5f
 
     private fun drawInfoDots() {
         val total = INFO_TAB_COUNT

@@ -5,21 +5,33 @@ import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter
-import com.badlogic.gdx.math.MathUtils
 import kotlin.math.abs
 
 /**
  * Handles initialization, caching, and retrieval of BitmapFonts of various sizes using FreeType.
  */
 class FontManager {
-    private val fonts: Array<BitmapFont>
+    private val titleFonts: Array<BitmapFont>
+    private val bodyFonts: Array<BitmapFont>
 
     init {
         Gdx.app.log("FontManager", "Initializing fonts...")
+        titleFonts = generateFamily(
+            arrayOf("fonts/Orbitron-Bold.ttf", "fonts/Orbitron-SemiBold.ttf", "fonts/zendots-regular.ttf")
+        )
+        bodyFonts = generateFamily(
+            arrayOf("fonts/Rajdhani-SemiBold.ttf", "fonts/Rajdhani-Medium.ttf", "fonts/zendots-regular.ttf")
+        )
+        Gdx.app.log("FontManager", "Fonts initialized successfully.")
+    }
+
+    private fun generateFamily(candidates: Array<String>): Array<BitmapFont> {
         val tempFonts = arrayOfNulls<BitmapFont>(SIZES.size)
+        val file = candidates.map { Gdx.files.internal(it) }.firstOrNull { it.exists() }
         var gen: FreeTypeFontGenerator? = null
         try {
-            gen = FreeTypeFontGenerator(Gdx.files.internal("fonts/zendots-regular.ttf"))
+            if (file == null) throw IllegalStateException("No font candidate found")
+            gen = FreeTypeFontGenerator(file)
             val p = FreeTypeFontParameter()
             p.magFilter = Texture.TextureFilter.Linear
             p.minFilter = Texture.TextureFilter.MipMapLinearLinear
@@ -28,7 +40,6 @@ class FontManager {
                 p.size = SIZES[i]
                 tempFonts[i] = gen.generateFont(p)
             }
-            Gdx.app.log("FontManager", "Fonts initialized successfully.")
         } catch (e: Exception) {
             Gdx.app.error("FontManager", "Could not load font: " + e.message)
             for (i in SIZES.indices) {
@@ -37,16 +48,30 @@ class FontManager {
         } finally {
             gen?.dispose()
         }
-        @Suppress("UNCHECKED_CAST") fonts = tempFonts as Array<BitmapFont>
+        @Suppress("UNCHECKED_CAST")
+        return tempFonts as Array<BitmapFont>
     }
 
     fun dispose() {
         Gdx.app.log("FontManager", "Disposing fonts...")
-        for (f in fonts) f.dispose()
+        for (f in titleFonts) f.dispose()
+        for (f in bodyFonts) f.dispose()
         Gdx.app.log("FontManager", "Fonts disposed.")
     }
 
     fun get(size: Int): BitmapFont {
+        return closest(bodyFonts, size)
+    }
+
+    fun getTitle(size: Int): BitmapFont {
+        return closest(titleFonts, size)
+    }
+
+    fun getBody(size: Int): BitmapFont {
+        return closest(bodyFonts, size)
+    }
+
+    private fun closest(family: Array<BitmapFont>, size: Int): BitmapFont {
         var best = 0
         var bestDiff: Int = abs(SIZES[0] - size)
         for (i in 1..<SIZES.size) {
@@ -56,7 +81,7 @@ class FontManager {
                 best = i
             }
         }
-        return fonts[best]
+        return family[best]
     }
 
     companion object {
