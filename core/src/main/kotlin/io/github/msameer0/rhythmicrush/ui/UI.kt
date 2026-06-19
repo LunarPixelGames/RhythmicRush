@@ -12,7 +12,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer
  * assets/fonts/Rajdhani-Medium.ttf
  * assets/fonts/Rajdhani-SemiBold.ttf
  */
-object NeonUI {
+object UI {
     val BACKGROUND = Color.valueOf("121323")
     val BACKGROUND_SECONDARY = Color.valueOf("171827")
     val PANEL = Color.valueOf("222338")

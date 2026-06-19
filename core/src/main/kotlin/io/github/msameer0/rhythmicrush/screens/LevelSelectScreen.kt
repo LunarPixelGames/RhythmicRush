@@ -14,7 +14,7 @@ import io.github.msameer0.rhythmicrush.RhythmicRushGame
 import io.github.msameer0.rhythmicrush.font.FontManager
 import io.github.msameer0.rhythmicrush.game.level.LevelData
 import io.github.msameer0.rhythmicrush.ui.AnimatedButton
-import io.github.msameer0.rhythmicrush.ui.NeonUI
+import io.github.msameer0.rhythmicrush.ui.UI
 import kotlin.math.abs
 import kotlin.math.round
 import kotlin.math.sign
@@ -177,7 +177,7 @@ class LevelSelectScreen @JvmOverloads constructor(
         back.draw(game.batch); left.draw(game.batch); right.draw(game.batch)
         drawTitle("Level Select", viewport.worldWidth / 2f, viewport.worldHeight * 0.91f, 1.05f)
         drawCarouselCardContents()
-        drawButtonText(practice, "PRACTICE MODE", NeonUI.TEXT)
+        drawButtonText(practice, "PRACTICE MODE", UI.TEXT)
         drawButtonText(play, "PLAY", Color(0.04f, 0.05f, 0.09f, 1f))
         game.batch.end()
     }
@@ -192,14 +192,14 @@ class LevelSelectScreen @JvmOverloads constructor(
         if (region != null) game.batch.draw(region, iconX, iconY, iconSize, iconSize)
         val textX = x + cardW * 0.43f
         titleFont.data.setScale(1.05f)
-        drawShadow(titleFont, name, textX, cardY + cardH * 0.76f, NeonUI.TEXT)
+        drawShadow(titleFont, name, textX, cardY + cardH * 0.76f, UI.TEXT)
         bodyFont.data.setScale(0.86f)
         val difficulty = level.difficulty.replaceFirstChar { it.uppercase() }
-        drawShadow(bodyFont, difficulty, textX, cardY + cardH * 0.58f, NeonUI.LIME)
+        drawShadow(bodyFont, difficulty, textX, cardY + cardH * 0.58f, UI.LIME)
         val lineY = cardY + cardH * 0.46f
         bodyFont.data.setScale(0.72f)
-        drawShadow(bodyFont, "BEST", textX, lineY, NeonUI.TEXT_SECONDARY)
-        drawShadow(bodyFont, "ATTEMPTS", textX + cardW * 0.25f, lineY, NeonUI.TEXT_SECONDARY)
+        drawShadow(bodyFont, "BEST", textX, lineY, UI.TEXT_SECONDARY)
+        drawShadow(bodyFont, "ATTEMPTS", textX + cardW * 0.25f, lineY, UI.TEXT_SECONDARY)
         titleFont.data.setScale(0.76f)
         drawShadow(titleFont, "${progress?.bestPercent ?: 0}%", textX, lineY - cardH * 0.13f, statBlue)
         drawShadow(titleFont, "${progress?.totalAttempts ?: 0}", textX + cardW * 0.25f, lineY - cardH * 0.13f, statBlue)
@@ -219,17 +219,17 @@ class LevelSelectScreen @JvmOverloads constructor(
         val barH = maxOf(10f, cardH * 0.025f)
 
         shapes.color = Color(0.10f, 0.10f, 0.15f, 0.72f)
-        NeonUI.rounded(shapes, barX, barY, barW, barH, barH / 2f)
+        UI.rounded(shapes, barX, barY, barW, barH, barH / 2f)
         if (progress > 0f) {
             shapes.color = statBlue
-            NeonUI.rounded(shapes, barX, barY, barW * progress, barH, barH / 2f)
+            UI.rounded(shapes, barX, barY, barW * progress, barH, barH / 2f)
         }
     }
 
     private fun drawTitle(text: String, cx: Float, y: Float, scale: Float) {
         titleFont.data.setScale(scale)
         layout.setText(titleFont, text)
-        drawShadow(titleFont, text, cx - layout.width / 2f, y, NeonUI.YELLOW)
+        drawShadow(titleFont, text, cx - layout.width / 2f, y, UI.YELLOW)
         titleFont.data.setScale(1f)
     }
 
@@ -308,9 +308,9 @@ class LevelSelectScreen @JvmOverloads constructor(
         thickness: Float
     ) {
         shapes.color = border
-        NeonUI.rounded(shapes, x, y, w, h, radius)
+        UI.rounded(shapes, x, y, w, h, radius)
         shapes.color = fill
-        NeonUI.rounded(
+        UI.rounded(
             shapes,
             x + thickness,
             y + thickness,

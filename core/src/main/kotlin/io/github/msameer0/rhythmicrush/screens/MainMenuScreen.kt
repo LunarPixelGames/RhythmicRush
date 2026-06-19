@@ -17,7 +17,7 @@ import io.github.msameer0.rhythmicrush.RhythmicRushGame
 import io.github.msameer0.rhythmicrush.font.FontManager
 import io.github.msameer0.rhythmicrush.settings.SettingsManager
 import io.github.msameer0.rhythmicrush.ui.AnimatedButton
-import io.github.msameer0.rhythmicrush.ui.NeonUI
+import io.github.msameer0.rhythmicrush.ui.UI
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
@@ -78,22 +78,22 @@ class MainMenuScreen @JvmOverloads constructor(
         private const val MAX_ROWS_PER_PAGE = 4
         private const val PANEL_HEIGHT_FRACTION = 0.88f
 
-        private val COL_OVERLAY = NeonUI.OVERLAY
-        private val COL_PANEL = NeonUI.PANEL
+        private val COL_OVERLAY = UI.OVERLAY
+        private val COL_PANEL = UI.PANEL
         private val COL_PANEL_SHADOW = Color(0f, 0f, 0f, 0.22f)
-        private val COL_LABEL = NeonUI.TEXT
-        private val COL_DIM = NeonUI.TEXT_SECONDARY
-        private val COL_ON = NeonUI.LIME
+        private val COL_LABEL = UI.TEXT
+        private val COL_DIM = UI.TEXT_SECONDARY
+        private val COL_ON = UI.LIME
         private val COL_OFF = Color(0.50f, 0.50f, 0.55f, 1f)
         private val COL_TRACK = Color(0.28f, 0.28f, 0.35f, 1f)
-        private val COL_FILL = NeonUI.BLUE
+        private val COL_FILL = UI.BLUE
         private val COL_THUMB = Color(1f, 1f, 1f, 1f)
-        private val COL_HEADING = NeonUI.YELLOW
-        private val COL_TAB_ACT = NeonUI.LIME
+        private val COL_HEADING = UI.YELLOW
+        private val COL_TAB_ACT = UI.LIME
         private val COL_TAB_INACT = Color(0.35f, 0.35f, 0.45f, 1f)
         private val COL_INPUT_BG = Color(0.18f, 0.18f, 0.26f, 1f)
-        private val COL_INPUT_BD = NeonUI.BLUE
-        private val COL_DOT_ACT = NeonUI.LIME
+        private val COL_INPUT_BD = UI.BLUE
+        private val COL_DOT_ACT = UI.LIME
         private val COL_DOT_INACT = Color(0.35f, 0.35f, 0.45f, 1f)
 
         private fun hits(t: Vector2, x: Float, y: Float, w: Float, h: Float): Boolean {
@@ -432,7 +432,7 @@ class MainMenuScreen @JvmOverloads constructor(
             font.data.setScale(settingsFontScale * 0.56f)
             val hint = "TIP  Adjust the audio settings to your preference."
             layout.setText(font, hint)
-            drawTextWithShadow(font, hint, panelX + panelW / 2f - layout.width / 2f, footerY, NeonUI.TEXT_MUTED)
+            drawTextWithShadow(font, hint, panelX + panelW / 2f - layout.width / 2f, footerY, UI.TEXT_MUTED)
             game.batch.end()
         }
     }
@@ -480,7 +480,7 @@ class MainMenuScreen @JvmOverloads constructor(
                 font, TAB_NAMES[i].uppercase(),
                 x + tabW / 2f - layout.width / 2f,
                 tabY + tabH / 2f + layout.height / 2f,
-                if (TAB_CATEGORIES[i] == activeCat) NeonUI.LIME else NeonUI.TEXT_SECONDARY
+                if (TAB_CATEGORIES[i] == activeCat) UI.LIME else UI.TEXT_SECONDARY
             )
         }
         game.batch.end()
@@ -547,7 +547,7 @@ class MainMenuScreen @JvmOverloads constructor(
             }
             game.batch.begin()
             font.data.setScale(settingsFontScale * 0.90f)
-            drawTextWithShadow(font, settingDescription(row.id), rowLabelX, ry - rowStep * 0.18f, NeonUI.TEXT_SECONDARY)
+            drawTextWithShadow(font, settingDescription(row.id), rowLabelX, ry - rowStep * 0.18f, UI.TEXT_SECONDARY)
             game.batch.end()
         }
     }
@@ -922,7 +922,7 @@ class MainMenuScreen @JvmOverloads constructor(
                 val entry = howToEntries[i]
                 val y = pageContentY - (i + 1) * blockGap
                 font.data.setScale(settingsFontScale * 1.00f)
-                font.color = NeonUI.LIME
+                font.color = UI.LIME
                 font.draw(game.batch, entry.first, contentX, y)
                 font.data.setScale(settingsFontScale * 1.02f)
                 font.color = COL_LABEL

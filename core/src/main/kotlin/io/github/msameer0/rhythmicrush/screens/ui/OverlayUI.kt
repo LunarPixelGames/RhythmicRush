@@ -1,6 +1,5 @@
 package io.github.msameer0.rhythmicrush.screens.ui
 
-import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.g2d.BitmapFont
@@ -13,7 +12,7 @@ import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.viewport.Viewport
 import io.github.msameer0.rhythmicrush.RhythmicRushGame
 import io.github.msameer0.rhythmicrush.game.level.LevelData
-import io.github.msameer0.rhythmicrush.ui.NeonUI
+import io.github.msameer0.rhythmicrush.ui.UI
 
 /** Shared pause and results presentation with responsive hit targets. */
 class OverlayUI(
@@ -73,7 +72,7 @@ class OverlayUI(
     }
 
     fun drawDimOverlay(camera: OrthographicCamera, viewport: Viewport) {
-        shapes.color = NeonUI.OVERLAY
+        shapes.color = UI.OVERLAY
         shapes.rect(camera.position.x - viewport.worldWidth / 2f, camera.position.y - viewport.worldHeight / 2f, viewport.worldWidth, viewport.worldHeight)
     }
 
@@ -97,17 +96,17 @@ class OverlayUI(
     }
 
     private fun drawPanel() {
-        NeonUI.filled(shapes, panelX + 10f, panelY - 12f, panelW, panelH, 30f * uiScale, Color(0f, 0f, 0f, 0.28f))
-        NeonUI.filled(shapes, panelX, panelY, panelW, panelH, 30f * uiScale, Color(0.11f, 0.11f, 0.17f, 0.98f))
+        UI.filled(shapes, panelX + 10f, panelY - 12f, panelW, panelH, 30f * uiScale, Color(0f, 0f, 0f, 0.28f))
+        UI.filled(shapes, panelX, panelY, panelW, panelH, 30f * uiScale, Color(0.11f, 0.11f, 0.17f, 0.98f))
     }
 
     private fun drawAudioRow(y: Float, value: Float) {
         val sx = sliderX()
-        shapes.color = Color(NeonUI.TEXT_MUTED.r, NeonUI.TEXT_MUTED.g, NeonUI.TEXT_MUTED.b, 0.35f)
+        shapes.color = Color(UI.TEXT_MUTED.r, UI.TEXT_MUTED.g, UI.TEXT_MUTED.b, 0.35f)
         shapes.rect(sx, y - sliderH / 2f, sliderW, sliderH)
-        shapes.color = NeonUI.BLUE
+        shapes.color = UI.BLUE
         if (value > 0f) shapes.rect(sx, y - sliderH / 2f, sliderW * value, sliderH)
-        shapes.color = NeonUI.TEXT
+        shapes.color = UI.TEXT
         shapes.circle(sx + sliderW * value, y, 15f * uiScale, 24)
     }
 
@@ -117,9 +116,9 @@ class OverlayUI(
     }
 
     private fun drawFlatButton(x: Float, y: Float, w: Float, h: Float, primary: Boolean) {
-        NeonUI.filled(
+        UI.filled(
             shapes, x, y, w, h, 14f * uiScale,
-            if (primary) NeonUI.LIME else Color(0.16f, 0.16f, 0.24f, 0.96f)
+            if (primary) UI.LIME else Color(0.16f, 0.16f, 0.24f, 0.96f)
         )
     }
 
@@ -131,13 +130,13 @@ class OverlayUI(
     ) {
         place(camera)
         val center = panelX + panelW / 2f
-        text("Paused", center, panelY + panelH * 0.91f, NeonUI.YELLOW, 1.15f, true, true)
-        text(levelData?.name ?: "Level", center, panelY + panelH * 0.79f, NeonUI.YELLOW, 0.82f, true, true)
+        text("Paused", center, panelY + panelH * 0.91f, UI.YELLOW, 1.15f, true, true)
+        text(levelData?.name ?: "Level", center, panelY + panelH * 0.79f, UI.YELLOW, 0.82f, true, true)
         val progress = levelKey?.let { game.progressManager.getOrCreate(it) }
-        text("Personal Best", center - panelW * 0.14f, panelY + panelH * 0.70f, NeonUI.TEXT_SECONDARY, 0.90f, true)
-        text("${progress?.bestPercent ?: 0}%", center - panelW * 0.14f, panelY + panelH * 0.64f, NeonUI.TEXT, 0.80f, true, true)
-        text("Session Attempts", center + panelW * 0.14f, panelY + panelH * 0.70f, NeonUI.TEXT_SECONDARY, 0.90f, true)
-        text("$sessionAttempts", center + panelW * 0.14f, panelY + panelH * 0.64f, NeonUI.TEXT, 0.80f, true, true)
+        text("Personal Best", center - panelW * 0.14f, panelY + panelH * 0.70f, UI.TEXT_SECONDARY, 0.90f, true)
+        text("${progress?.bestPercent ?: 0}%", center - panelW * 0.14f, panelY + panelH * 0.64f, UI.TEXT, 0.80f, true, true)
+        text("Session Attempts", center + panelW * 0.14f, panelY + panelH * 0.70f, UI.TEXT_SECONDARY, 0.90f, true)
+        text("$sessionAttempts", center + panelW * 0.14f, panelY + panelH * 0.64f, UI.TEXT, 0.80f, true, true)
         val rowH = panelH * 0.15f
         drawAudioText("Music Volume", sliderCenterY + rowH * 0.55f, game.settingsManager.musicVolume)
         drawAudioText("SFX Volume", sliderCenterY - rowH * 0.55f, game.settingsManager.sfxVolume)
@@ -153,13 +152,13 @@ class OverlayUI(
                 labels[i],
                 cx,
                 buttonY + buttonH / 2f + 7f * uiScale,
-                if (i == 1) Color(0.04f, 0.05f, 0.09f, 1f) else NeonUI.TEXT,
+                if (i == 1) Color(0.04f, 0.05f, 0.09f, 1f) else UI.TEXT,
                 0.72f,
                 true,
                 true
             )
         }
-        text("Enter / Space: Resume     R: Restart     Esc: Level Select", center, panelY + pad * 0.38f, NeonUI.TEXT_MUTED, 1.12f, true)
+        text("Enter / Space: Resume     R: Restart     Esc: Level Select", center, panelY + pad * 0.38f, UI.TEXT_MUTED, 1.12f, true)
     }
 
     fun drawCompleteOverlay(
@@ -171,28 +170,28 @@ class OverlayUI(
         place(camera)
         val center = panelX + panelW / 2f
         val progress = levelKey?.let { game.progressManager.getOrCreate(it) }
-        text("LEVEL COMPLETE!", center, panelY + panelH * 0.88f, NeonUI.YELLOW, 1.28f, true, true)
-        text(levelData?.name ?: "Level", center, panelY + panelH * 0.75f, NeonUI.TEXT, 0.96f, true, true)
+        text("LEVEL COMPLETE!", center, panelY + panelH * 0.88f, UI.YELLOW, 1.28f, true, true)
+        text(levelData?.name ?: "Level", center, panelY + panelH * 0.75f, UI.TEXT, 0.96f, true, true)
         val lx = panelX + panelW * 0.31f
         val rx = panelX + panelW * 0.69f
         val ys = floatArrayOf(0.47f, 0.38f)
         val names = arrayOf("Attempts This Session", "Total Attempts")
         val values = arrayOf("$sessionAttempts", "${progress?.totalAttempts ?: sessionAttempts}")
         for (i in names.indices) {
-            text(names[i], lx, panelY + panelH * ys[i], NeonUI.TEXT_SECONDARY, 1.18f, false)
-            text(values[i], rx, panelY + panelH * ys[i], NeonUI.BLUE, 1.08f, true, true)
+            text(names[i], lx, panelY + panelH * ys[i], UI.TEXT_SECONDARY, 1.18f, false)
+            text(values[i], rx, panelY + panelH * ys[i], UI.BLUE, 1.08f, true, true)
         }
         val completeW = (panelW - pad * 2f - buttonGap * 2f) / 3f
         val labels = arrayOf("MENU", if (hasNextLevel) "NEXT LEVEL" else "REPLAY", "REPLAY")
         for (i in labels.indices) {
             val cx = panelX + pad + i * (completeW + buttonGap) + completeW / 2f
-            text(labels[i], cx, buttonY + buttonH / 2f + 8f * uiScale, if (i == 1) Color(0.04f, 0.05f, 0.09f, 1f) else NeonUI.TEXT, 0.80f, true, true)
+            text(labels[i], cx, buttonY + buttonH / 2f + 8f * uiScale, if (i == 1) Color(0.04f, 0.05f, 0.09f, 1f) else UI.TEXT, 0.80f, true, true)
         }
     }
 
     private fun drawAudioText(label: String, y: Float, value: Float) {
-        text(label, panelX + pad, y + 8f * uiScale, NeonUI.TEXT, 1.48f, false)
-        text("${MathUtils.round(value * 100f)}%", panelX + panelW - pad - panelW * 0.045f, y + 8f * uiScale, NeonUI.BLUE, 0.78f, true, true)
+        text(label, panelX + pad, y + 8f * uiScale, UI.TEXT, 1.48f, false)
+        text("${MathUtils.round(value * 100f)}%", panelX + panelW - pad - panelW * 0.045f, y + 8f * uiScale, UI.BLUE, 0.78f, true, true)
     }
 
     private fun text(
@@ -262,13 +261,13 @@ class OverlayUI(
     fun drawPauseToggleButtonShapes(camera: OrthographicCamera, viewport: Viewport, visible: Boolean) {
         val x = camera.position.x - viewport.worldWidth / 2f + 20f * uiScale
         val y = camera.position.y - viewport.worldHeight / 2f + 20f * uiScale
-        NeonUI.filled(shapes, x, y, pauseToggleW, pauseToggleH, 12f * uiScale, if (visible) NeonUI.PANEL_ELEVATED else Color(NeonUI.LIME.r, NeonUI.LIME.g, NeonUI.LIME.b, 0.8f))
+        UI.filled(shapes, x, y, pauseToggleW, pauseToggleH, 12f * uiScale, if (visible) UI.PANEL_ELEVATED else Color(UI.LIME.r, UI.LIME.g, UI.LIME.b, 0.8f))
     }
 
     fun drawPauseToggleButtonText(camera: OrthographicCamera, viewport: Viewport, visible: Boolean) {
         val x = camera.position.x - viewport.worldWidth / 2f + 20f * uiScale + pauseToggleW / 2f
         val y = camera.position.y - viewport.worldHeight / 2f + 20f * uiScale + pauseToggleH * 0.65f
-        text(if (visible) "Hide Menu" else "Show Menu", x, y, if (visible) NeonUI.TEXT else NeonUI.BACKGROUND, 0.48f, true)
+        text(if (visible) "Hide Menu" else "Show Menu", x, y, if (visible) UI.TEXT else UI.BACKGROUND, 0.48f, true)
     }
 
     fun hitsPauseToggleButton(tx: Float, ty: Float, camera: OrthographicCamera, viewport: Viewport): Boolean {
