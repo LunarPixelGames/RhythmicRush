@@ -1,6 +1,5 @@
 package io.github.msameer0.rhythmicrush.game.gameplay.hazards
 
-import com.badlogic.gdx.math.Rectangle
 import io.github.msameer0.rhythmicrush.game.engine.Rotatable
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.game.registries.Registry
@@ -60,11 +59,6 @@ class Spike : AbstractHazard, Rotatable {
         this.rotation = 0f
     }
 
-    override fun updatePosition(scrollSpeed: Float, delta: Float) {
-        super.updatePosition(scrollSpeed, delta)
-        updateHitbox()
-    }
-
     public override fun onTouch(player: AbstractPlayer?) {
         player?.getWorld()?.playerDied()
     }
@@ -74,6 +68,5 @@ class Spike : AbstractHazard, Rotatable {
         private const val TEXTURE_SIZE = 100f
         private const val HITBOX_W: Float = PLAYER_SIZE * 0.25f
         private const val HITBOX_H: Float = PLAYER_SIZE * 0.5f
-        private const val HITBOX_CENTER_X: Float = (TEXTURE_SIZE - HITBOX_W) / 2f
     }
 }

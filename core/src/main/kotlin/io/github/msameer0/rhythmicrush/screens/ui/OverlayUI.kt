@@ -25,6 +25,15 @@ class OverlayUI(
     @Suppress("UNUSED_PARAMETER") resumeRegion: TextureRegion?,
     @Suppress("UNUSED_PARAMETER") backRegion: TextureRegion?
 ) {
+    private companion object {
+        val PANEL_SHADOW = Color(0f, 0f, 0f, 0.28f)
+        val PANEL_FILL = Color(0.11f, 0.11f, 0.17f, 0.98f)
+        val SLIDER_TRACK = Color(UI.TEXT_MUTED.r, UI.TEXT_MUTED.g, UI.TEXT_MUTED.b, 0.35f)
+        val SECONDARY_BUTTON = Color(0.16f, 0.16f, 0.24f, 0.96f)
+        val PRIMARY_TEXT = Color(0.04f, 0.05f, 0.09f, 1f)
+        val TOGGLE_ACTIVE = Color(UI.LIME.r, UI.LIME.g, UI.LIME.b, 0.8f)
+    }
+
     enum class SliderKind { MUSIC, SFX }
     enum class PauseAction { RESTART, RESUME, PRACTICE, LEVEL_SELECT }
     enum class CompleteAction { MENU, PRIMARY, REPLAY }
@@ -96,13 +105,13 @@ class OverlayUI(
     }
 
     private fun drawPanel() {
-        UI.filled(shapes, panelX + 10f, panelY - 12f, panelW, panelH, 30f * uiScale, Color(0f, 0f, 0f, 0.28f))
-        UI.filled(shapes, panelX, panelY, panelW, panelH, 30f * uiScale, Color(0.11f, 0.11f, 0.17f, 0.98f))
+        UI.filled(shapes, panelX + 10f, panelY - 12f, panelW, panelH, 30f * uiScale, PANEL_SHADOW)
+        UI.filled(shapes, panelX, panelY, panelW, panelH, 30f * uiScale, PANEL_FILL)
     }
 
     private fun drawAudioRow(y: Float, value: Float) {
         val sx = sliderX()
-        shapes.color = Color(UI.TEXT_MUTED.r, UI.TEXT_MUTED.g, UI.TEXT_MUTED.b, 0.35f)
+        shapes.color = SLIDER_TRACK
         shapes.rect(sx, y - sliderH / 2f, sliderW, sliderH)
         shapes.color = UI.BLUE
         if (value > 0f) shapes.rect(sx, y - sliderH / 2f, sliderW * value, sliderH)
@@ -118,7 +127,7 @@ class OverlayUI(
     private fun drawFlatButton(x: Float, y: Float, w: Float, h: Float, primary: Boolean) {
         UI.filled(
             shapes, x, y, w, h, 14f * uiScale,
-            if (primary) UI.LIME else Color(0.16f, 0.16f, 0.24f, 0.96f)
+            if (primary) UI.LIME else SECONDARY_BUTTON
         )
     }
 
@@ -140,19 +149,19 @@ class OverlayUI(
         val rowH = panelH * 0.15f
         drawAudioText("Music Volume", sliderCenterY + rowH * 0.55f, game.settingsManager.musicVolume)
         drawAudioText("SFX Volume", sliderCenterY - rowH * 0.55f, game.settingsManager.sfxVolume)
-        val labels = arrayOf(
-            "RESTART",
-            "RESUME",
-            if (practiceMode) "NORMAL MODE" else "PRACTICE MODE",
-            "LEVEL SELECT"
-        )
-        for (i in labels.indices) {
+        for (i in 0..3) {
+            val label = when (i) {
+                0 -> "RESTART"
+                1 -> "RESUME"
+                2 -> if (practiceMode) "NORMAL MODE" else "PRACTICE MODE"
+                else -> "LEVEL SELECT"
+            }
             val cx = panelX + pad + i * (buttonW + buttonGap) + buttonW / 2f
             text(
-                labels[i],
+                label,
                 cx,
                 buttonY + buttonH / 2f + 7f * uiScale,
-                if (i == 1) Color(0.04f, 0.05f, 0.09f, 1f) else UI.TEXT,
+                if (i == 1) PRIMARY_TEXT else UI.TEXT,
                 0.72f,
                 true,
                 true
@@ -174,18 +183,19 @@ class OverlayUI(
         text(levelData?.name ?: "Level", center, panelY + panelH * 0.75f, UI.TEXT, 0.96f, true, true)
         val lx = panelX + panelW * 0.31f
         val rx = panelX + panelW * 0.69f
-        val ys = floatArrayOf(0.47f, 0.38f)
-        val names = arrayOf("Attempts This Session", "Total Attempts")
-        val values = arrayOf("$sessionAttempts", "${progress?.totalAttempts ?: sessionAttempts}")
-        for (i in names.indices) {
-            text(names[i], lx, panelY + panelH * ys[i], UI.TEXT_SECONDARY, 1.18f, false)
-            text(values[i], rx, panelY + panelH * ys[i], UI.BLUE, 1.08f, true, true)
-        }
+        text("Attempts This Session", lx, panelY + panelH * 0.47f, UI.TEXT_SECONDARY, 1.18f, false)
+        text("$sessionAttempts", rx, panelY + panelH * 0.47f, UI.BLUE, 1.08f, true, true)
+        text("Total Attempts", lx, panelY + panelH * 0.38f, UI.TEXT_SECONDARY, 1.18f, false)
+        text("${progress?.totalAttempts ?: sessionAttempts}", rx, panelY + panelH * 0.38f, UI.BLUE, 1.08f, true, true)
         val completeW = (panelW - pad * 2f - buttonGap * 2f) / 3f
-        val labels = arrayOf("MENU", if (hasNextLevel) "NEXT LEVEL" else "REPLAY", "REPLAY")
-        for (i in labels.indices) {
+        for (i in 0..2) {
+            val label = when (i) {
+                0 -> "MENU"
+                1 -> if (hasNextLevel) "NEXT LEVEL" else "REPLAY"
+                else -> "REPLAY"
+            }
             val cx = panelX + pad + i * (completeW + buttonGap) + completeW / 2f
-            text(labels[i], cx, buttonY + buttonH / 2f + 8f * uiScale, if (i == 1) Color(0.04f, 0.05f, 0.09f, 1f) else UI.TEXT, 0.80f, true, true)
+            text(label, cx, buttonY + buttonH / 2f + 8f * uiScale, if (i == 1) PRIMARY_TEXT else UI.TEXT, 0.80f, true, true)
         }
     }
 
@@ -261,7 +271,7 @@ class OverlayUI(
     fun drawPauseToggleButtonShapes(camera: OrthographicCamera, viewport: Viewport, visible: Boolean) {
         val x = camera.position.x - viewport.worldWidth / 2f + 20f * uiScale
         val y = camera.position.y - viewport.worldHeight / 2f + 20f * uiScale
-        UI.filled(shapes, x, y, pauseToggleW, pauseToggleH, 12f * uiScale, if (visible) UI.PANEL_ELEVATED else Color(UI.LIME.r, UI.LIME.g, UI.LIME.b, 0.8f))
+        UI.filled(shapes, x, y, pauseToggleW, pauseToggleH, 12f * uiScale, if (visible) UI.PANEL_ELEVATED else TOGGLE_ACTIVE)
     }
 
     fun drawPauseToggleButtonText(camera: OrthographicCamera, viewport: Viewport, visible: Boolean) {

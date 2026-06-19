@@ -27,6 +27,7 @@ object UI {
     val TEXT_MUTED = Color.valueOf("7D7A91")
     val DANGER = Color.valueOf("FF5F6D")
     val OVERLAY = Color(0.025f, 0.025f, 0.08f, 0.78f)
+    private val DEFAULT_BORDER = Color(BORDER.r, BORDER.g, BORDER.b, 0.55f)
 
     fun rounded(
         shapes: ShapeRenderer,
@@ -67,7 +68,7 @@ object UI {
         h: Float,
         radius: Float,
         fill: Color = PANEL,
-        border: Color = Color(BORDER.r, BORDER.g, BORDER.b, 0.55f),
+        border: Color = DEFAULT_BORDER,
         thickness: Float = 2f
     ) {
         filled(shapes, x, y, w, h, radius, border)

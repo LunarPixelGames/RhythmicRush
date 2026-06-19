@@ -11,6 +11,8 @@ import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
  * Handles practice mode functionality, including checkpoint management and world state restoration.
  */
 class PracticeManager(private val world: GameWorld) {
+    private val checkpointOutlineColor = Color(0.1f, 0.4f, 0.1f, 0.8f)
+    private val checkpointColor = Color(0.6f, 1.0f, 0.2f, 0.9f)
 
     private class CheckpointState {
         var worldScrolled = 0f
@@ -101,10 +103,10 @@ class PracticeManager(private val world: GameWorld) {
             val dx = s.playerX - (scroll - s.worldScrolled)
             val dy = s.playerY + 25f
 
-            shapes.color = Color(0.1f, 0.4f, 0.1f, 0.8f)
+            shapes.color = checkpointOutlineColor
             drawDiamond(shapes, dx, dy, hw + 2f, hh + 2f)
 
-            shapes.color = Color(0.6f, 1.0f, 0.2f, 0.9f)
+            shapes.color = checkpointColor
             drawDiamond(shapes, dx, dy, hw, hh)
         }
     }

@@ -31,6 +31,9 @@ class LevelSelectScreen @JvmOverloads constructor(
     private val primaryColor = Color.valueOf("B8F28A")
     private val darkOutline = Color(0.035f, 0.035f, 0.055f, 0.95f)
     private val statBlue = Color.valueOf("6FA8E8")
+    private val playTextColor = Color(0.04f, 0.05f, 0.09f, 1f)
+    private val progressTrackColor = Color(0.10f, 0.10f, 0.15f, 0.72f)
+    private val touch = Vector2()
 
     private val levels = Array<LevelData>()
     private var selectedLevel = initialIndex
@@ -128,7 +131,8 @@ class LevelSelectScreen @JvmOverloads constructor(
         back.update(delta); left.update(delta); right.update(delta); practice.update(delta); play.update(delta)
         updateCarouselMotion(delta)
 
-        val t = viewport.unproject(Vector2(Gdx.input.x.toFloat(), Gdx.input.y.toFloat()))
+        touch.set(Gdx.input.x.toFloat(), Gdx.input.y.toFloat())
+        val t = viewport.unproject(touch)
         if (Gdx.input.justTouched()) {
             back.onTouchDown(t.x, t.y); left.onTouchDown(t.x, t.y); right.onTouchDown(t.x, t.y)
             practice.onTouchDown(t.x, t.y); play.onTouchDown(t.x, t.y)
@@ -178,7 +182,7 @@ class LevelSelectScreen @JvmOverloads constructor(
         drawTitle("Level Select", viewport.worldWidth / 2f, viewport.worldHeight * 0.91f, 1.05f)
         drawCarouselCardContents()
         drawButtonText(practice, "PRACTICE MODE", UI.TEXT)
-        drawButtonText(play, "PLAY", Color(0.04f, 0.05f, 0.09f, 1f))
+        drawButtonText(play, "PLAY", playTextColor)
         game.batch.end()
     }
 
@@ -218,7 +222,7 @@ class LevelSelectScreen @JvmOverloads constructor(
         val barW = cardW * 0.46f
         val barH = maxOf(10f, cardH * 0.025f)
 
-        shapes.color = Color(0.10f, 0.10f, 0.15f, 0.72f)
+        shapes.color = progressTrackColor
         UI.rounded(shapes, barX, barY, barW, barH, barH / 2f)
         if (progress > 0f) {
             shapes.color = statBlue

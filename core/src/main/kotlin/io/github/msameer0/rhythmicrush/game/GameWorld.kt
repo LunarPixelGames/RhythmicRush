@@ -239,10 +239,12 @@ class GameWorld : Tickable {
 
         val bg = if (!data.bgColor.isNullOrEmpty()) data.bgColor else "1a1a2e"
         val gnd = if (!data.groundColor.isNullOrEmpty()) data.groundColor else "16213e"
-        colors.baseBgColor.set(hexToColor(bg))
-        colors.baseGroundColor.set(hexToColor(gnd))
-        colors.backgroundColor.set(hexToColor(bg))
-        colors.groundColor.set(hexToColor(gnd))
+        val bgColor = hexToColor(bg)
+        val groundColor = hexToColor(gnd)
+        colors.baseBgColor.set(bgColor)
+        colors.baseGroundColor.set(groundColor)
+        colors.backgroundColor.set(bgColor)
+        colors.groundColor.set(groundColor)
 
         for (e in data.objects) {
             val rx = e.x - startScrolled

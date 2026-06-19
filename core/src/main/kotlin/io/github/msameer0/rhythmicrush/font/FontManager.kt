@@ -27,7 +27,9 @@ class FontManager {
 
     private fun generateFamily(candidates: Array<String>): Array<BitmapFont> {
         val tempFonts = arrayOfNulls<BitmapFont>(SIZES.size)
-        val file = candidates.map { Gdx.files.internal(it) }.firstOrNull { it.exists() }
+        val file = candidates.firstNotNullOfOrNull { path ->
+            Gdx.files.internal(path).takeIf { it.exists() }
+        }
         var gen: FreeTypeFontGenerator? = null
         try {
             if (file == null) throw IllegalStateException("No font candidate found")

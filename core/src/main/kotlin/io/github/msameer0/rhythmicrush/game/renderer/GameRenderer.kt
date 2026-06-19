@@ -731,7 +731,7 @@ class GameRenderer(
         for (i in 0 until world.deathBursts.size) {
             val burst = world.deathBursts[i]
             if (burst.alpha <= 0f) continue
-            shape.color = Color(burst.brightness, burst.brightness, burst.brightness, burst.alpha)
+            shape.setColor(burst.brightness, burst.brightness, burst.brightness, burst.alpha)
             shape.circle(burst.x, burst.y, burst.radius, 28)
         }
     }

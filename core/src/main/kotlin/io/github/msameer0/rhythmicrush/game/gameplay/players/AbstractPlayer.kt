@@ -49,6 +49,8 @@ abstract class AbstractPlayer() {
     private var rotation: Float = 0f
     private val playerPolygon: com.badlogic.gdx.math.Polygon = com.badlogic.gdx.math.Polygon()
     private val innerPolygon: com.badlogic.gdx.math.Polygon = com.badlogic.gdx.math.Polygon()
+    private var polygonWidth = -1f
+    private var polygonHeight = -1f
 
     @JvmField
     protected var gravityFlipped: Boolean = false
@@ -153,13 +155,16 @@ abstract class AbstractPlayer() {
             20f
         )
 
-        // Update Polygons - Always refresh vertices to reflect current width/height (e.g. mini mode)
-        playerPolygon.vertices = floatArrayOf(
-            0f, 0f,
-            width, 0f,
-            width, height,
-            0f, height
-        )
+        if (polygonWidth != width || polygonHeight != height) {
+            playerPolygon.vertices = floatArrayOf(
+                0f, 0f,
+                width, 0f,
+                width, height,
+                0f, height
+            )
+            polygonWidth = width
+            polygonHeight = height
+        }
         playerPolygon.setPosition(x, y)
         playerPolygon.setOrigin(width / 2f, height / 2f)
         playerPolygon.rotation = rotation

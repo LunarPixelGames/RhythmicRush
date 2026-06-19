@@ -61,6 +61,8 @@ open class Block : Tickable, Rotatable {
     }
 
     private val blockPolygon = Polygon()
+    private var polygonWidth = -1f
+    private var polygonHeight = -1f
 
     open fun reset() {
         this.x = 0f
@@ -126,13 +128,16 @@ open class Block : Tickable, Rotatable {
             }
         }
 
-        // Update block polygon for precise collision
-        blockPolygon.vertices = floatArrayOf(
-            0f, 0f,
-            width, 0f,
-            width, height,
-            0f, height
-        )
+        if (polygonWidth != width || polygonHeight != height) {
+            blockPolygon.vertices = floatArrayOf(
+                0f, 0f,
+                width, 0f,
+                width, height,
+                0f, height
+            )
+            polygonWidth = width
+            polygonHeight = height
+        }
         blockPolygon.setPosition(x, y)
         blockPolygon.setOrigin(width / 2f, height / 2f)
         blockPolygon.rotation = rotation

@@ -78,7 +78,7 @@ class LevelSerializer {
             // Peak first byte - UBJSON usually starts with object/array markers '{' '[' or type markers
             // and won't have the typical whitespace of a pretty JSON.
             // Simplified check: if it can't be read as a simple string starting with '{', it's likely binary.
-            val firstByte = file.readBytes().getOrNull(0)?.toInt()?.toChar()
+            val firstByte = file.read().use { it.read().takeIf { byte -> byte >= 0 }?.toChar() }
             return firstByte != '{' && firstByte != '[' && firstByte != ' ' && firstByte != '\n' && firstByte != '\r'
         }
 

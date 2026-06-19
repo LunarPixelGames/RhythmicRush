@@ -2,11 +2,7 @@ package io.github.msameer0.rhythmicrush.game.gameplay.hazards
 
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.game.registries.Registry
-import com.badlogic.gdx.math.Circle
-import com.badlogic.gdx.math.Intersector
-import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.math.Polygon
-import com.badlogic.gdx.math.Vector2
 import kotlin.math.max
 import kotlin.math.min
 
@@ -55,26 +51,22 @@ class SawBlade : AbstractHazard {
         val cx = x + width / 2f
         val cy = y + height / 2f
 
-        val collisionCircle = Circle(cx, cy, radius)
         val pPoly = player.getPlayerPolygon()
 
         // Broad phase using bounding box
         if (!pPoly.boundingRectangle.overlaps(bounds)) return
 
         // Precise phase: Circle vs Rotated Polygon
-        if (circleOverlapsPolygon(collisionCircle, pPoly)) {
+        if (circleOverlapsPolygon(cx, cy, radius, pPoly)) {
             onTouch(player)
         }
     }
 
-    private fun circleOverlapsPolygon(circle: Circle, poly: Polygon): Boolean {
-        // 1. Check if circle center is inside polygon
-        if (poly.contains(circle.x, circle.y)) return true
+    private fun circleOverlapsPolygon(cx: Float, cy: Float, radius: Float, poly: Polygon): Boolean {
+        if (poly.contains(cx, cy)) return true
 
-        // 2. Check if any edge intersects the circle
         val vertices = poly.transformedVertices
-        val center = Vector2(circle.x, circle.y)
-        val squareRadius = circle.radius * circle.radius
+        val squareRadius = radius * radius
 
         for (i in 0 until vertices.size step 2) {
             val x1 = vertices[i]
@@ -82,10 +74,16 @@ class SawBlade : AbstractHazard {
             val x2 = if (i + 2 < vertices.size) vertices[i + 2] else vertices[0]
             val y2 = if (i + 3 < vertices.size) vertices[i + 3] else vertices[1]
 
-            if (Intersector.intersectSegmentCircle(
-                    Vector2(x1, y1), Vector2(x2, y2),
-                    center, squareRadius
-                )) return true
+            val dx = x2 - x1
+            val dy = y2 - y1
+            val lengthSquared = dx * dx + dy * dy
+            val t = if (lengthSquared == 0f) 0f
+            else (((cx - x1) * dx + (cy - y1) * dy) / lengthSquared).coerceIn(0f, 1f)
+            val nearestX = x1 + t * dx
+            val nearestY = y1 + t * dy
+            val offsetX = cx - nearestX
+            val offsetY = cy - nearestY
+            if (offsetX * offsetX + offsetY * offsetY <= squareRadius) return true
         }
 
         return false

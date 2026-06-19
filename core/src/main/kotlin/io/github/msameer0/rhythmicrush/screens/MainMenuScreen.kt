@@ -12,6 +12,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.math.Vector2
+import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.Array
 import io.github.msameer0.rhythmicrush.RhythmicRushGame
 import io.github.msameer0.rhythmicrush.font.FontManager
@@ -56,6 +57,8 @@ class MainMenuScreen @JvmOverloads constructor(
     private lateinit var font: BitmapFont
     private lateinit var headingFont: BitmapFont
     private val layout = GlyphLayout()
+    private val touch3 = Vector3()
+    private val touch2 = Vector2()
 
     companion object {
         private const val CAT_AUDIO = 0
@@ -93,8 +96,11 @@ class MainMenuScreen @JvmOverloads constructor(
         private val COL_TAB_INACT = Color(0.35f, 0.35f, 0.45f, 1f)
         private val COL_INPUT_BG = Color(0.18f, 0.18f, 0.26f, 1f)
         private val COL_INPUT_BD = UI.BLUE
+        private val COL_INPUT_BD_INACTIVE = Color(UI.BLUE.r, UI.BLUE.g, UI.BLUE.b, 0.4f)
         private val COL_DOT_ACT = UI.LIME
         private val COL_DOT_INACT = Color(0.35f, 0.35f, 0.45f, 1f)
+        private val COL_DIVIDER = Color(UI.TEXT_SECONDARY.r, UI.TEXT_SECONDARY.g, UI.TEXT_SECONDARY.b, 0.12f)
+        private val COL_INFO_DIVIDER = Color(UI.TEXT_SECONDARY.r, UI.TEXT_SECONDARY.g, UI.TEXT_SECONDARY.b, 0.16f)
 
         private fun hits(t: Vector2, x: Float, y: Float, w: Float, h: Float): Boolean {
             return t.x >= x && t.x <= x + w && t.y >= y && t.y <= y + h
@@ -524,7 +530,7 @@ class MainMenuScreen @JvmOverloads constructor(
         shapes.begin(ShapeRenderer.ShapeType.Filled)
         for (i in 0 until rows.size) {
             val ry = rowY(i)
-            shapes.color = Color(COL_DIM.r, COL_DIM.g, COL_DIM.b, 0.12f)
+            shapes.color = COL_DIVIDER
             shapes.rect(rowLabelX, ry - rowStep * 0.40f, controlRightX - rowLabelX, 1.5f)
         }
         shapes.end()
@@ -652,12 +658,7 @@ class MainMenuScreen @JvmOverloads constructor(
         shapes.rect(boxX, ry - boxH / 2f, boxW, boxH)
         shapes.end()
         shapes.begin(ShapeRenderer.ShapeType.Line)
-        shapes.color = if (fpsInputActive) COL_INPUT_BD else Color(
-            COL_INPUT_BD.r,
-            COL_INPUT_BD.g,
-            COL_INPUT_BD.b,
-            0.4f
-        )
+        shapes.color = if (fpsInputActive) COL_INPUT_BD else COL_INPUT_BD_INACTIVE
         shapes.rect(boxX, ry - boxH / 2f, boxW, boxH)
         shapes.end()
         val display =
@@ -900,7 +901,7 @@ class MainMenuScreen @JvmOverloads constructor(
         drawArrow(arrowLeftX, arrowY, arrowSize, true)
         drawArrow(arrowRightX, arrowY, arrowSize, false)
         shapes.begin(ShapeRenderer.ShapeType.Filled)
-        shapes.color = Color(COL_DIM.r, COL_DIM.g, COL_DIM.b, 0.16f)
+        shapes.color = COL_INFO_DIVIDER
         val dividerStartX = panelX + panelPadX
         shapes.rect(dividerStartX, contentTopY + 18f, panelX + panelW - panelPadX - dividerStartX, 2f)
         shapes.end()
@@ -1094,9 +1095,9 @@ class MainMenuScreen @JvmOverloads constructor(
     }
 
     private fun unproject(): Vector2 {
-        val touch = com.badlogic.gdx.math.Vector3(Gdx.input.x.toFloat(), Gdx.input.y.toFloat(), 0f)
-        viewport.unproject(touch)
-        return Vector2(touch.x, touch.y)
+        touch3.set(Gdx.input.x.toFloat(), Gdx.input.y.toFloat(), 0f)
+        viewport.unproject(touch3)
+        return touch2.set(touch3.x, touch3.y)
     }
 
     override fun resize(width: Int, height: Int) {
@@ -1108,12 +1109,15 @@ class MainMenuScreen @JvmOverloads constructor(
     }
 
     private fun drawShadowText(f: BitmapFont, text: String, x: Float, y: Float, color: Color) {
-        val oldColor = f.color.cpy()
+        val oldR = f.color.r
+        val oldG = f.color.g
+        val oldB = f.color.b
+        val oldA = f.color.a
         f.setColor(0f, 0f, 0f, color.a * 0.5f)
         f.draw(game.batch, text, x + 2f, y - 2f)
         f.color = color
         f.draw(game.batch, text, x, y)
-        f.color = oldColor
+        f.setColor(oldR, oldG, oldB, oldA)
     }
 
     private fun drawTextWithShadow(f: BitmapFont, text: String, x: Float, y: Float, color: Color) {

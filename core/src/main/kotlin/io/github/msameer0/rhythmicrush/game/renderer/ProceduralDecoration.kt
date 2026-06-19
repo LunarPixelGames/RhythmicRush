@@ -233,18 +233,15 @@ private fun drawDecorativeShape(
 }
 
 private fun drawHexagon(renderer: ShapeRenderer, centerX: Float, centerY: Float, radiusX: Float, radiusY: Float) {
-    val vertices = FloatArray(12)
+    var previousX = centerX + MathUtils.cosDeg(30f) * radiusX
+    var previousY = centerY + MathUtils.sinDeg(30f) * radiusY
     for (i in 0 until 6) {
-        val angle = 60f * i + 30f
-        vertices[i * 2] = centerX + MathUtils.cosDeg(angle) * radiusX
-        vertices[i * 2 + 1] = centerY + MathUtils.sinDeg(angle) * radiusY
-    }
-    for (i in 1 until 5) {
-        renderer.triangle(
-            vertices[0], vertices[1],
-            vertices[i * 2], vertices[i * 2 + 1],
-            vertices[(i + 1) * 2], vertices[(i + 1) * 2 + 1]
-        )
+        val angle = 60f * (i + 1) + 30f
+        val nextX = centerX + MathUtils.cosDeg(angle) * radiusX
+        val nextY = centerY + MathUtils.sinDeg(angle) * radiusY
+        renderer.triangle(centerX, centerY, previousX, previousY, nextX, nextY)
+        previousX = nextX
+        previousY = nextY
     }
 }
 

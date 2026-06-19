@@ -145,9 +145,9 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         shapeRenderer.projectionMatrix = camera.combined
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
         val barX = (width - barWidth) / 2f
-        shapeRenderer.color = Color(0.15f, 0.15f, 0.15f, 1f)
+        shapeRenderer.setColor(0.15f, 0.15f, 0.15f, 1f)
         shapeRenderer.rect(barX, barY, barWidth, barHeight)
-        shapeRenderer.color = Color(0.2f, 0.5f, 1f, 1f)
+        shapeRenderer.setColor(0.2f, 0.5f, 1f, 1f)
         shapeRenderer.rect(barX, barY, barWidth * progress, barHeight)
         shapeRenderer.end()
 

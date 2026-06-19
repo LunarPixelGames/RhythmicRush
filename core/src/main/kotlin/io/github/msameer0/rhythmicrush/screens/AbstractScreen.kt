@@ -78,7 +78,7 @@ abstract class AbstractScreen(protected val game: RhythmicRushGame) : Screen {
         mainColor: Color
     ) {
         val shadowOffset = 2f
-        font.color = Color(0f, 0f, 0f, mainColor.a * 0.4f)
+        font.setColor(0f, 0f, 0f, mainColor.a * 0.4f)
         font.draw(game.batch, text, x + shadowOffset, y - shadowOffset)
         font.color = mainColor
         font.draw(game.batch, text, x, y)

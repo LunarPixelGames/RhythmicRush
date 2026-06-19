@@ -92,7 +92,7 @@ class ColorStateManager {
     fun update(delta: Float) {
         if (bgFade.active) {
             bgFade.elapsed += delta
-            val t = min(bgFade.elapsed / bgFade.duration, 1f)
+            val t = if (bgFade.duration <= 0f) 1f else min(bgFade.elapsed / bgFade.duration, 1f)
             baseBgColor.set(
                 lerp(bgFade.from.r, bgFade.to.r, t),
                 lerp(bgFade.from.g, bgFade.to.g, t),
@@ -103,7 +103,7 @@ class ColorStateManager {
 
         if (groundFade.active) {
             groundFade.elapsed += delta
-            val t = min(groundFade.elapsed / groundFade.duration, 1f)
+            val t = if (groundFade.duration <= 0f) 1f else min(groundFade.elapsed / groundFade.duration, 1f)
             baseGroundColor.set(
                 lerp(groundFade.from.r, groundFade.to.r, t),
                 lerp(groundFade.from.g, groundFade.to.g, t),

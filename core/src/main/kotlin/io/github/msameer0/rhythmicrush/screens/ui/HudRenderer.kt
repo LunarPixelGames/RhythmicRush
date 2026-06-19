@@ -37,6 +37,9 @@ class HudRenderer(
         private val HUD_ATTEMPT = Color(1f, 1f, 1f, 0.85f)
         private val HUD_BEST = Color(1f, 1f, 1f, 0.55f)
         private val HUD_FPS = Color(1f, 1f, 1f, 0.45f)
+        private val PROGRESS_TRACK = Color(0.2f, 0.2f, 0.2f, 0.55f)
+        private val PAUSE_BUTTON = Color(0.2f, 0.2f, 0.2f, 0.75f)
+        private val PAUSE_ICON = Color(1f, 1f, 1f, 0.9f)
     }
 
     private val glyphLayout = GlyphLayout()
@@ -86,7 +89,7 @@ class HudRenderer(
         val r = barH / 2f
         val fillW = barW * progress
 
-        shapes.color = Color(0.2f, 0.2f, 0.2f, 0.55f)
+        shapes.color = PROGRESS_TRACK
         drawRoundedRect(startX, lineY - barH / 2f, barW, barH, r)
 
         if (fillW >= barH) {
@@ -103,13 +106,13 @@ class HudRenderer(
         val cy = pauseCircleCY(camera, viewport)
         val r = PAUSE_BTN / 2f
 
-        shapes.color = Color(0.2f, 0.2f, 0.2f, 0.75f)
+        shapes.color = PAUSE_BUTTON
         shapes.circle(cx, cy, r, 32)
 
         val barW = r * 0.22f
         val barH = r * 0.75f
         val gap = r * 0.18f
-        shapes.color = Color(1f, 1f, 1f, 0.9f)
+        shapes.color = PAUSE_ICON
         shapes.rect(cx - gap - barW, cy - barH / 2f, barW, barH)
         shapes.rect(cx + gap, cy - barH / 2f, barW, barH)
     }
