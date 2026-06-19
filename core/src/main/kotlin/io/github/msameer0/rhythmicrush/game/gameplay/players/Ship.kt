@@ -102,8 +102,9 @@ class Ship : AbstractPlayer {
 
         // Update Tilt Rotation with exaggeration and smoothing to prevent snapping
         val scrollSpeed = world?.scrollSpeed ?: GameConstants.World.SCROLL_SPEED
-        var targetAngle = MathUtils.atan2(velocityY, scrollSpeed) * MathUtils.radiansToDegrees * GameConstants.Player.Ship.TILT_EXAGGERATION
-        if (gravityFlipped) targetAngle = -targetAngle
+        var targetAngle = MathUtils.atan2(velocityY, scrollSpeed) *
+            MathUtils.radiansToDegrees *
+            GameConstants.Player.Ship.TILT_EXAGGERATION
         targetAngle = MathUtils.clamp(targetAngle, -GameConstants.Player.Ship.MAX_TILT, GameConstants.Player.Ship.MAX_TILT)
 
         setRotation(MathUtils.lerp(getRotation(), targetAngle, MathUtils.clamp(GameConstants.Player.Ship.TILT_LERP * delta, 0f, 1f)))
