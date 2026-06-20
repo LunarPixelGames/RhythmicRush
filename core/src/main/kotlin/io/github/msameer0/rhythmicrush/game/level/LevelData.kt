@@ -33,6 +33,7 @@ class LevelData : Json.Serializable {
         var blockType: String = ""
         var rotation: Float = 0f
         var flipped: Boolean = false
+        var untouchable: Boolean = false
 
         var triggerBgColor: String = ""
         var triggerGroundColor: String = ""
@@ -61,6 +62,7 @@ class LevelData : Json.Serializable {
             if (blockType.isNotEmpty()) json.writeValue("blockType", blockType)
             if (rotation != 0f) json.writeValue("rotation", rotation)
             if (flipped) json.writeValue("flipped", flipped)
+            if (untouchable) json.writeValue("untouchable", untouchable)
 
             if (type == "color_trigger") {
                 if (triggerBgColor.isNotEmpty()) json.writeValue("triggerBgColor", triggerBgColor)
@@ -83,6 +85,7 @@ class LevelData : Json.Serializable {
             blockType = jsonData.getString("blockType", "")
             rotation = jsonData.getFloat("rotation", 0f)
             flipped = jsonData.getBoolean("flipped", false)
+            untouchable = jsonData.getBoolean("untouchable", false)
 
             triggerBgColor = jsonData.getString("triggerBgColor", "")
             triggerGroundColor = jsonData.getString("triggerGroundColor", "")

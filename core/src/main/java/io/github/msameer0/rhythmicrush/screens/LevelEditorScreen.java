@@ -1042,6 +1042,7 @@ public class LevelEditorScreen extends AbstractScreen {
             copy.setSize(e.getSize());
             copy.setRotation(e.getRotation());
             copy.setBlockType(e.getBlockType());
+            copy.setUntouchable(e.getUntouchable());
             copy.setTriggerBgColor(e.getTriggerBgColor());
             copy.setTriggerGroundColor(e.getTriggerGroundColor());
             copy.setFadeDuration(e.getFadeDuration());
@@ -1065,6 +1066,7 @@ public class LevelEditorScreen extends AbstractScreen {
             copy.setSize(src.getSize());
             copy.setRotation(src.getRotation());
             copy.setBlockType(src.getBlockType());
+            copy.setUntouchable(src.getUntouchable());
             copy.setTriggerBgColor(src.getTriggerBgColor());
             copy.setTriggerGroundColor(src.getTriggerGroundColor());
             copy.setFadeDuration(src.getFadeDuration());
@@ -1224,6 +1226,12 @@ public class LevelEditorScreen extends AbstractScreen {
                 return true;
             }
             StringBuilder active = propBuffers[propField];
+            if ("block".equals(propTarget.getType()) && propField == 2 && c == ' ') {
+                boolean enabled = Boolean.parseBoolean(active.toString().trim());
+                active.setLength(0);
+                active.append(!enabled);
+                return true;
+            }
             if (c == '\b') {
                 if (active.length() > 0) active.deleteCharAt(active.length() - 1);
             } else if (c >= 32) active.append(c);
@@ -1491,6 +1499,12 @@ public class LevelEditorScreen extends AbstractScreen {
             propBuffers[2].append(e.getFadeInTime());
             propBuffers[3].append(e.getHoldTime());
             propBuffers[4].append(e.getFadeOutTime());
+        } else if ("block".equals(e.getType())) {
+            propLabels = new String[]{"Size", "Rotation (degrees)", "Untouchable (SPACE toggles)"};
+            propFieldCount = 3;
+            propBuffers[0].append(e.getSize());
+            propBuffers[1].append(e.getRotation());
+            propBuffers[2].append(e.getUntouchable());
         } else {
             propLabels = new String[]{"Size", "Rotation (degrees)"};
             propFieldCount = 2;
@@ -1535,6 +1549,9 @@ public class LevelEditorScreen extends AbstractScreen {
             try {
                 propTarget.setRotation(Float.parseFloat(propBuffers[1].toString().trim()));
             } catch (Exception ignored) {
+            }
+            if ("block".equals(propTarget.getType())) {
+                propTarget.setUntouchable(Boolean.parseBoolean(propBuffers[2].toString().trim()));
             }
         }
         propPanelOpen = false;

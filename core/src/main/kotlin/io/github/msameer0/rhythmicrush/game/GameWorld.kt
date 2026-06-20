@@ -8,6 +8,7 @@ import io.github.msameer0.rhythmicrush.GameConstants
 import io.github.msameer0.rhythmicrush.game.engine.Tickable
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Block
 import io.github.msameer0.rhythmicrush.game.gameplay.blocks.BlockType
+import io.github.msameer0.rhythmicrush.game.gameplay.blocks.Slope
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.AbstractHazard
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.HalfSpike
 import io.github.msameer0.rhythmicrush.game.gameplay.hazards.SawBlade
@@ -306,7 +307,9 @@ class GameWorld : Tickable {
             if ("slope" == e.type) {
                 blocks.add(pools.obtainSlope().init(rx, e.y, e.size, bt, e.rotation))
             } else {
-                blocks.add(pools.obtainBlock().init(rx, e.y, e.size, bt, e.rotation))
+                val block = pools.obtainBlock().init(rx, e.y, e.size, bt, e.rotation)
+                block.untouchable = e.untouchable
+                blocks.add(block)
             }
         } else if (Registries.HAZARDS.has(e.type)) {
             val hW = if ("saw_blade" == e.type) e.size else 100f
@@ -466,6 +469,7 @@ class GameWorld : Tickable {
         if (isPlayerDead || isLevelComplete) return
 
         val currentPlayer = player ?: return
+        val slopeBeforeUpdate = currentPlayer.getCurrentSlopeRotation()
         currentPlayer.update(delta, maxOf(groundY, boundaryBottom), boundaryTop)
 
         val lowerKillZoneMargin = currentPlayer.height + 700f
@@ -499,7 +503,47 @@ class GameWorld : Tickable {
         for (i in blockStart until blocks.size) {
             val block = blocks.get(i)
             if (block.x > rangeMax) break
-            block.tryTouch(currentPlayer)
+            if (block is Slope) {
+                val requireDescendingSurfaceCrossing =
+                    currentPlayer.getType() == AbstractPlayer.PlayerType.CUBE &&
+                        slopeBeforeUpdate == 0f
+                block.tryTouch(currentPlayer, requireDescendingSurfaceCrossing)
+            }
+        }
+
+        for (i in blockStart until blocks.size) {
+            val block = blocks.get(i)
+            if (block.x > rangeMax) break
+            if (block is Slope) continue
+            if (!currentPlayer.bounds.overlaps(block.bounds)) continue
+
+            var coveredBySlope = false
+            for (slopeIndex in blockStart until blocks.size) {
+                val possibleSlope = blocks.get(slopeIndex)
+                if (possibleSlope.x > rangeMax) break
+                if (
+                    possibleSlope is Slope &&
+                    possibleSlope.coversSupportBlock(block, currentPlayer)
+                ) {
+                    coveredBySlope = true
+                    break
+                }
+            }
+
+            if (!coveredBySlope) block.tryTouch(currentPlayer)
+        }
+
+        val leftAscendingSlope =
+            currentPlayer.getType() == AbstractPlayer.PlayerType.CUBE &&
+                slopeBeforeUpdate > 0f &&
+                currentPlayer.getCurrentSlopeRotation() == 0f
+        if (leftAscendingSlope) {
+            val launchVelocity =
+                scrollSpeed * Slope.ASCENDING_EXIT_VELOCITY_MULTIPLIER
+            currentPlayer.setVelocityY(
+                if (currentPlayer.isGravityFlipped()) -launchVelocity else launchVelocity
+            )
+            currentPlayer.setGrounded(false)
         }
 
         for (i in portalStart until portals.size) {

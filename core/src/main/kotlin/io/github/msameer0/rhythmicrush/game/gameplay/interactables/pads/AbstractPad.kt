@@ -65,9 +65,9 @@ abstract class AbstractPad {
 
         when (rot) {
             0 -> hitbox.set(x, y, width, hHeight)
-            90 -> hitbox.set(x, y, hHeight, height)
+            90 -> hitbox.set(x + width - hHeight, y, hHeight, height)
             180 -> hitbox.set(x, y + height - hHeight, width, hHeight)
-            270 -> hitbox.set(x + width - hHeight, y, hHeight, height)
+            270 -> hitbox.set(x, y, hHeight, height)
             else -> hitbox.set(x, y, width, hHeight)
         }
     }

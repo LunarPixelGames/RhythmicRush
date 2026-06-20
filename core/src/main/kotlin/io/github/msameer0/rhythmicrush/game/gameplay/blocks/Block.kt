@@ -20,6 +20,7 @@ open class Block : Tickable, Rotatable {
     var height: Float = 0f
     var bounds: Rectangle = Rectangle()
     var type: BlockType
+    var untouchable: Boolean = false
 
     constructor() {
         this.type = BlockType.DEFAULT
@@ -43,6 +44,7 @@ open class Block : Tickable, Rotatable {
         this.height = size
         this.type = type
         this.rotation = rotation
+        this.untouchable = false
         bounds.set(x, y, width, height)
         return this
     }
@@ -71,10 +73,13 @@ open class Block : Tickable, Rotatable {
         this.height = 0f
         this.type = BlockType.DEFAULT
         this.rotation = 0f
+        this.untouchable = false
         this.bounds.set(0f, 0f, 0f, 0f)
     }
 
     open fun tryTouch(player: AbstractPlayer) {
+        if (untouchable) return
+
         val playerRect = player.getBounds()
         if (!playerRect.overlaps(bounds)) return
 
