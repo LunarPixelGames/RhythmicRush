@@ -528,10 +528,8 @@ class GameRenderer(
             // Ship rendering
             val ship1 = shipLayer1Region
             val ship2 = shipLayer2Region
-            val cube1 = cubeLayer1Region
-            val cube2 = cubeLayer2Region
 
-            if (ship1 == null || ship2 == null || cube1 == null || cube2 == null) {
+            if (ship1 == null || ship2 == null) {
                 // Fallback
                 batch.end()
                 shape.begin(ShapeRenderer.ShapeType.Filled)
@@ -554,15 +552,6 @@ class GameRenderer(
                 if (ship2.isFlipY) ship2.flip(false, true)
             }
 
-            // Handle flipping for cube layers inside ship
-            if (player.isGravityFlipped()) {
-                if (!cube1.isFlipY) cube1.flip(false, true)
-                if (!cube2.isFlipY) cube2.flip(false, true)
-            } else {
-                if (cube1.isFlipY) cube1.flip(false, true)
-                if (cube2.isFlipY) cube2.flip(false, true)
-            }
-
             // Colors
             val color1 = Color.GREEN
             val color2 = Color.CYAN
@@ -577,43 +566,7 @@ class GameRenderer(
                 scale, scale, player.getRotation()
             )
 
-            // 2. Draw Cube Skin inside ship
-            // Calculation based on 128x128 texture: 54 from left, 61 from top
-            // Unit conversion (100/128): X = 42.1875, Y = 52.34375
-            val cubeSize = player.width * 0.26f
-            val xOffset = 33.3f
-            var yOffset = 48.5625f
-
-            if (player.isGravityFlipped()) {
-                // Original ship flipped offset
-                yOffset = 25.4375f
-            }
-
-            // Origin relative to cube's unscaled bottom-left, mapping to ship center (50, 50)
-            val originX = player.width / 2f - xOffset
-            val originY = player.height / 2f - yOffset
-
-            // Draw cube layer 1
-            batch.color = color1
-            batch.draw(
-                cube1,
-                player.x + xOffset, player.y + yOffset,
-                originX, originY,
-                cubeSize, cubeSize,
-                scale, scale, player.getRotation()
-            )
-
-            // Draw cube layer 2
-            batch.color = color2
-            batch.draw(
-                cube2,
-                player.x + xOffset, player.y + yOffset,
-                originX, originY,
-                cubeSize, cubeSize,
-                scale, scale, player.getRotation()
-            )
-
-            // 3. Draw Ship Layer 2
+            // 2. Draw Ship Layer 2
             batch.color = color2
             batch.draw(
                 ship2,
