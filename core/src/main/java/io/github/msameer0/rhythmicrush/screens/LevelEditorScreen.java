@@ -100,6 +100,10 @@ public class LevelEditorScreen extends AbstractScreen {
 
     private boolean rubberBanding = false;
     private float rbStartWX, rbStartWY;
+    private boolean draggingSelection = false;
+    private float selectionDragStartWX, selectionDragStartWY;
+    private final FloatArray selectionDragX = new FloatArray();
+    private final FloatArray selectionDragY = new FloatArray();
 
     private LevelData levelData;
     private final Array<LevelData.ObjectEntry> selection = new Array<>();
@@ -177,6 +181,18 @@ public class LevelEditorScreen extends AbstractScreen {
     private static final Color C_PROP_BORDER = new Color(0.35f, 0.65f, 1.00f, 1f);
     private static final Color C_PROP_ACTIVE = new Color(1.00f, 0.95f, 0.35f, 1f);
     private static final Color C_PROP_DIM = new Color(1.00f, 1.00f, 1.00f, 0.50f);
+    private static final Color C_FIELD_BG = new Color(0.12f, 0.12f, 0.18f, 1f);
+    private static final Color C_FIELD_HOVER = new Color(0.17f, 0.17f, 0.25f, 1f);
+
+    private boolean colorPickerOpen = false;
+    private boolean colorPickerForLevel = false;
+    private int colorPickerField = -1;
+    private float pickerHue = 0f;
+    private float pickerSaturation = 1f;
+    private float pickerValue = 1f;
+    private String colorPickerOriginal = "";
+    private int colorPickerDrag = 0;
+    private boolean suppressNextDialogKeyTyped = false;
 
     private boolean loadDialogOpen = false;
     private List<String> levelFiles = new ArrayList<>();
@@ -328,6 +344,7 @@ public class LevelEditorScreen extends AbstractScreen {
         if (trailHasData) drawTrail(sh);
         if (propPanelOpen) drawPropertyPanel();
         if (levelPanelOpen) drawLevelPanel(sw, sh);
+        if (colorPickerOpen) drawColorPicker(sw, sh);
         if (loadDialogOpen) drawLoadDialog(sw, sh);
     }
 
@@ -928,6 +945,7 @@ public class LevelEditorScreen extends AbstractScreen {
     }
 
     private void showLevelProperties() {
+        closeColorPicker(false);
         levelPanelOpen = true;
         levelField = 0;
         for (StringBuilder sb : levelBuffers) sb.setLength(0);
@@ -942,6 +960,7 @@ public class LevelEditorScreen extends AbstractScreen {
     }
 
     private void confirmLevelProperties() {
+        closeColorPicker(false);
         levelData.setName(defaultIfBlank(levelBuffers[0].toString(), "Unnamed Level"));
         levelData.setDifficulty(defaultIfBlank(levelBuffers[1].toString(), "normal"));
         levelData.setMusicFile(levelBuffers[2].toString().trim());
@@ -1161,18 +1180,46 @@ public class LevelEditorScreen extends AbstractScreen {
     private class EditorInput extends InputAdapter {
         @Override
         public boolean keyDown(int keycode) {
+            if (colorPickerOpen) {
+                if (keycode == Input.Keys.ENTER) closeColorPicker(false);
+                else if (keycode == Input.Keys.ESCAPE) closeColorPicker(true);
+                else return false;
+                suppressNextDialogKeyTyped = true;
+                return true;
+            }
+            if (propPanelOpen) {
+                if (keycode == Input.Keys.ENTER) {
+                    confirmPropertyEdit();
+                    suppressNextDialogKeyTyped = true;
+                }
+                else if (keycode == Input.Keys.ESCAPE) {
+                    propPanelOpen = false;
+                    propTarget = null;
+                    suppressNextDialogKeyTyped = true;
+                } else if (keycode == Input.Keys.TAB || keycode == Input.Keys.DOWN) {
+                    boolean shift = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
+                    propField = (propField + (shift ? propFieldCount - 1 : 1)) % propFieldCount;
+                    if (keycode == Input.Keys.TAB) suppressNextDialogKeyTyped = true;
+                } else if (keycode == Input.Keys.UP) {
+                    propField = (propField + propFieldCount - 1) % propFieldCount;
+                } else return false;
+                return true;
+            }
             if (!levelPanelOpen) return false;
             if (keycode == Input.Keys.ENTER) {
                 confirmLevelProperties();
+                suppressNextDialogKeyTyped = true;
                 return true;
             }
             if (keycode == Input.Keys.ESCAPE) {
                 levelPanelOpen = false;
+                suppressNextDialogKeyTyped = true;
                 return true;
             }
             if (keycode == Input.Keys.TAB || keycode == Input.Keys.DOWN) {
                 boolean shift = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
                 levelField = (levelField + (shift ? LEVEL_LABELS.length - 1 : 1)) % LEVEL_LABELS.length;
+                if (keycode == Input.Keys.TAB) suppressNextDialogKeyTyped = true;
                 return true;
             }
             if (keycode == Input.Keys.UP) {
@@ -1192,6 +1239,11 @@ public class LevelEditorScreen extends AbstractScreen {
 
         @Override
         public boolean keyTyped(char c) {
+            if (suppressNextDialogKeyTyped) {
+                suppressNextDialogKeyTyped = false;
+                return true;
+            }
+            if (colorPickerOpen) return true;
             if (levelPanelOpen) {
                 if (c == '\r' || c == '\n') {
                     confirmLevelProperties();
@@ -1240,8 +1292,9 @@ public class LevelEditorScreen extends AbstractScreen {
 
         @Override
         public boolean touchDown(int sx, int sy, int pointer, int button) {
+            if (colorPickerOpen) return handleColorPickerTouch(sx, sy);
             if (levelPanelOpen) return handleLevelPanelTouch(sx, sy);
-            if (propPanelOpen) return false;
+            if (propPanelOpen) return handlePropertyPanelTouch(sx, sy);
             int sw = Gdx.graphics.getWidth(), sh = Gdx.graphics.getHeight();
             float canvasW = sw - SIDEBAR_W, canvasH = sh - TOPBAR_H;
             Vector2 ui = new Vector2(sx, sh - sy);
@@ -1352,6 +1405,17 @@ public class LevelEditorScreen extends AbstractScreen {
                                     selection.add(hit);
                                 }
                             }
+                            if (!shift && selection.contains(hit, true)) {
+                                draggingSelection = true;
+                                selectionDragStartWX = wx;
+                                selectionDragStartWY = wy;
+                                selectionDragX.clear();
+                                selectionDragY.clear();
+                                for (LevelData.ObjectEntry selected : selection) {
+                                    selectionDragX.add(selected.getX());
+                                    selectionDragY.add(selected.getY());
+                                }
+                            }
                         } else {
                             if (!shift) selection.clear();
                             rubberBanding = true;
@@ -1372,6 +1436,28 @@ public class LevelEditorScreen extends AbstractScreen {
 
         @Override
         public boolean touchDragged(int sx, int sy, int p) {
+            if (colorPickerOpen && colorPickerDrag != 0) {
+                updateColorPickerFromTouch(sx, sy, colorPickerDrag);
+                return true;
+            }
+            if (draggingSelection) {
+                float canvasW = Gdx.graphics.getWidth() - SIDEBAR_W;
+                float canvasH = Gdx.graphics.getHeight() - TOPBAR_H;
+                float uiY = Gdx.graphics.getHeight() - sy - TOPBAR_H;
+                float wx = (sx - canvasW / 2f) / zoom + camX;
+                float wy = (uiY - canvasH / 2f) / zoom + camY;
+                float dx = wx - selectionDragStartWX;
+                float dy = wy - selectionDragStartWY;
+                if (gridSnapping) {
+                    dx = Math.round(dx / GRID_SIZE) * GRID_SIZE;
+                    dy = Math.round(dy / GRID_SIZE) * GRID_SIZE;
+                }
+                for (int i = 0; i < selection.size; i++) {
+                    selection.get(i).setX(selectionDragX.get(i) + dx);
+                    selection.get(i).setY(selectionDragY.get(i) + dy);
+                }
+                return true;
+            }
             if (panning) {
                 camX = panCamX0 - (sx - panStartX) / zoom;
                 camY = panCamY0 + (sy - panStartY) / zoom;
@@ -1382,7 +1468,15 @@ public class LevelEditorScreen extends AbstractScreen {
 
         @Override
         public boolean touchUp(int sx, int sy, int p, int b) {
+            if (colorPickerDrag != 0) {
+                colorPickerDrag = 0;
+                return true;
+            }
             if (b == Input.Buttons.MIDDLE) panning = false;
+            if (b == Input.Buttons.LEFT && draggingSelection) {
+                draggingSelection = false;
+                return true;
+            }
             if (b == Input.Buttons.LEFT && rubberBanding) {
                 rubberBanding = false;
                 float canvasW = Gdx.graphics.getWidth() - SIDEBAR_W, canvasH = Gdx.graphics.getHeight() - TOPBAR_H, uiY = Gdx.graphics.getHeight() - sy - TOPBAR_H;
@@ -1403,7 +1497,7 @@ public class LevelEditorScreen extends AbstractScreen {
             int sw = Gdx.graphics.getWidth(), sh = Gdx.graphics.getHeight();
             float canvasW = sw - SIDEBAR_W;
             Vector2 ui = new Vector2(Gdx.input.getX(), sh - Gdx.input.getY());
-            if (levelPanelOpen) return true;
+            if (levelPanelOpen || propPanelOpen || colorPickerOpen) return true;
             if (loadDialogOpen) {
                 loadScroll = MathUtils.clamp(loadScroll + ay * 24f, 0, Math.max(0, levelFiles.size() * 36f - 400f));
                 return true;
@@ -1482,6 +1576,7 @@ public class LevelEditorScreen extends AbstractScreen {
     }
 
     private void showPropertyEditor(LevelData.ObjectEntry e) {
+        closeColorPicker(false);
         propTarget = e;
         propField = 0;
         for (StringBuilder sb : propBuffers) sb.setLength(0);
@@ -1515,6 +1610,7 @@ public class LevelEditorScreen extends AbstractScreen {
     }
 
     private void confirmPropertyEdit() {
+        closeColorPicker(false);
         if (propTarget == null) {
             propPanelOpen = false;
             return;
@@ -1561,41 +1657,70 @@ public class LevelEditorScreen extends AbstractScreen {
     private void drawPropertyPanel() {
         if (!propPanelOpen || propTarget == null) return;
         int sw = Gdx.graphics.getWidth(), sh = Gdx.graphics.getHeight();
-        float pw = 520f, ph = 32f + propFieldCount * 36f + 32f, px = sw / 2f - pw / 2f, py = sh / 2f - ph / 2f;
+        float pw = 620f, ph = 92f + propFieldCount * 44f, px = sw / 2f - pw / 2f, py = sh / 2f - ph / 2f;
         Gdx.gl.glEnable(GL20.GL_BLEND);
         shapes.setProjectionMatrix(uiCam.combined);
         shapes.begin(ShapeRenderer.ShapeType.Filled);
         shapes.setColor(C_PROP_BG);
         shapes.rect(px, py, pw, ph);
+        for (int i = 0; i < propFieldCount; i++) {
+            float fy = py + ph - 72f - i * 44f;
+            shapes.setColor(i == propField ? C_FIELD_HOVER : C_FIELD_BG);
+            shapes.rect(px + 190f, fy - 24f, pw - 210f, 34f);
+            if (isPropertyColorField(i)) {
+                Color preview = parseHexColor(propBuffers[i].toString(), Color.WHITE);
+                shapes.setColor(preview);
+                shapes.rect(px + pw - 58f, fy - 20f, 26f, 26f);
+            }
+        }
+        drawFilledButton(px + pw - 190f, py + 14f, 78f, 30f, "Cancel");
+        drawFilledButton(px + pw - 102f, py + 14f, 78f, 30f, "Apply");
         shapes.end();
         shapes.begin(ShapeRenderer.ShapeType.Line);
         shapes.setColor(C_PROP_BORDER);
         shapes.rect(px, py, pw, ph);
+        for (int i = 0; i < propFieldCount; i++) {
+            float fy = py + ph - 72f - i * 44f;
+            shapes.setColor(i == propField ? C_PROP_ACTIVE : C_PROP_DIM);
+            shapes.rect(px + 190f, fy - 24f, pw - 210f, 34f);
+        }
         shapes.end();
         Gdx.gl.glDisable(GL20.GL_BLEND);
         getGame().getBatch().setProjectionMatrix(uiCam.combined);
         getGame().getBatch().begin();
         font.getData().setScale(0.62f);
         font.setColor(C_PROP_BORDER);
-        font.draw(getGame().getBatch(), "Properties: " + propTarget.getType() + "   [TAB next | ENTER confirm | ESC cancel]", px + 12f, py + ph - 10f);
+        font.draw(getGame().getBatch(), "Properties: " + propTarget.getType(), px + 16f, py + ph - 16f);
+        font.getData().setScale(0.40f);
+        font.setColor(C_PROP_DIM);
+        font.draw(getGame().getBatch(), "Click a field to edit. Color swatches open the picker.", px + 16f, py + ph - 38f);
         for (int i = 0; i < propFieldCount; i++) {
-            float fy = py + ph - 36f - i * 36f;
+            float fy = py + ph - 72f - i * 44f;
             boolean active = (i == propField);
             font.getData().setScale(0.56f);
             font.setColor(active ? C_PROP_ACTIVE : C_PROP_DIM);
-            String label = propLabels[i] + ":  ";
-            layout.setText(font, label);
-            font.draw(getGame().getBatch(), label, px + 12f, fy);
+            font.draw(getGame().getBatch(), propLabels[i], px + 16f, fy);
             font.setColor(Color.WHITE);
-            font.draw(getGame().getBatch(), propBuffers[i].toString() + (active ? "_" : ""), px + 12f + layout.width, fy);
+            String value = propBuffers[i].toString();
+            if ("block".equals(propTarget.getType()) && i == 2) value = Boolean.parseBoolean(value) ? "On" : "Off";
+            font.draw(getGame().getBatch(), value + (active && !colorPickerOpen ? "_" : ""), px + 204f, fy);
+            if (isPropertyColorField(i)) {
+                font.getData().setScale(0.40f);
+                font.setColor(C_PROP_DIM);
+                font.draw(getGame().getBatch(), "Pick", px + pw - 104f, fy - 1f);
+            }
         }
+        font.getData().setScale(0.48f);
+        font.setColor(Color.WHITE);
+        font.draw(getGame().getBatch(), "Cancel", px + pw - 178f, py + 35f);
+        font.draw(getGame().getBatch(), "Apply", px + pw - 92f, py + 35f);
         font.getData().setScale(1f);
         getGame().getBatch().end();
     }
 
     private void drawLevelPanel(int sw, int sh) {
-        float pw = 620f;
-        float ph = 454f;
+        float pw = 700f;
+        float ph = 500f;
         float px = sw / 2f - pw / 2f;
         float py = sh / 2f - ph / 2f;
         Gdx.gl.glEnable(GL20.GL_BLEND);
@@ -1603,10 +1728,30 @@ public class LevelEditorScreen extends AbstractScreen {
         shapes.begin(ShapeRenderer.ShapeType.Filled);
         shapes.setColor(C_PROP_BG);
         shapes.rect(px, py, pw, ph);
+        for (int i = 0; i < LEVEL_LABELS.length; i++) {
+            float fy = py + ph - 82f - i * 43f;
+            shapes.setColor(i == levelField ? C_FIELD_HOVER : C_FIELD_BG);
+            shapes.rect(px + 205f, fy - 24f, pw - 230f, 34f);
+            if (isLevelChoiceField(i)) {
+                shapes.setColor(C_BTN);
+                shapes.rect(px + 211f, fy - 20f, 28f, 26f);
+                shapes.rect(px + pw - 59f, fy - 20f, 28f, 26f);
+            } else if (isLevelColorField(i)) {
+                shapes.setColor(parseHexColor(levelBuffers[i].toString(), Color.WHITE));
+                shapes.rect(px + pw - 59f, fy - 20f, 28f, 26f);
+            }
+        }
+        drawFilledButton(px + pw - 200f, py + 14f, 84f, 30f, "Cancel");
+        drawFilledButton(px + pw - 104f, py + 14f, 84f, 30f, "Save");
         shapes.end();
         shapes.begin(ShapeRenderer.ShapeType.Line);
         shapes.setColor(C_PROP_BORDER);
         shapes.rect(px, py, pw, ph);
+        for (int i = 0; i < LEVEL_LABELS.length; i++) {
+            float fy = py + ph - 82f - i * 43f;
+            shapes.setColor(i == levelField ? C_PROP_ACTIVE : C_PROP_DIM);
+            shapes.rect(px + 205f, fy - 24f, pw - 230f, 34f);
+        }
         shapes.end();
         Gdx.gl.glDisable(GL20.GL_BLEND);
 
@@ -1617,10 +1762,10 @@ public class LevelEditorScreen extends AbstractScreen {
         font.draw(getGame().getBatch(), "Level Properties", px + 12f, py + ph - 12f);
         font.getData().setScale(0.40f);
         font.setColor(C_PROP_DIM);
-        font.draw(getGame().getBatch(), "Tab to move, Left/Right cycles choices, Enter saves", px + 12f, py + ph - 34f);
+        font.draw(getGame().getBatch(), "Click fields to edit. Use arrows for choices and swatches for colors.", px + 12f, py + ph - 36f);
 
         for (int i = 0; i < LEVEL_LABELS.length; i++) {
-            float fy = py + ph - 68f - i * 38f;
+            float fy = py + ph - 82f - i * 43f;
             boolean active = i == levelField;
             font.getData().setScale(0.54f);
             font.setColor(active ? C_PROP_ACTIVE : C_PROP_DIM);
@@ -1630,10 +1775,19 @@ public class LevelEditorScreen extends AbstractScreen {
             font.setColor(Color.WHITE);
             String value = levelBuffers[i].toString();
             if ((i == 2 || i == 3 || i == 6 || i == 7) && value.isEmpty()) value = "None";
-            font.draw(getGame().getBatch(), value + (active ? "_" : ""), px + 200f, fy);
+            float valueX = px + (isLevelChoiceField(i) ? 250f : 218f);
+            font.draw(getGame().getBatch(), value + (active && !colorPickerOpen ? "_" : ""), valueX, fy);
+            if (isLevelChoiceField(i)) {
+                font.draw(getGame().getBatch(), "<", px + 220f, fy);
+                font.draw(getGame().getBatch(), ">", px + pw - 51f, fy);
+            } else if (isLevelColorField(i)) {
+                font.getData().setScale(0.40f);
+                font.setColor(C_PROP_DIM);
+                font.draw(getGame().getBatch(), "Pick", px + pw - 105f, fy - 1f);
+            }
         }
 
-        float idY = py + ph - 68f - LEVEL_LABELS.length * 38f;
+        float idY = py + 62f;
         font.getData().setScale(0.54f);
         font.setColor(C_PROP_DIM);
         String idLabel = LEVEL_ID_LABEL + ": ";
@@ -1645,8 +1799,182 @@ public class LevelEditorScreen extends AbstractScreen {
 
         font.getData().setScale(0.48f);
         font.setColor(Color.WHITE);
-        font.draw(getGame().getBatch(), "[Save]", px + pw - 130f, py + 28f);
-        font.draw(getGame().getBatch(), "[Cancel]", px + pw - 220f, py + 28f);
+        font.draw(getGame().getBatch(), "Cancel", px + pw - 187f, py + 35f);
+        font.draw(getGame().getBatch(), "Save", px + pw - 87f, py + 35f);
+        font.getData().setScale(1f);
+        getGame().getBatch().end();
+    }
+
+    private void drawFilledButton(float x, float y, float w, float h, String ignoredLabel) {
+        shapes.setColor(isMouseOver(x, y, w, h) ? C_BTN_HOV : C_BTN);
+        shapes.rect(x, y, w, h);
+    }
+
+    private boolean isMouseOver(float x, float y, float w, float h) {
+        float mx = Gdx.input.getX();
+        float my = Gdx.graphics.getHeight() - Gdx.input.getY();
+        return mx >= x && mx <= x + w && my >= y && my <= y + h;
+    }
+
+    private boolean isPropertyColorField(int field) {
+        if (propTarget == null) return false;
+        return ("color_trigger".equals(propTarget.getType()) || "pulse_trigger".equals(propTarget.getType()))
+            && (field == 0 || field == 1);
+    }
+
+    private boolean isLevelColorField(int field) {
+        return field == 4 || field == 5;
+    }
+
+    private boolean isLevelChoiceField(int field) {
+        return field == 1 || field == 2 || field == 3 || field == 6 || field == 7;
+    }
+
+    private StringBuilder activeColorBuffer() {
+        if (colorPickerForLevel) {
+            return colorPickerField >= 0 && colorPickerField < levelBuffers.length ? levelBuffers[colorPickerField] : null;
+        }
+        return colorPickerField >= 0 && colorPickerField < propBuffers.length ? propBuffers[colorPickerField] : null;
+    }
+
+    private void openColorPicker(boolean forLevel, int field) {
+        colorPickerForLevel = forLevel;
+        colorPickerField = field;
+        StringBuilder buffer = activeColorBuffer();
+        if (buffer == null) return;
+        colorPickerOriginal = buffer.toString();
+        Color color = parseHexColor(buffer.toString(), Color.WHITE);
+        float[] hsv = rgbToHsv(color);
+        pickerHue = hsv[0];
+        pickerSaturation = hsv[1];
+        pickerValue = hsv[2];
+        colorPickerDrag = 0;
+        colorPickerOpen = true;
+    }
+
+    private void closeColorPicker(boolean restoreOriginal) {
+        if (colorPickerOpen && restoreOriginal) {
+            StringBuilder buffer = activeColorBuffer();
+            if (buffer != null) {
+                buffer.setLength(0);
+                buffer.append(colorPickerOriginal);
+            }
+        }
+        colorPickerOpen = false;
+        colorPickerDrag = 0;
+        colorPickerField = -1;
+    }
+
+    private void updateColorBuffer() {
+        StringBuilder buffer = activeColorBuffer();
+        if (buffer == null) return;
+        Color color = hsvToRgb(pickerHue, pickerSaturation, pickerValue);
+        int rgb = Color.rgb888(color);
+        buffer.setLength(0);
+        buffer.append(String.format("%06x", rgb));
+    }
+
+    private Color parseHexColor(String value, Color fallback) {
+        String hex = value == null ? "" : value.trim().replace("#", "");
+        if (hex.length() == 3)
+            hex = "" + hex.charAt(0) + hex.charAt(0) + hex.charAt(1) + hex.charAt(1) + hex.charAt(2) + hex.charAt(2);
+        try {
+            if (hex.length() == 6) return Color.valueOf(hex + "ff");
+            if (hex.length() == 8) return Color.valueOf(hex);
+        } catch (Exception ignored) {
+        }
+        return new Color(fallback);
+    }
+
+    private Color hsvToRgb(float hue, float saturation, float value) {
+        float h = ((hue % 1f) + 1f) % 1f * 6f;
+        int sector = (int) Math.floor(h);
+        float fraction = h - sector;
+        float p = value * (1f - saturation);
+        float q = value * (1f - saturation * fraction);
+        float t = value * (1f - saturation * (1f - fraction));
+        switch (sector % 6) {
+            case 0: return new Color(value, t, p, 1f);
+            case 1: return new Color(q, value, p, 1f);
+            case 2: return new Color(p, value, t, 1f);
+            case 3: return new Color(p, q, value, 1f);
+            case 4: return new Color(t, p, value, 1f);
+            default: return new Color(value, p, q, 1f);
+        }
+    }
+
+    private float[] rgbToHsv(Color color) {
+        float max = Math.max(color.r, Math.max(color.g, color.b));
+        float min = Math.min(color.r, Math.min(color.g, color.b));
+        float delta = max - min;
+        float hue = 0f;
+        if (delta > 0.0001f) {
+            if (max == color.r) hue = ((color.g - color.b) / delta) % 6f;
+            else if (max == color.g) hue = (color.b - color.r) / delta + 2f;
+            else hue = (color.r - color.g) / delta + 4f;
+            hue /= 6f;
+            if (hue < 0f) hue += 1f;
+        }
+        return new float[]{hue, max <= 0f ? 0f : delta / max, max};
+    }
+
+    private void drawColorPicker(int sw, int sh) {
+        float pw = 390f, ph = 300f, px = sw / 2f - pw / 2f, py = sh / 2f - ph / 2f;
+        float svX = px + 20f, svY = py + 70f, svW = 270f, svH = 180f;
+        float hueX = px + 310f, hueY = svY, hueW = 28f, hueH = svH;
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        shapes.setProjectionMatrix(uiCam.combined);
+        shapes.begin(ShapeRenderer.ShapeType.Filled);
+        shapes.setColor(0f, 0f, 0f, 0.45f);
+        shapes.rect(0, 0, sw, sh);
+        shapes.setColor(C_PROP_BG);
+        shapes.rect(px, py, pw, ph);
+
+        int cols = 24, rows = 16;
+        for (int y = 0; y < rows; y++) {
+            float value = (y + 0.5f) / rows;
+            for (int x = 0; x < cols; x++) {
+                float saturation = (x + 0.5f) / cols;
+                shapes.setColor(hsvToRgb(pickerHue, saturation, value));
+                shapes.rect(svX + x * svW / cols, svY + y * svH / rows,
+                    svW / cols + 1f, svH / rows + 1f);
+            }
+        }
+        for (int i = 0; i < 24; i++) {
+            shapes.setColor(hsvToRgb((i + 0.5f) / 24f, 1f, 1f));
+            shapes.rect(hueX, hueY + i * hueH / 24f, hueW, hueH / 24f + 1f);
+        }
+
+        Color selected = hsvToRgb(pickerHue, pickerSaturation, pickerValue);
+        shapes.setColor(selected);
+        shapes.rect(px + 350f, svY, 20f, svH);
+        drawFilledButton(px + pw - 178f, py + 18f, 72f, 30f, "Cancel");
+        drawFilledButton(px + pw - 94f, py + 18f, 72f, 30f, "Done");
+        shapes.end();
+
+        shapes.begin(ShapeRenderer.ShapeType.Line);
+        shapes.setColor(C_PROP_BORDER);
+        shapes.rect(px, py, pw, ph);
+        shapes.rect(svX, svY, svW, svH);
+        shapes.rect(hueX, hueY, hueW, hueH);
+        shapes.setColor(Color.WHITE);
+        shapes.circle(svX + pickerSaturation * svW, svY + pickerValue * svH, 6f, 16);
+        shapes.rect(hueX - 3f, hueY + pickerHue * hueH - 2f, hueW + 6f, 4f);
+        shapes.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+
+        getGame().getBatch().setProjectionMatrix(uiCam.combined);
+        getGame().getBatch().begin();
+        font.getData().setScale(0.64f);
+        font.setColor(C_PROP_BORDER);
+        font.draw(getGame().getBatch(), "Choose Color", px + 16f, py + ph - 16f);
+        font.getData().setScale(0.48f);
+        font.setColor(Color.WHITE);
+        StringBuilder buffer = activeColorBuffer();
+        font.draw(getGame().getBatch(), "#" + (buffer == null ? "" : buffer.toString()), px + 20f, py + 39f);
+        font.draw(getGame().getBatch(), "Cancel", px + pw - 168f, py + 39f);
+        font.draw(getGame().getBatch(), "Done", px + pw - 82f, py + 39f);
         font.getData().setScale(1f);
         getGame().getBatch().end();
     }
@@ -1680,11 +2008,80 @@ public class LevelEditorScreen extends AbstractScreen {
         }
     }
 
+    private boolean handlePropertyPanelTouch(int sx, int sy) {
+        int sw = Gdx.graphics.getWidth(), sh = Gdx.graphics.getHeight();
+        float pw = 620f, ph = 92f + propFieldCount * 44f;
+        float px = sw / 2f - pw / 2f, py = sh / 2f - ph / 2f, uiY = sh - sy;
+        if (sx < px || sx > px + pw || uiY < py || uiY > py + ph) {
+            propPanelOpen = false;
+            propTarget = null;
+            return true;
+        }
+        for (int i = 0; i < propFieldCount; i++) {
+            float fy = py + ph - 72f - i * 44f;
+            if (uiY >= fy - 26f && uiY <= fy + 12f) {
+                propField = i;
+                if ("block".equals(propTarget.getType()) && i == 2) {
+                    boolean enabled = Boolean.parseBoolean(propBuffers[i].toString().trim());
+                    propBuffers[i].setLength(0);
+                    propBuffers[i].append(!enabled);
+                } else if (isPropertyColorField(i) && sx >= px + pw - 120f) {
+                    openColorPicker(false, i);
+                }
+                return true;
+            }
+        }
+        if (uiY >= py + 12f && uiY <= py + 46f) {
+            if (sx >= px + pw - 190f && sx <= px + pw - 112f) {
+                propPanelOpen = false;
+                propTarget = null;
+            } else if (sx >= px + pw - 102f && sx <= px + pw - 24f) {
+                confirmPropertyEdit();
+            }
+        }
+        return true;
+    }
+
+    private boolean handleColorPickerTouch(int sx, int sy) {
+        int sw = Gdx.graphics.getWidth(), sh = Gdx.graphics.getHeight();
+        float pw = 390f, ph = 300f, px = sw / 2f - pw / 2f, py = sh / 2f - ph / 2f;
+        float uiY = sh - sy;
+        float svX = px + 20f, svY = py + 70f, svW = 270f, svH = 180f;
+        float hueX = px + 310f, hueY = svY, hueW = 28f, hueH = svH;
+        if (sx >= svX && sx <= svX + svW && uiY >= svY && uiY <= svY + svH) {
+            colorPickerDrag = 1;
+            updateColorPickerFromTouch(sx, sy, colorPickerDrag);
+            return true;
+        }
+        if (sx >= hueX && sx <= hueX + hueW && uiY >= hueY && uiY <= hueY + hueH) {
+            colorPickerDrag = 2;
+            updateColorPickerFromTouch(sx, sy, colorPickerDrag);
+            return true;
+        }
+        if (uiY >= py + 16f && uiY <= py + 50f) {
+            if (sx >= px + pw - 178f && sx <= px + pw - 106f) closeColorPicker(true);
+            else if (sx >= px + pw - 94f && sx <= px + pw - 22f) closeColorPicker(false);
+        }
+        return true;
+    }
+
+    private void updateColorPickerFromTouch(int sx, int sy, int dragMode) {
+        int sw = Gdx.graphics.getWidth(), sh = Gdx.graphics.getHeight();
+        float px = sw / 2f - 195f, py = sh / 2f - 150f, uiY = sh - sy;
+        if (dragMode == 1) {
+            pickerSaturation = MathUtils.clamp((sx - (px + 20f)) / 270f, 0f, 1f);
+            pickerValue = MathUtils.clamp((uiY - (py + 70f)) / 180f, 0f, 1f);
+        } else if (dragMode == 2) {
+            pickerHue = MathUtils.clamp((uiY - (py + 70f)) / 180f, 0f, 1f);
+        }
+        updateColorBuffer();
+    }
+
     private boolean handleLevelPanelTouch(int sx, int sy) {
         int sw = Gdx.graphics.getWidth();
         int sh = Gdx.graphics.getHeight();
-        float pw = 620f;
-        float ph = 454f;
+        float pw = 700f;
+        float ph = 500f;
         float px = sw / 2f - pw / 2f;
         float py = sh / 2f - ph / 2f;
         float uiY = sh - sy;
@@ -1693,18 +2090,25 @@ public class LevelEditorScreen extends AbstractScreen {
             return true;
         }
         for (int i = 0; i < LEVEL_LABELS.length; i++) {
-            float rowTop = py + ph - 54f - i * 38f;
-            float rowBottom = rowTop - 28f;
+            float fy = py + ph - 82f - i * 43f;
+            float rowTop = fy + 12f;
+            float rowBottom = fy - 26f;
             if (uiY >= rowBottom && uiY <= rowTop) {
                 levelField = i;
+                if (isLevelChoiceField(i)) {
+                    if (sx <= px + 245f) cycleLevelFieldOption(-1);
+                    else if (sx >= px + pw - 70f) cycleLevelFieldOption(1);
+                } else if (isLevelColorField(i) && sx >= px + pw - 120f) {
+                    openColorPicker(true, i);
+                }
                 return true;
             }
         }
-        if (sx >= px + pw - 150f && sx <= px + pw - 90f && uiY >= py + 10f && uiY <= py + 34f) {
+        if (sx >= px + pw - 104f && sx <= px + pw - 20f && uiY >= py + 12f && uiY <= py + 46f) {
             confirmLevelProperties();
             return true;
         }
-        if (sx >= px + pw - 240f && sx <= px + pw - 150f && uiY >= py + 10f && uiY <= py + 34f) {
+        if (sx >= px + pw - 200f && sx <= px + pw - 116f && uiY >= py + 12f && uiY <= py + 46f) {
             levelPanelOpen = false;
             return true;
         }
@@ -1771,7 +2175,8 @@ public class LevelEditorScreen extends AbstractScreen {
 
     private String normalizeHex(String value, String fallback) {
         String trimmed = defaultIfBlank(value, fallback).replace("#", "").trim();
-        return trimmed.isEmpty() ? fallback : trimmed.toLowerCase();
+        Color color = parseHexColor(trimmed, parseHexColor(fallback, Color.WHITE));
+        return String.format("%06x", Color.rgb888(color));
     }
 
     private FileHandle resolveWritableLevelFile(String filename) {
