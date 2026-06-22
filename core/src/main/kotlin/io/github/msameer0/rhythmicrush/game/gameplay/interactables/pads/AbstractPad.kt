@@ -93,15 +93,17 @@ abstract class AbstractPad {
         }
     }
 
-    fun tryTouch(player: AbstractPlayer) {
+    fun tryTouch(player: AbstractPlayer): Boolean {
         if (hitbox.overlaps(player.bounds)) {
             if (!used && canActivate(player)) {
                 used = true
                 onActivate(player)
+                return true
             }
         } else {
             used = false
         }
+        return false
     }
 
     fun reset() {

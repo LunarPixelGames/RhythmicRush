@@ -692,7 +692,7 @@ class GameWorld : Tickable {
         for (i in padStart until pads.size) {
             val pad = pads.get(i)
             if (pad.x > rangeMax) break
-            pad.tryTouch(currentPlayer)
+            if (pad.tryTouch(currentPlayer)) spawnPadGlow(pad)
         }
 
         currentPlayer.tryJump()
@@ -831,6 +831,24 @@ class GameWorld : Tickable {
             PortalGlow(
                 x = orb.x + orb.width / 2f,
                 y = orb.y + orb.height / 2f,
+                color = Color(color)
+            )
+        )
+    }
+
+    private fun spawnPadGlow(pad: AbstractPad) {
+        val color = when (pad.type) {
+            AbstractPad.PadType.YELLOW -> YELLOW_ORB_GLOW
+            AbstractPad.PadType.BLUE -> BLUE_ORB_GLOW
+            AbstractPad.PadType.PINK -> PINK_ORB_GLOW
+            AbstractPad.PadType.RED -> RED_ORB_GLOW
+            AbstractPad.PadType.BLACK -> BLACK_ORB_GLOW
+            AbstractPad.PadType.GREEN -> GREEN_ORB_GLOW
+        }
+        portalGlows.add(
+            PortalGlow(
+                x = pad.hitbox.x + pad.hitbox.width / 2f,
+                y = pad.hitbox.y + pad.hitbox.height / 2f,
                 color = Color(color)
             )
         )
