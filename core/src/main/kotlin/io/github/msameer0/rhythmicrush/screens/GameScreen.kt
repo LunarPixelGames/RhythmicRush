@@ -77,6 +77,7 @@ class GameScreen @JvmOverloads constructor(
     private var lastDelta = 0f
     private var lastJumpHeld = false
     private var ignoreInputUntilRelease = false
+    private var endWallSoundPlayed = false
 
     private val unprojectPosition = Vector3()
     private val sliderTouchPosition = Vector2()
@@ -303,7 +304,11 @@ class GameScreen @JvmOverloads constructor(
             triggerRestart()
             return
         }
-        if (paused || levelCompletedState) return
+        if (paused) return
+        if (levelCompletedState) {
+            customCamera.updateCompletionShake(delta)
+            return
+        }
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.R) && !deathPaused) {
             triggerRespawn()
@@ -344,6 +349,14 @@ class GameScreen @JvmOverloads constructor(
         
         engine.update(delta)
 
+        if (world.endCaptureActive) {
+            if (!endWallSoundPlayed) {
+                game.soundManager.playEndWallAbsorptionSound()
+                endWallSoundPlayed = true
+            }
+            music.applyFadeProgress(world.endSequenceMusicFadeProgress)
+        }
+
         if (world.isPlayerDead) {
             recordDeath()
             game.soundManager.playDeathSound()
@@ -359,6 +372,11 @@ class GameScreen @JvmOverloads constructor(
             recordComplete()
             levelEndingSequence = true
             levelEndTimer = 0f
+            levelCompletedState = true
+            checkAndShowAd(1.0f)
+            music.stopAndDispose()
+            Gdx.input.isCursorCatched = false
+            customCamera.beginCompletionShake()
         }
 
         if (levelEndingSequence && !levelCompletedState) {
@@ -419,6 +437,8 @@ class GameScreen @JvmOverloads constructor(
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
 
         renderer.render(lastDelta, paused, hitboxesActive, bgTexture, bg, world.currentLoudness)
+
+        if (levelCompletedState) customCamera.clearShake()
 
         game.batch.projectionMatrix = gameCamera.combined
         shapes.projectionMatrix = gameCamera.combined
@@ -518,6 +538,7 @@ class GameScreen @JvmOverloads constructor(
         levelCompletedState = false
         levelEndingSequence = false
         levelEndTimer = 0f
+        endWallSoundPlayed = false
         paused = false
         lastJumpHeld = false
         hud.hideNewBestPopup()
@@ -576,6 +597,7 @@ class GameScreen @JvmOverloads constructor(
         levelCompletedState = false
         levelEndingSequence = false
         levelEndTimer = 0f
+        endWallSoundPlayed = false
         paused = false
         lastDelta = 0f
         lastJumpHeld = false
@@ -597,6 +619,7 @@ class GameScreen @JvmOverloads constructor(
         levelCompletedState = false
         levelEndingSequence = false
         levelEndTimer = 0f
+        endWallSoundPlayed = false
         paused = false
         lastDelta = 0f
         lastJumpHeld = false

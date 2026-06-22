@@ -40,6 +40,7 @@ import io.github.msameer0.rhythmicrush.game.trigger.AbstractTrigger
 import io.github.msameer0.rhythmicrush.game.trigger.ColorTrigger
 import io.github.msameer0.rhythmicrush.game.trigger.PulseTrigger
 import kotlin.math.min
+import kotlin.math.ceil
 
 /**
  * Represents the core game state, including the player, level objects, and world simulation logic.
@@ -103,8 +104,12 @@ class GameWorld : Tickable {
 
     companion object {
         private const val COLLISION_LOOKAHEAD = 2800f
-        private const val POST_END_DELAY = 2f
         private const val UPPER_DEATH_MARGIN_BLOCKS = 25f
+        private const val END_WALL_OFFSET_BLOCKS = 11f
+        private const val END_CAPTURE_HOLD_DURATION = 0.5f
+        private const val END_CAPTURE_PULL_DURATION = 1.15f
+        private const val END_ABSORPTION_DELAY = 1.5f
+        private const val END_CAPTURE_ARC_HEIGHT = 180f
         private val GREEN_PORTAL_GLOW = Color.valueOf("54FF78")
         private val PINK_PORTAL_GLOW = Color.valueOf("FF55D7")
         private val YELLOW_ORB_GLOW = Color.valueOf("FFE34A")
@@ -162,7 +167,28 @@ class GameWorld : Tickable {
     var isLevelComplete = false
     var worldScrolled = 0f
     private var levelEndX = 0f
-    private var postEndTimer = -1f
+    var endWallScreenX = Float.MAX_VALUE
+        private set
+    var endCaptureActive = false
+        private set
+    var endCaptureProgress = 0f
+        private set
+    var endCaptureShakeStrength = 0f
+        private set
+    var playerAbsorbed = false
+        private set
+    val endSequenceMusicFadeProgress: Float
+        get() = (
+            endCaptureAge /
+                (END_CAPTURE_HOLD_DURATION + END_CAPTURE_PULL_DURATION + END_ABSORPTION_DELAY)
+            ).coerceIn(0f, 1f)
+    var endWallVisibleCenterY = 540f
+    var endWallLockX = Float.MAX_VALUE
+    private var endCaptureStartY = 0f
+    private var endCaptureTargetY = 0f
+    private var endCaptureStartX = 0f
+    private var endCaptureTargetX = 0f
+    private var endCaptureAge = 0f
     private var upperDeathY = GameConstants.World.GROUND_Y +
         UPPER_DEATH_MARGIN_BLOCKS * GameConstants.Editor.GRID_SIZE
     var cullX = 0f
@@ -268,7 +294,11 @@ class GameWorld : Tickable {
         deathBursts.clear()
         portalGlows.clear()
         worldScrolled = startScrolled
-        postEndTimer = -1f
+        endCaptureActive = false
+        endCaptureProgress = 0f
+        endCaptureShakeStrength = 0f
+        playerAbsorbed = false
+        endCaptureAge = 0f
         bgImage = data.bgImage ?: ""
         bgShape = PatternShape.fromId(data.bgShape)
         groundShape = PatternShape.fromId(data.groundShape)
@@ -290,7 +320,8 @@ class GameWorld : Tickable {
             spawnObject(objectEntry, renderedX, startScrolled)
         }
 
-        levelEndX = data.getLevelEndX()
+        levelEndX = calculateEndWallWorldX(data)
+        endWallScreenX = levelEndX - startScrolled
         upperDeathY = calculateUpperDeathY(data)
 
         blocks.sort { a, b2 -> a.x.compareTo(b2.x) }
@@ -335,6 +366,22 @@ class GameWorld : Tickable {
         }
 
         return highestObjectTop + UPPER_DEATH_MARGIN_BLOCKS * GameConstants.Editor.GRID_SIZE
+    }
+
+    private fun calculateEndWallWorldX(data: LevelData): Float {
+        var lastOccupiedRight = 0f
+        for (objectEntry in data.objects) {
+            if (Registries.TRIGGERS.has(objectEntry.type)) continue
+            lastOccupiedRight = maxOf(lastOccupiedRight, objectEntry.x + objectEntry.size)
+        }
+        val lastOccupiedGridX = if (lastOccupiedRight > 0f) {
+            (ceil(lastOccupiedRight / GameConstants.Editor.GRID_SIZE) - 1f) *
+                GameConstants.Editor.GRID_SIZE
+        } else {
+            0f
+        }
+        return lastOccupiedGridX +
+            END_WALL_OFFSET_BLOCKS * GameConstants.Editor.GRID_SIZE
     }
 
     private fun spawnObject(e: LevelData.ObjectEntry, rx: Float, startScrolled: Float) {
@@ -484,7 +531,12 @@ class GameWorld : Tickable {
             deathBursts.clear()
             portalGlows.clear()
             worldScrolled = 0f
-            postEndTimer = -1f
+            endCaptureActive = false
+            endCaptureProgress = 0f
+            endCaptureShakeStrength = 0f
+            playerAbsorbed = false
+            endCaptureAge = 0f
+            endWallScreenX = Float.MAX_VALUE
             levelEndX = 0f
             freePlayer()
             player = obtainPlayer("cube").init(GameConstants.Player.START_X, groundY)
@@ -493,6 +545,7 @@ class GameWorld : Tickable {
     }
 
     override fun onInput(held: Boolean): Boolean {
+        if (endCaptureActive) return true
         return player?.let {
             it.setJumpHeld(held)
             it.isGrounded() || !held
@@ -507,6 +560,28 @@ class GameWorld : Tickable {
         if (isPlayerDead || isLevelComplete) return
 
         val currentPlayer = player ?: return
+        endWallScreenX = levelEndX - worldScrolled
+        if (!endCaptureActive && endWallScreenX <= endWallLockX) {
+            endWallScreenX = endWallLockX
+            endCaptureActive = true
+            endCaptureAge = 0f
+            endCaptureProgress = 0f
+            endCaptureShakeStrength = 0.08f
+            playerAbsorbed = false
+            endCaptureStartX = currentPlayer.x
+            endCaptureStartY = currentPlayer.y
+            endCaptureTargetX =
+                endWallLockX + GameConstants.Editor.GRID_SIZE / 2f - currentPlayer.width / 2f
+            endCaptureTargetY = endWallVisibleCenterY - currentPlayer.height / 2f
+            currentPlayer.setVelocityY(0f)
+            currentPlayer.setGrounded(false)
+        }
+
+        if (endCaptureActive) {
+            updateEndCapture(currentPlayer, delta)
+            return
+        }
+
         val slopeBeforeUpdate = currentPlayer.getCurrentSlopeRotation()
         currentPlayer.update(delta, maxOf(groundY, boundaryBottom), boundaryTop)
 
@@ -517,12 +592,16 @@ class GameWorld : Tickable {
             return
         }
 
-        for (i in portalCull until portals.size) portals.get(i).updatePosition(scrollSpeed, delta)
-        for (i in hazardCull until hazards.size) hazards.get(i).updatePosition(scrollSpeed, delta)
-        for (i in blockCull until blocks.size) blocks.get(i).updatePosition(scrollSpeed, delta)
-        for (i in orbCull until orbs.size) orbs.get(i).updatePosition(scrollSpeed, delta)
-        for (i in padCull until pads.size) pads.get(i).updatePosition(scrollSpeed, delta)
-        for (i in 0 until portalGlows.size) portalGlows[i].x -= scrollSpeed * delta
+        val remainingScrollToLock = (endWallScreenX - endWallLockX).coerceAtLeast(0f)
+        val scrollAmount = min(scrollSpeed * delta, remainingScrollToLock)
+        val scrollDelta = if (scrollSpeed > 0f) scrollAmount / scrollSpeed else 0f
+
+        for (i in portalCull until portals.size) portals.get(i).updatePosition(scrollSpeed, scrollDelta)
+        for (i in hazardCull until hazards.size) hazards.get(i).updatePosition(scrollSpeed, scrollDelta)
+        for (i in blockCull until blocks.size) blocks.get(i).updatePosition(scrollSpeed, scrollDelta)
+        for (i in orbCull until orbs.size) orbs.get(i).updatePosition(scrollSpeed, scrollDelta)
+        for (i in padCull until pads.size) pads.get(i).updatePosition(scrollSpeed, scrollDelta)
+        for (i in 0 until portalGlows.size) portalGlows[i].x -= scrollAmount
 
         val playerX = currentPlayer.x
         val rangeMin = playerX - 600f
@@ -618,7 +697,8 @@ class GameWorld : Tickable {
 
         currentPlayer.tryJump()
 
-        worldScrolled += scrollSpeed * delta
+        worldScrolled += scrollAmount
+        endWallScreenX = levelEndX - worldScrolled
         currentPlayer.worldX = GameConstants.Player.START_X + worldScrolled
 
         while (triggerIdx < triggers.size) {
@@ -630,14 +710,69 @@ class GameWorld : Tickable {
         }
 
         currentPlayer.postUpdate()
+    }
 
-        if (levelEndX > 0 && worldScrolled >= levelEndX && postEndTimer < 0) postEndTimer = 0f
-        if (postEndTimer >= 0) {
-            postEndTimer += delta
-            if (postEndTimer >= POST_END_DELAY && !isLevelComplete) {
-                Gdx.app.log("GameWorld", "Level completed!")
-                isLevelComplete = true
-            }
+    private fun updateEndCapture(currentPlayer: AbstractPlayer, delta: Float) {
+        endWallScreenX = endWallLockX
+        endCaptureAge += delta
+        currentPlayer.setVelocityY(0f)
+        currentPlayer.worldX = GameConstants.Player.START_X + worldScrolled
+
+        if (endCaptureAge <= END_CAPTURE_HOLD_DURATION) {
+            endCaptureProgress = 0f
+            endCaptureShakeStrength = 0.08f
+            currentPlayer.postUpdate()
+            return
+        }
+
+        val pullAge = endCaptureAge - END_CAPTURE_HOLD_DURATION
+        val pullProgress = (pullAge / END_CAPTURE_PULL_DURATION).coerceIn(0f, 1f)
+        endCaptureProgress = pullProgress
+
+        if (pullProgress < 1f) {
+            val eased = pullProgress * pullProgress * pullProgress
+            val startCenterX = endCaptureStartX + currentPlayer.width / 2f
+            val startCenterY = endCaptureStartY + currentPlayer.height / 2f
+            val targetCenterX = endCaptureTargetX + currentPlayer.width / 2f
+            val targetCenterY = endCaptureTargetY + currentPlayer.height / 2f
+            val dx = targetCenterX - startCenterX
+            val dy = targetCenterY - startCenterY
+            val distance = kotlin.math.sqrt(dx * dx + dy * dy).coerceAtLeast(1f)
+            val controlX = (startCenterX + targetCenterX) / 2f -
+                dy / distance * END_CAPTURE_ARC_HEIGHT
+            val controlY = (startCenterY + targetCenterY) / 2f +
+                dx / distance * END_CAPTURE_ARC_HEIGHT
+            val inverse = 1f - eased
+            val centerX =
+                inverse * inverse * startCenterX +
+                    2f * inverse * eased * controlX +
+                    eased * eased * targetCenterX
+            val centerY =
+                inverse * inverse * startCenterY +
+                    2f * inverse * eased * controlY +
+                    eased * eased * targetCenterY
+
+            currentPlayer.x = centerX - currentPlayer.width / 2f
+            currentPlayer.setY(centerY - currentPlayer.height / 2f)
+            currentPlayer.setRotation(
+                MathUtils.lerp(currentPlayer.getRotation(), 0f, eased)
+            )
+            endCaptureShakeStrength = 0.08f + eased * eased * 0.92f
+            currentPlayer.postUpdate()
+            return
+        }
+
+        currentPlayer.x = endCaptureTargetX
+        currentPlayer.setY(endCaptureTargetY)
+        currentPlayer.setRotation(0f)
+        playerAbsorbed = true
+        endCaptureShakeStrength = 1.75f
+        currentPlayer.postUpdate()
+
+        if (pullAge >= END_CAPTURE_PULL_DURATION + END_ABSORPTION_DELAY) {
+            endCaptureProgress = 1f
+            isLevelComplete = true
+            Gdx.app.log("GameWorld", "Level completed at end wall.")
         }
     }
 

@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.utils.ObjectMap
+import io.github.msameer0.rhythmicrush.GameConstants
 import io.github.msameer0.rhythmicrush.atlas.AtlasManager
 import io.github.msameer0.rhythmicrush.game.GameCamera
 import io.github.msameer0.rhythmicrush.game.GameWorld
@@ -27,6 +28,7 @@ import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.game.level.PatternShape
 import io.github.msameer0.rhythmicrush.settings.SettingsManager
 import kotlin.math.min
+import kotlin.math.floor
 
 /**
  * Primary renderer for the game world, handling sprites, shapes, backgrounds, and the player.
@@ -175,6 +177,7 @@ class GameRenderer(
         drawPortalsBack(rightEdge)
         drawHazards(rightEdge)
         drawBlocks(rightEdge)
+        drawEndWall()
         drawOrbs(rightEdge, beatIntensity)
 
         batch.end()
@@ -217,7 +220,7 @@ class GameRenderer(
         batch.begin()
         batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
         batch.color = Color.WHITE
-        if (!world.isPlayerDead) drawPlayer(player)
+        if (!world.isPlayerDead && !world.playerAbsorbed) drawPlayer(player)
         drawPortalsFront(rightEdge)
         batch.end()
 
@@ -407,6 +410,43 @@ class GameRenderer(
                     1f, 1f, block.rotation
                 )
             }
+        }
+    }
+
+    private fun drawEndWall() {
+        val faceRegion = blockRegionsByOrdinal[BlockType.TOP_DEFAULT.ordinal] ?: return
+        val backingRegion =
+            blockRegionsByOrdinal[BlockType.DEFAULT_NO_OUTLINE.ordinal] ?: faceRegion
+        val size = GameConstants.Editor.GRID_SIZE
+        val wallX = world.endWallScreenX
+        val cameraLeft = camera.position.x - camera.viewportWidth / 2f
+        val cameraRight = camera.position.x + camera.viewportWidth / 2f
+        if (wallX + size * 5f < cameraLeft || wallX > cameraRight + size) return
+
+        val cameraBottom = camera.position.y - camera.viewportHeight / 2f
+        val cameraTop = camera.position.y + camera.viewportHeight / 2f
+        val firstY = floor(cameraBottom / size) * size - size
+
+        for (column in 1..4) {
+            var backingY = firstY
+            val backingX = wallX + size * column
+            while (backingY <= cameraTop + size) {
+                batch.draw(backingRegion, backingX, backingY, size, size)
+                backingY += size
+            }
+        }
+
+        var y = firstY
+        while (y <= cameraTop + size) {
+            batch.draw(
+                faceRegion,
+                wallX, y,
+                size / 2f, size / 2f,
+                size, size,
+                1f, 1f,
+                90f
+            )
+            y += size
         }
     }
 

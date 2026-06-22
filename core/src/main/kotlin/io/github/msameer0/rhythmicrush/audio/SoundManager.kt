@@ -14,6 +14,12 @@ class SoundManager {
 
     private var menuMusic: Music? = null
     private var deathSound: Sound? = null
+    private var endWallAbsorptionSound: Sound? = null
+
+    init {
+        deathSound = loadSound("sfx/death.wav")
+        endWallAbsorptionSound = loadSound("sfx/end_wall_absorption.wav")
+    }
 
     fun playMenuMusic() {
         if (menuMusic == null) {
@@ -62,12 +68,18 @@ class SoundManager {
         sound.play(sfxVolume)
     }
 
+    fun playEndWallAbsorptionSound() {
+        endWallAbsorptionSound?.play(sfxVolume)
+    }
+
+    private fun loadSound(path: String): Sound? {
+        val file = Gdx.files.internal(path)
+        return if (file.exists()) Gdx.audio.newSound(file) else null
+    }
+
     private fun loadDeathSound(): Sound? {
         if (deathSound == null) {
-            val file = Gdx.files.internal("sfx/death.wav")
-            if (file.exists()) {
-                deathSound = Gdx.audio.newSound(file)
-            }
+            deathSound = loadSound("sfx/death.wav")
         }
         return deathSound
     }
@@ -82,5 +94,7 @@ class SoundManager {
         }
         deathSound?.dispose()
         deathSound = null
+        endWallAbsorptionSound?.dispose()
+        endWallAbsorptionSound = null
     }
 }
