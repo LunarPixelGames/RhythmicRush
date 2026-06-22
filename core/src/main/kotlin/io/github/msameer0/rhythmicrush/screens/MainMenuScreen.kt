@@ -16,6 +16,8 @@ import com.badlogic.gdx.math.Vector3
 import com.badlogic.gdx.utils.Array
 import io.github.msameer0.rhythmicrush.RhythmicRushGame
 import io.github.msameer0.rhythmicrush.font.FontManager
+import io.github.msameer0.rhythmicrush.game.level.PatternShape
+import io.github.msameer0.rhythmicrush.game.renderer.ProceduralBackground
 import io.github.msameer0.rhythmicrush.settings.SettingsManager
 import io.github.msameer0.rhythmicrush.ui.AnimatedButton
 import io.github.msameer0.rhythmicrush.ui.UI
@@ -38,6 +40,10 @@ class MainMenuScreen @JvmOverloads constructor(
     private lateinit var backArrow: TextureRegion
     private lateinit var infoButton: TextureRegion
     private lateinit var bgColor: Color
+    private val proceduralBackground = ProceduralBackground()
+    private lateinit var backgroundShape: PatternShape
+    private var backgroundSeed = 0
+    private var backgroundScroll = 0f
 
     private var titleX = 0f
     private var titleY = 0f
@@ -80,6 +86,7 @@ class MainMenuScreen @JvmOverloads constructor(
         // Four rows leaves a dedicated footer band for navigation dots at 720p and 1080p.
         private const val MAX_ROWS_PER_PAGE = 4
         private const val PANEL_HEIGHT_FRACTION = 0.88f
+        private const val MENU_BACKGROUND_SCROLL_SPEED = 22f
 
         private val COL_OVERLAY = UI.OVERLAY
         private val COL_PANEL = UI.PANEL
@@ -204,6 +211,9 @@ class MainMenuScreen @JvmOverloads constructor(
             0.2f + 0.6f * MathUtils.random(),
             0.2f + 0.6f * MathUtils.random(), 1f
         )
+        backgroundShape = PatternShape.entries.random()
+        backgroundSeed = MathUtils.random.nextInt()
+        backgroundScroll = 0f
 
         shapes = ShapeRenderer()
         font = game.fontManager.getBody(FontManager.SIZE_LARGE)
@@ -380,6 +390,7 @@ class MainMenuScreen @JvmOverloads constructor(
     }
 
     override fun update(delta: Float) {
+        backgroundScroll += MENU_BACKGROUND_SCROLL_SPEED * delta
         if (!settingsOpen && !infoOpen) {
             btnPlay.update(delta)
             btnSettings.update(delta)
@@ -398,6 +409,7 @@ class MainMenuScreen @JvmOverloads constructor(
     override fun draw() {
         Gdx.gl.glClearColor(bgColor.r, bgColor.g, bgColor.b, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
+        drawProceduralMenuBackground()
         game.batch.projectionMatrix = camera.combined
         game.batch.begin()
         game.batch.draw(title, titleX, titleY, titleW, titleH)
@@ -407,6 +419,26 @@ class MainMenuScreen @JvmOverloads constructor(
         game.batch.end()
         if (settingsOpen) drawSettingsOverlay()
         else if (infoOpen) drawInfoOverlay()
+    }
+
+    private fun drawProceduralMenuBackground() {
+        Gdx.gl.glEnable(GL20.GL_BLEND)
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+        shapes.projectionMatrix = camera.combined
+        shapes.begin(ShapeRenderer.ShapeType.Filled)
+        proceduralBackground.render(
+            shapes,
+            backgroundShape,
+            bgColor,
+            backgroundSeed,
+            backgroundScroll,
+            0f,
+            0f,
+            viewport.worldWidth,
+            viewport.worldHeight
+        )
+        shapes.end()
+        Gdx.gl.glDisable(GL20.GL_BLEND)
     }
 
     private fun drawSettingsOverlay() {
