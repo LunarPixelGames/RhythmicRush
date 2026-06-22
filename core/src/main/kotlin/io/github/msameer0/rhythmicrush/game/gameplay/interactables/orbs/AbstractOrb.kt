@@ -28,6 +28,7 @@ abstract class AbstractOrb {
     protected var multiActivate: Boolean = false
     var bounds: Rectangle
     private var used: Boolean = false
+    private var activationPulseAge = ACTIVATION_PULSE_DURATION
 
     constructor() {
         this.bounds = Rectangle(x, y, width, height)
@@ -43,6 +44,8 @@ abstract class AbstractOrb {
     fun updatePosition(scrollSpeed: Float, delta: Float) {
         x -= scrollSpeed * delta
         bounds.setPosition(x, y)
+        activationPulseAge =
+            (activationPulseAge + delta).coerceAtMost(ACTIVATION_PULSE_DURATION)
     }
 
     open fun init(x: Float, y: Float): AbstractOrb {
@@ -55,12 +58,15 @@ abstract class AbstractOrb {
 
     fun isUsed(): Boolean = used
 
-    fun tryActivate(player: AbstractPlayer) {
+    fun tryActivate(player: AbstractPlayer): Boolean {
         if (multiActivate || !used) {
             used = true
+            activationPulseAge = 0f
             player.setJumpConsumed(true)
             onClick(player)
+            return true
         }
+        return false
     }
 
     fun resetOverlap() {
@@ -69,7 +75,23 @@ abstract class AbstractOrb {
 
     fun reset() {
         used = false
+        activationPulseAge = ACTIVATION_PULSE_DURATION
+    }
+
+    fun getActivationScale(): Float {
+        if (activationPulseAge >= ACTIVATION_PULSE_DURATION) return 1f
+        val progress = activationPulseAge / ACTIVATION_PULSE_DURATION
+        val pulse = if (progress < 0.45f) {
+            progress / 0.45f
+        } else {
+            1f - (progress - 0.45f) / 0.55f
+        }
+        return 1f + 0.65f * pulse.coerceIn(0f, 1f)
     }
 
     abstract fun onClick(player: AbstractPlayer)
+
+    companion object {
+        private const val ACTIVATION_PULSE_DURATION = 0.28f
+    }
 }

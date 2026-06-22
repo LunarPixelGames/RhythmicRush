@@ -4,6 +4,8 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
+import com.badlogic.gdx.graphics.Pixmap
+import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
@@ -50,6 +52,7 @@ class GameRenderer(
     private val hitboxRenderer = HitboxRenderer(world, shape)
     private val proceduralBackground = ProceduralBackground()
     private val proceduralGround = ProceduralGroundDecoration()
+    private val glowTexture = createGlowTexture()
 
     private val blockRegionsByOrdinal: Array<TextureRegion?>
     private val slopeRegion: TextureRegion?
@@ -198,8 +201,17 @@ class GameRenderer(
         shape.begin(ShapeRenderer.ShapeType.Filled)
         drawPadFallbacks(rightEdge)
         drawGroundFill()
-        drawDeathBursts()
         shape.end()
+
+        if (world.deathBursts.size > 0 || world.portalGlows.size > 0) {
+            batch.begin()
+            batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+            drawDeathBursts()
+            batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE)
+            drawPortalGlows()
+            batch.color = Color.WHITE
+            batch.end()
+        }
 
         // Pass 5: Foreground gameplay elements
         batch.begin()
@@ -403,13 +415,14 @@ class GameRenderer(
         val cullStart = world.orbCull
 
         val doPulse = settings.pulseOrbs
-        val scale = if (doPulse) 0.65f + (beatIntensity * 0.70f) else 1f
+        val beatScale = if (doPulse) 0.65f + (beatIntensity * 0.70f) else 1f
 
         for (i in cullStart until orbs.size) {
             val orb = orbs.get(i)
             if (orb.x > rightEdge) break
             val region = orbRegions[orb.type]
             if (region != null) {
+                val scale = maxOf(beatScale, orb.getActivationScale())
                 val visualW = orb.width * scale
                 val visualH = orb.height * scale
                 val visualX = orb.x + (orb.width - visualW) / 2f
@@ -684,8 +697,56 @@ class GameRenderer(
         for (i in 0 until world.deathBursts.size) {
             val burst = world.deathBursts[i]
             if (burst.alpha <= 0f) continue
-            shape.setColor(burst.brightness, burst.brightness, burst.brightness, burst.alpha)
-            shape.circle(burst.x, burst.y, burst.radius, 28)
+            batch.setColor(burst.brightness, burst.brightness, burst.brightness, burst.alpha)
+            val diameter = burst.radius * 2f
+            batch.draw(
+                glowTexture,
+                burst.x - burst.radius,
+                burst.y - burst.radius,
+                diameter,
+                diameter
+            )
+        }
+    }
+
+    private fun drawPortalGlows() {
+        for (i in 0 until world.portalGlows.size) {
+            val glow = world.portalGlows[i]
+            if (glow.alpha <= 0f) continue
+            val color = glow.color
+            batch.setColor(color.r, color.g, color.b, glow.alpha)
+            val diameter = glow.radius * 2f
+            batch.draw(
+                glowTexture,
+                glow.x - glow.radius,
+                glow.y - glow.radius,
+                diameter,
+                diameter
+            )
+        }
+    }
+
+    private fun createGlowTexture(): Texture {
+        val size = 64
+        val center = (size - 1) / 2f
+        val maxDistance = center
+        val pixmap = Pixmap(size, size, Pixmap.Format.RGBA8888)
+        for (y in 0 until size) {
+            for (x in 0 until size) {
+                val dx = x - center
+                val dy = y - center
+                val distance = kotlin.math.sqrt(dx * dx + dy * dy) / maxDistance
+                val alpha = (1f - distance).coerceIn(0f, 1f)
+                pixmap.drawPixel(
+                    x,
+                    y,
+                    (0xffffff00.toInt()) or (alpha * 255f).toInt()
+                )
+            }
+        }
+        return Texture(pixmap).also {
+            it.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear)
+            pixmap.dispose()
         }
     }
 
@@ -704,6 +765,7 @@ class GameRenderer(
     }
 
     fun dispose() {
+        glowTexture.dispose()
         shape.dispose()
     }
 }

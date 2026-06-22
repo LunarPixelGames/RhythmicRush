@@ -56,6 +56,9 @@ class GameWorld : Tickable {
         val maxAlpha: Float,
         var age: Float = 0f
     ) {
+        private val minimumAlpha: Float
+            get() = 0.07f
+
         val activeAge: Float
             get() = age - startDelay
 
@@ -69,16 +72,47 @@ class GameWorld : Tickable {
             get() = startRadius + (endRadius - startRadius) * progress
 
         val alpha: Float
-            get() = if (!isActive) 0f else maxAlpha * (1f - progress)
+            get() = if (!isActive) 0f else
+                minimumAlpha + (maxAlpha - minimumAlpha) * (1f - progress * progress * progress)
 
         val brightness: Float
             get() = if (!isActive) 0.55f else 0.55f + 0.4f * progress
+    }
+
+    data class PortalGlow(
+        var x: Float,
+        val y: Float,
+        val color: Color,
+        val startRadius: Float = 24f,
+        val endRadius: Float = GameConstants.Editor.GRID_SIZE * 1.5f,
+        val duration: Float = 0.48f,
+        val maxAlpha: Float = 0.42f,
+        var age: Float = 0f
+    ) {
+        private val minimumAlpha: Float
+            get() = 0.07f
+
+        val progress: Float
+            get() = min(age / duration, 1f)
+        val radius: Float
+            get() = startRadius + (endRadius - startRadius) * progress
+        val alpha: Float
+            get() =
+                minimumAlpha + (maxAlpha - minimumAlpha) * (1f - progress * progress * progress)
     }
 
     companion object {
         private const val COLLISION_LOOKAHEAD = 2800f
         private const val POST_END_DELAY = 2f
         private const val UPPER_DEATH_MARGIN_BLOCKS = 25f
+        private val GREEN_PORTAL_GLOW = Color.valueOf("54FF78")
+        private val PINK_PORTAL_GLOW = Color.valueOf("FF55D7")
+        private val YELLOW_ORB_GLOW = Color.valueOf("FFE34A")
+        private val BLUE_ORB_GLOW = Color.valueOf("55A7FF")
+        private val PINK_ORB_GLOW = Color.valueOf("FF55D7")
+        private val RED_ORB_GLOW = Color.valueOf("FF5252")
+        private val BLACK_ORB_GLOW = Color.valueOf("9B72CF")
+        private val GREEN_ORB_GLOW = Color.valueOf("54FF78")
 
         private fun parseOptionalHex(hex: String?): Color? {
             return if (!hex.isNullOrEmpty()) hexToColor(hex) else null
@@ -158,6 +192,7 @@ class GameWorld : Tickable {
     private val triggers = Array<AbstractTrigger>()
     private var currentLevelData: LevelData? = null
     val deathBursts = Array<DeathBurst>()
+    val portalGlows = Array<PortalGlow>()
 
     init {
         player = pools.obtainCube().init(100f, groundY)
@@ -200,6 +235,7 @@ class GameWorld : Tickable {
 
     fun updateVisuals(delta: Float) {
         updateDeathBursts(delta)
+        updatePortalGlows(delta)
         if (isPlayerDead || isLevelComplete) return
         colors.update(delta)
 
@@ -230,6 +266,7 @@ class GameWorld : Tickable {
         isPlayerDead = false
         isLevelComplete = false
         deathBursts.clear()
+        portalGlows.clear()
         worldScrolled = startScrolled
         postEndTimer = -1f
         bgImage = data.bgImage ?: ""
@@ -445,6 +482,7 @@ class GameWorld : Tickable {
             isPlayerDead = false
             isLevelComplete = false
             deathBursts.clear()
+            portalGlows.clear()
             worldScrolled = 0f
             postEndTimer = -1f
             levelEndX = 0f
@@ -484,6 +522,7 @@ class GameWorld : Tickable {
         for (i in blockCull until blocks.size) blocks.get(i).updatePosition(scrollSpeed, delta)
         for (i in orbCull until orbs.size) orbs.get(i).updatePosition(scrollSpeed, delta)
         for (i in padCull until pads.size) pads.get(i).updatePosition(scrollSpeed, delta)
+        for (i in 0 until portalGlows.size) portalGlows[i].x -= scrollSpeed * delta
 
         val playerX = currentPlayer.x
         val rangeMin = playerX - 600f
@@ -564,7 +603,7 @@ class GameWorld : Tickable {
             if (orb.x > rangeMax) break
             if (orb.bounds.overlaps(currentPlayer.bounds)) {
                 if (currentPlayer.isJumpHeld() && !currentPlayer.isJumpConsumed()) {
-                    orb.tryActivate(currentPlayer)
+                    if (orb.tryActivate(currentPlayer)) spawnOrbGlow(orb)
                 }
             } else {
                 orb.resetOverlap()
@@ -604,6 +643,7 @@ class GameWorld : Tickable {
 
     private fun handlePortalActivation(portal: AbstractPortal) {
         val currentPlayer = player ?: return
+        spawnPortalGlow(portal)
         if (portal is GravityPortal) {
             currentPlayer.setGravityFlipped(!currentPlayer.isGravityFlipped())
         } else if (portal is MiniPortal) {
@@ -626,6 +666,39 @@ class GameWorld : Tickable {
                 player = next
             }
         }
+    }
+
+    private fun spawnPortalGlow(portal: AbstractPortal) {
+        val color = when (portal) {
+            is CubePortal, is GravityPortal -> GREEN_PORTAL_GLOW
+            is ShipPortal, is MiniPortal -> PINK_PORTAL_GLOW
+            else -> return
+        }
+        portalGlows.add(
+            PortalGlow(
+                x = portal.x + portal.width / 2f,
+                y = portal.y + portal.height / 2f,
+                color = Color(color)
+            )
+        )
+    }
+
+    private fun spawnOrbGlow(orb: AbstractOrb) {
+        val color = when (orb.type) {
+            AbstractOrb.OrbType.YELLOW -> YELLOW_ORB_GLOW
+            AbstractOrb.OrbType.BLUE -> BLUE_ORB_GLOW
+            AbstractOrb.OrbType.PINK -> PINK_ORB_GLOW
+            AbstractOrb.OrbType.RED -> RED_ORB_GLOW
+            AbstractOrb.OrbType.BLACK -> BLACK_ORB_GLOW
+            AbstractOrb.OrbType.GREEN -> GREEN_ORB_GLOW
+        }
+        portalGlows.add(
+            PortalGlow(
+                x = orb.x + orb.width / 2f,
+                y = orb.y + orb.height / 2f,
+                color = Color(color)
+            )
+        )
     }
 
     fun cull() {
@@ -688,7 +761,7 @@ class GameWorld : Tickable {
                     x = centerX,
                     y = centerY,
                     startRadius = 0f,
-                    endRadius = 78f,
+                    endRadius = GameConstants.Editor.GRID_SIZE * 1.5f,
                     startDelay = i * 0.06f,
                     duration = 0.22f,
                     maxAlpha = 0.42f
@@ -702,6 +775,14 @@ class GameWorld : Tickable {
             val burst = deathBursts[i]
             burst.age += delta
             if (burst.age >= burst.startDelay + burst.duration) deathBursts.removeIndex(i)
+        }
+    }
+
+    private fun updatePortalGlows(delta: Float) {
+        for (i in portalGlows.size - 1 downTo 0) {
+            val glow = portalGlows[i]
+            glow.age += delta
+            if (glow.age >= glow.duration) portalGlows.removeIndex(i)
         }
     }
 
