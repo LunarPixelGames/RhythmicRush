@@ -4,6 +4,8 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
+import com.badlogic.gdx.graphics.Pixmap
+import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.graphics.g2d.TextureRegion
@@ -33,9 +35,11 @@ class LevelSelectScreen @JvmOverloads constructor(
     private val statBlue = Color.valueOf("6FA8E8")
     private val playTextColor = Color(0.04f, 0.05f, 0.09f, 1f)
     private val progressTrackColor = Color(0.10f, 0.10f, 0.15f, 0.72f)
+    private val thumbnailShade = Color(0.055f, 0.055f, 0.085f, 1f)
     private val touch = Vector2()
 
     private val levels = Array<LevelData>()
+    private val thumbnails = Array<Texture?>()
     private var selectedLevel = initialIndex
     private lateinit var titleFont: BitmapFont
     private lateinit var bodyFont: BitmapFont
@@ -44,7 +48,6 @@ class LevelSelectScreen @JvmOverloads constructor(
     private lateinit var backRegion: TextureRegion
     private lateinit var leftRegion: TextureRegion
     private lateinit var rightRegion: TextureRegion
-    private lateinit var difficultyRegions: kotlin.Array<TextureRegion?>
     private lateinit var back: AnimatedButton
     private lateinit var left: AnimatedButton
     private lateinit var right: AnimatedButton
@@ -71,6 +74,9 @@ class LevelSelectScreen @JvmOverloads constructor(
         private const val CAROUSEL_SPRING = 105f
         private const val CAROUSEL_DAMPING = 17f
         private const val CAROUSEL_MAX_SPEED = 14f
+        // Moves the thumbnail crop toward the left side of the source image.
+        // 0 = centered, 15 = 15% left, -15 = 15% right.
+        private const val THUMBNAIL_CROP_LEFT_PERCENT = 20.5f
     }
 
     override fun show() {
@@ -82,10 +88,6 @@ class LevelSelectScreen @JvmOverloads constructor(
         backRegion = atlas.findRegion("back")
         leftRegion = atlas.findRegion("left_arrow")
         rightRegion = atlas.findRegion("right_arrow")
-        difficultyRegions = arrayOf(
-            atlas.findRegion("1_diff"), atlas.findRegion("2_diff"), atlas.findRegion("3_diff"),
-            atlas.findRegion("4_diff"), atlas.findRegion("5_diff")
-        )
         levels.addAll(game.levelManager.getLevels())
         if (levels.size == 0) {
             val empty = LevelData()
@@ -102,6 +104,7 @@ class LevelSelectScreen @JvmOverloads constructor(
         practice = AnimatedButton(null, 0f, 0f, 0f, 0f) { launch(true) }
         play = AnimatedButton(null, 0f, 0f, 0f, 0f) { launch(false) }
         updateLayout()
+        loadThumbnails()
     }
 
     private fun updateLayout() {
@@ -202,24 +205,29 @@ class LevelSelectScreen @JvmOverloads constructor(
     private fun drawCard(level: LevelData, x: Float) {
         val name = level.name
         val progress = if (level.id >= 0) game.progressManager.getOrCreate(level.getProgressKey()) else null
-        val iconSize = cardH * 0.48f
-        val iconX = x + cardW * 0.09f
-        val iconY = cardY + (cardH - iconSize) / 2f
-        val region = difficultyRegions[difficultyIndex(level.difficulty)] ?: difficultyRegions[1]
-        if (region != null) game.batch.draw(region, iconX, iconY, iconSize, iconSize)
-        val textX = x + cardW * 0.43f
-        titleFont.data.setScale(1.05f)
-        drawShadow(titleFont, name, textX, cardY + cardH * 0.76f, UI.TEXT)
-        bodyFont.data.setScale(0.86f)
+        val levelIndex = levels.indexOf(level, true)
+        val thumbnail = if (levelIndex >= 0 && levelIndex < thumbnails.size) thumbnails[levelIndex] else null
+        val thumbX = x + 3f
+        val thumbY = cardY + 3f
+        val thumbW = cardW * 0.52f
+        val thumbH = cardH - 6f
+        if (thumbnail != null) drawDiagonalThumbnail(thumbnail, thumbX, thumbY, thumbW, thumbH)
+
+        val textX = x + cardW * 0.56f
         val difficulty = level.difficulty.replaceFirstChar { it.uppercase() }
-        drawShadow(bodyFont, difficulty, textX, cardY + cardH * 0.58f, UI.LIME)
-        val lineY = cardY + cardH * 0.46f
-        bodyFont.data.setScale(0.72f)
+        val difficultyColor = difficultyColor(level.difficulty)
+        titleFont.data.setScale(0.88f)
+        drawShadow(titleFont, name, textX, cardY + cardH * 0.78f, UI.TEXT)
+        bodyFont.data.setScale(0.74f)
+        drawShadow(bodyFont, difficulty, textX, cardY + cardH * 0.64f, difficultyColor)
+
+        val lineY = cardY + cardH * 0.48f
+        bodyFont.data.setScale(0.58f)
         drawShadow(bodyFont, "BEST", textX, lineY, UI.TEXT_SECONDARY)
-        drawShadow(bodyFont, "ATTEMPTS", textX + cardW * 0.25f, lineY, UI.TEXT_SECONDARY)
-        titleFont.data.setScale(0.76f)
-        drawShadow(titleFont, "${progress?.bestPercent ?: 0}%", textX, lineY - cardH * 0.13f, statBlue)
-        drawShadow(titleFont, "${progress?.totalAttempts ?: 0}", textX + cardW * 0.25f, lineY - cardH * 0.13f, statBlue)
+        drawShadow(bodyFont, "ATTEMPTS", textX + cardW * 0.22f, lineY, UI.TEXT_SECONDARY)
+        titleFont.data.setScale(0.64f)
+        drawShadow(titleFont, "${progress?.bestPercent ?: 0}%", textX, lineY - cardH * 0.12f, statBlue)
+        drawShadow(titleFont, "${progress?.totalAttempts ?: 0}", textX + cardW * 0.22f, lineY - cardH * 0.12f, statBlue)
         titleFont.data.setScale(1f)
         bodyFont.data.setScale(1f)
     }
@@ -231,9 +239,9 @@ class LevelSelectScreen @JvmOverloads constructor(
             0
         }
         val progress = (bestPercent.coerceIn(0, 100) / 100f)
-        val barX = x + cardW * 0.43f
+        val barX = x + cardW * 0.56f
         val barY = cardY + cardH * 0.14f
-        val barW = cardW * 0.46f
+        val barW = cardW * 0.35f
         val barH = maxOf(10f, cardH * 0.025f)
 
         shapes.color = progressTrackColor
@@ -289,12 +297,13 @@ class LevelSelectScreen @JvmOverloads constructor(
         font.draw(game.batch, text, x, y)
     }
 
-    private fun difficultyIndex(value: String?) = when (value?.lowercase()) {
-        "easy" -> 0
-        "hard" -> 2
-        "insane" -> 3
-        "extreme", "demon" -> 4
-        else -> 1
+    private fun difficultyColor(value: String?) = when (value?.lowercase()) {
+        "easy" -> Color.valueOf("55A7FF")
+        "normal" -> Color.valueOf("62D96B")
+        "hard" -> Color.valueOf("FFD84A")
+        "insane" -> Color.valueOf("B36CFF")
+        "extreme", "demon" -> Color.valueOf("FF5252")
+        else -> Color.valueOf("62D96B")
     }
 
     private fun navigate(direction: Int) {
@@ -324,7 +333,111 @@ class LevelSelectScreen @JvmOverloads constructor(
             subtleBorder,
             3f
         )
+        drawThumbnailPlaceholder(x)
         drawBestProgressBar(level, x)
+    }
+
+    private fun drawThumbnailPlaceholder(x: Float) {
+        val thumbX = x + 3f
+        val thumbY = cardY + 3f
+        val thumbW = cardW * 0.52f
+        val thumbH = cardH - 6f
+        val cut = thumbW * 0.14f
+        shapes.color = thumbnailShade
+        UI.rounded(shapes, thumbX, thumbY, thumbW, thumbH, cardH * 0.075f - 3f)
+        shapes.color = panelColor
+        shapes.triangle(
+            thumbX + thumbW, thumbY + thumbH,
+            thumbX + thumbW - cut, thumbY,
+            thumbX + thumbW, thumbY
+        )
+    }
+
+    private fun drawDiagonalThumbnail(texture: Texture, x: Float, y: Float, w: Float, h: Float) {
+        game.batch.draw(texture, x, y, w, h)
+    }
+
+    private fun loadThumbnails() {
+        thumbnails.forEach { it?.dispose() }
+        thumbnails.clear()
+        for (index in 0 until levels.size) {
+            thumbnails.add(loadTintedThumbnail(index, difficultyColor(levels[index].difficulty)))
+        }
+    }
+
+    private fun loadTintedThumbnail(index: Int, tint: Color): Texture? {
+        val extensions = arrayOf("png", "jpg", "jpeg")
+        val file = extensions
+            .asSequence()
+            .map { Gdx.files.internal("level_thumbnails/$index.$it") }
+            .firstOrNull { it.exists() }
+            ?: return null
+        return try {
+            val source = Pixmap(file)
+            val outputWidth = 768
+            val thumbnailAspect = (cardW * 0.52f) / (cardH - 6f)
+            val outputHeight = (outputWidth / thumbnailAspect).toInt().coerceAtLeast(1)
+            val tinted = Pixmap(outputWidth, outputHeight, Pixmap.Format.RGBA8888)
+            val scale = maxOf(
+                outputWidth.toFloat() / source.width,
+                outputHeight.toFloat() / source.height
+            )
+            val visibleSourceWidth = outputWidth / scale
+            val visibleSourceHeight = outputHeight / scale
+            val centeredCropX = (source.width - visibleSourceWidth) * 0.5f
+            val cropShift =
+                (source.width - visibleSourceWidth) * (THUMBNAIL_CROP_LEFT_PERCENT / 100f)
+            val cropX = (centeredCropX - cropShift)
+                .coerceIn(0f, (source.width - visibleSourceWidth).coerceAtLeast(0f))
+            val cropY = ((source.height - visibleSourceHeight) * 0.5f).coerceAtLeast(0f)
+            val cornerRadius = outputHeight * 0.075f
+            val diagonalCut = outputWidth * 0.14f
+            for (py in 0 until outputHeight) {
+                for (px in 0 until outputWidth) {
+                    val sourceX = (cropX + px / scale).toInt().coerceIn(0, source.width - 1)
+                    val sourceY = (cropY + py / scale).toInt().coerceIn(0, source.height - 1)
+                    val rgba = source.getPixel(sourceX, sourceY)
+                    val red = (rgba ushr 24) and 0xff
+                    val green = (rgba ushr 16) and 0xff
+                    val blue = (rgba ushr 8) and 0xff
+                    var alpha = rgba and 0xff
+                    if (px < cornerRadius) {
+                        val cornerCenterY = when {
+                            py < cornerRadius -> cornerRadius
+                            py > outputHeight - cornerRadius -> outputHeight - cornerRadius
+                            else -> -1f
+                        }
+                        if (cornerCenterY >= 0f) {
+                            val dx = px - cornerRadius
+                            val dy = py - cornerCenterY
+                            val edgeCoverage =
+                                (cornerRadius + 0.75f - kotlin.math.sqrt(dx * dx + dy * dy))
+                                    .coerceIn(0f, 1f)
+                            alpha = (alpha * edgeCoverage).toInt()
+                        }
+                    }
+                    val diagonalEdge =
+                        outputWidth - diagonalCut * (py / (outputHeight - 1f).coerceAtLeast(1f))
+                    val diagonalCoverage = (diagonalEdge + 0.75f - px).coerceIn(0f, 1f)
+                    alpha = (alpha * diagonalCoverage).toInt()
+                    val gray = (red * 0.299f + green * 0.587f + blue * 0.114f) / 255f
+                    val outRed = (gray * (0.22f + tint.r * 0.78f) * 255f).toInt().coerceIn(0, 255)
+                    val outGreen = (gray * (0.22f + tint.g * 0.78f) * 255f).toInt().coerceIn(0, 255)
+                    val outBlue = (gray * (0.22f + tint.b * 0.78f) * 255f).toInt().coerceIn(0, 255)
+                    val tintedRgba =
+                        (outRed shl 24) or (outGreen shl 16) or (outBlue shl 8) or alpha
+                    tinted.drawPixel(px, py, tintedRgba)
+                }
+            }
+            source.dispose()
+            Texture(tinted).also {
+                it.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear)
+                tinted.dispose()
+            }
+        } catch (exception: Exception) {
+            Gdx.app.error("LevelSelect", "Could not load thumbnail $index: ${exception.message}")
+            null
+        }
     }
 
     private fun drawSimplePanel(
@@ -424,6 +537,8 @@ class LevelSelectScreen @JvmOverloads constructor(
     }
 
     override fun dispose() {
+        thumbnails.forEach { it?.dispose() }
+        thumbnails.clear()
         shapes.dispose()
         super.dispose()
     }
