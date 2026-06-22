@@ -411,7 +411,7 @@ class GameScreen @JvmOverloads constructor(
         }
 
         val bg = world.backgroundColor
-        if (bgTexture == null) {
+        if (bgTexture == null || world.bgShape != null) {
             Gdx.gl.glClearColor(bg.r, bg.g, bg.b, 1f)
         } else {
             Gdx.gl.glClearColor(0f, 0f, 0f, 1f)

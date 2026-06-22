@@ -46,8 +46,6 @@ class ProceduralBackground {
         width: Float,
         height: Float
     ) {
-        renderer.color = baseColor
-        renderer.rect(left, bottom, width, height)
         farLayer.render(renderer, shape, baseColor, seed, scrollX, left, bottom, width, height)
         nearLayer.render(renderer, shape, baseColor, seed, scrollX, left, bottom, width, height)
     }
@@ -78,11 +76,14 @@ class BackgroundSlabLayer(
         screenHeight: Float
     ) {
         val parallaxScroll = scrollX * parallaxFactor
-        val visibleStart = screenLeft + parallaxScroll - CHUNK_WIDTH
-        val visibleEnd = screenLeft + screenWidth + parallaxScroll + CHUNK_WIDTH
+        val generationMargin = widthRange.endInclusive + gapRange.endInclusive
+        val visibleStart = screenLeft + parallaxScroll - generationMargin
+        val visibleEnd = screenLeft + screenWidth + parallaxScroll + generationMargin
         val firstChunk = floor(visibleStart / CHUNK_WIDTH).toInt()
         val lastChunk = ceil(visibleEnd / CHUNK_WIDTH).toInt()
         val bandHeight = screenHeight / bandCount
+        val screenRight = screenLeft + screenWidth
+        val screenTop = screenBottom + screenHeight
 
         setDarkenedColor(slabColor, baseColor, darkenAmount, alpha)
         renderer.color = slabColor
@@ -116,7 +117,14 @@ class BackgroundSlabLayer(
                     val slabY = bandBase + yJitter
                     val drawX = x - parallaxScroll
 
-                    drawDecorativeShape(renderer, shape, drawX, slabY, slabWidth, slabHeight)
+                    if (
+                        drawX + slabWidth >= screenLeft &&
+                        drawX <= screenRight &&
+                        slabY + slabHeight >= screenBottom &&
+                        slabY <= screenTop
+                    ) {
+                        drawDecorativeShape(renderer, shape, drawX, slabY, slabWidth, slabHeight)
+                    }
                     x += slabWidth
                 }
             }
@@ -229,10 +237,12 @@ private fun drawDecorativeShape(
             x, y,
             x + width, y
         )
-        PatternShape.CIRCLE -> renderer.ellipse(x, y, width, height, 28)
+        PatternShape.CIRCLE -> renderer.ellipse(x, y, width, height, CIRCLE_SEGMENTS)
         PatternShape.HEXAGON -> drawHexagon(renderer, x + width / 2f, y + height / 2f, width / 2f, height / 2f)
     }
 }
+
+private const val CIRCLE_SEGMENTS = 16
 
 private fun drawHexagon(renderer: ShapeRenderer, centerX: Float, centerY: Float, radiusX: Float, radiusY: Float) {
     var previousX = centerX + MathUtils.cosDeg(30f) * radiusX

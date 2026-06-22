@@ -153,13 +153,13 @@ class GameRenderer(
 
         shape.projectionMatrix = camera.combined
         batch.projectionMatrix = camera.combined
-        batch.begin()
 
         if (world.bgShape != null) {
-            batch.end()
             drawProceduralBackground(world.bgShape!!, bgColor)
-            batch.begin()
-        } else if (bgTexture != null) {
+        }
+
+        batch.begin()
+        if (world.bgShape == null && bgTexture != null) {
             drawBackground(bgTexture, bgColor)
         }
 
