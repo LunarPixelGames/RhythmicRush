@@ -12,6 +12,7 @@ import io.github.msameer0.rhythmicrush.atlas.AtlasManager
 import io.github.msameer0.rhythmicrush.audio.SoundManager
 import io.github.msameer0.rhythmicrush.font.FontManager
 import io.github.msameer0.rhythmicrush.game.level.LevelManager
+import io.github.msameer0.rhythmicrush.game.level.LevelThumbnailManager
 import io.github.msameer0.rhythmicrush.game.level.ProgressManager
 import io.github.msameer0.rhythmicrush.game.registries.Registries
 import io.github.msameer0.rhythmicrush.settings.SettingsManager
@@ -32,7 +33,7 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
     private var statusFont: BitmapFont? = null
 
     companion object {
-        private const val TOTAL_STEPS = 8
+        private const val TOTAL_STEPS = 10
     }
 
     override fun show() {
@@ -80,6 +81,15 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             }
 
             7 -> {
+                statusText = "Preparing Level Previews..."
+            }
+
+            8 -> {
+                game.levelThumbnailManager =
+                    LevelThumbnailManager(game.levelManager.getLevels())
+            }
+
+            9 -> {
                 statusText = "Finalizing..."
                 finalizeLoading()
                 finished = true

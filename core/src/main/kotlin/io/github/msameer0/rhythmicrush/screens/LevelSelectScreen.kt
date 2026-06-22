@@ -4,7 +4,6 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
-import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.GlyphLayout
@@ -39,7 +38,6 @@ class LevelSelectScreen @JvmOverloads constructor(
     private val touch = Vector2()
 
     private val levels = Array<LevelData>()
-    private val thumbnails = Array<Texture?>()
     private var selectedLevel = initialIndex
     private lateinit var titleFont: BitmapFont
     private lateinit var bodyFont: BitmapFont
@@ -74,9 +72,6 @@ class LevelSelectScreen @JvmOverloads constructor(
         private const val CAROUSEL_SPRING = 105f
         private const val CAROUSEL_DAMPING = 17f
         private const val CAROUSEL_MAX_SPEED = 14f
-        // Moves the thumbnail crop toward the left side of the source image.
-        // 0 = centered, 15 = 15% left, -15 = 15% right.
-        private const val THUMBNAIL_CROP_LEFT_PERCENT = 20.5f
     }
 
     override fun show() {
@@ -104,7 +99,6 @@ class LevelSelectScreen @JvmOverloads constructor(
         practice = AnimatedButton(null, 0f, 0f, 0f, 0f) { launch(true) }
         play = AnimatedButton(null, 0f, 0f, 0f, 0f) { launch(false) }
         updateLayout()
-        loadThumbnails()
     }
 
     private fun updateLayout() {
@@ -206,7 +200,7 @@ class LevelSelectScreen @JvmOverloads constructor(
         val name = level.name
         val progress = if (level.id >= 0) game.progressManager.getOrCreate(level.getProgressKey()) else null
         val levelIndex = levels.indexOf(level, true)
-        val thumbnail = if (levelIndex >= 0 && levelIndex < thumbnails.size) thumbnails[levelIndex] else null
+        val thumbnail = game.levelThumbnailManager[levelIndex]
         val thumbX = x + 3f
         val thumbY = cardY + 3f
         val thumbW = cardW * 0.52f
@@ -357,89 +351,6 @@ class LevelSelectScreen @JvmOverloads constructor(
         game.batch.draw(texture, x, y, w, h)
     }
 
-    private fun loadThumbnails() {
-        thumbnails.forEach { it?.dispose() }
-        thumbnails.clear()
-        for (index in 0 until levels.size) {
-            thumbnails.add(loadTintedThumbnail(index, difficultyColor(levels[index].difficulty)))
-        }
-    }
-
-    private fun loadTintedThumbnail(index: Int, tint: Color): Texture? {
-        val extensions = arrayOf("png", "jpg", "jpeg")
-        val file = extensions
-            .asSequence()
-            .map { Gdx.files.internal("level_thumbnails/$index.$it") }
-            .firstOrNull { it.exists() }
-            ?: return null
-        return try {
-            val source = Pixmap(file)
-            val outputWidth = 768
-            val thumbnailAspect = (cardW * 0.52f) / (cardH - 6f)
-            val outputHeight = (outputWidth / thumbnailAspect).toInt().coerceAtLeast(1)
-            val tinted = Pixmap(outputWidth, outputHeight, Pixmap.Format.RGBA8888)
-            val scale = maxOf(
-                outputWidth.toFloat() / source.width,
-                outputHeight.toFloat() / source.height
-            )
-            val visibleSourceWidth = outputWidth / scale
-            val visibleSourceHeight = outputHeight / scale
-            val centeredCropX = (source.width - visibleSourceWidth) * 0.5f
-            val cropShift =
-                (source.width - visibleSourceWidth) * (THUMBNAIL_CROP_LEFT_PERCENT / 100f)
-            val cropX = (centeredCropX - cropShift)
-                .coerceIn(0f, (source.width - visibleSourceWidth).coerceAtLeast(0f))
-            val cropY = ((source.height - visibleSourceHeight) * 0.5f).coerceAtLeast(0f)
-            val cornerRadius = outputHeight * 0.075f
-            val diagonalCut = outputWidth * 0.14f
-            for (py in 0 until outputHeight) {
-                for (px in 0 until outputWidth) {
-                    val sourceX = (cropX + px / scale).toInt().coerceIn(0, source.width - 1)
-                    val sourceY = (cropY + py / scale).toInt().coerceIn(0, source.height - 1)
-                    val rgba = source.getPixel(sourceX, sourceY)
-                    val red = (rgba ushr 24) and 0xff
-                    val green = (rgba ushr 16) and 0xff
-                    val blue = (rgba ushr 8) and 0xff
-                    var alpha = rgba and 0xff
-                    if (px < cornerRadius) {
-                        val cornerCenterY = when {
-                            py < cornerRadius -> cornerRadius
-                            py > outputHeight - cornerRadius -> outputHeight - cornerRadius
-                            else -> -1f
-                        }
-                        if (cornerCenterY >= 0f) {
-                            val dx = px - cornerRadius
-                            val dy = py - cornerCenterY
-                            val edgeCoverage =
-                                (cornerRadius + 0.75f - kotlin.math.sqrt(dx * dx + dy * dy))
-                                    .coerceIn(0f, 1f)
-                            alpha = (alpha * edgeCoverage).toInt()
-                        }
-                    }
-                    val diagonalEdge =
-                        outputWidth - diagonalCut * (py / (outputHeight - 1f).coerceAtLeast(1f))
-                    val diagonalCoverage = (diagonalEdge + 0.75f - px).coerceIn(0f, 1f)
-                    alpha = (alpha * diagonalCoverage).toInt()
-                    val gray = (red * 0.299f + green * 0.587f + blue * 0.114f) / 255f
-                    val outRed = (gray * (0.22f + tint.r * 0.78f) * 255f).toInt().coerceIn(0, 255)
-                    val outGreen = (gray * (0.22f + tint.g * 0.78f) * 255f).toInt().coerceIn(0, 255)
-                    val outBlue = (gray * (0.22f + tint.b * 0.78f) * 255f).toInt().coerceIn(0, 255)
-                    val tintedRgba =
-                        (outRed shl 24) or (outGreen shl 16) or (outBlue shl 8) or alpha
-                    tinted.drawPixel(px, py, tintedRgba)
-                }
-            }
-            source.dispose()
-            Texture(tinted).also {
-                it.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear)
-                tinted.dispose()
-            }
-        } catch (exception: Exception) {
-            Gdx.app.error("LevelSelect", "Could not load thumbnail $index: ${exception.message}")
-            null
-        }
-    }
-
     private fun drawSimplePanel(
         x: Float,
         y: Float,
@@ -537,8 +448,6 @@ class LevelSelectScreen @JvmOverloads constructor(
     }
 
     override fun dispose() {
-        thumbnails.forEach { it?.dispose() }
-        thumbnails.clear()
         shapes.dispose()
         super.dispose()
     }

@@ -8,6 +8,7 @@ import io.github.msameer0.rhythmicrush.atlas.AtlasManager
 import io.github.msameer0.rhythmicrush.audio.SoundManager
 import io.github.msameer0.rhythmicrush.font.FontManager
 import io.github.msameer0.rhythmicrush.game.level.LevelManager
+import io.github.msameer0.rhythmicrush.game.level.LevelThumbnailManager
 import io.github.msameer0.rhythmicrush.game.level.ProgressManager
 import io.github.msameer0.rhythmicrush.screens.LoadingScreen
 import io.github.msameer0.rhythmicrush.settings.SettingsManager
@@ -27,6 +28,7 @@ class RhythmicRushGame(val adController: AdController, val updateManager: Update
     var windowController: WindowController? = null
     lateinit var progressManager: ProgressManager
     lateinit var levelManager: LevelManager
+    lateinit var levelThumbnailManager: LevelThumbnailManager
     lateinit var settingsManager: SettingsManager
 
     override fun create() {
@@ -45,6 +47,7 @@ class RhythmicRushGame(val adController: AdController, val updateManager: Update
         if (::soundManager.isInitialized) soundManager.dispose()
         if (::atlasManager.isInitialized) atlasManager.dispose()
         if (::fontManager.isInitialized) fontManager.dispose()
+        if (::levelThumbnailManager.isInitialized) levelThumbnailManager.dispose()
         Gdx.app.log("Game", "Game disposed.")
     }
 }
