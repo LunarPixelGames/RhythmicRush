@@ -307,7 +307,7 @@ class LevelSelectScreen @JvmOverloads constructor(
     }
 
     private fun launch(practiceMode: Boolean) {
-        if (isCarouselMoving() || draggingCard) return
+        if (draggingCard) return
         val level = levels[selectedLevel]
         if (level.fileName != "-1.json") game.screen = GameScreen(game, level, selectedLevel, practiceMode)
     }
