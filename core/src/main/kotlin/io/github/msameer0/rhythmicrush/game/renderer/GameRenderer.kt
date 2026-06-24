@@ -556,7 +556,6 @@ class GameRenderer(
             val color1 = Color.GREEN
             val color2 = Color.CYAN
 
-            // Draw layer 1
             batch.color = color1
             batch.draw(
                 layer1,
@@ -566,7 +565,6 @@ class GameRenderer(
                 1f, 1f, player.getRotation()
             )
 
-            // Draw layer 2
             batch.color = color2
             batch.draw(
                 layer2,
@@ -578,7 +576,6 @@ class GameRenderer(
 
             batch.color = Color.WHITE
         } else {
-            // Ship rendering
             val ship1 = shipLayer1Region
             val ship2 = shipLayer2Region
 
@@ -593,7 +590,6 @@ class GameRenderer(
                 return
             }
 
-            // Ship scale
             val scale = 1.675f
 
             // Handle flipping for ship layers
@@ -605,11 +601,9 @@ class GameRenderer(
                 if (ship2.isFlipY) ship2.flip(false, true)
             }
 
-            // Colors
             val color1 = Color.GREEN
             val color2 = Color.CYAN
 
-            // 1. Draw Ship Layer 1
             batch.color = color1
             batch.draw(
                 ship1,
@@ -619,7 +613,6 @@ class GameRenderer(
                 scale, scale, player.getRotation()
             )
 
-            // 2. Draw Ship Layer 2
             batch.color = color2
             batch.draw(
                 ship2,
