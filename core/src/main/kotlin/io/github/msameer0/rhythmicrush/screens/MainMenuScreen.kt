@@ -36,6 +36,8 @@ class MainMenuScreen @JvmOverloads constructor(
 
     private lateinit var title: TextureRegion
     private lateinit var startButton: TextureRegion
+    private lateinit var onlineButton: TextureRegion
+    private lateinit var skinsButton: TextureRegion
     private lateinit var settingsButton: TextureRegion
     private lateinit var backArrow: TextureRegion
     private lateinit var infoButton: TextureRegion
@@ -51,6 +53,8 @@ class MainMenuScreen @JvmOverloads constructor(
     private var titleH = 0f
 
     private lateinit var btnPlay: AnimatedButton
+    private lateinit var btnOnline: AnimatedButton
+    private lateinit var btnSkins: AnimatedButton
     private lateinit var btnSettings: AnimatedButton
     private lateinit var btnInfo: AnimatedButton
     private lateinit var btnOverlayBack: AnimatedButton
@@ -59,6 +63,7 @@ class MainMenuScreen @JvmOverloads constructor(
 
     private var settingsOpen = false
     private var infoOpen = false
+    private var skinsPopupOpen = false
     private lateinit var shapes: ShapeRenderer
     private lateinit var font: BitmapFont
     private lateinit var headingFont: BitmapFont
@@ -202,6 +207,8 @@ class MainMenuScreen @JvmOverloads constructor(
 
         title = menuAtlas.findRegion("title")
         startButton = menuAtlas.findRegion("start_button")
+        onlineButton = menuAtlas.findRegion("online")
+        skinsButton = menuAtlas.findRegion("skins")
         settingsButton = menuAtlas.findRegion("settings_button")
         backArrow = levelSelectAtlas.findRegion("back")
         infoButton = menuAtlas.findRegion("info")
@@ -221,6 +228,8 @@ class MainMenuScreen @JvmOverloads constructor(
 
         btnPlay =
             AnimatedButton(startButton, 0f, 0f, 0f, 0f) { game.screen = LevelSelectScreen(game) }
+        btnOnline = AnimatedButton(onlineButton, 0f, 0f, 0f, 0f) { game.screen = OnlineScreen(game) }
+        btnSkins = AnimatedButton(skinsButton, 0f, 0f, 0f, 0f) { skinsPopupOpen = true }
         btnSettings = AnimatedButton(settingsButton, 0f, 0f, 0f, 0f) { settingsOpen = true }
         btnInfo = AnimatedButton(infoButton, 0f, 0f, 0f, 0f) { infoOpen = true }
         btnOverlayBack = AnimatedButton(backArrow, 0f, 0f, 0f, 0f, null)
@@ -324,13 +333,20 @@ class MainMenuScreen @JvmOverloads constructor(
 
         val maxStartW = vw * 0.25f * 0.55f
         val startScale = maxStartW / startButton.regionWidth
-        val startW = startButton.regionWidth * startScale
-        val startH = startButton.regionHeight * startScale
-        val startX = vw / 2f - startW / 2f
-        val minY = titleY - startH - vh * 0.06f
-        val midY = vh / 2f - startH / 2f
-        val startY = min(midY, minY)
-        if (::btnPlay.isInitialized) btnPlay.setBounds(startX, startY, startW, startH)
+        val playSize = startButton.regionHeight * startScale * 1.35f
+        val sideSize = playSize * 0.675f
+        val groupCenterY = min(titleY - playSize / 2f - vh * 0.06f, vh / 2f)
+        val playX = vw / 2f - playSize / 2f
+        val playY = groupCenterY - playSize / 2f
+        val sideY = groupCenterY - sideSize / 2f
+        val sideGap = sideSize * 0.28f
+        if (::btnPlay.isInitialized) btnPlay.setBounds(playX, playY, playSize, playSize)
+        if (::btnOnline.isInitialized) {
+            btnOnline.setBounds(playX + playSize + sideGap, sideY, sideSize, sideSize)
+        }
+        if (::btnSkins.isInitialized) {
+            btnSkins.setBounds(playX - sideGap - sideSize, sideY, sideSize, sideSize)
+        }
 
         val maxSettingsW = vw * 0.1f * 0.85f
         val settingsScale = maxSettingsW / settingsButton.regionWidth
@@ -391,10 +407,16 @@ class MainMenuScreen @JvmOverloads constructor(
 
     override fun update(delta: Float) {
         backgroundScroll += MENU_BACKGROUND_SCROLL_SPEED * delta
-        if (!settingsOpen && !infoOpen) {
+        if (!settingsOpen && !infoOpen && !skinsPopupOpen) {
             btnPlay.update(delta)
+            btnOnline.update(delta)
+            btnSkins.update(delta)
             btnSettings.update(delta)
             btnInfo.update(delta)
+        }
+        if (skinsPopupOpen) {
+            handleSkinsPopupInput()
+            return
         }
         if (settingsOpen || infoOpen) {
             btnOverlayBack.update(delta)
@@ -413,10 +435,13 @@ class MainMenuScreen @JvmOverloads constructor(
         game.batch.projectionMatrix = camera.combined
         game.batch.begin()
         game.batch.draw(title, titleX, titleY, titleW, titleH)
+        btnSkins.draw(game.batch)
+        btnOnline.draw(game.batch)
         btnPlay.draw(game.batch)
         btnSettings.draw(game.batch)
         btnInfo.draw(game.batch)
         game.batch.end()
+        if (skinsPopupOpen) drawSkinsPopup()
         if (settingsOpen) drawSettingsOverlay()
         else if (infoOpen) drawInfoOverlay()
     }
@@ -439,6 +464,54 @@ class MainMenuScreen @JvmOverloads constructor(
         )
         shapes.end()
         Gdx.gl.glDisable(GL20.GL_BLEND)
+    }
+
+    private fun drawSkinsPopup() {
+        val boxW = min(viewport.worldWidth * 0.70f, 820f)
+        val boxH = min(viewport.worldHeight * 0.34f, 340f).coerceAtLeast(260f)
+        val boxX = viewport.worldWidth / 2f - boxW / 2f
+        val boxY = viewport.worldHeight / 2f - boxH / 2f
+        val ok = skinsPopupOkBounds()
+
+        Gdx.gl.glEnable(GL20.GL_BLEND)
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+        shapes.projectionMatrix = camera.combined
+        shapes.begin(ShapeRenderer.ShapeType.Filled)
+        shapes.color = Color(0f, 0f, 0f, 0.55f)
+        shapes.rect(0f, 0f, viewport.worldWidth, viewport.worldHeight)
+        shapes.color = Color(0f, 0f, 0f, 0.22f)
+        drawRoundedRect(boxX + 8f, boxY - 10f, boxW, boxH, 30f)
+        shapes.color = UI.PANEL_ELEVATED
+        drawRoundedRect(boxX, boxY, boxW, boxH, 30f)
+        shapes.color = UI.LIME
+        drawRoundedRect(ok[0], ok[1], ok[2], ok[3], 18f)
+        shapes.end()
+        Gdx.gl.glDisable(GL20.GL_BLEND)
+
+        game.batch.begin()
+        drawCenteredMenuText(headingFont, "COMING SOON", boxX + boxW / 2f, boxY + boxH - 72f, UI.YELLOW, 0.72f)
+        drawCenteredMenuTextFit(
+            font,
+            "Skins and shop will be added in an upcoming update.",
+            boxX + boxW / 2f,
+            boxY + boxH / 2f + 18f,
+            UI.TEXT,
+            0.92f,
+            0.64f,
+            boxW - 90f
+        )
+        drawCenteredMenuText(font, "OK", ok[0] + ok[2] / 2f, ok[1] + ok[3] / 2f, Color.BLACK, 0.82f)
+        game.batch.end()
+    }
+
+    private fun skinsPopupOkBounds(): FloatArray {
+        val boxW = min(viewport.worldWidth * 0.70f, 820f)
+        val boxH = min(viewport.worldHeight * 0.34f, 340f).coerceAtLeast(260f)
+        val boxX = viewport.worldWidth / 2f - boxW / 2f
+        val boxY = viewport.worldHeight / 2f - boxH / 2f
+        val okW = min(boxW * 0.38f, 260f)
+        val okH = 68f
+        return floatArrayOf(boxX + boxW / 2f - okW / 2f, boxY + 34f, okW, okH)
     }
 
     private fun drawSettingsOverlay() {
@@ -735,13 +808,36 @@ class MainMenuScreen @JvmOverloads constructor(
         val touchPosition = unproject()
         if (Gdx.input.justTouched()) {
             btnPlay.onTouchDown(touchPosition.x, touchPosition.y)
+            btnOnline.onTouchDown(touchPosition.x, touchPosition.y)
+            btnSkins.onTouchDown(touchPosition.x, touchPosition.y)
             btnSettings.onTouchDown(touchPosition.x, touchPosition.y)
             btnInfo.onTouchDown(touchPosition.x, touchPosition.y)
         }
         if (!Gdx.input.isTouched) {
             btnPlay.onTouchUp(touchPosition.x, touchPosition.y)
+            btnOnline.onTouchUp(touchPosition.x, touchPosition.y)
+            btnSkins.onTouchUp(touchPosition.x, touchPosition.y)
             btnSettings.onTouchUp(touchPosition.x, touchPosition.y)
             btnInfo.onTouchUp(touchPosition.x, touchPosition.y)
+        }
+    }
+
+    private fun handleSkinsPopupInput() {
+        if (
+            Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) ||
+            Gdx.input.isKeyJustPressed(Input.Keys.ENTER) ||
+            Gdx.input.isKeyJustPressed(Input.Keys.NUMPAD_ENTER) ||
+            Gdx.input.isKeyJustPressed(Input.Keys.SPACE)
+        ) {
+            skinsPopupOpen = false
+            return
+        }
+        if (Gdx.input.justTouched()) {
+            val touchPosition = unproject()
+            val ok = skinsPopupOkBounds()
+            if (hits(touchPosition, ok[0], ok[1], ok[2], ok[3])) {
+                skinsPopupOpen = false
+            }
         }
     }
 
@@ -1233,6 +1329,45 @@ class MainMenuScreen @JvmOverloads constructor(
         f.draw(game.batch, text, x + 2f, y - 2f)
         f.color = color
         f.draw(game.batch, text, x, y)
+    }
+
+    private fun drawCenteredMenuText(
+        f: BitmapFont,
+        text: String,
+        centerX: Float,
+        centerY: Float,
+        color: Color,
+        scale: Float
+    ) {
+        f.data.setScale(scale)
+        layout.setText(f, text)
+        drawTextWithShadow(
+            f,
+            text,
+            centerX - layout.width / 2f,
+            centerY + layout.height / 2f,
+            color
+        )
+    }
+
+    private fun drawCenteredMenuTextFit(
+        f: BitmapFont,
+        text: String,
+        centerX: Float,
+        centerY: Float,
+        color: Color,
+        preferredScale: Float,
+        minimumScale: Float,
+        maxWidth: Float
+    ) {
+        f.data.setScale(preferredScale)
+        layout.setText(f, text)
+        val scale = if (layout.width > maxWidth && layout.width > 0f) {
+            (preferredScale * maxWidth / layout.width).coerceIn(minimumScale, preferredScale)
+        } else {
+            preferredScale
+        }
+        drawCenteredMenuText(f, text, centerX, centerY, color, scale)
     }
 
     private fun createRoundedRect(

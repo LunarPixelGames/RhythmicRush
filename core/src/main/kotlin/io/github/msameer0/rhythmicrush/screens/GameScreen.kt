@@ -665,6 +665,7 @@ class GameScreen @JvmOverloads constructor(
         val key = levelKey ?: return
         val levelProgress = game.progressManager.getOrCreate(key)
         levelProgress.totalAttempts++
+        levelProgress.localDeviceAttempts++
         game.progressManager.save()
     }
 
@@ -676,6 +677,7 @@ class GameScreen @JvmOverloads constructor(
         if (percentage > levelProgress.bestPercent) {
             levelProgress.bestPercent = percentage
             game.progressManager.save()
+            game.queueCloudProgressUpload()
             hud.showNewBestPopup(percentage)
             checkAndShowAd(percentage / 100f)
         }
@@ -686,8 +688,12 @@ class GameScreen @JvmOverloads constructor(
         if (key == null || practiceMode) return
         val levelProgress = game.progressManager.getOrCreate(key)
         levelProgress.bestPercent = 100
-        awardCompletionRewards()
+        if (!levelProgress.completionRewardGranted) {
+            awardCompletionRewards()
+            levelProgress.completionRewardGranted = true
+        }
         game.progressManager.save()
+        game.queueCloudProgressUpload()
     }
 
     private fun awardCompletionRewards() {
