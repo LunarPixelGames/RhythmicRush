@@ -159,7 +159,7 @@ class OverlayUI(
                 0 -> "RESTART"
                 1 -> "RESUME"
                 2 -> if (practiceMode) "NORMAL MODE" else "PRACTICE MODE"
-                else -> "LEVEL SELECT"
+                else -> "MENU"
             }
             val cx = panelX + pad + i * (buttonW + buttonGap) + buttonW / 2f
             text(
@@ -172,7 +172,7 @@ class OverlayUI(
                 true
             )
         }
-        text("Enter / Space: Resume     R: Restart     Esc: Level Select", center, panelY + pad * 0.38f, UI.TEXT_MUTED, 1.12f, true)
+        text("Enter / Space: Resume     R: Restart     Esc: Menu", center, panelY + pad * 0.38f, UI.TEXT_MUTED, 1.12f, true)
     }
 
     fun drawCompleteOverlay(
@@ -196,8 +196,8 @@ class OverlayUI(
         for (i in 0..2) {
             val label = when (i) {
                 0 -> "MENU"
-                1 -> if (hasNextLevel) "NEXT LEVEL" else "REPLAY"
-                else -> "REPLAY"
+                1 -> if (hasNextLevel) "NEXT LEVEL" else "PLAY AGAIN"
+                else -> "PLAY AGAIN"
             }
             val cx = panelX + pad + i * (completeW + buttonGap) + completeW / 2f
             text(label, cx, buttonY + buttonH / 2f + 8f * uiScale, if (i == 1) PRIMARY_TEXT else UI.TEXT, 0.80f, true, true)
