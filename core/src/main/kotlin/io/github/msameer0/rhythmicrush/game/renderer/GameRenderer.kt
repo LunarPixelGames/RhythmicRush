@@ -206,18 +206,15 @@ class GameRenderer(
         drawGroundFill()
         shape.end()
 
+        batch.begin()
         if (world.deathBursts.size > 0 || world.portalGlows.size > 0) {
-            batch.begin()
             batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
             drawDeathBursts()
             batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE)
             drawPortalGlows()
-            batch.color = Color.WHITE
-            batch.end()
         }
 
         // Pass 5: Foreground gameplay elements
-        batch.begin()
         batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
         batch.color = Color.WHITE
         if (!world.isPlayerDead && !world.playerAbsorbed) drawPlayer(player)
@@ -249,7 +246,6 @@ class GameRenderer(
 
         Gdx.gl.glEnable(GL20.GL_BLEND)
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-        shape.projectionMatrix = camera.combined
         shape.begin(ShapeRenderer.ShapeType.Filled)
         proceduralBackground.render(
             shape,

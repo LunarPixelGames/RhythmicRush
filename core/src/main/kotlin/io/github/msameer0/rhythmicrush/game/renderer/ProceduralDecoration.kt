@@ -64,6 +64,8 @@ class BackgroundSlabLayer(
 ) {
     private val slabColor = Color()
 
+    private val random = DecorationRandom(0)
+
     fun render(
         renderer: ShapeRenderer,
         shape: PatternShape,
@@ -90,7 +92,7 @@ class BackgroundSlabLayer(
 
         for (band in 0 until bandCount) {
             for (chunk in firstChunk..lastChunk) {
-                val random = DecorationRandom(mixSeed(levelSeed, seedSalt, band, chunk))
+                random.reset(mixSeed(levelSeed, seedSalt, band, chunk))
                 var x = chunk * CHUNK_WIDTH - random.range(80f, 360f)
                 val chunkEnd = (chunk + 1) * CHUNK_WIDTH + widthRange.endInclusive
 
@@ -277,6 +279,10 @@ private fun mixSeed(levelSeed: Int, salt: Int, band: Int, chunk: Int): Int {
 
 private class DecorationRandom(seed: Int) {
     private var state = if (seed == 0) 0x6d2b79f5 else seed
+
+    fun reset(seed: Int) {
+        state = if (seed == 0) 0x6d2b79f5 else seed
+    }
 
     fun nextFloat(): Float {
         var x = state

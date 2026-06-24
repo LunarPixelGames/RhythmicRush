@@ -51,9 +51,9 @@ class SawBlade : AbstractHazard {
         val cx = x + width / 2f
         val cy = y + height / 2f
 
-        val pPoly = player.getPlayerPolygon()
+        if (!player.bounds.overlaps(bounds)) return
 
-        if (!pPoly.boundingRectangle.overlaps(bounds)) return
+        val pPoly = player.getPlayerPolygon()
 
         if (circleOverlapsPolygon(cx, cy, radius, pPoly)) {
             onTouch(player)

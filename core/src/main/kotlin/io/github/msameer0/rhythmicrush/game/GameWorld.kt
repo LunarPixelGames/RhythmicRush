@@ -47,16 +47,29 @@ import kotlin.math.ceil
  */
 class GameWorld : Tickable {
     /** Represents one expanding ring in the player death effect. */
-    data class DeathBurst(
-        val x: Float,
-        val y: Float,
-        val startRadius: Float,
-        val endRadius: Float,
-        val startDelay: Float,
-        val duration: Float,
-        val maxAlpha: Float,
+    class DeathBurst {
+        var x: Float = 0f
+        var y: Float = 0f
+        var startRadius: Float = 0f
+        var endRadius: Float = 0f
+        var startDelay: Float = 0f
+        var duration: Float = 0f
+        var maxAlpha: Float = 0f
         var age: Float = 0f
-    ) {
+
+        fun init(
+            x: Float, y: Float, startRadius: Float, endRadius: Float,
+            startDelay: Float, duration: Float, maxAlpha: Float
+        ): DeathBurst {
+            this.x = x; this.y = y
+            this.startRadius = startRadius; this.endRadius = endRadius
+            this.startDelay = startDelay; this.duration = duration
+            this.maxAlpha = maxAlpha; this.age = 0f
+            return this
+        }
+
+        fun reset() { age = 0f }
+
         private val minimumAlpha: Float
             get() = 0.07f
 
@@ -80,16 +93,29 @@ class GameWorld : Tickable {
             get() = if (!isActive) 0.55f else 0.55f + 0.4f * progress
     }
 
-    data class PortalGlow(
-        var x: Float,
-        val y: Float,
-        val color: Color,
-        val startRadius: Float = 24f,
-        val endRadius: Float = GameConstants.Editor.GRID_SIZE * 1.5f,
-        val duration: Float = 0.48f,
-        val maxAlpha: Float = 0.42f,
+    class PortalGlow {
+        var x: Float = 0f
+        var y: Float = 0f
+        val color: Color = Color()
+        var startRadius: Float = 24f
+        var endRadius: Float = GameConstants.Editor.GRID_SIZE * 1.5f
+        var duration: Float = 0.48f
+        var maxAlpha: Float = 0.42f
         var age: Float = 0f
-    ) {
+
+        fun init(x: Float, y: Float, color: Color): PortalGlow {
+            this.x = x; this.y = y
+            this.color.set(color)
+            this.startRadius = 24f
+            this.endRadius = GameConstants.Editor.GRID_SIZE * 1.5f
+            this.duration = 0.48f
+            this.maxAlpha = 0.42f
+            this.age = 0f
+            return this
+        }
+
+        fun reset() { age = 0f }
+
         private val minimumAlpha: Float
             get() = 0.07f
 
@@ -125,14 +151,19 @@ class GameWorld : Tickable {
 
         @JvmStatic
         fun hexToColor(hexStr: String?): Color {
+            return hexToColor(hexStr, Color())
+        }
+
+        @JvmStatic
+        fun hexToColor(hexStr: String?, out: Color): Color {
             var hex = hexStr
-            if (hex.isNullOrEmpty()) return Color(0f, 0f, 0f, 1f)
+            if (hex.isNullOrEmpty()) return out.set(0f, 0f, 0f, 1f)
             if (hex.startsWith("#")) hex = hex.substring(1)
             val colorValue = hex.toLong(16)
             val red = (colorValue shr 16 and 0xFF).toFloat() / 255f
             val green = (colorValue shr 8 and 0xFF).toFloat() / 255f
             val blue = (colorValue and 0xFF).toFloat() / 255f
-            return Color(red, green, blue, 1f)
+            return out.set(red, green, blue, 1f)
         }
 
         private fun resolveBlockType(textureName: String?): BlockType {
@@ -147,6 +178,9 @@ class GameWorld : Tickable {
 
     private val pools = WorldPoolManager()
     private val colors = ColorStateManager()
+
+    private val deathBurstPool = Array<DeathBurst>()
+    private val portalGlowPool = Array<PortalGlow>()
 
     var currentLoudness: Float = 0f
     var targetLoudness: Float = 0f
@@ -803,6 +837,10 @@ class GameWorld : Tickable {
         }
     }
 
+    private fun obtainPortalGlow(): PortalGlow {
+        return if (portalGlowPool.size > 0) portalGlowPool.pop() else PortalGlow()
+    }
+
     private fun spawnPortalGlow(portal: AbstractPortal) {
         val color = when (portal) {
             is CubePortal, is GravityPortal -> GREEN_PORTAL_GLOW
@@ -810,10 +848,10 @@ class GameWorld : Tickable {
             else -> return
         }
         portalGlows.add(
-            PortalGlow(
-                x = portal.x + portal.width / 2f,
-                y = portal.y + portal.height / 2f,
-                color = Color(color)
+            obtainPortalGlow().init(
+                portal.x + portal.width / 2f,
+                portal.y + portal.height / 2f,
+                color
             )
         )
     }
@@ -828,10 +866,10 @@ class GameWorld : Tickable {
             AbstractOrb.OrbType.GREEN -> GREEN_ORB_GLOW
         }
         portalGlows.add(
-            PortalGlow(
-                x = orb.x + orb.width / 2f,
-                y = orb.y + orb.height / 2f,
-                color = Color(color)
+            obtainPortalGlow().init(
+                orb.x + orb.width / 2f,
+                orb.y + orb.height / 2f,
+                color
             )
         )
     }
@@ -846,10 +884,10 @@ class GameWorld : Tickable {
             AbstractPad.PadType.GREEN -> GREEN_ORB_GLOW
         }
         portalGlows.add(
-            PortalGlow(
-                x = pad.hitbox.x + pad.hitbox.width / 2f,
-                y = pad.hitbox.y + pad.hitbox.height / 2f,
-                color = Color(color)
+            obtainPortalGlow().init(
+                pad.hitbox.x + pad.hitbox.width / 2f,
+                pad.hitbox.y + pad.hitbox.height / 2f,
+                color
             )
         )
     }
@@ -902,7 +940,13 @@ class GameWorld : Tickable {
         }
     }
 
+    private fun obtainDeathBurst(): DeathBurst {
+        return if (deathBurstPool.size > 0) deathBurstPool.pop() else DeathBurst()
+    }
+
     private fun spawnDeathBursts() {
+        // Return existing bursts to pool before clearing
+        for (i in 0 until deathBursts.size) deathBurstPool.add(deathBursts[i])
         deathBursts.clear()
         val currentPlayer = player ?: return
         val centerX = currentPlayer.x + currentPlayer.width / 2f
@@ -910,14 +954,10 @@ class GameWorld : Tickable {
         val burstCount = 3
         for (i in 0 until burstCount) {
             deathBursts.add(
-                DeathBurst(
-                    x = centerX,
-                    y = centerY,
-                    startRadius = 0f,
-                    endRadius = GameConstants.Editor.GRID_SIZE * 1.5f,
-                    startDelay = i * 0.06f,
-                    duration = 0.22f,
-                    maxAlpha = 0.42f
+                obtainDeathBurst().init(
+                    centerX, centerY,
+                    0f, GameConstants.Editor.GRID_SIZE * 1.5f,
+                    i * 0.06f, 0.22f, 0.42f
                 )
             )
         }
@@ -927,7 +967,10 @@ class GameWorld : Tickable {
         for (i in deathBursts.size - 1 downTo 0) {
             val burst = deathBursts[i]
             burst.age += delta
-            if (burst.age >= burst.startDelay + burst.duration) deathBursts.removeIndex(i)
+            if (burst.age >= burst.startDelay + burst.duration) {
+                deathBurstPool.add(burst)
+                deathBursts.removeIndex(i)
+            }
         }
     }
 
@@ -935,7 +978,10 @@ class GameWorld : Tickable {
         for (i in portalGlows.size - 1 downTo 0) {
             val glow = portalGlows[i]
             glow.age += delta
-            if (glow.age >= glow.duration) portalGlows.removeIndex(i)
+            if (glow.age >= glow.duration) {
+                portalGlowPool.add(glow)
+                portalGlows.removeIndex(i)
+            }
         }
     }
 

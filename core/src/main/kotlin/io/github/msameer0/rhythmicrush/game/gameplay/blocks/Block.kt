@@ -134,12 +134,15 @@ open class Block : Tickable, Rotatable {
         }
 
         if (polygonWidth != width || polygonHeight != height) {
-            blockPolygon.vertices = floatArrayOf(
-                0f, 0f,
-                width, 0f,
-                width, height,
-                0f, height
-            )
+            var verts = blockPolygon.vertices
+            if (verts == null || verts.size != 8) {
+                verts = FloatArray(8)
+                blockPolygon.vertices = verts
+            }
+            verts[0] = 0f; verts[1] = 0f
+            verts[2] = width; verts[3] = 0f
+            verts[4] = width; verts[5] = height
+            verts[6] = 0f; verts[7] = height
             polygonWidth = width
             polygonHeight = height
         }

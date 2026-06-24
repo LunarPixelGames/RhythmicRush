@@ -23,6 +23,8 @@ class Slope : Block {
     }
 
 
+    private val slopeLineCache = FloatArray(4)
+
     constructor() : super()
 
     constructor(x: Float, y: Float, size: Float, rotation: Float) : super(
@@ -46,10 +48,11 @@ class Slope : Block {
 
     fun getSlopeLine(): FloatArray {
         val normalizedRotation = normalizedRotation()
-        val line = if (normalizedRotation == 0 || normalizedRotation == 180) {
-            floatArrayOf(x, y, x + width, y + height)
+        val line = slopeLineCache
+        if (normalizedRotation == 0 || normalizedRotation == 180) {
+            line[0] = x; line[1] = y; line[2] = x + width; line[3] = y + height
         } else {
-            floatArrayOf(x, y + height, x + width, y)
+            line[0] = x; line[1] = y + height; line[2] = x + width; line[3] = y
         }
 
         val edgeX = line[2] - line[0]

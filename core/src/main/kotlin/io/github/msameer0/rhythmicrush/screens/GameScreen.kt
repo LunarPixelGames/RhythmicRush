@@ -81,6 +81,7 @@ class GameScreen @JvmOverloads constructor(
 
     private val unprojectPosition = Vector3()
     private val sliderTouchPosition = Vector2()
+    private val glyphLayout = com.badlogic.gdx.graphics.g2d.GlyphLayout()
 
     private val gameInputProcessor = object : InputAdapter() {
         override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
@@ -505,7 +506,7 @@ class GameScreen @JvmOverloads constructor(
         val uiScale = overlay.uiScale
         val btnSize = currentPractice.btnSize
         val font = game.fontManager.get(FontManager.SIZE_SMALL)
-        val layout = com.badlogic.gdx.graphics.g2d.GlyphLayout()
+        val layout = glyphLayout
 
         font?.data?.setScale(1.5f * uiScale)
         layout.setText(font, "+")

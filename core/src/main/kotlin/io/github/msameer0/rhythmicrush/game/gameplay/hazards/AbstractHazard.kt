@@ -41,10 +41,9 @@ abstract class AbstractHazard(
     }
 
     open fun tryTouch(player: AbstractPlayer) {
-        val pPoly = player.getPlayerPolygon()
-        if (!pPoly.boundingRectangle.overlaps(hazardPolygon.boundingRectangle)) return
+        if (!player.bounds.overlaps(bounds)) return
         
-        if (Intersector.overlapConvexPolygons(pPoly, hazardPolygon)) {
+        if (Intersector.overlapConvexPolygons(player.getPlayerPolygon(), hazardPolygon)) {
             onTouch(player)
         }
     }

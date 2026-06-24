@@ -156,12 +156,15 @@ abstract class AbstractPlayer {
         )
 
         if (polygonWidth != width || polygonHeight != height) {
-            playerPolygon.vertices = floatArrayOf(
-                0f, 0f,
-                width, 0f,
-                width, height,
-                0f, height
-            )
+            var verts = playerPolygon.vertices
+            if (verts == null || verts.size != 8) {
+                verts = FloatArray(8)
+                playerPolygon.vertices = verts
+            }
+            verts[0] = 0f; verts[1] = 0f
+            verts[2] = width; verts[3] = 0f
+            verts[4] = width; verts[5] = height
+            verts[6] = 0f; verts[7] = height
             polygonWidth = width
             polygonHeight = height
         }
@@ -170,12 +173,15 @@ abstract class AbstractPlayer {
         playerPolygon.rotation = rotation
 
         if (innerPolygon.vertices.size != 8) {
-            innerPolygon.vertices = floatArrayOf(
-                0f, 0f,
-                20f, 0f,
-                20f, 20f,
-                0f, 20f
-            )
+            var verts = innerPolygon.vertices
+            if (verts == null || verts.size != 8) {
+                verts = FloatArray(8)
+                innerPolygon.vertices = verts
+            }
+            verts[0] = 0f; verts[1] = 0f
+            verts[2] = 20f; verts[3] = 0f
+            verts[4] = 20f; verts[5] = 20f
+            verts[6] = 0f; verts[7] = 20f
         }
         innerPolygon.setPosition(x + (width - 20f) / 2f, y + (height - 20f) / 2f)
         innerPolygon.setOrigin(10f, 10f)
