@@ -671,6 +671,11 @@ class GameRenderer(
         val isCorridor = player.isUsingCorridor()
 
         if (!isCorridor || bp < 0.99f) {
+            val deepGroundBottom = kotlin.math.min(0f, screenBottom - 1000f)
+            if (deepGroundBottom < 0f) {
+                shape.color = world.groundColor
+                shape.rect(worldLeft, deepGroundBottom, worldWidth, -deepGroundBottom)
+            }
             drawGroundRegion(worldLeft, 0f, worldWidth, world.groundY, true)
         }
 
