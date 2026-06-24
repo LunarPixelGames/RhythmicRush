@@ -11,25 +11,18 @@ object PackGamemodesAtlas {
         settings.edgePadding = true
         settings.duplicatePadding = true
 
-//        TexturePacker.process(
-//            settings,
-//            "textures_to_put_in_atlases/objects/gamemodes",  // input folder (one PNG per BlockType.textureName)
-//            "assets/game/objects",  // output folder
-//            "gamemodes" // atlas name → blocks.atlas + blocks.png
-//        )
-
-        TexturePacker.process(
-            settings,
-            "textures_to_put_in_atlases/objects/gamemodes/cube",  // input folder (one PNG per BlockType.textureName)
-            "assets/game/objects",  // output folder
-            "cubes" // atlas name → blocks.atlas + blocks.png
+        AtlasPackingUtils.packAllQualities(
+            "textures_to_put_in_atlases/objects/gamemodes/cube",
+            "assets/game/objects",
+            "cubes",
+            settings
         )
 
-        TexturePacker.process(
-            settings,
-            "textures_to_put_in_atlases/objects/gamemodes/ship",  // input folder (one PNG per BlockType.textureName)
-            "assets/game/objects",  // output folder
-            "ships" // atlas name → blocks.atlas + blocks.png
+        AtlasPackingUtils.packAllQualities(
+            "textures_to_put_in_atlases/objects/gamemodes/ship",
+            "assets/game/objects",
+            "ships",
+            settings
         )
     }
 }

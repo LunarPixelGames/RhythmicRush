@@ -9,6 +9,12 @@ import com.badlogic.gdx.utils.JsonWriter
  * Manages game settings, including persistence and application of graphics/audio configurations.
  */
 class SettingsManager {
+    enum class TextureQuality(val suffix: String) {
+        HIGH(""),
+        MEDIUM("_medium"),
+        LOW("_low")
+    }
+
     var menuMusicEnabled: Boolean = true
     var musicVolume: Float = 1f
     var sfxVolume: Float = 1f
@@ -27,6 +33,7 @@ class SettingsManager {
     var uiPadding: Float = 12f
     var practiceButtonOpacity: Float = 0.5f
     var pulseOrbs: Boolean = true
+    var textureQuality: TextureQuality = TextureQuality.HIGH
 
     /** Stores the serializable representation of game settings. */
     class Data {
@@ -48,6 +55,7 @@ class SettingsManager {
         var uiPadding: Float = 12f
         var practiceButtonOpacity: Float = 0.5f
         var pulseOrbs: Boolean = true
+        var textureQuality: String = "HIGH"
     }
 
     private val json: Json = Json()
@@ -80,6 +88,7 @@ class SettingsManager {
             snapshot.uiPadding = uiPadding
             snapshot.practiceButtonOpacity = practiceButtonOpacity
             snapshot.pulseOrbs = pulseOrbs
+            snapshot.textureQuality = textureQuality.name
             val file = Gdx.files.local(SAVE_PATH)
             file.parent().mkdirs()
             file.writeString(json.prettyPrint(snapshot), false)
@@ -116,6 +125,7 @@ class SettingsManager {
             uiPadding = savedSettings.uiPadding
             practiceButtonOpacity = savedSettings.practiceButtonOpacity
             pulseOrbs = savedSettings.pulseOrbs
+            textureQuality = try { TextureQuality.valueOf(savedSettings.textureQuality) } catch (e: Exception) { TextureQuality.HIGH }
             Gdx.app.log("SettingsManager", "Settings loaded successfully.")
         } catch (exception: Exception) {
             Gdx.app.error("SettingsManager", "Failed to load: ${exception.message}")

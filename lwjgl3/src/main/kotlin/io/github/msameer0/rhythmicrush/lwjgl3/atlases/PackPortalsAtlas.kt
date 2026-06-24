@@ -11,18 +11,18 @@ object PackPortalsAtlas {
         settings.edgePadding = true
         settings.duplicatePadding = true
 
-        TexturePacker.process(
-            settings,
+        AtlasPackingUtils.packAllQualities(
             "textures_to_put_in_atlases/objects/portals/back/",
             "assets/game/objects",
-            "portals_back"
+            "portals_back",
+            settings
         )
 
-        TexturePacker.process(
-            settings,
+        AtlasPackingUtils.packAllQualities(
             "textures_to_put_in_atlases/objects/portals/front/",
             "assets/game/objects",
-            "portals_front"
+            "portals_front",
+            settings
         )
     }
 }

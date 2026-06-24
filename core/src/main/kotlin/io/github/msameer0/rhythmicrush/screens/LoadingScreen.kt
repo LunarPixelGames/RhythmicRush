@@ -55,7 +55,7 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
             2 -> {
                 statusText = "Loading Textures..."
-                game.atlasManager = AtlasManager()
+                game.atlasManager = AtlasManager(game.settingsManager.textureQuality)
                 titleRegion = game.atlasManager.menuAtlas.findRegion("title")
             }
 

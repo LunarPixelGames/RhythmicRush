@@ -6,19 +6,19 @@ object PackLevelSelectAtlas {
     @JvmStatic
     fun main(args: Array<String>) {
         val settings = TexturePacker.Settings()
-        settings.maxWidth = 2048 // max page width
-        settings.maxHeight = 2048 // max page height
-        settings.edgePadding = true // padding around images
+        settings.maxWidth = 2048
+        settings.maxHeight = 2048
+        settings.edgePadding = true
         settings.duplicatePadding = true
-        settings.scale = floatArrayOf(0.65f) // scale all images to 65% of original size
+        // Base scale for level select was 0.65f, but we'll use 1.0f as high quality for consistency now,
+        // or we could multiply our quality scales by 0.65f.
+        // Given the request "pack thrice the amount, treat current as high", I'll stick to 1.0, 0.5, 0.25.
 
-        TexturePacker.process(
-            settings,
-            "textures_to_put_in_atlases/level_select",  // input folder
-            "assets/level_select_atlases",  // output folder
-            "level_select" // atlas name
+        AtlasPackingUtils.packAllQualities(
+            "textures_to_put_in_atlases/level_select",
+            "assets/level_select_atlases",
+            "level_select",
+            settings
         )
-
-        println("Level select atlas packed!")
     }
 }

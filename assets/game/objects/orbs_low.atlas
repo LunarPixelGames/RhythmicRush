@@ -1,0 +1,48 @@
+
+orbs_low.png
+size: 256, 64
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+black_orb
+  rotate: false
+  xy: 1, 1
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+blue_orb
+  rotate: false
+  xy: 35, 1
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+green_orb
+  rotate: false
+  xy: 69, 1
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+pink_orb
+  rotate: false
+  xy: 103, 1
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+red_orb
+  rotate: false
+  xy: 137, 1
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+yellow_orb
+  rotate: false
+  xy: 171, 1
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1

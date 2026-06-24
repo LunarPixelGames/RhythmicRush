@@ -191,7 +191,7 @@ class MainMenuScreen @JvmOverloads constructor(
     private var lastPanelH = -1
 
     /** Identifies the control used by a settings row. */
-    private enum class RowType { TOGGLE, SLIDER, INT_FIELD }
+    private enum class RowType { TOGGLE, SLIDER, INT_FIELD, CYCLE }
 
     /** Describes one configurable row in the settings panel. */
     private class SettingRow(val type: RowType, val label: String, val id: String)
@@ -277,6 +277,7 @@ class MainMenuScreen @JvmOverloads constructor(
                 }
                 rows.add(SettingRow(RowType.TOGGLE, "VSync", "vsync"))
             }
+            rows.add(SettingRow(RowType.CYCLE, "Texture Quality", "textureQuality"))
             rows.add(SettingRow(RowType.SLIDER, "UI Padding", "uiPadding"))
         }
         return rows
@@ -666,6 +667,14 @@ class MainMenuScreen @JvmOverloads constructor(
                 RowType.INT_FIELD -> {
                     drawIntFieldRow(ry, row.label, settings.fpsCapValue)
                 }
+
+                RowType.CYCLE -> {
+                    val value = when (row.id) {
+                        "textureQuality" -> settings.textureQuality.name
+                        else -> ""
+                    }
+                    drawCycleRow(ry, row.label, value)
+                }
             }
             game.batch.begin()
             font.data.setScale(settingsFontScale * 0.90f)
@@ -693,6 +702,7 @@ class MainMenuScreen @JvmOverloads constructor(
         "fpsValue" -> "Choose the frame-rate limit."
         "vsync" -> "Synchronize frames with the display."
         "uiPadding" -> "Adjust HUD spacing from the screen edges."
+        "textureQuality" -> "Set the texture resolution (Requires Restart)."
         else -> ""
     }
 
@@ -765,6 +775,33 @@ class MainMenuScreen @JvmOverloads constructor(
             pct,
             controlRightX - layout.width,
             ry + layout.height / 2f + rowStep * 0.28f,
+            COL_DIM
+        )
+        game.batch.end()
+    }
+
+    private fun drawCycleRow(ry: Float, label: String, value: String) {
+        val boxH = rowStep * 0.40f
+        val boxW = boxH * 4.0f
+        val boxX = controlRightX - boxW
+        shapes.begin(ShapeRenderer.ShapeType.Filled)
+        shapes.color = COL_INPUT_BG
+        shapes.rect(boxX, ry - boxH / 2f, boxW, boxH)
+        shapes.end()
+        shapes.begin(ShapeRenderer.ShapeType.Line)
+        shapes.color = COL_INPUT_BD_INACTIVE
+        shapes.rect(boxX, ry - boxH / 2f, boxW, boxH)
+        shapes.end()
+        game.batch.begin()
+        font.data.setScale(settingsFontScale)
+        drawTextWithShadow(font, label, rowLabelX, ry + layout.height / 2f, COL_LABEL)
+        font.data.setScale(settingsFontScale * 0.85f)
+        layout.setText(font, value)
+        drawTextWithShadow(
+            font,
+            value,
+            boxX + boxW / 2f - layout.width / 2f,
+            ry + layout.height / 2f,
             COL_DIM
         )
         game.batch.end()
@@ -967,8 +1004,23 @@ class MainMenuScreen @JvmOverloads constructor(
                 fpsInputActive = true
                 fpsInputBuffer.setLength(0)
                 fpsInputBuffer.append(settings.fpsCapValue)
+            } else if (
+                row.type == RowType.CYCLE &&
+                hitIntBox(touchPosition, rowCenterY)
+            ) {
+                handleCycle(row.id, settings)
             }
         }
+    }
+
+    private fun handleCycle(id: String, settings: SettingsManager) {
+        when (id) {
+            "textureQuality" -> {
+                val nextIndex = (settings.textureQuality.ordinal + 1) % SettingsManager.TextureQuality.entries.size
+                settings.textureQuality = SettingsManager.TextureQuality.entries[nextIndex]
+            }
+        }
+        settings.save()
     }
 
     private fun handleToggle(id: String, settings: SettingsManager) {

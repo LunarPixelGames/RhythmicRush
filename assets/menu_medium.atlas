@@ -1,0 +1,48 @@
+
+menu_medium.png
+size: 2048, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+info
+  rotate: false
+  xy: 543, 1
+  size: 423, 379
+  orig: 423, 379
+  offset: 0, 0
+  index: -1
+online
+  rotate: false
+  xy: 823, 382
+  size: 512, 512
+  orig: 512, 512
+  offset: 0, 0
+  index: -1
+settings_button
+  rotate: false
+  xy: 968, 1
+  size: 423, 379
+  orig: 423, 379
+  offset: 0, 0
+  index: -1
+skins
+  rotate: false
+  xy: 1337, 382
+  size: 512, 512
+  orig: 512, 512
+  offset: 0, 0
+  index: -1
+start_button
+  rotate: false
+  xy: 1, 20
+  size: 540, 540
+  orig: 540, 540
+  offset: 0, 0
+  index: -1
+title
+  rotate: false
+  xy: 1, 562
+  size: 820, 332
+  orig: 820, 332
+  offset: 0, 0
+  index: -1

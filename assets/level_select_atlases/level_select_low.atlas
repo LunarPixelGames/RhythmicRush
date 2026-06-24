@@ -1,0 +1,55 @@
+
+level_select_low.png
+size: 2048, 512
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+1_diff
+  rotate: false
+  xy: 1, 192
+  size: 270, 270
+  orig: 270, 270
+  offset: 0, 0
+  index: -1
+2_diff
+  rotate: false
+  xy: 273, 192
+  size: 270, 270
+  orig: 270, 270
+  offset: 0, 0
+  index: -1
+3_diff
+  rotate: false
+  xy: 545, 192
+  size: 270, 270
+  orig: 270, 270
+  offset: 0, 0
+  index: -1
+4_diff
+  rotate: false
+  xy: 817, 192
+  size: 270, 270
+  orig: 270, 270
+  offset: 0, 0
+  index: -1
+back
+  rotate: false
+  xy: 1, 1
+  size: 211, 189
+  orig: 211, 189
+  offset: 0, 0
+  index: -1
+left_arrow
+  rotate: false
+  xy: 1089, 192
+  size: 270, 270
+  orig: 270, 270
+  offset: 0, 0
+  index: -1
+right_arrow
+  rotate: false
+  xy: 1361, 192
+  size: 270, 270
+  orig: 270, 270
+  offset: 0, 0
+  index: -1

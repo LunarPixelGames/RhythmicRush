@@ -11,11 +11,11 @@ object PackMenuAtlas {
         settings.edgePadding = true // keep optional padding
         settings.duplicatePadding = true
 
-        TexturePacker.process(
-            settings,
-            "textures_to_put_in_atlases/menu",  // input folder
-            "assets",  // output folder
-            "menu" // atlas name
+        AtlasPackingUtils.packAllQualities(
+            "textures_to_put_in_atlases/menu",
+            "assets",
+            "menu",
+            settings
         )
     }
 }

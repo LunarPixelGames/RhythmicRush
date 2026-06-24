@@ -231,10 +231,10 @@ public class LevelEditorScreen extends AbstractScreen {
         spikeRegion = getGame().getAtlasManager().getSpikesAtlas().findRegion("spike");
         halfSpikeRegion = getGame().getAtlasManager().getSpikesAtlas().findRegion("half_spike");
         sawBladeRegion = getGame().getAtlasManager().getSpikesAtlas().findRegion("saw_blade");
-        cubePortalRegion = getGame().getAtlasManager().getPortalsAtlas().findRegion("cube_portal");
-        shipPortalRegion = getGame().getAtlasManager().getPortalsAtlas().findRegion("ship_portal");
-        gravityPortalRegion = getGame().getAtlasManager().getPortalsAtlas().findRegion("gravity_portal");
-        miniPortalRegion = getGame().getAtlasManager().getPortalsAtlas().findRegion("mini_portal");
+        cubePortalRegion = getGame().getAtlasManager().getPortalsFrontAtlas().findRegion("cube_portal");
+        shipPortalRegion = getGame().getAtlasManager().getPortalsFrontAtlas().findRegion("ship_portal");
+        gravityPortalRegion = getGame().getAtlasManager().getPortalsFrontAtlas().findRegion("gravity_portal");
+        miniPortalRegion = getGame().getAtlasManager().getPortalsFrontAtlas().findRegion("mini_portal");
 
         yellowOrbRegion = getGame().getAtlasManager().getOrbsAtlas().findRegion("yellow_orb");
         blueOrbRegion = getGame().getAtlasManager().getOrbsAtlas().findRegion("blue_orb");

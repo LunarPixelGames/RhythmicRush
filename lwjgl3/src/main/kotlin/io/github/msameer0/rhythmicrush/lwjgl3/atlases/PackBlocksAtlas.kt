@@ -11,11 +11,11 @@ object PackBlocksAtlas {
         settings.edgePadding = true
         settings.duplicatePadding = true
 
-        TexturePacker.process(
-            settings,
-            "textures_to_put_in_atlases/objects/blocks",  // input folder (one PNG per BlockType.textureName)
-            "assets/game/objects",  // output folder
-            "blocks" // atlas name → blocks.atlas + blocks.png
+        AtlasPackingUtils.packAllQualities(
+            "textures_to_put_in_atlases/objects/blocks",
+            "assets/game/objects",
+            "blocks",
+            settings
         )
     }
 }

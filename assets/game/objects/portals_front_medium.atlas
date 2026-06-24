@@ -1,0 +1,48 @@
+
+portals_front_medium.png
+size: 512, 256
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+ball
+  rotate: false
+  xy: 1, 1
+  size: 75, 192
+  orig: 75, 192
+  offset: 0, 0
+  index: -1
+cube
+  rotate: false
+  xy: 78, 1
+  size: 75, 192
+  orig: 75, 192
+  offset: 0, 0
+  index: -1
+gravity
+  rotate: false
+  xy: 155, 1
+  size: 75, 192
+  orig: 75, 192
+  offset: 0, 0
+  index: -1
+mini
+  rotate: false
+  xy: 232, 1
+  size: 75, 192
+  orig: 75, 192
+  offset: 0, 0
+  index: -1
+ship
+  rotate: false
+  xy: 309, 1
+  size: 75, 192
+  orig: 75, 192
+  offset: 0, 0
+  index: -1
+ufo
+  rotate: false
+  xy: 386, 1
+  size: 75, 192
+  orig: 75, 192
+  offset: 0, 0
+  index: -1

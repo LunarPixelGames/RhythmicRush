@@ -11,11 +11,11 @@ object PackOrbsAtlas {
         settings.edgePadding = true
         settings.duplicatePadding = true
 
-        TexturePacker.process(
-            settings,
-            "textures_to_put_in_atlases/objects/orbs",  // input folder (one PNG per BlockType.textureName)
-            "assets/game/objects",  // output folder
-            "orbs" // atlas name → blocks.atlas + blocks.png
+        AtlasPackingUtils.packAllQualities(
+            "textures_to_put_in_atlases/objects/orbs",
+            "assets/game/objects",
+            "orbs",
+            settings
         )
     }
 }

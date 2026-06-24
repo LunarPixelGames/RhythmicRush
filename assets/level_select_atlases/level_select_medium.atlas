@@ -1,0 +1,55 @@
+
+level_select_medium.png
+size: 2048, 2048
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+1_diff
+  rotate: false
+  xy: 1, 1466
+  size: 540, 540
+  orig: 540, 540
+  offset: 0, 0
+  index: -1
+2_diff
+  rotate: false
+  xy: 1, 924
+  size: 540, 540
+  orig: 540, 540
+  offset: 0, 0
+  index: -1
+3_diff
+  rotate: false
+  xy: 543, 1466
+  size: 540, 540
+  orig: 540, 540
+  offset: 0, 0
+  index: -1
+4_diff
+  rotate: false
+  xy: 1, 382
+  size: 540, 540
+  orig: 540, 540
+  offset: 0, 0
+  index: -1
+back
+  rotate: false
+  xy: 1, 1
+  size: 423, 379
+  orig: 423, 379
+  offset: 0, 0
+  index: -1
+left_arrow
+  rotate: false
+  xy: 543, 924
+  size: 540, 540
+  orig: 540, 540
+  offset: 0, 0
+  index: -1
+right_arrow
+  rotate: false
+  xy: 1085, 1466
+  size: 540, 540
+  orig: 540, 540
+  offset: 0, 0
+  index: -1

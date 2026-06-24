@@ -6,56 +6,80 @@ filter: Nearest, Nearest
 repeat: none
 1_diff
   rotate: false
-  xy: 1, 1199
-  size: 702, 702
-  orig: 702, 702
-  offset: 0, 0
-  index: -1
-2_diff
-  rotate: false
-  xy: 1, 495
-  size: 702, 702
-  orig: 702, 702
-  offset: 0, 0
-  index: -1
-3_diff
-  rotate: false
-  xy: 705, 1199
-  size: 702, 702
-  orig: 702, 702
-  offset: 0, 0
-  index: -1
-4_diff
-  rotate: false
-  xy: 705, 495
-  size: 702, 702
-  orig: 702, 702
+  xy: 1, 760
+  size: 1080, 1080
+  orig: 1080, 1080
   offset: 0, 0
   index: -1
 back
   rotate: false
   xy: 1, 1
-  size: 549, 492
-  orig: 549, 492
+  size: 845, 757
+  orig: 845, 757
   offset: 0, 0
   index: -1
 
 level_select2.png
-size: 2048, 1024
+size: 2048, 2048
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+2_diff
+  rotate: false
+  xy: 1, 1
+  size: 1080, 1080
+  orig: 1080, 1080
+  offset: 0, 0
+  index: -1
+
+level_select3.png
+size: 2048, 2048
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+3_diff
+  rotate: false
+  xy: 1, 1
+  size: 1080, 1080
+  orig: 1080, 1080
+  offset: 0, 0
+  index: -1
+
+level_select4.png
+size: 2048, 2048
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+4_diff
+  rotate: false
+  xy: 1, 1
+  size: 1080, 1080
+  orig: 1080, 1080
+  offset: 0, 0
+  index: -1
+
+level_select5.png
+size: 2048, 2048
 format: RGBA8888
 filter: Nearest, Nearest
 repeat: none
 left_arrow
   rotate: false
   xy: 1, 1
-  size: 702, 702
-  orig: 702, 702
+  size: 1080, 1080
+  orig: 1080, 1080
   offset: 0, 0
   index: -1
+
+level_select6.png
+size: 2048, 2048
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
 right_arrow
   rotate: false
-  xy: 705, 1
-  size: 702, 702
-  orig: 702, 702
+  xy: 1, 1
+  size: 1080, 1080
+  orig: 1080, 1080
   offset: 0, 0
   index: -1

@@ -65,8 +65,6 @@ class GameRenderer(
     private val cubeLayer2Region: TextureRegion?
     private val shipLayer1Region: TextureRegion?
     private val shipLayer2Region: TextureRegion?
-    private val cubePortalRegion: TextureRegion?
-    private val shipPortalRegion: TextureRegion?
     private val cubePortalBackRegion: TextureRegion?
     private val cubePortalFrontRegion: TextureRegion?
     private val shipPortalBackRegion: TextureRegion?
@@ -75,8 +73,6 @@ class GameRenderer(
     private val gravityPortalFrontRegion: TextureRegion?
     private val miniPortalBackRegion: TextureRegion?
     private val miniPortalFrontRegion: TextureRegion?
-    private val gravityPortalRegion: TextureRegion?
-    private val miniPortalRegion: TextureRegion?
 
     private val orbRegions = ObjectMap<AbstractOrb.OrbType, TextureRegion>()
     private val padRegions = ObjectMap<AbstractPad.PadType, TextureRegion>()
@@ -108,8 +104,6 @@ class GameRenderer(
         cubeLayer2Region = atlasManager.cubesAtlas.findRegion("12")
         shipLayer1Region = atlasManager.shipsAtlas.findRegion("11")
         shipLayer2Region = atlasManager.shipsAtlas.findRegion("12")
-        cubePortalRegion = atlasManager.portalsAtlas.findRegion("cube_portal")
-        shipPortalRegion = atlasManager.portalsAtlas.findRegion("ship_portal")
 
         cubePortalBackRegion = atlasManager.portalsBackAtlas.findRegion("cube")
         cubePortalFrontRegion = atlasManager.portalsFrontAtlas.findRegion("cube")
@@ -120,9 +114,6 @@ class GameRenderer(
         gravityPortalFrontRegion = atlasManager.portalsFrontAtlas.findRegion("gravity")
         miniPortalBackRegion = atlasManager.portalsBackAtlas.findRegion("mini")
         miniPortalFrontRegion = atlasManager.portalsFrontAtlas.findRegion("mini")
-
-        gravityPortalRegion = atlasManager.portalsAtlas.findRegion("gravity_portal")
-        miniPortalRegion = atlasManager.portalsAtlas.findRegion("mini_portal")
 
         orbRegions.put(AbstractOrb.OrbType.YELLOW, atlasManager.orbsAtlas.findRegion("yellow_orb"))
         orbRegions.put(AbstractOrb.OrbType.BLUE, atlasManager.orbsAtlas.findRegion("blue_orb"))
@@ -287,7 +278,13 @@ class GameRenderer(
             val portal = world.portals.get(i)
             if (portal.x > rightEdge) break
             val pType = portal.type
-            val region = portalRegion(pType)
+            val region = when (pType) {
+                AbstractPortal.PortalType.CUBE -> cubePortalBackRegion
+                AbstractPortal.PortalType.SHIP -> shipPortalBackRegion
+                AbstractPortal.PortalType.GRAVITY -> gravityPortalBackRegion
+                AbstractPortal.PortalType.MINI -> miniPortalBackRegion
+                else -> null
+            }
             if (region == null) {
                 shape.color =
                     if (pType == AbstractPortal.PortalType.CUBE) FALLBACK_CUBE_PORTAL else FALLBACK_SHIP_PORTAL
@@ -316,12 +313,6 @@ class GameRenderer(
                 val drawX = portal.x + (portal.width - visualW) / 2f
                 val drawY = portal.y
                 batch.draw(region, drawX, drawY, visualW / 2f, visualH / 2f, visualW, visualH, 1f, 1f, portal.rotation)
-            } else {
-                // Fallback for types not yet moved to layered system
-                val fallback = portalRegion(portal.type)
-                if (fallback != null) {
-                    batch.draw(fallback, portal.x, portal.y, portal.width / 2f, portal.height / 2f, portal.width, portal.height, 1f, 1f, portal.rotation)
-                }
             }
         }
     }
@@ -781,16 +772,6 @@ class GameRenderer(
         return Texture(pixmap).also {
             it.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear)
             pixmap.dispose()
-        }
-    }
-
-    private fun portalRegion(type: AbstractPortal.PortalType?): TextureRegion? {
-        return when (type) {
-            AbstractPortal.PortalType.CUBE -> cubePortalRegion
-            AbstractPortal.PortalType.SHIP -> shipPortalRegion
-            AbstractPortal.PortalType.GRAVITY -> gravityPortalRegion
-            AbstractPortal.PortalType.MINI -> miniPortalRegion
-            else -> null
         }
     }
 
