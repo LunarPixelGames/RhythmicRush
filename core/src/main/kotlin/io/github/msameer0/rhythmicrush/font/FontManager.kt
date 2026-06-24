@@ -5,58 +5,85 @@ import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter
-import com.badlogic.gdx.math.MathUtils
 import kotlin.math.abs
 
 /**
  * Handles initialization, caching, and retrieval of BitmapFonts of various sizes using FreeType.
  */
 class FontManager {
-    private val fonts: Array<BitmapFont>
+    private val titleFonts: Array<BitmapFont>
+    private val bodyFonts: Array<BitmapFont>
 
     init {
         Gdx.app.log("FontManager", "Initializing fonts...")
+        titleFonts = generateFamily(
+            arrayOf("fonts/Orbitron-Bold.ttf", "fonts/Orbitron-SemiBold.ttf", "fonts/zendots-regular.ttf")
+        )
+        bodyFonts = generateFamily(
+            arrayOf("fonts/Rajdhani-SemiBold.ttf", "fonts/Rajdhani-Medium.ttf", "fonts/zendots-regular.ttf")
+        )
+        Gdx.app.log("FontManager", "Fonts initialized successfully.")
+    }
+
+    private fun generateFamily(candidates: Array<String>): Array<BitmapFont> {
         val tempFonts = arrayOfNulls<BitmapFont>(SIZES.size)
-        var gen: FreeTypeFontGenerator? = null
+        val file = candidates.firstNotNullOfOrNull { path ->
+            Gdx.files.internal(path).takeIf { it.exists() }
+        }
+        var generator: FreeTypeFontGenerator? = null
         try {
-            gen = FreeTypeFontGenerator(Gdx.files.internal("fonts/zendots-regular.ttf"))
-            val p = FreeTypeFontParameter()
-            p.magFilter = Texture.TextureFilter.Linear
-            p.minFilter = Texture.TextureFilter.MipMapLinearLinear
-            p.genMipMaps = true
-            for (i in SIZES.indices) {
-                p.size = SIZES[i]
-                tempFonts[i] = gen.generateFont(p)
+            if (file == null) throw IllegalStateException("No font candidate found")
+            generator = FreeTypeFontGenerator(file)
+            val parameters = FreeTypeFontParameter()
+            parameters.magFilter = Texture.TextureFilter.Linear
+            parameters.minFilter = Texture.TextureFilter.MipMapLinearLinear
+            parameters.genMipMaps = true
+            for (sizeIndex in SIZES.indices) {
+                parameters.size = SIZES[sizeIndex]
+                tempFonts[sizeIndex] = generator.generateFont(parameters)
             }
-            Gdx.app.log("FontManager", "Fonts initialized successfully.")
-        } catch (e: Exception) {
-            Gdx.app.error("FontManager", "Could not load font: " + e.message)
-            for (i in SIZES.indices) {
-                if (tempFonts[i] == null) tempFonts[i] = BitmapFont()
+        } catch (exception: Exception) {
+            Gdx.app.error("FontManager", "Could not load font: ${exception.message}")
+            for (sizeIndex in SIZES.indices) {
+                if (tempFonts[sizeIndex] == null) tempFonts[sizeIndex] = BitmapFont()
             }
         } finally {
-            gen?.dispose()
+            generator?.dispose()
         }
-        @Suppress("UNCHECKED_CAST") fonts = tempFonts as Array<BitmapFont>
+        @Suppress("UNCHECKED_CAST")
+        return tempFonts as Array<BitmapFont>
     }
 
     fun dispose() {
         Gdx.app.log("FontManager", "Disposing fonts...")
-        for (f in fonts) f.dispose()
+        for (font in titleFonts) font.dispose()
+        for (font in bodyFonts) font.dispose()
         Gdx.app.log("FontManager", "Fonts disposed.")
     }
 
     fun get(size: Int): BitmapFont {
-        var best = 0
-        var bestDiff: Int = abs(SIZES[0] - size)
-        for (i in 1..<SIZES.size) {
-            val diff: Int = abs(SIZES[i] - size)
-            if (diff < bestDiff) {
-                bestDiff = diff
-                best = i
+        return closest(bodyFonts, size)
+    }
+
+    fun getTitle(size: Int): BitmapFont {
+        return closest(titleFonts, size)
+    }
+
+    fun getBody(size: Int): BitmapFont {
+        return closest(bodyFonts, size)
+    }
+
+    private fun closest(family: Array<BitmapFont>, size: Int): BitmapFont {
+        var closestIndex = 0
+        var smallestDifference = abs(SIZES[0] - size)
+        for (sizeIndex in 1..<SIZES.size) {
+            val difference = abs(SIZES[sizeIndex] - size)
+            if (difference < smallestDifference) {
+                smallestDifference = difference
+                closestIndex = sizeIndex
             }
         }
-        return fonts[best]
+        return family[closestIndex]
     }
 
     companion object {

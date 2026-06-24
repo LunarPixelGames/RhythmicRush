@@ -1,0 +1,48 @@
+
+menu_low.png
+size: 1024, 512
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+info
+  rotate: false
+  xy: 273, 1
+  size: 211, 189
+  orig: 211, 189
+  offset: 0, 0
+  index: -1
+online
+  rotate: false
+  xy: 413, 192
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+settings_button
+  rotate: false
+  xy: 486, 1
+  size: 211, 189
+  orig: 211, 189
+  offset: 0, 0
+  index: -1
+skins
+  rotate: false
+  xy: 671, 192
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+start_button
+  rotate: false
+  xy: 1, 10
+  size: 270, 270
+  orig: 270, 270
+  offset: 0, 0
+  index: -1
+title
+  rotate: false
+  xy: 1, 282
+  size: 410, 166
+  orig: 410, 166
+  offset: 0, 0
+  index: -1

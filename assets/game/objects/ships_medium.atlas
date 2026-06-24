@@ -1,0 +1,20 @@
+
+ships_medium.png
+size: 256, 128
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+11
+  rotate: false
+  xy: 1, 1
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+12
+  rotate: false
+  xy: 67, 1
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1

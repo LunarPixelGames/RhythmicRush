@@ -1,0 +1,26 @@
+name = "rhythmic-rush-api-dev"
+main = "src/index.ts"
+compatibility_date = "2026-06-23"
+workers_dev = true
+account_id = "YOUR_CLOUDFLARE_ACCOUNT_ID"
+
+[vars]
+ENVIRONMENT = "development"
+FIREBASE_PROJECT_ID = "rhythmic-rush-dev"
+FIREBASE_PROJECT_NUMBER = "YOUR_FIREBASE_PROJECT_NUMBER"
+APP_CHECK_MODE = "off"
+ALLOWED_ORIGIN = "*"
+ENABLE_NEW_ACCOUNTS = "true"
+ENABLE_PROGRESS_UPLOADS = "true"
+ENABLE_LEADERBOARD_REFRESH = "true"
+ENABLE_ACCOUNT_DELETION = "true"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rhythmic-rush-dev"
+database_id = "REPLACE_AFTER_D1_CREATION"
+migrations_dir = "migrations"
+
+# Add this after production validation if you want automatic 72-hour cleanup:
+# [triggers]
+# crons = ["17 * * * *"]

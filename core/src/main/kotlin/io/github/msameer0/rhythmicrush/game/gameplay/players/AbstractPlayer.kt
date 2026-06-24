@@ -6,7 +6,7 @@ import io.github.msameer0.rhythmicrush.game.GameWorld
 /**
  * Base class for all player modes, handling common movement, input, and state properties.
  */
-abstract class AbstractPlayer() {
+abstract class AbstractPlayer {
 
     /**
      * Enumeration of available player game modes.
@@ -14,6 +14,14 @@ abstract class AbstractPlayer() {
     enum class PlayerType {
         CUBE,
         SHIP
+    }
+
+    /**
+     * Defines how the camera should follow the player.
+     */
+    enum class CameraMode {
+        FREE,
+        RESTRICTED
     }
 
     @JvmField
@@ -28,13 +36,21 @@ abstract class AbstractPlayer() {
     @JvmField
     var worldX: Float = 0f
     @JvmField
-    var width: Float = 50f
+    var width: Float = 100f
     @JvmField
-    var height: Float = 50f
+    var height: Float = 100f
     @JvmField
     var velocityY: Float = 0f
     @JvmField
     var bounds: Rectangle = Rectangle(x, y, width, height)
+    @JvmField
+    var innerBounds: Rectangle = Rectangle(x + 40f, y + 40f, 20f, 20f)
+
+    private var rotation: Float = 0f
+    private val playerPolygon: com.badlogic.gdx.math.Polygon = com.badlogic.gdx.math.Polygon()
+    private val innerPolygon: com.badlogic.gdx.math.Polygon = com.badlogic.gdx.math.Polygon()
+    private var polygonWidth = -1f
+    private var polygonHeight = -1f
 
     @JvmField
     protected var gravityFlipped: Boolean = false
@@ -50,6 +66,10 @@ abstract class AbstractPlayer() {
     protected var justPressed: Boolean = false
     @JvmField
     protected var world: GameWorld? = null
+    @JvmField
+    var lastPortalCenterY: Float = 0f
+    @JvmField
+    var lastPortalBottomY: Float = 0f
 
     fun isMini(): Boolean = mini
 
@@ -59,14 +79,14 @@ abstract class AbstractPlayer() {
 
         if (mini && !this.mini) {
             this.mini = true
-            this.width = 25f
-            this.height = 25f
+            this.width = 50f
+            this.height = 50f
             this.x += (oldWidth - this.width) / 2f
             this.y += (oldHeight - this.height) / 2f
         } else if (!mini && this.mini) {
             this.mini = false
-            this.width = 50f
-            this.height = 50f
+            this.width = 100f
+            this.height = 100f
             this.x -= (this.width - oldWidth) / 2f
             if (gravityFlipped) {
                 this.y -= (this.height - oldHeight)
@@ -87,7 +107,7 @@ abstract class AbstractPlayer() {
     ): AbstractPlayer
 
     abstract fun init(startX: Float, startY: Float): AbstractPlayer
-    abstract fun update(delta: Float, groundY: Float)
+    abstract fun update(delta: Float, groundY: Float, ceilingY: Float)
     abstract fun jump()
     abstract fun copyState(other: AbstractPlayer)
 
@@ -117,9 +137,55 @@ abstract class AbstractPlayer() {
     }
 
     fun getBounds(): Rectangle = bounds
+    fun getInnerBounds(): Rectangle = innerBounds
+    fun getRotation(): Float = rotation
+    fun setRotation(rot: Float) {
+        rotation = rot
+    }
+
+    fun getPlayerPolygon(): com.badlogic.gdx.math.Polygon = playerPolygon
+    fun getInnerPolygon(): com.badlogic.gdx.math.Polygon = innerPolygon
 
     protected fun updateBounds() {
         bounds.setPosition(x, y)
+        innerBounds.set(
+            x + (width - 20f) / 2f,
+            y + (height - 20f) / 2f,
+            20f,
+            20f
+        )
+
+        if (polygonWidth != width || polygonHeight != height) {
+            var verts = playerPolygon.vertices
+            if (verts == null || verts.size != 8) {
+                verts = FloatArray(8)
+                playerPolygon.vertices = verts
+            }
+            verts[0] = 0f; verts[1] = 0f
+            verts[2] = width; verts[3] = 0f
+            verts[4] = width; verts[5] = height
+            verts[6] = 0f; verts[7] = height
+            polygonWidth = width
+            polygonHeight = height
+        }
+        playerPolygon.setPosition(x, y)
+        playerPolygon.setOrigin(width / 2f, height / 2f)
+        playerPolygon.rotation = rotation
+
+        if (innerPolygon.vertices.size != 8) {
+            var verts = innerPolygon.vertices
+            if (verts == null || verts.size != 8) {
+                verts = FloatArray(8)
+                innerPolygon.vertices = verts
+            }
+            verts[0] = 0f; verts[1] = 0f
+            verts[2] = 20f; verts[3] = 0f
+            verts[4] = 20f; verts[5] = 20f
+            verts[6] = 0f; verts[7] = 20f
+        }
+        innerPolygon.setPosition(x + (width - 20f) / 2f, y + (height - 20f) / 2f)
+        innerPolygon.setOrigin(10f, 10f)
+        innerPolygon.rotation = rotation
     }
 
     fun getX(): Float = x
@@ -158,4 +224,32 @@ abstract class AbstractPlayer() {
     fun setCurrentSlopeRotation(rot: Float) {
         currentSlopeRotation = rot
     }
+
+    open fun getCameraMode(): CameraMode = CameraMode.FREE
+
+    /**
+     * Called when the camera starts following this player mode.
+     * @param cameraY The current camera Y position at the moment of transition.
+     * @param worldGroundY The world's base ground Y level.
+     */
+    open fun onCameraModeEnter(cameraY: Float, worldGroundY: Float) {}
+
+    /**
+     * For RESTRICTED mode: The target Y position for the camera.
+     */
+    open fun getRestrictedCameraY(): Float = 540f
+
+    /**
+     * The lower boundary for player movement.
+     */
+    open fun getCameraFloorY(worldGroundY: Float): Float = -Float.MAX_VALUE
+
+    /**
+     * The upper boundary for player movement.
+     */
+    open fun getCameraCeilingY(): Float = Float.MAX_VALUE
+
+    open fun isUsingCorridor(): Boolean = false
+    open fun getCorridorTop(): Float? = null
+    open fun getCorridorBottom(): Float? = null
 }

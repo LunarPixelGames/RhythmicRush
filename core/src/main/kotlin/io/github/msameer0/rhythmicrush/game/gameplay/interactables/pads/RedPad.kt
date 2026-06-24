@@ -1,5 +1,6 @@
 package io.github.msameer0.rhythmicrush.game.gameplay.interactables.pads
 
+import io.github.msameer0.rhythmicrush.GameConstants
 import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 import io.github.msameer0.rhythmicrush.game.registries.Registry
 
@@ -24,10 +25,7 @@ class RedPad : AbstractPad {
     }
 
     override fun onActivate(player: AbstractPlayer) {
-        if (player.isGravityFlipped()) {
-            player.setVelocityY(-1200f)
-        } else {
-            player.setVelocityY(1200f)
-        }
+        val velocity = GameConstants.Interactables.Pads.RED_VELOCITY
+        player.setVelocityY(if (player.isGravityFlipped()) -velocity else velocity)
     }
 }

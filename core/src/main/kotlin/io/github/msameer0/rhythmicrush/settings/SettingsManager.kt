@@ -9,8 +9,16 @@ import com.badlogic.gdx.utils.JsonWriter
  * Manages game settings, including persistence and application of graphics/audio configurations.
  */
 class SettingsManager {
+    enum class TextureQuality(val suffix: String) {
+        HIGH(""),
+        MEDIUM("_medium"),
+        LOW("_low")
+    }
+
     var menuMusicEnabled: Boolean = true
     var musicVolume: Float = 1f
+    var sfxVolume: Float = 1f
+    var deathEffectEnabled: Boolean = true
     var showHitboxes: Boolean = false
     var showHitboxesOnDeath: Boolean = false
     var lockCursorInGame: Boolean = false
@@ -25,13 +33,14 @@ class SettingsManager {
     var uiPadding: Float = 12f
     var practiceButtonOpacity: Float = 0.5f
     var pulseOrbs: Boolean = true
+    var textureQuality: TextureQuality = TextureQuality.HIGH
 
-    /**
-     * DTO for persisting settings data to JSON.
-     */
+    /** Stores the serializable representation of game settings. */
     class Data {
         var menuMusicEnabled: Boolean = true
         var musicVolume: Float = 1f
+        var sfxVolume: Float = 1f
+        var deathEffectEnabled: Boolean = true
         var showHitboxes: Boolean = false
         var showHitboxesOnDeath: Boolean = false
         var lockCursorInGame: Boolean = false
@@ -46,6 +55,7 @@ class SettingsManager {
         var uiPadding: Float = 12f
         var practiceButtonOpacity: Float = 0.5f
         var pulseOrbs: Boolean = true
+        var textureQuality: String = "HIGH"
     }
 
     private val json: Json = Json()
@@ -62,6 +72,8 @@ class SettingsManager {
             val snapshot = Data()
             snapshot.menuMusicEnabled = menuMusicEnabled
             snapshot.musicVolume = musicVolume
+            snapshot.sfxVolume = sfxVolume
+            snapshot.deathEffectEnabled = deathEffectEnabled
             snapshot.showHitboxes = showHitboxes
             snapshot.showHitboxesOnDeath = showHitboxesOnDeath
             snapshot.lockCursorInGame = lockCursorInGame
@@ -76,12 +88,13 @@ class SettingsManager {
             snapshot.uiPadding = uiPadding
             snapshot.practiceButtonOpacity = practiceButtonOpacity
             snapshot.pulseOrbs = pulseOrbs
+            snapshot.textureQuality = textureQuality.name
             val file = Gdx.files.local(SAVE_PATH)
             file.parent().mkdirs()
             file.writeString(json.prettyPrint(snapshot), false)
             Gdx.app.log("SettingsManager", "Settings saved successfully.")
-        } catch (e: Exception) {
-            Gdx.app.error("SettingsManager", "Failed to save: " + e.message)
+        } catch (exception: Exception) {
+            Gdx.app.error("SettingsManager", "Failed to save: ${exception.message}")
         }
     }
 
@@ -93,27 +106,29 @@ class SettingsManager {
                 Gdx.app.log("SettingsManager", "No settings file found. Using defaults.")
                 return
             }
-            val d = json.fromJson<Data?>(Data::class.java, file)
-            if (d == null) return
-            menuMusicEnabled = d.menuMusicEnabled
-            musicVolume = d.musicVolume
-            showHitboxes = d.showHitboxes
-            showHitboxesOnDeath = d.showHitboxesOnDeath
-            lockCursorInGame = d.lockCursorInGame
-            showFps = d.showFps
-            capFps = d.capFps
-            fpsCapValue = d.fpsCapValue
-            enableVsync = d.enableVsync
-            showPercentage = d.showPercentage
-            showProgressBar = d.showProgressBar
-            showAttempts = d.showAttempts
-            showBest = d.showBest
-            uiPadding = d.uiPadding
-            practiceButtonOpacity = d.practiceButtonOpacity
-            pulseOrbs = d.pulseOrbs
+            val savedSettings = json.fromJson<Data?>(Data::class.java, file) ?: return
+            menuMusicEnabled = savedSettings.menuMusicEnabled
+            musicVolume = savedSettings.musicVolume
+            sfxVolume = savedSettings.sfxVolume
+            deathEffectEnabled = savedSettings.deathEffectEnabled
+            showHitboxes = savedSettings.showHitboxes
+            showHitboxesOnDeath = savedSettings.showHitboxesOnDeath
+            lockCursorInGame = savedSettings.lockCursorInGame
+            showFps = savedSettings.showFps
+            capFps = savedSettings.capFps
+            fpsCapValue = savedSettings.fpsCapValue
+            enableVsync = savedSettings.enableVsync
+            showPercentage = savedSettings.showPercentage
+            showProgressBar = savedSettings.showProgressBar
+            showAttempts = savedSettings.showAttempts
+            showBest = savedSettings.showBest
+            uiPadding = savedSettings.uiPadding
+            practiceButtonOpacity = savedSettings.practiceButtonOpacity
+            pulseOrbs = savedSettings.pulseOrbs
+            textureQuality = try { TextureQuality.valueOf(savedSettings.textureQuality) } catch (e: Exception) { TextureQuality.HIGH }
             Gdx.app.log("SettingsManager", "Settings loaded successfully.")
-        } catch (e: Exception) {
-            Gdx.app.error("SettingsManager", "Failed to load: " + e.message)
+        } catch (exception: Exception) {
+            Gdx.app.error("SettingsManager", "Failed to load: ${exception.message}")
         }
     }
 

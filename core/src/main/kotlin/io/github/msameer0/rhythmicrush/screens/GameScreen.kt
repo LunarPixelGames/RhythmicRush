@@ -15,8 +15,10 @@ import com.badlogic.gdx.utils.TimeUtils
 import com.badlogic.gdx.utils.viewport.ExtendViewport
 import io.github.msameer0.rhythmicrush.RhythmicRushGame
 import io.github.msameer0.rhythmicrush.font.FontManager
+import io.github.msameer0.rhythmicrush.game.GameCamera
 import io.github.msameer0.rhythmicrush.game.GameWorld
 import io.github.msameer0.rhythmicrush.game.engine.FixedTickEngine
+import io.github.msameer0.rhythmicrush.game.engine.LoudnessAnalyzer
 import io.github.msameer0.rhythmicrush.game.level.LevelData
 import io.github.msameer0.rhythmicrush.game.renderer.GameRenderer
 import io.github.msameer0.rhythmicrush.screens.ui.HudRenderer
@@ -30,7 +32,7 @@ class GameScreen @JvmOverloads constructor(
     game: RhythmicRushGame,
     private val levelData: LevelData?,
     private val levelIndex: Int,
-    private val isPracticeMode: Boolean = false
+    initialPracticeMode: Boolean = false
 ) : AbstractScreen(game) {
 
     companion object {
@@ -48,10 +50,12 @@ class GameScreen @JvmOverloads constructor(
     private val music = MusicController(game, levelData)
     private val hud: HudRenderer
     private val overlay: OverlayUI
-    private val practice: PracticeManager? = if (isPracticeMode) PracticeManager(world) else null
+    private var practiceMode = initialPracticeMode
+    private var practice: PracticeManager? = if (practiceMode) PracticeManager(world) else null
 
     private val gameCamera = OrthographicCamera()
-    private val gameViewport = ExtendViewport(1280f, 720f, gameCamera)
+    private val customCamera = GameCamera(gameCamera, world)
+    private val gameViewport = ExtendViewport(1920f, 1080f, gameCamera)
 
     private val shapes = ShapeRenderer()
 
@@ -69,67 +73,108 @@ class GameScreen @JvmOverloads constructor(
     private var levelEndingSequence = false
     private var levelEndTimer = 0f
     private var levelCompletedState = false
+    private var pauseOverlayVisible = true
     private var lastDelta = 0f
     private var lastJumpHeld = false
     private var ignoreInputUntilRelease = false
+    private var endWallSoundPlayed = false
 
-    private val _unprojectTmp = Vector3()
+    private val unprojectPosition = Vector3()
+    private val sliderTouchPosition = Vector2()
+    private val glyphLayout = com.badlogic.gdx.graphics.g2d.GlyphLayout()
 
     private val gameInputProcessor = object : InputAdapter() {
         override fun touchDown(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-            _unprojectTmp.set(screenX.toFloat(), screenY.toFloat(), 0f)
-            gameCamera.unproject(_unprojectTmp)
-            val tx = _unprojectTmp.x
-            val ty = _unprojectTmp.y
+            unprojectPosition.set(screenX.toFloat(), screenY.toFloat(), 0f)
+            gameCamera.unproject(unprojectPosition)
+            val touchX = unprojectPosition.x
+            val touchY = unprojectPosition.y
 
             if (paused) {
-                if (overlay.hitsBackButton(tx, ty, gameCamera)) {
-                    exitToLevelSelect()
+                if (
+                    overlay.hitsPauseToggleButton(
+                        touchX,
+                        touchY,
+                        gameCamera,
+                        gameViewport
+                    )
+                ) {
+                    pauseOverlayVisible = !pauseOverlayVisible
                     return true
                 }
-                if (overlay.hitsResumeButton(tx, ty, gameCamera)) {
-                    setPaused(false)
-                    ignoreInputUntilRelease = true
-                    return true
+                if (!pauseOverlayVisible) return true
+                when (overlay.hitPauseAction(touchX, touchY, gameCamera)) {
+                    OverlayUI.PauseAction.RESTART -> {
+                        triggerRestart()
+                        ignoreInputUntilRelease = true
+                        return true
+                    }
+                    OverlayUI.PauseAction.RESUME -> {
+                        setPaused(false)
+                        ignoreInputUntilRelease = true
+                        return true
+                    }
+                    OverlayUI.PauseAction.PRACTICE -> {
+                        togglePracticeMode()
+                        ignoreInputUntilRelease = true
+                        return true
+                    }
+                    OverlayUI.PauseAction.LEVEL_SELECT -> {
+                        exitToLevelSelect()
+                        return true
+                    }
+                    null -> Unit
                 }
-                if (overlay.hitsSlider(Vector2(tx, ty), gameCamera)) {
-                    overlay.beginSliderDrag()
+                sliderTouchPosition.set(touchX, touchY)
+                val slider = overlay.hitSlider(sliderTouchPosition, gameCamera)
+                if (slider != null) {
+                    overlay.beginSliderDrag(slider)
                     return true
                 }
                 return false
             }
 
             if (levelCompletedState) {
-                if (overlay.hitsBackButton(tx, ty, gameCamera)) {
-                    exitToLevelSelect()
-                    return true
-                }
-                if (overlay.hitsResumeButton(tx, ty, gameCamera)) {
-                    triggerRestart()
-                    ignoreInputUntilRelease = true
-                    return true
+                when (overlay.hitCompleteAction(touchX, touchY, gameCamera)) {
+                    OverlayUI.CompleteAction.MENU -> {
+                        exitToLevelSelect()
+                        return true
+                    }
+                    OverlayUI.CompleteAction.PRIMARY -> {
+                        launchNextLevel()
+                        return true
+                    }
+                    OverlayUI.CompleteAction.REPLAY -> {
+                        triggerRestart()
+                        ignoreInputUntilRelease = true
+                        return true
+                    }
+                    null -> Unit
                 }
                 return false
             }
 
-            if (hud.hitsPauseButton(tx, ty, gameCamera, gameViewport)) {
+            if (hud.hitsPauseButton(touchX, touchY, gameCamera, gameViewport)) {
                 setPaused(true)
                 return true
             }
 
-            if (isPracticeMode && practice != null) {
-                practice.updateButtonCoords(
+            val currentPractice = practice
+            if (practiceMode && currentPractice != null) {
+                currentPractice.updateButtonCoords(
                     camCX(), camBot(),
                     game.settingsManager.uiPadding,
                     overlay.uiScale,
                     72f * overlay.uiScale
                 )
-                if (practice.hitsPlus(tx, ty)) {
+                if (currentPractice.hitsPlus(touchX, touchY)) {
                     placeCheckpoint()
+                    ignoreInputUntilRelease = true
                     return true
                 }
-                if (practice.hitsMinus(tx, ty)) {
+                if (currentPractice.hitsMinus(touchX, touchY)) {
                     removeLastCheckpoint()
+                    ignoreInputUntilRelease = true
                     return true
                 }
             }
@@ -137,10 +182,10 @@ class GameScreen @JvmOverloads constructor(
         }
 
         override fun touchDragged(screenX: Int, screenY: Int, pointer: Int): Boolean {
-            if (paused && overlay.isSliderDragging) {
-                _unprojectTmp.set(screenX.toFloat(), screenY.toFloat(), 0f)
-                gameCamera.unproject(_unprojectTmp)
-                overlay.updateSliderFromDrag(_unprojectTmp.x, gameCamera)
+            if (paused && overlay.activeSlider != null) {
+                unprojectPosition.set(screenX.toFloat(), screenY.toFloat(), 0f)
+                gameCamera.unproject(unprojectPosition)
+                overlay.updateSliderFromDrag(unprojectPosition.x, gameCamera)
                 if (music.getMusic() != null) {
                     music.setVolume(game.settingsManager.musicVolume)
                 }
@@ -150,7 +195,7 @@ class GameScreen @JvmOverloads constructor(
         }
 
         override fun touchUp(screenX: Int, screenY: Int, pointer: Int, button: Int): Boolean {
-            if (overlay.isSliderDragging) {
+            if (overlay.activeSlider != null) {
                 overlay.endSliderDrag()
                 game.settingsManager.save()
                 return true
@@ -162,21 +207,22 @@ class GameScreen @JvmOverloads constructor(
     init {
         gameViewport.update(Gdx.graphics.width, Gdx.graphics.height, true)
 
-        renderer = GameRenderer(world, gameCamera, game.batch, game.settingsManager, game.atlasManager)
+        renderer = GameRenderer(world, gameCamera, game.batch, game.settingsManager, game.atlasManager, customCamera)
 
         val font = game.fontManager.get(FontManager.SIZE_SMALL)
-        val pauseFont = game.fontManager.get(FontManager.SIZE_SMALL)
+        val pauseTitleFont = game.fontManager.getTitle(FontManager.SIZE_LARGE)
+        val pauseBodyFont = game.fontManager.getBody(FontManager.SIZE_SMALL)
 
         hud = HudRenderer(game, world, font, shapes, game.batch)
 
         val resumeRegion = game.atlasManager.menuAtlas.findRegion("start_button")
         val backRegion = game.atlasManager.levelSelectAtlas.findRegion("back")
         overlay =
-            OverlayUI(game, levelData, pauseFont, shapes, game.batch, resumeRegion, backRegion)
+            OverlayUI(game, levelData, pauseTitleFont, pauseBodyFont, shapes, game.batch, resumeRegion, backRegion)
 
         if (levelData != null) {
             world.loadLevel(levelData)
-            levelKey = levelData.fileName
+            levelKey = if (levelData.id >= 0) levelData.getProgressKey() else null
             recordAttempt()
             updateBgTexture()
         }
@@ -185,21 +231,27 @@ class GameScreen @JvmOverloads constructor(
     }
 
     override fun show() {
-        overlay.updateScale()
+        overlay.updateScale(gameViewport)
         game.soundManager.stopMenuMusic()
         
-        val mFile = levelData?.musicFile
-        if (mFile != null && mFile.isNotEmpty()) {
+        val musicFile = levelData?.musicFile
+        if (!musicFile.isNullOrEmpty()) {
             try {
-                var fh = Gdx.files.internal("musics/$mFile")
-                if (!fh.exists()) fh = Gdx.files.local("assets/musics/$mFile")
-                if (fh.exists()) {
+                var fileHandle = Gdx.files.internal("musics/$musicFile")
+                if (!fileHandle.exists()) {
+                    fileHandle = Gdx.files.local("assets/musics/$musicFile")
+                }
+                if (fileHandle.exists()) {
                     Gdx.app.log("GameScreen", "Analyzing audio loudness map...")
-                    loudnessMap = io.github.msameer0.rhythmicrush.game.engine.LoudnessAnalyzer().analyze(fh, loudnessSampleRate)
+                    loudnessMap =
+                        LoudnessAnalyzer().analyze(fileHandle, loudnessSampleRate)
                     Gdx.app.log("GameScreen", "Analysis complete (size: ${loudnessMap?.size})")
                 }
-            } catch (e: Exception) {
-                Gdx.app.error("GameScreen", "Failed to analyze audio: ${e.message}")
+            } catch (exception: Exception) {
+                Gdx.app.error(
+                    "GameScreen",
+                    "Failed to analyze audio: ${exception.message}"
+                )
             }
         }
 
@@ -211,8 +263,12 @@ class GameScreen @JvmOverloads constructor(
     }
 
     override fun resize(width: Int, height: Int) {
-        overlay.updateScale()
+        val oldX = gameCamera.position.x
+        val oldY = gameCamera.position.y
         gameViewport.update(width, height, true)
+        overlay.updateScale(gameViewport)
+        gameCamera.position.set(oldX, oldY, 0f)
+        gameCamera.update()
     }
 
     override fun hide() {
@@ -234,17 +290,26 @@ class GameScreen @JvmOverloads constructor(
             if (levelCompletedState) {
                 exitToLevelSelect()
             } else if (paused) {
-                setPaused(false)
+                exitToLevelSelect()
             } else {
                 setPaused(true)
             }
             return
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE) && paused) {
+        if ((Gdx.input.isKeyJustPressed(Input.Keys.SPACE) ||
+                Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) && paused) {
             setPaused(false)
             return
         }
-        if (paused || levelCompletedState) return
+        if (Gdx.input.isKeyJustPressed(Input.Keys.R) && paused) {
+            triggerRestart()
+            return
+        }
+        if (paused) return
+        if (levelCompletedState) {
+            customCamera.updateCompletionShake(delta)
+            return
+        }
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.R) && !deathPaused) {
             triggerRespawn()
@@ -253,6 +318,7 @@ class GameScreen @JvmOverloads constructor(
 
         if (deathPaused) {
             deathTimer += delta
+            world.updateVisuals(delta)
             hud.update(delta)
             if (deathTimer >= DEATH_PAUSE_DURATION) triggerRespawn()
             return
@@ -269,16 +335,32 @@ class GameScreen @JvmOverloads constructor(
             return
         }
 
-        if (isPracticeMode) {
+        if (practiceMode) {
             if (Gdx.input.isKeyJustPressed(Input.Keys.Z)) placeCheckpoint()
             if (Gdx.input.isKeyJustPressed(Input.Keys.X)) removeLastCheckpoint()
         }
 
         handleInput()
+        
+        world.player?.let { 
+            customCamera.update(it, delta)
+            world.boundaryTop = customCamera.getCeilingY()
+            world.boundaryBottom = customCamera.getFloorY()
+        }
+        
         engine.update(delta)
+
+        if (world.endCaptureActive) {
+            if (!endWallSoundPlayed) {
+                game.soundManager.playEndWallAbsorptionSound()
+                endWallSoundPlayed = true
+            }
+            music.applyFadeProgress(world.endSequenceMusicFadeProgress)
+        }
 
         if (world.isPlayerDead) {
             recordDeath()
+            game.soundManager.playDeathSound()
             music.stopAndDispose()
             deathPaused = true
             deathTimer = 0f
@@ -291,6 +373,11 @@ class GameScreen @JvmOverloads constructor(
             recordComplete()
             levelEndingSequence = true
             levelEndTimer = 0f
+            levelCompletedState = true
+            checkAndShowAd(1.0f)
+            music.stopAndDispose()
+            Gdx.input.isCursorCatched = false
+            customCamera.beginCompletionShake()
         }
 
         if (levelEndingSequence && !levelCompletedState) {
@@ -308,17 +395,18 @@ class GameScreen @JvmOverloads constructor(
             }
         }
 
-        // Keep visuals and camera in sync before drawing
-        val musicPos = music.levelMusic?.position ?: 0f
+        val musicPosition = music.levelMusic?.position ?: 0f
         
-        // Update loudness tracking
         if (loudnessMap != null) {
-            val idx = (musicPos * loudnessSampleRate).toInt()
-            if (idx >= 0 && idx < (loudnessMap?.size ?: 0)) {
-                val intensity = loudnessMap!![idx]
+            val sampleIndex = (musicPosition * loudnessSampleRate).toInt()
+            if (sampleIndex >= 0 && sampleIndex < (loudnessMap?.size ?: 0)) {
+                val intensity = loudnessMap!![sampleIndex]
                 world.updateLoudness(intensity)
                 if (Gdx.graphics.frameId % 60L == 0L) {
-                    Gdx.app.log("GameScreen", "Pos: $musicPos, Idx: $idx, Intensity: $intensity")
+                    Gdx.app.log(
+                        "GameScreen",
+                        "Pos: $musicPosition, Idx: $sampleIndex, Intensity: $intensity"
+                    )
                 }
             } else {
                 world.updateLoudness(0f)
@@ -326,14 +414,14 @@ class GameScreen @JvmOverloads constructor(
         }
         
         world.updateVisuals(delta)
-        world.player?.let { renderer.updateCamera(it) }
     }
 
     override fun draw() {
         gameViewport.apply()
 
-        if (isPracticeMode && practice != null) {
-            practice.updateButtonCoords(
+        val currentPractice = practice
+        if (practiceMode && currentPractice != null) {
+            currentPractice.updateButtonCoords(
                 camCX(), camBot(),
                 game.settingsManager.uiPadding,
                 overlay.uiScale,
@@ -342,7 +430,7 @@ class GameScreen @JvmOverloads constructor(
         }
 
         val bg = world.backgroundColor
-        if (bgTexture == null) {
+        if (bgTexture == null || world.bgShape != null) {
             Gdx.gl.glClearColor(bg.r, bg.g, bg.b, 1f)
         } else {
             Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
@@ -350,6 +438,8 @@ class GameScreen @JvmOverloads constructor(
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
 
         renderer.render(lastDelta, paused, hitboxesActive, bgTexture, bg, world.currentLoudness)
+
+        if (levelCompletedState) customCamera.clearShake()
 
         game.batch.projectionMatrix = gameCamera.combined
         shapes.projectionMatrix = gameCamera.combined
@@ -361,14 +451,22 @@ class GameScreen @JvmOverloads constructor(
         hud.drawProgressBarShapes(gameCamera, gameViewport)
         hud.drawPauseButtonShapes(gameCamera, gameViewport)
 
-        if (isPracticeMode && practice != null) {
+        if (practiceMode && currentPractice != null) {
             val opacity = game.settingsManager.practiceButtonOpacity
-            practice.drawButtonShapes(shapes, opacity)
-            practice.drawCheckpoints(shapes, gameCamera)
+            currentPractice.drawButtonShapes(shapes, opacity)
+            currentPractice.drawCheckpoints(shapes, gameCamera)
         }
 
-        if (paused || levelCompletedState) {
+        if (levelCompletedState || (paused && pauseOverlayVisible)) {
             overlay.drawDimOverlay(gameCamera, gameViewport)
+        }
+        if (paused && pauseOverlayVisible) {
+            overlay.drawPausePanelShapes(gameCamera)
+        } else if (levelCompletedState) {
+            overlay.drawCompletePanelShapes(gameCamera)
+        }
+        if (paused) {
+            overlay.drawPauseToggleButtonShapes(gameCamera, gameViewport, pauseOverlayVisible)
         }
 
         shapes.end()
@@ -380,35 +478,43 @@ class GameScreen @JvmOverloads constructor(
         hud.drawSessionAttemptsText(gameCamera, gameViewport, sessionAttempts, levelKey)
         hud.drawNewBestPopup(gameCamera)
 
-        if (isPracticeMode) drawPracticeButtonText()
+        if (practiceMode) drawPracticeButtonText()
 
         if (paused) {
-            overlay.drawPauseOverlay(gameCamera, sessionAttempts, levelKey)
+            overlay.drawPauseToggleButtonText(gameCamera, gameViewport, pauseOverlayVisible)
+            if (pauseOverlayVisible) {
+                overlay.drawPauseOverlay(gameCamera, sessionAttempts, levelKey, practiceMode)
+            }
         } else if (levelCompletedState) {
-            overlay.drawCompleteOverlay(gameCamera, sessionAttempts, levelKey)
+            overlay.drawCompleteOverlay(
+                gameCamera,
+                sessionAttempts,
+                levelKey,
+                levelIndex + 1 < game.levelManager.getLevels().size
+            )
         }
 
         game.batch.end()
 
-        if (paused) overlay.drawPauseSlider(gameCamera)
+        if (paused && pauseOverlayVisible) overlay.drawPauseSliders(gameCamera)
     }
 
     private fun drawPracticeButtonText() {
-        if (practice == null) return
+        val currentPractice = practice ?: return
 
         val opacity = game.settingsManager.practiceButtonOpacity
         val uiScale = overlay.uiScale
-        val btnSize = practice.btnSize
+        val btnSize = currentPractice.btnSize
         val font = game.fontManager.get(FontManager.SIZE_SMALL)
-        val layout = com.badlogic.gdx.graphics.g2d.GlyphLayout()
+        val layout = glyphLayout
 
         font?.data?.setScale(1.5f * uiScale)
         layout.setText(font, "+")
-        val plusX = practice.plusX + (btnSize - layout.width) / 2f
-        val plusY = practice.plusY + (btnSize + layout.height) / 2f
+        val plusX = currentPractice.plusX + (btnSize - layout.width) / 2f
+        val plusY = currentPractice.plusY + (btnSize + layout.height) / 2f
         layout.setText(font, "-")
-        val minusX = practice.minusX + (btnSize - layout.width) / 2f
-        val minusY = practice.minusY + (btnSize + layout.height) / 2f
+        val minusX = currentPractice.minusX + (btnSize - layout.width) / 2f
+        val minusY = currentPractice.minusY + (btnSize + layout.height) / 2f
 
         font?.setColor(0f, 0f, 0f, 0.4f * opacity)
         font?.draw(game.batch, "+", plusX + 2f * uiScale, plusY - 2f * uiScale)
@@ -421,6 +527,7 @@ class GameScreen @JvmOverloads constructor(
 
     private fun setPaused(p: Boolean) {
         paused = p
+        if (p) pauseOverlayVisible = true
         if (!p) overlay.endSliderDrag()
         if (p) music.pause() else music.resume()
         if (game.settingsManager.lockCursorInGame) {
@@ -432,11 +539,14 @@ class GameScreen @JvmOverloads constructor(
         levelCompletedState = false
         levelEndingSequence = false
         levelEndTimer = 0f
+        endWallSoundPlayed = false
         paused = false
         lastJumpHeld = false
         hud.hideNewBestPopup()
         music.stopAndDispose()
         world.reset()
+        renderer.reset()
+        customCamera.reset()
         engine.reset()
         music.start()
         recordAttempt()
@@ -445,13 +555,26 @@ class GameScreen @JvmOverloads constructor(
         }
     }
 
+    private fun togglePracticeMode() {
+        if (practiceMode) {
+            practiceMode = false
+            practice = null
+            triggerRestart()
+            return
+        }
+
+        practiceMode = true
+        practice = PracticeManager(world).also { it.placeCheckpoint() }
+        setPaused(false)
+    }
+
     private fun updateBgTexture() {
         bgTexture?.dispose()
         bgTexture = null
         if (world.bgImage.isNotEmpty()) {
-            val fh = Gdx.files.internal("game/bg/${world.bgImage}")
-            if (fh.exists()) {
-                bgTexture = Texture(fh)
+            val fileHandle = Gdx.files.internal("game/bg/${world.bgImage}")
+            if (fileHandle.exists()) {
+                bgTexture = Texture(fileHandle)
                 bgTexture?.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear)
             } else {
                 val localFh = Gdx.files.local("assets/game/bg/${world.bgImage}")
@@ -464,7 +587,7 @@ class GameScreen @JvmOverloads constructor(
     }
 
     private fun triggerRespawn() {
-        if (isPracticeMode && practice?.hasCheckpoints() == true) {
+        if (practiceMode && practice?.hasCheckpoints() == true) {
             respawnAtCheckpoint()
             return
         }
@@ -475,10 +598,13 @@ class GameScreen @JvmOverloads constructor(
         levelCompletedState = false
         levelEndingSequence = false
         levelEndTimer = 0f
+        endWallSoundPlayed = false
         paused = false
         lastDelta = 0f
         lastJumpHeld = false
         world.reset()
+        renderer.reset()
+        customCamera.reset()
         engine.reset()
         music.start()
         recordAttempt()
@@ -487,18 +613,21 @@ class GameScreen @JvmOverloads constructor(
     }
 
     private fun respawnAtCheckpoint() {
-        if (practice == null) return
+        val currentPractice = practice ?: return
 
         deathPaused = false
         deathTimer = 0f
         levelCompletedState = false
         levelEndingSequence = false
         levelEndTimer = 0f
+        endWallSoundPlayed = false
         paused = false
         lastDelta = 0f
         lastJumpHeld = false
 
-        val musicOffset = practice.applyLatestCheckpoint()
+        val musicOffset = currentPractice.applyLatestCheckpoint()
+        renderer.reset()
+        customCamera.reset()
         engine.reset()
         music.stopAndDispose()
         music.start(musicOffset)
@@ -508,11 +637,11 @@ class GameScreen @JvmOverloads constructor(
     }
 
     private fun placeCheckpoint() {
-        if (isPracticeMode) practice?.placeCheckpoint()
+        if (practiceMode) practice?.placeCheckpoint()
     }
 
     private fun removeLastCheckpoint() {
-        if (!isPracticeMode) return
+        if (!practiceMode) return
         val stillHasCheckpoints = practice?.removeLastCheckpoint() ?: false
         if (deathPaused && stillHasCheckpoints) triggerRespawn()
     }
@@ -522,33 +651,81 @@ class GameScreen @JvmOverloads constructor(
         game.screen = LevelSelectScreen(game, levelIndex)
     }
 
+    private fun launchNextLevel() {
+        val levels = game.levelManager.getLevels()
+        if (levelIndex + 1 < levels.size) {
+            music.stopAndDispose()
+            game.screen = GameScreen(game, levels[levelIndex + 1], levelIndex + 1)
+        } else {
+            triggerRestart()
+        }
+    }
+
     private fun recordAttempt() {
         sessionAttempts++
         val key = levelKey ?: return
-        val p = game.progressManager.getOrCreate(key)
-        p.totalAttempts = p.totalAttempts + 1
+        val levelProgress = game.progressManager.getOrCreate(key)
+        levelProgress.totalAttempts++
+        levelProgress.localDeviceAttempts++
         game.progressManager.save()
     }
 
     private fun recordDeath() {
         val key = levelKey
-        if (key == null || isPracticeMode) return
-        val pct = MathUtils.round(world.progress * 100f)
-        val p = game.progressManager.getOrCreate(key)
-        if (pct > p.bestPercent) {
-            p.bestPercent = pct
+        if (key == null || practiceMode) return
+        val percentage = MathUtils.round(world.progress * 100f)
+        val levelProgress = game.progressManager.getOrCreate(key)
+        if (percentage > levelProgress.bestPercent) {
+            levelProgress.bestPercent = percentage
             game.progressManager.save()
-            hud.showNewBestPopup(pct)
-            checkAndShowAd(pct / 100f)
+            game.queueCloudProgressUpload()
+            hud.showNewBestPopup(percentage)
+            checkAndShowAd(percentage / 100f)
         }
     }
 
     private fun recordComplete() {
         val key = levelKey
-        if (key == null || isPracticeMode) return
-        val p = game.progressManager.getOrCreate(key)
-        p.bestPercent = 100
+        if (key == null || practiceMode) return
+        val levelProgress = game.progressManager.getOrCreate(key)
+        levelProgress.bestPercent = 100
+        if (!levelProgress.completionRewardGranted) {
+            awardCompletionRewards()
+            levelProgress.completionRewardGranted = true
+        }
         game.progressManager.save()
+        game.queueCloudProgressUpload()
+    }
+
+    private fun awardCompletionRewards() {
+        val difficulty = levelData?.difficulty?.lowercase() ?: "normal"
+        val progress = game.progressManager
+        when (difficulty) {
+            "easy" -> {
+                progress.coins += 50
+                progress.points += 2
+            }
+            "normal" -> {
+                progress.coins += 75
+                progress.points += 3
+            }
+            "hard", "harder" -> {
+                progress.coins += 125
+                progress.points += 5
+            }
+            "insane" -> {
+                progress.coins += 250
+                progress.points += 7
+            }
+            "extreme", "demon" -> {
+                progress.coins += 500
+                progress.points += 10
+            }
+            else -> {
+                progress.coins += 75
+                progress.points += 3
+            }
+        }
     }
 
     private fun handleInput() {
@@ -570,7 +747,6 @@ class GameScreen @JvmOverloads constructor(
     private fun checkAndShowAd(adChance: Float) {
         if (TimeUtils.timeSinceMillis(lastAdTimeMillis) < AD_COOLDOWN_MS) return
         if (MathUtils.randomBoolean(adChance) && game.adController != null) {
-            // game.getAdController().showInterstitialAd(); // TODO: ADS
             lastAdTimeMillis = TimeUtils.millis()
         }
     }

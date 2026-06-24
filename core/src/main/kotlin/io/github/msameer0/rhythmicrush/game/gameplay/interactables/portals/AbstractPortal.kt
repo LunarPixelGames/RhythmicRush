@@ -22,14 +22,16 @@ abstract class AbstractPortal : Rotatable {
 
     var type: PortalType? = null
     var x: Float = 0f
+    var worldX: Float = 0f
     var y: Float = 0f
-    var width: Float = 50f
-    var height: Float = 100f
+    var width: Float = 100f
+    var height: Float = 250f
     var bounds: Rectangle
     var isUsed: Boolean = false
 
     constructor(x: Float, y: Float) {
         this.x = x
+        this.worldX = x
         this.y = y
         bounds = Rectangle(x, y, width, height)
     }
@@ -40,6 +42,7 @@ abstract class AbstractPortal : Rotatable {
 
     open fun reset() {
         this.x = 0f
+        this.worldX = 0f
         this.y = 0f
         this.rotation = 0f
         this.isUsed = false
@@ -48,6 +51,7 @@ abstract class AbstractPortal : Rotatable {
 
     open fun init(x: Float, y: Float, rotation: Float): AbstractPortal? {
         this.x = x
+        this.worldX = x
         this.y = y
         this.rotation = rotation
         this.isUsed = false
@@ -59,8 +63,8 @@ abstract class AbstractPortal : Rotatable {
         return init(x, y, 0f)
     }
 
-    fun updatePosition(scrollSpeed: Float, delta: Float) {
-        x -= scrollSpeed * delta
+    fun updatePosition(worldScrolled: Float) {
+        x = worldX - worldScrolled
         updateBounds()
     }
 
@@ -77,7 +81,6 @@ abstract class AbstractPortal : Rotatable {
         if (rotSnapped == 90 || rotSnapped == 270) {
             val cx = x + width / 2f
             val cy = y + height / 2f
-            // Swap width and height and offset by center
             bounds.set(cx - height / 2f, cy - width / 2f, height, width)
         } else {
             bounds.set(x, y, width, height)

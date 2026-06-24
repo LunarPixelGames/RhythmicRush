@@ -5,7 +5,12 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration
 import io.github.msameer0.rhythmicrush.RhythmicRushGame
+import io.github.msameer0.rhythmicrush.account.AccountClient
+import io.github.msameer0.rhythmicrush.account.UnavailableAccountClient
 import io.github.msameer0.rhythmicrush.ads.AdController
+import io.github.msameer0.rhythmicrush.lwjgl3.account.DesktopAccountClient
+import io.github.msameer0.rhythmicrush.lwjgl3.account.DesktopAccountConfiguration
+import io.github.msameer0.rhythmicrush.lwjgl3.input.DesktopTextInputController
 import io.github.msameer0.rhythmicrush.lwjgl3.window.DesktopWindowController
 import io.github.msameer0.rhythmicrush.update.UpdateManager
 
@@ -20,7 +25,25 @@ class Lwjgl3Launcher {
         }
 
         private fun createApplication() : Lwjgl3Application {
-            val game = RhythmicRushGame(DesktopAdController(), DesktopUpdateManager())
+            val accountConfigurationProvider = DesktopAccountConfiguration()
+            val accountConfiguration = accountConfigurationProvider.getConfiguration()
+            val accountClient: AccountClient =
+                if (accountConfiguration.isValid &&
+                    !accountConfiguration.firebaseWebApiKey.isNullOrBlank()
+                ) {
+                    DesktopAccountClient(accountConfiguration)
+                } else {
+                    UnavailableAccountClient(
+                        "Desktop account configuration is missing or invalid."
+                    )
+                }
+            val game = RhythmicRushGame(
+                DesktopAdController(),
+                DesktopUpdateManager(),
+                accountClient,
+                accountConfigurationProvider,
+                DesktopTextInputController()
+            )
 
             game.windowController = DesktopWindowController()
 
@@ -60,4 +83,5 @@ class Lwjgl3Launcher {
             Gdx.app.log("UpdateManager", "Not checking for updates on PC.")
         }
     }
+
 }

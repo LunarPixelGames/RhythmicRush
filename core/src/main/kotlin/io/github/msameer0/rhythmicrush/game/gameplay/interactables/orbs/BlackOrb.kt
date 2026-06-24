@@ -25,9 +25,9 @@ class BlackOrb : AbstractOrb {
 
     override fun onClick(player: AbstractPlayer) {
         if (player.isGravityFlipped()) {
-            player.setVelocityY(900f)
+            player.setVelocityY(1800f)
         } else {
-            player.setVelocityY(-900f)
+            player.setVelocityY(-1800f)
         }
     }
 }

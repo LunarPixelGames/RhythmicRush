@@ -9,7 +9,7 @@ import com.badlogic.gdx.utils.Array
 class LevelManager {
     private val levels = Array<LevelData?>()
 
-    constructor() {
+    init {
         Gdx.app.log("LevelManager", "Scanning and pre-loading all levels...")
         loadAll()
         Gdx.app.log("LevelManager", "Pre-loaded " + levels.size + " levels.")
@@ -19,16 +19,24 @@ class LevelManager {
         levels.clear()
         var index = 0
         while (true) {
-            val fh = Gdx.files.internal("levels/$index.json")
-            if (!fh.exists()) break
+            var fileHandle = Gdx.files.internal("levels/$index.ubj")
+            if (!fileHandle.exists()) {
+                fileHandle = Gdx.files.internal("levels/$index.json")
+            }
+
+            if (!fileHandle.exists()) break
+
             try {
-                val data = LevelSerializer.load(fh)
+                val data = LevelSerializer.load(fileHandle)
                 if (data != null) {
                     levels.add(data)
                 }
                 index++
-            } catch (e: Exception) {
-                Gdx.app.error("LevelManager", "Failed to load level " + index + ": " + e.message)
+            } catch (exception: Exception) {
+                Gdx.app.error(
+                    "LevelManager",
+                    "Failed to load level $index: ${exception.message}"
+                )
                 break
             }
         }

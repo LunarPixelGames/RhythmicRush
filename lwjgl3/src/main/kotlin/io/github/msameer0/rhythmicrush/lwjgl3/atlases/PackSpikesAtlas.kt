@@ -11,11 +11,11 @@ object PackSpikesAtlas {
         settings.edgePadding = true
         settings.duplicatePadding = true
 
-        TexturePacker.process(
-            settings,
-            "textures_to_put_in_atlases/objects/spikes",  // input
-            "assets/game/objects",  // output
-            "spikes" // atlas name → spikes.atlas
+        AtlasPackingUtils.packAllQualities(
+            "textures_to_put_in_atlases/objects/spikes",
+            "assets/game/objects",
+            "spikes",
+            settings
         )
     }
 }

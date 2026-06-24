@@ -27,14 +27,34 @@ title
   index: -1
 
 menu2.png
-size: 1024, 1024
+size: 2048, 2048
 format: RGBA8888
 filter: Nearest, Nearest
 repeat: none
+online
+  rotate: false
+  xy: 1, 760
+  size: 1024, 1024
+  orig: 1024, 1024
+  offset: 0, 0
+  index: -1
 settings_button
   rotate: false
   xy: 1, 1
   size: 845, 757
   orig: 845, 757
+  offset: 0, 0
+  index: -1
+
+menu3.png
+size: 2048, 2048
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+skins
+  rotate: false
+  xy: 1, 1
+  size: 1024, 1024
+  orig: 1024, 1024
   offset: 0, 0
   index: -1

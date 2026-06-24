@@ -1,0 +1,48 @@
+
+portals_back_low.png
+size: 256, 128
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+ball
+  rotate: false
+  xy: 1, 1
+  size: 38, 96
+  orig: 38, 96
+  offset: 0, 0
+  index: -1
+cube
+  rotate: false
+  xy: 41, 1
+  size: 38, 96
+  orig: 38, 96
+  offset: 0, 0
+  index: -1
+gravity
+  rotate: false
+  xy: 81, 1
+  size: 38, 96
+  orig: 38, 96
+  offset: 0, 0
+  index: -1
+mini
+  rotate: false
+  xy: 121, 1
+  size: 38, 96
+  orig: 38, 96
+  offset: 0, 0
+  index: -1
+ship
+  rotate: false
+  xy: 161, 1
+  size: 38, 96
+  orig: 38, 96
+  offset: 0, 0
+  index: -1
+ufo
+  rotate: false
+  xy: 201, 1
+  size: 38, 96
+  orig: 38, 96
+  offset: 0, 0
+  index: -1

@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.utils.viewport.ExtendViewport
 import com.badlogic.gdx.utils.viewport.Viewport
+import io.github.msameer0.rhythmicrush.GameConstants
 import io.github.msameer0.rhythmicrush.RhythmicRushGame
 
 /**
@@ -27,8 +28,11 @@ abstract class AbstractScreen(protected val game: RhythmicRushGame) : Screen {
     }
 
     override fun render(delta: Float) {
+        // Cap delta to prevent huge spikes (e.g. during resize/fullscreen switch) 
+        // from snapping animations instantly.
+        val cappedDelta = kotlin.math.min(delta, GameConstants.World.DELTA_CAP)
         handleWindowKeys()
-        update(delta)
+        update(cappedDelta)
         draw()
     }
 
@@ -74,7 +78,7 @@ abstract class AbstractScreen(protected val game: RhythmicRushGame) : Screen {
         mainColor: Color
     ) {
         val shadowOffset = 2f
-        font.color = Color(0f, 0f, 0f, mainColor.a * 0.4f)
+        font.setColor(0f, 0f, 0f, mainColor.a * 0.4f)
         font.draw(game.batch, text, x + shadowOffset, y - shadowOffset)
         font.color = mainColor
         font.draw(game.batch, text, x, y)

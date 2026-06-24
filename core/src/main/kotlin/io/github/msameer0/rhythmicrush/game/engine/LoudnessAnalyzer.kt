@@ -37,9 +37,9 @@ class LoudnessAnalyzer {
             if (dataEnd > dataStart) {
                 var energy = 0.0
                 val count = dataEnd - dataStart
-                for (i in dataStart until dataEnd) {
-                    val v = (bytes[i].toInt() and 0xFF) - 128
-                    energy += v.toDouble() * v.toDouble()
+                for (byteIndex in dataStart until dataEnd) {
+                    val centeredSample = (bytes[byteIndex].toInt() and 0xFF) - 128
+                    energy += centeredSample.toDouble() * centeredSample.toDouble()
                 }
                 windowEnergy += sqrt(energy / count)
                 windowFrames++
@@ -67,9 +67,11 @@ class LoudnessAnalyzer {
 
         val result = FloatArray(loudnessMap.size)
         if (maxLoudness > 0) {
-            for (i in loudnessMap.indices) {
-                val rawNormalized = (loudnessMap[i] / maxLoudness).coerceIn(0f, 1f)
-                result[i] = Math.pow(rawNormalized.toDouble(), 6.0).toFloat()
+            for (sampleIndex in loudnessMap.indices) {
+                val normalizedLoudness =
+                    (loudnessMap[sampleIndex] / maxLoudness).coerceIn(0f, 1f)
+                result[sampleIndex] =
+                    Math.pow(normalizedLoudness.toDouble(), 6.0).toFloat()
             }
         }
 

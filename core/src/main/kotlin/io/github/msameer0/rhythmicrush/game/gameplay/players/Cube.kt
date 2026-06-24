@@ -1,6 +1,8 @@
 package io.github.msameer0.rhythmicrush.game.gameplay.players
 
+import com.badlogic.gdx.math.MathUtils
 import io.github.msameer0.rhythmicrush.game.registries.Registry
+import io.github.msameer0.rhythmicrush.GameConstants
 
 /**
  * Standard Cube game mode focusing on platforming and precise jumping.
@@ -9,25 +11,26 @@ import io.github.msameer0.rhythmicrush.game.registries.Registry
 class Cube : AbstractPlayer {
 
     @JvmField
-    var jumpVelocity: Float = 600f
+    var jumpVelocity: Float = GameConstants.Player.Cube.JUMP_VELOCITY
 
     private var isGrounded: Boolean = false
 
     private var coyoteTimer: Float = 0f
 
     companion object {
-        private const val COYOTE_TIME = 0.083f
+        private const val COYOTE_TIME = GameConstants.Player.Cube.COYOTE_TIME
+        private const val CUBE_SPIN_FACTOR = 0.5f
     }
 
     constructor(startX: Float, groundY: Float) : super() {
         this.x = startX
         this.y = groundY
-        gravity = -1800f
+        gravity = GameConstants.Player.Cube.GRAVITY
         type = PlayerType.CUBE
     }
 
     constructor() : super() {
-        gravity = -1800f
+        gravity = GameConstants.Player.Cube.GRAVITY
         type = PlayerType.CUBE
     }
 
@@ -35,7 +38,7 @@ class Cube : AbstractPlayer {
         type = PlayerType.CUBE
         x = startX
         y = startY
-        gravity = -1800f
+        gravity = GameConstants.Player.Cube.GRAVITY
         this.velocityY = velocityY
         isGrounded = false
         this.jumpHeld = jumpHeld
@@ -50,8 +53,9 @@ class Cube : AbstractPlayer {
 
     override fun init(startX: Float, startY: Float): Cube = init(startX, startY, 0f, false)
 
-    override fun update(delta: Float, groundY: Float) {
+    override fun update(delta: Float, groundY: Float, ceilingY: Float) {
         val wasGrounded = isGrounded
+        val lastSlopeRotation = currentSlopeRotation
         isGrounded = false
         currentSlopeRotation = 0f
 
@@ -67,13 +71,21 @@ class Cube : AbstractPlayer {
             }
         } else {
             @Suppress("UNUSED_VARIABLE")
-            val ceilingY = 720 - groundY - height
+            val ceilingY = 1080 - groundY - height
         }
 
-        if (isGrounded) {
+        if (wasGrounded) {
             coyoteTimer = COYOTE_TIME
-        } else if (!wasGrounded) {
-            coyoteTimer = maxOf(0f, coyoteTimer - delta)
+
+            val currentRot = getRotation()
+            val nearest90 = MathUtils.round((currentRot - lastSlopeRotation) / 90f) * 90f
+            setRotation(MathUtils.lerp(currentRot, nearest90 + lastSlopeRotation, MathUtils.clamp(delta * 15f, 0f, 1f)))
+        } else {
+            coyoteTimer = kotlin.math.max(0f, coyoteTimer - delta)
+
+            val spinAmount = GameConstants.Player.Cube.SPIN_SPEED * delta
+            if (gravityFlipped) setRotation(getRotation() + spinAmount)
+            else setRotation(getRotation() - spinAmount)
         }
 
         updateBounds()
@@ -83,8 +95,10 @@ class Cube : AbstractPlayer {
 
     override fun jump() {
         if (canJump()) {
-            val v = if (mini) jumpVelocity * 0.75f else jumpVelocity
-            velocityY = if (gravityFlipped) -v else v
+            val effectiveJumpVelocity =
+                if (mini) jumpVelocity * 0.75f else jumpVelocity
+            velocityY =
+                if (gravityFlipped) -effectiveJumpVelocity else effectiveJumpVelocity
             isGrounded = false
             coyoteTimer = 0f
             jumpConsumed = true

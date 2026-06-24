@@ -1,11 +1,7 @@
 package io.github.msameer0.rhythmicrush.screens.ui
 
-import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.OrthographicCamera
-import com.badlogic.gdx.graphics.Pixmap
-import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
@@ -16,346 +12,328 @@ import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.utils.viewport.Viewport
 import io.github.msameer0.rhythmicrush.RhythmicRushGame
 import io.github.msameer0.rhythmicrush.game.level.LevelData
+import io.github.msameer0.rhythmicrush.ui.UI
 
-/**
- * Manages the rendering and interaction logic for gameplay overlays such as pause and completion screens.
- */
+/** Shared pause and results presentation with responsive hit targets. */
 class OverlayUI(
     private val game: RhythmicRushGame,
     private val levelData: LevelData?,
-    private val pauseFont: BitmapFont,
+    private val titleFont: BitmapFont,
+    private val bodyFont: BitmapFont,
     private val shapes: ShapeRenderer,
     private val batch: SpriteBatch,
-    private val resumeRegion: TextureRegion?,
-    private val backRegion: TextureRegion?
+    @Suppress("UNUSED_PARAMETER") resumeRegion: TextureRegion?,
+    @Suppress("UNUSED_PARAMETER") backRegion: TextureRegion?
 ) {
-
-    private var panelW = 520f
-    private var panelH = 360f
-    private var btnSize = 72f
-    var uiScale = 1.0f
-        private set
-
-    companion object {
-        private val COL_OVERLAY = Color(0f, 0f, 0f, 0.65f)
-        private val COL_PANEL = Color(0.11f, 0.11f, 0.17f, 1f)
-        private val COL_HEADING = Color(1f, 0.85f, 0.35f, 1f)
-        private val COL_LABEL = Color(1f, 1f, 1f, 0.85f)
-        private val COL_DIM = Color(1f, 1f, 1f, 0.50f)
-        private val COL_TRACK = Color(0.28f, 0.28f, 0.35f, 1f)
-        private val COL_FILL = Color(0.35f, 0.65f, 1.00f, 1f)
-        private val COL_THUMB = Color(1f, 1f, 1f, 1f)
-
-        private fun hits(tx: Float, ty: Float, x: Float, y: Float, w: Float, h: Float): Boolean {
-            return tx in x..(x + w) && ty in y..(y + h)
-        }
-
-        private fun createRoundedRect(w: Int, h: Int, r: Int, color: Color): Texture {
-            val pm = Pixmap(w, h, Pixmap.Format.RGBA8888)
-            pm.setColor(0f, 0f, 0f, 0f)
-            pm.fill()
-            pm.setColor(color)
-            pm.fillRectangle(r, 0, w - 2 * r, h)
-            pm.fillRectangle(0, r, w, h - 2 * r)
-            pm.fillCircle(r, r, r)
-            pm.fillCircle(w - r, r, r)
-            pm.fillCircle(r, h - r, r)
-            pm.fillCircle(w - r, h - r, r)
-            val t = Texture(pm)
-            pm.dispose()
-            return t
-        }
-
-        private fun camLeft(c: OrthographicCamera, v: Viewport): Float {
-            return c.position.x - v.worldWidth / 2f
-        }
-
-        private fun camBot(c: OrthographicCamera, v: Viewport): Float {
-            return c.position.y - v.worldHeight / 2f
-        }
+    private companion object {
+        val PANEL_SHADOW = Color(0f, 0f, 0f, 0.28f)
+        val PANEL_FILL = Color(0.11f, 0.11f, 0.17f, 0.98f)
+        val SLIDER_TRACK = Color(UI.TEXT_MUTED.r, UI.TEXT_MUTED.g, UI.TEXT_MUTED.b, 0.35f)
+        val SECONDARY_BUTTON = Color(0.16f, 0.16f, 0.24f, 0.96f)
+        val PRIMARY_TEXT = Color(0.04f, 0.05f, 0.09f, 1f)
+        val TOGGLE_ACTIVE = Color(UI.LIME.r, UI.LIME.g, UI.LIME.b, 0.8f)
     }
 
+    /** Identifies the audio setting controlled by a pause-menu slider. */
+    enum class SliderKind { MUSIC, SFX }
+
+    /** Identifies an action available from the pause menu. */
+    enum class PauseAction { RESTART, RESUME, PRACTICE, LEVEL_SELECT }
+
+    /** Identifies an action available after completing a level. */
+    enum class CompleteAction { MENU, PRIMARY, REPLAY }
+
     private val layout = GlyphLayout()
-
-    private var panelTexture: Texture? = null
-    private var lastPanelW = -1
-    private var lastPanelH = -1
-
-    var isSliderDragging = false
+    private var panelW = 1120f
+    private var panelH = 760f
+    private var panelX = 0f
+    private var panelY = 0f
+    private var pad = 56f
+    private var sliderW = 390f
+    private var sliderH = 8f
+    private var sliderCenterY = 0f
+    private var buttonY = 0f
+    private var buttonH = 94f
+    private var buttonGap = 18f
+    private var buttonW = 0f
+    var uiScale = 1f
+        private set
+    var activeSlider: SliderKind? = null
         private set
 
-    fun updateScale() {
-        val mobile = Gdx.app.type == com.badlogic.gdx.Application.ApplicationType.Android ||
-            Gdx.app.type == com.badlogic.gdx.Application.ApplicationType.iOS
-        if (mobile) {
-            panelW = 740f
-            panelH = 480f
-            btnSize = 100f
-            uiScale = 1.4f
-        } else {
-            panelW = 520f
-            panelH = 360f
-            btnSize = 72f
-            uiScale = 1.0f
-        }
-        lastPanelW = -1
+    private val pauseToggleW get() = 130f * uiScale
+    private val pauseToggleH get() = 48f * uiScale
+
+    fun updateScale(viewport: Viewport) {
+        val vw = viewport.worldWidth
+        val vh = viewport.worldHeight
+        uiScale = MathUtils.clamp(minOf(vw / 1920f, vh / 1080f), 0.72f, 1.25f)
+        panelW = minOf(vw * 0.72f, 1280f)
+        panelH = minOf(vh * 0.76f, 820f)
+        pad = panelW * 0.055f
+        sliderW = panelW * 0.35f
+        sliderH = maxOf(8f, panelH * 0.014f)
+        buttonH = panelH * 0.145f
+        buttonGap = panelW * 0.014f
+        buttonW = (panelW - pad * 2f - buttonGap * 3f) / 4f
+    }
+
+    private fun place(camera: OrthographicCamera) {
+        panelX = camera.position.x - panelW / 2f
+        panelY = camera.position.y - panelH / 2f
+        buttonY = panelY + pad
+        sliderCenterY = panelY + panelH * 0.40f
     }
 
     fun drawDimOverlay(camera: OrthographicCamera, viewport: Viewport) {
-        shapes.color = COL_OVERLAY
-        shapes.rect(
-            camLeft(camera, viewport), camBot(camera, viewport),
-            viewport.worldWidth, viewport.worldHeight
-        )
+        shapes.color = UI.OVERLAY
+        shapes.rect(camera.position.x - viewport.worldWidth / 2f, camera.position.y - viewport.worldHeight / 2f, viewport.worldWidth, viewport.worldHeight)
     }
 
-    fun drawPauseOverlay(camera: OrthographicCamera, sessionAttempts: Int, levelKey: String?) {
-        ensurePanel()
-        val px = panelX(camera)
-        val py = panelY(camera)
-        val shadow = 2f * uiScale
+    fun drawPausePanelShapes(camera: OrthographicCamera) {
+        place(camera)
+        drawPanel()
+        val rowH = panelH * 0.15f
+        drawAudioRow(sliderCenterY + rowH * 0.55f, game.settingsManager.musicVolume)
+        drawAudioRow(sliderCenterY - rowH * 0.55f, game.settingsManager.sfxVolume)
+        for (action in PauseAction.entries) drawAction(action.ordinal, action == PauseAction.RESUME)
+    }
 
-        panelTexture?.let { batch.draw(it, px, py) }
-
-        val name = levelData?.name ?: "Level"
-        pauseFont.data.setScale(1.1f * uiScale)
-        layout.setText(pauseFont, name)
-        var x = px + panelW / 2f - layout.width / 2f
-        var y = py + panelH - 18f * uiScale
-        drawShadowText(name, x, y, COL_HEADING, shadow)
-
-        var sy = y - layout.height - 22f * uiScale
-        if (levelKey != null) {
-            val p = game.progressManager.getOrCreate(levelKey)
-
-            pauseFont.data.setScale(0.68f * uiScale)
-            val best = "Personal Best: " + p?.bestPercent + "%"
-            layout.setText(pauseFont, best)
-            x = px + panelW / 2f - layout.width / 2f
-            drawShadowText(best, x, sy, COL_LABEL, shadow)
-
-            sy -= layout.height + 14f * uiScale
-            val att = "Total: " + p?.totalAttempts + "   Session: " + sessionAttempts
-            layout.setText(pauseFont, att)
-            x = px + panelW / 2f - layout.width / 2f
-            drawShadowText(att, x, sy, COL_DIM, shadow)
+    fun drawCompletePanelShapes(camera: OrthographicCamera) {
+        place(camera)
+        drawPanel()
+        val completeW = (panelW - pad * 2f - buttonGap * 2f) / 3f
+        for (i in 0..2) {
+            val x = panelX + pad + i * (completeW + buttonGap)
+            drawFlatButton(x, buttonY, completeW, buttonH, i == 1)
         }
-
-        if (backRegion != null) batch.draw(
-            backRegion,
-            backX(camera),
-            backY(camera),
-            btnSize * 0.9f,
-            btnSize * 0.9f
-        )
-        if (resumeRegion != null) batch.draw(
-            resumeRegion,
-            resumeX(camera),
-            backY(camera),
-            btnSize * 0.9f,
-            btnSize * 0.9f
-        )
-
-        val sliderY = sliderY(camera)
-        pauseFont.data.setScale(0.58f * uiScale)
-        layout.setText(pauseFont, "Volume")
-        x = px + panelW / 2f - layout.width / 2f
-        y = sliderY + layout.height + 12f * uiScale
-        drawShadowText("Volume", x, y, COL_LABEL, shadow)
-
-        val vol = game.settingsManager.musicVolume
-        pauseFont.data.setScale(0.48f * uiScale)
-        val volPct = MathUtils.round(vol * 100f).toString() + "%"
-        layout.setText(pauseFont, volPct)
-        x = sliderTrackX(camera) - layout.width - 12f * uiScale
-        y = sliderY + layout.height / 2f
-        drawShadowText(volPct, x, y, COL_DIM, shadow)
-
-        pauseFont.data.setScale(0.5f * uiScale)
-        val labelY = backY(camera) - 6f * uiScale
-        layout.setText(pauseFont, "Back")
-        x = backX(camera) + btnSize * 0.9f / 2f - layout.width / 2f
-        drawShadowText("Back", x, labelY, COL_DIM, shadow)
-
-        layout.setText(pauseFont, "Resume")
-        x = resumeX(camera) + btnSize * 0.9f / 2f - layout.width / 2f
-        drawShadowText("Resume", x, labelY, COL_DIM, shadow)
-
-        pauseFont.data.setScale(1f)
     }
 
-    fun drawPauseSlider(camera: OrthographicCamera) {
-        val sliderY = sliderY(camera)
-        val vol = game.settingsManager.musicVolume
-        val tx = sliderTrackX(camera)
-        val tw = sliderTrackW()
-        val trackH = 5f * uiScale
-        val thumbR = 10f * uiScale
-        val fillW = tw * vol
-
-        Gdx.gl.glEnable(GL20.GL_BLEND)
-        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
-        shapes.begin(ShapeRenderer.ShapeType.Filled)
-        shapes.color = COL_TRACK
-        shapes.rect(tx, sliderY - trackH / 2f, tw, trackH)
-        shapes.color = COL_FILL
-        if (fillW > 0) shapes.rect(tx, sliderY - trackH / 2f, fillW, trackH)
-        shapes.color = COL_THUMB
-        shapes.circle(tx + fillW, sliderY, thumbR, 24)
-        shapes.end()
-        Gdx.gl.glDisable(GL20.GL_BLEND)
+    private fun drawPanel() {
+        UI.filled(shapes, panelX + 10f, panelY - 12f, panelW, panelH, 30f * uiScale, PANEL_SHADOW)
+        UI.filled(shapes, panelX, panelY, panelW, panelH, 30f * uiScale, PANEL_FILL)
     }
 
-    fun drawCompleteOverlay(camera: OrthographicCamera, sessionAttempts: Int, levelKey: String?) {
-        ensurePanel()
-        val px = panelX(camera)
-        val py = panelY(camera)
-        val shadow = 2f * uiScale
+    private fun drawAudioRow(y: Float, value: Float) {
+        val sx = sliderX()
+        shapes.color = SLIDER_TRACK
+        shapes.rect(sx, y - sliderH / 2f, sliderW, sliderH)
+        shapes.color = UI.BLUE
+        if (value > 0f) shapes.rect(sx, y - sliderH / 2f, sliderW * value, sliderH)
+        shapes.color = UI.TEXT
+        shapes.circle(sx + sliderW * value, y, 15f * uiScale, 24)
+    }
 
-        panelTexture?.let { batch.draw(it, px, py) }
+    private fun drawAction(index: Int, primary: Boolean) {
+        val x = panelX + pad + index * (buttonW + buttonGap)
+        drawFlatButton(x, buttonY, buttonW, buttonH, primary)
+    }
 
-        pauseFont.data.setScale(1.25f * uiScale)
-        layout.setText(pauseFont, "LEVEL COMPLETE")
-        var x = px + panelW / 2f - layout.width / 2f
-        val y = py + panelH - 22f * uiScale
-        drawShadowText("LEVEL COMPLETE", x, y, COL_HEADING, shadow)
+    private fun drawFlatButton(x: Float, y: Float, w: Float, h: Float, primary: Boolean) {
+        UI.filled(
+            shapes, x, y, w, h, 14f * uiScale,
+            if (primary) UI.LIME else SECONDARY_BUTTON
+        )
+    }
 
-        var sy = y - layout.height - 35f * uiScale
-        if (levelKey != null) {
-            val p = game.progressManager.getOrCreate(levelKey)
-
-            pauseFont.data.setScale(0.85f * uiScale)
-            val total = "Total Attempts: " + p?.totalAttempts
-            layout.setText(pauseFont, total)
-            x = px + panelW / 2f - layout.width / 2f
-            drawShadowText(total, x, sy, COL_LABEL, shadow)
-
-            sy -= layout.height + 20f * uiScale
-            val session = "Session Attempts: " + sessionAttempts
-            layout.setText(pauseFont, session)
-            x = px + panelW / 2f - layout.width / 2f
-            drawShadowText(session, x, sy, COL_DIM, shadow)
+    fun drawPauseOverlay(
+        camera: OrthographicCamera,
+        sessionAttempts: Int,
+        levelKey: String?,
+        practiceMode: Boolean
+    ) {
+        place(camera)
+        val center = panelX + panelW / 2f
+        text("Paused", center, panelY + panelH * 0.91f, UI.YELLOW, 1.15f, true, true)
+        text(levelData?.name ?: "Level", center, panelY + panelH * 0.79f, UI.YELLOW, 0.82f, true, true)
+        val progress = levelKey?.let { game.progressManager.getOrCreate(it) }
+        text("Personal Best", center - panelW * 0.14f, panelY + panelH * 0.70f, UI.TEXT_SECONDARY, 0.90f, true)
+        text("${progress?.bestPercent ?: 0}%", center - panelW * 0.14f, panelY + panelH * 0.64f, UI.TEXT, 0.80f, true, true)
+        text("Session Attempts", center + panelW * 0.14f, panelY + panelH * 0.70f, UI.TEXT_SECONDARY, 0.90f, true)
+        text("$sessionAttempts", center + panelW * 0.14f, panelY + panelH * 0.64f, UI.TEXT, 0.80f, true, true)
+        val rowH = panelH * 0.15f
+        drawAudioText("Music Volume", sliderCenterY + rowH * 0.55f, game.settingsManager.musicVolume)
+        drawAudioText("SFX Volume", sliderCenterY - rowH * 0.55f, game.settingsManager.sfxVolume)
+        for (i in 0..3) {
+            val label = when (i) {
+                0 -> "RESTART"
+                1 -> "RESUME"
+                2 -> if (practiceMode) "NORMAL MODE" else "PRACTICE MODE"
+                else -> "MENU"
+            }
+            val cx = panelX + pad + i * (buttonW + buttonGap) + buttonW / 2f
+            text(
+                label,
+                cx,
+                buttonY + buttonH / 2f + 7f * uiScale,
+                if (i == 1) PRIMARY_TEXT else UI.TEXT,
+                0.72f,
+                true,
+                true
+            )
         }
-
-        if (backRegion != null) batch.draw(
-            backRegion,
-            backX(camera),
-            backY(camera),
-            btnSize * 0.9f,
-            btnSize * 0.9f
-        )
-        if (resumeRegion != null) batch.draw(
-            resumeRegion,
-            resumeX(camera),
-            backY(camera),
-            btnSize * 0.9f,
-            btnSize * 0.9f
-        )
-
-        pauseFont.data.setScale(0.52f * uiScale)
-        val labelY = backY(camera) - 6f * uiScale
-        layout.setText(pauseFont, "Menu")
-        x = backX(camera) + btnSize * 0.9f / 2f - layout.width / 2f
-        drawShadowText("Menu", x, labelY, COL_DIM, shadow)
-
-        layout.setText(pauseFont, "Replay")
-        x = resumeX(camera) + btnSize * 0.9f / 2f - layout.width / 2f
-        drawShadowText("Replay", x, labelY, COL_DIM, shadow)
-
-        pauseFont.data.setScale(1f)
+        text("Enter / Space: Resume     R: Restart     Esc: Menu", center, panelY + pad * 0.38f, UI.TEXT_MUTED, 1.12f, true)
     }
 
-    fun hitsBackButton(tx: Float, ty: Float, camera: OrthographicCamera): Boolean {
-        return hits(tx, ty, backX(camera), backY(camera), btnSize * 0.9f, btnSize)
+    fun drawCompleteOverlay(
+        camera: OrthographicCamera,
+        sessionAttempts: Int,
+        levelKey: String?,
+        hasNextLevel: Boolean
+    ) {
+        place(camera)
+        val center = panelX + panelW / 2f
+        val progress = levelKey?.let { game.progressManager.getOrCreate(it) }
+        text("LEVEL COMPLETE!", center, panelY + panelH * 0.88f, UI.YELLOW, 1.28f, true, true)
+        text(levelData?.name ?: "Level", center, panelY + panelH * 0.75f, UI.TEXT, 0.96f, true, true)
+        val lx = panelX + panelW * 0.31f
+        val rx = panelX + panelW * 0.69f
+        text("Attempts This Session", lx, panelY + panelH * 0.47f, UI.TEXT_SECONDARY, 1.18f, false)
+        text("$sessionAttempts", rx, panelY + panelH * 0.47f, UI.BLUE, 1.08f, true, true)
+        text("Total Attempts", lx, panelY + panelH * 0.38f, UI.TEXT_SECONDARY, 1.18f, false)
+        text("${progress?.totalAttempts ?: sessionAttempts}", rx, panelY + panelH * 0.38f, UI.BLUE, 1.08f, true, true)
+        val completeW = (panelW - pad * 2f - buttonGap * 2f) / 3f
+        for (i in 0..2) {
+            val label = when (i) {
+                0 -> "MENU"
+                1 -> if (hasNextLevel) "NEXT LEVEL" else "PLAY AGAIN"
+                else -> "PLAY AGAIN"
+            }
+            val cx = panelX + pad + i * (completeW + buttonGap) + completeW / 2f
+            text(label, cx, buttonY + buttonH / 2f + 8f * uiScale, if (i == 1) PRIMARY_TEXT else UI.TEXT, 0.80f, true, true)
+        }
     }
 
-    fun hitsResumeButton(tx: Float, ty: Float, camera: OrthographicCamera): Boolean {
-        return hits(tx, ty, resumeX(camera), backY(camera), btnSize * 0.9f, btnSize)
+    private fun drawAudioText(label: String, y: Float, value: Float) {
+        text(label, panelX + pad, y + 8f * uiScale, UI.TEXT, 1.48f, false)
+        text("${MathUtils.round(value * 100f)}%", panelX + panelW - pad - panelW * 0.045f, y + 8f * uiScale, UI.BLUE, 0.78f, true, true)
     }
 
-    fun hitsSlider(t: Vector2, camera: OrthographicCamera): Boolean {
-        val tx = sliderTrackX(camera)
-        val tw = sliderTrackW()
-        val ty = sliderY(camera)
-        return t.x in (tx - 16f)..(tx + tw + 16f) && t.y in (ty - 16f)..(ty + 16f)
+    private fun text(
+        value: String,
+        x: Float,
+        y: Float,
+        color: Color,
+        scale: Float,
+        centered: Boolean,
+        titleStyle: Boolean = false
+    ) {
+        val font = if (titleStyle) titleFont else bodyFont
+        font.data.setScale(scale * uiScale)
+        layout.setText(font, value)
+        val drawX = if (centered) x - layout.width / 2f else x
+        font.setColor(0f, 0f, 0f, color.a * 0.45f)
+        font.draw(batch, value, drawX + 2f, y - 2f)
+        font.color = color
+        font.draw(batch, value, drawX, y)
+        font.data.setScale(1f)
     }
 
-    fun beginSliderDrag() {
-        isSliderDragging = true
+    fun hitPauseAction(
+        touchX: Float,
+        touchY: Float,
+        camera: OrthographicCamera
+    ): PauseAction? {
+        place(camera)
+        for (action in PauseAction.entries) {
+            val buttonX = panelX + pad + action.ordinal * (buttonW + buttonGap)
+            if (hits(touchX, touchY, buttonX, buttonY, buttonW, buttonH)) {
+                return action
+            }
+        }
+        return null
     }
 
-    fun endSliderDrag() {
-        isSliderDragging = false
+    fun hitCompleteAction(
+        touchX: Float,
+        touchY: Float,
+        camera: OrthographicCamera
+    ): CompleteAction? {
+        place(camera)
+        val buttonWidth = (panelW - pad * 2f - buttonGap * 2f) / 3f
+        for (action in CompleteAction.entries) {
+            val buttonX = panelX + pad + action.ordinal * (buttonWidth + buttonGap)
+            if (
+                hits(
+                    touchX,
+                    touchY,
+                    buttonX,
+                    buttonY,
+                    buttonWidth,
+                    buttonH
+                )
+            ) {
+                return action
+            }
+        }
+        return null
     }
 
+    fun hitSlider(t: Vector2, camera: OrthographicCamera): SliderKind? {
+        place(camera)
+        val rowH = panelH * 0.15f
+        val musicY = sliderCenterY + rowH * 0.55f
+        val sfxY = sliderCenterY - rowH * 0.55f
+        if (t.x in (sliderX() - 18f)..(sliderX() + sliderW + 18f)) {
+            if (t.y in (musicY - rowH / 2f)..(musicY + rowH / 2f)) return SliderKind.MUSIC
+            if (t.y in (sfxY - rowH / 2f)..(sfxY + rowH / 2f)) return SliderKind.SFX
+        }
+        return null
+    }
+
+    fun beginSliderDrag(kind: SliderKind) { activeSlider = kind }
+    fun endSliderDrag() { activeSlider = null }
     fun updateSliderFromDrag(worldX: Float, camera: OrthographicCamera) {
-        val tsx = sliderTrackX(camera)
-        val tsw = sliderTrackW()
-        val vol = MathUtils.clamp((worldX - tsx) / tsw, 0f, 1f)
-        game.settingsManager.musicVolume = vol
-        game.soundManager.setMusicVolume(vol)
-    }
-
-    private fun panelX(c: OrthographicCamera): Float {
-        return c.position.x - panelW / 2f
-    }
-
-    private fun panelY(c: OrthographicCamera): Float {
-        return c.position.y - panelH / 2f
-    }
-
-    private fun resumeX(c: OrthographicCamera): Float {
-        return c.position.x + 16f
-    }
-
-    private fun backX(c: OrthographicCamera): Float {
-        return c.position.x - btnSize - 16f
-    }
-
-    private fun backY(c: OrthographicCamera): Float {
-        return panelY(c) + 20f
-    }
-
-    fun getSliderTrackX(c: OrthographicCamera): Float {
-        return panelX(c) + panelW * 0.18f
-    }
-
-    private fun sliderTrackX(c: OrthographicCamera): Float {
-        return getSliderTrackX(c)
-    }
-
-    fun getSliderTrackW(): Float {
-        return panelW * 0.64f
-    }
-
-    private fun sliderTrackW(): Float {
-        return getSliderTrackW()
-    }
-
-    private fun sliderY(c: OrthographicCamera): Float {
-        return panelY(c) + btnSize + 38f
-    }
-
-    private fun ensurePanel() {
-        val tw = panelW.toInt()
-        val th = panelH.toInt()
-        if (panelTexture == null || tw != lastPanelW || th != lastPanelH) {
-            panelTexture?.dispose()
-            panelTexture = createRoundedRect(tw, th, (24 * uiScale).toInt(), COL_PANEL)
-            lastPanelW = tw
-            lastPanelH = th
+        place(camera)
+        val value = MathUtils.clamp((worldX - sliderX()) / sliderW, 0f, 1f)
+        when (activeSlider) {
+            SliderKind.MUSIC -> {
+                game.settingsManager.musicVolume = value
+                game.soundManager.setMusicVolume(value)
+            }
+            SliderKind.SFX -> {
+                game.settingsManager.sfxVolume = value
+                game.soundManager.setSfxVolume(value)
+            }
+            null -> Unit
         }
     }
 
-    private fun drawShadowText(text: String, x: Float, y: Float, color: Color, shadow: Float) {
-        pauseFont.setColor(0f, 0f, 0f, color.a * 0.4f)
-        pauseFont.draw(batch, text, x + shadow, y - shadow)
-        pauseFont.color = color
-        pauseFont.draw(batch, text, x, y)
+    private fun sliderX() = panelX + panelW - pad - sliderW - panelW * 0.10f
+    private fun hits(
+        touchX: Float,
+        touchY: Float,
+        x: Float,
+        y: Float,
+        width: Float,
+        height: Float
+    ): Boolean {
+        return touchX in x..(x + width) && touchY in y..(y + height)
     }
 
-    fun dispose() {
-        panelTexture?.dispose()
-        panelTexture = null
+    fun drawPauseToggleButtonShapes(camera: OrthographicCamera, viewport: Viewport, visible: Boolean) {
+        val x = camera.position.x - viewport.worldWidth / 2f + 20f * uiScale
+        val y = camera.position.y - viewport.worldHeight / 2f + 20f * uiScale
+        UI.filled(shapes, x, y, pauseToggleW, pauseToggleH, 12f * uiScale, if (visible) UI.PANEL_ELEVATED else TOGGLE_ACTIVE)
     }
+
+    fun drawPauseToggleButtonText(camera: OrthographicCamera, viewport: Viewport, visible: Boolean) {
+        val x = camera.position.x - viewport.worldWidth / 2f + 20f * uiScale + pauseToggleW / 2f
+        val y = camera.position.y - viewport.worldHeight / 2f + 20f * uiScale + pauseToggleH * 0.65f
+        text(if (visible) "Hide Menu" else "Show Menu", x, y, if (visible) UI.TEXT else UI.BACKGROUND, 0.48f, true)
+    }
+
+    fun hitsPauseToggleButton(
+        touchX: Float,
+        touchY: Float,
+        camera: OrthographicCamera,
+        viewport: Viewport
+    ): Boolean {
+        val x = camera.position.x - viewport.worldWidth / 2f + 20f * uiScale
+        val y = camera.position.y - viewport.worldHeight / 2f + 20f * uiScale
+        return hits(touchX, touchY, x, y, pauseToggleW, pauseToggleH)
+    }
+
+    fun drawPauseSliders(@Suppress("UNUSED_PARAMETER") camera: OrthographicCamera) = Unit
+    fun dispose() = Unit
 }

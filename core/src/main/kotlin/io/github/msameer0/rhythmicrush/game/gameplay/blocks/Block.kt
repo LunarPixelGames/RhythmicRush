@@ -1,5 +1,7 @@
 package io.github.msameer0.rhythmicrush.game.gameplay.blocks
 
+import com.badlogic.gdx.math.Intersector
+import com.badlogic.gdx.math.Polygon
 import com.badlogic.gdx.math.Rectangle
 import io.github.msameer0.rhythmicrush.game.engine.Rotatable
 import io.github.msameer0.rhythmicrush.game.engine.Tickable
@@ -13,11 +15,13 @@ import io.github.msameer0.rhythmicrush.game.registries.Registry
 open class Block : Tickable, Rotatable {
     override var rotation: Float = 0f
     var x: Float = 0f
+    var worldX: Float = 0f
     var y: Float = 0f
     var width: Float = 0f
     var height: Float = 0f
     var bounds: Rectangle = Rectangle()
     var type: BlockType
+    var untouchable: Boolean = false
 
     constructor() {
         this.type = BlockType.DEFAULT
@@ -36,11 +40,13 @@ open class Block : Tickable, Rotatable {
 
     open fun init(x: Float, y: Float, size: Float, type: BlockType, rotation: Float): Block {
         this.x = x
+        this.worldX = x
         this.y = y
         this.width = size
         this.height = size
         this.type = type
         this.rotation = rotation
+        this.untouchable = false
         bounds.set(x, y, width, height)
         return this
     }
@@ -49,8 +55,8 @@ open class Block : Tickable, Rotatable {
         return init(x, y, size, type, 0f)
     }
 
-    fun updatePosition(scrollSpeed: Float, delta: Float) {
-        x -= scrollSpeed * delta
+    fun updatePosition(worldScrolled: Float) {
+        x = worldX - worldScrolled
         updateBounds()
     }
 
@@ -58,17 +64,25 @@ open class Block : Tickable, Rotatable {
         bounds.setPosition(x, y)
     }
 
+    private val blockPolygon = Polygon()
+    private var polygonWidth = -1f
+    private var polygonHeight = -1f
+
     open fun reset() {
         this.x = 0f
+        this.worldX = 0f
         this.y = 0f
         this.width = 0f
         this.height = 0f
         this.type = BlockType.DEFAULT
         this.rotation = 0f
+        this.untouchable = false
         this.bounds.set(0f, 0f, 0f, 0f)
     }
 
     open fun tryTouch(player: AbstractPlayer) {
+        if (untouchable) return
+
         val playerRect = player.getBounds()
         if (!playerRect.overlaps(bounds)) return
 
@@ -122,10 +136,24 @@ open class Block : Tickable, Rotatable {
             }
         }
 
-        val hMargin = playerRect.width * 0.25f
-        val vMargin = playerRect.height * 0.25f
+        if (polygonWidth != width || polygonHeight != height) {
+            var verts = blockPolygon.vertices
+            if (verts == null || verts.size != 8) {
+                verts = FloatArray(8)
+                blockPolygon.vertices = verts
+            }
+            verts[0] = 0f; verts[1] = 0f
+            verts[2] = width; verts[3] = 0f
+            verts[4] = width; verts[5] = height
+            verts[6] = 0f; verts[7] = height
+            polygonWidth = width
+            polygonHeight = height
+        }
+        blockPolygon.setPosition(x, y)
+        blockPolygon.setOrigin(width / 2f, height / 2f)
+        blockPolygon.rotation = rotation
 
-        if (playerRight - hMargin > blockLeft && playerLeft + hMargin < blockRight && playerTop - vMargin > blockBottom && playerBottom + vMargin < blockTop) {
+        if (Intersector.overlapConvexPolygons(player.getInnerPolygon(), blockPolygon)) {
             val world = player.getWorld()
             world?.playerDied()
         }

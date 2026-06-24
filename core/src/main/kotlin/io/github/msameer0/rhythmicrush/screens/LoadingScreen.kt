@@ -12,6 +12,7 @@ import io.github.msameer0.rhythmicrush.atlas.AtlasManager
 import io.github.msameer0.rhythmicrush.audio.SoundManager
 import io.github.msameer0.rhythmicrush.font.FontManager
 import io.github.msameer0.rhythmicrush.game.level.LevelManager
+import io.github.msameer0.rhythmicrush.game.level.LevelThumbnailManager
 import io.github.msameer0.rhythmicrush.game.level.ProgressManager
 import io.github.msameer0.rhythmicrush.game.registries.Registries
 import io.github.msameer0.rhythmicrush.settings.SettingsManager
@@ -32,7 +33,7 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
     private var statusFont: BitmapFont? = null
 
     companion object {
-        private const val TOTAL_STEPS = 8
+        private const val TOTAL_STEPS = 11
     }
 
     override fun show() {
@@ -54,7 +55,7 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
             2 -> {
                 statusText = "Loading Textures..."
-                game.atlasManager = AtlasManager()
+                game.atlasManager = AtlasManager(game.settingsManager.textureQuality)
                 titleRegion = game.atlasManager.menuAtlas.findRegion("title")
             }
 
@@ -75,11 +76,25 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             }
 
             6 -> {
+                statusText = "Restoring Account..."
+                game.initializeAccounts()
+            }
+
+            7 -> {
                 statusText = "Scanning Levels..."
                 game.levelManager = LevelManager()
             }
 
-            7 -> {
+            8 -> {
+                statusText = "Preparing Level Previews..."
+            }
+
+            9 -> {
+                game.levelThumbnailManager =
+                    LevelThumbnailManager(game.levelManager.getLevels())
+            }
+
+            10 -> {
                 statusText = "Finalizing..."
                 finalizeLoading()
                 finished = true
@@ -94,6 +109,7 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
     private fun finalizeLoading() {
         game.soundManager.setMusicVolume(game.settingsManager.musicVolume)
+        game.soundManager.setSfxVolume(game.settingsManager.sfxVolume)
         game.settingsManager.applyFpsCap()
         game.settingsManager.applyVsync()
 
@@ -112,7 +128,7 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         val height = viewport.worldHeight
 
         val barWidth = width * 0.6f
-        val barHeight = 10f
+        val barHeight = 25f
 
         var titleW = 0f
         var titleH = 0f
@@ -123,15 +139,15 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             titleH = region.regionHeight * titleScale
         }
 
-        val textPadding = 22f
-        val titlePadding = if (titleRegion != null) 25f else 0f
+        val textPadding = 45f
+        val titlePadding = if (titleRegion != null) 50f else 0f
 
         val totalGroupH = titleH + titlePadding + barHeight + textPadding
         val groupBottomY = (height - totalGroupH) / 2f
 
         val barY = groupBottomY + textPadding
         val titleY = barY + barHeight + titlePadding
-        val textY = barY - 10f
+        val textY = barY - 25f
 
         titleRegion?.let { region ->
             game.batch.projectionMatrix = camera.combined
@@ -144,15 +160,15 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
         shapeRenderer.projectionMatrix = camera.combined
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
         val barX = (width - barWidth) / 2f
-        shapeRenderer.color = Color(0.15f, 0.15f, 0.15f, 1f)
+        shapeRenderer.setColor(0.15f, 0.15f, 0.15f, 1f)
         shapeRenderer.rect(barX, barY, barWidth, barHeight)
-        shapeRenderer.color = Color(0.2f, 0.5f, 1f, 1f)
+        shapeRenderer.setColor(0.2f, 0.5f, 1f, 1f)
         shapeRenderer.rect(barX, barY, barWidth * progress, barHeight)
         shapeRenderer.end()
 
         statusFont?.let { font ->
             game.batch.begin()
-            font.data.setScale(0.6f)
+            font.data.setScale(1.2f)
             layout.setText(font, statusText)
             font.color = Color.LIGHT_GRAY
             font.draw(game.batch, statusText, (width - layout.width) / 2f, textY)

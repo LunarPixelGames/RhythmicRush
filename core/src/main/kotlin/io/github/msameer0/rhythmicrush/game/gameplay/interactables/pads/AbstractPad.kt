@@ -22,12 +22,12 @@ abstract class AbstractPad {
 
     var type: PadType = PadType.YELLOW
     var x: Float = 0f
+    var worldX: Float = 0f
     var y: Float = 0f
-    var width: Float = 50f
-    var height: Float = 50f
+    var width: Float = 100f
+    var height: Float = 100f
     var rotation: Float = 0f
 
-    // The actual collision hitbox (1/10th of the height)
     var hitbox: Rectangle = Rectangle()
     private var used: Boolean = false
 
@@ -37,18 +37,20 @@ abstract class AbstractPad {
 
     constructor(x: Float, y: Float, rotation: Float = 0f) {
         this.x = x
+        this.worldX = x
         this.y = y
         this.rotation = rotation
         updateHitbox()
     }
 
-    fun updatePosition(scrollSpeed: Float, delta: Float) {
-        x -= scrollSpeed * delta
+    fun updatePosition(worldScrolled: Float) {
+        x = worldX - worldScrolled
         updateHitbox()
     }
 
     open fun init(x: Float, y: Float, rotation: Float): AbstractPad {
         this.x = x
+        this.worldX = x
         this.y = y
         this.rotation = rotation
         updateHitbox()
@@ -65,10 +67,10 @@ abstract class AbstractPad {
         val rot = ((rotation / 90f).toInt() % 4 + 4) % 4 * 90
 
         when (rot) {
-            0 -> hitbox.set(x, y, width, hHeight) // Bottom
-            90 -> hitbox.set(x, y, hHeight, height) // Left
-            180 -> hitbox.set(x, y + height - hHeight, width, hHeight) // Top
-            270 -> hitbox.set(x + width - hHeight, y, hHeight, height) // Right
+            0 -> hitbox.set(x, y, width, hHeight)
+            90 -> hitbox.set(x + width - hHeight, y, hHeight, height)
+            180 -> hitbox.set(x, y + height - hHeight, width, hHeight)
+            270 -> hitbox.set(x, y, hHeight, height)
             else -> hitbox.set(x, y, width, hHeight)
         }
     }
@@ -85,25 +87,26 @@ abstract class AbstractPad {
         val isRegularPad = type == PadType.YELLOW || type == PadType.BLUE ||
                           type == PadType.PINK || type == PadType.RED
 
-        // Sideways pads (90, 270) activate for both
         if (rot == 90 || rot == 270) return true
 
         return if (isRegularPad) {
             if (!flipped) rot == 0 else rot == 180
-        } else { // Black and Green pads have inverted conditions
+        } else {
             if (!flipped) rot == 180 else rot == 0
         }
     }
 
-    fun tryTouch(player: AbstractPlayer) {
+    fun tryTouch(player: AbstractPlayer): Boolean {
         if (hitbox.overlaps(player.bounds)) {
             if (!used && canActivate(player)) {
                 used = true
                 onActivate(player)
+                return true
             }
         } else {
             used = false
         }
+        return false
     }
 
     fun reset() {
