@@ -28,6 +28,8 @@ hs_err_pid*
 /android/libs/x86_64/
 /android/gen/
 /android/out/
+/android/google-services.json
+/android/release/
 local.properties
 com_crashlytics_export_strings.xml
 
@@ -157,6 +159,20 @@ Thumbs.db
 /assets/assets.txt
 /assets/saves/
 GEMINI.md
+
+## Cloudflare Worker backend:
+/backend/node_modules/
+/backend/.wrangler/
+/backend/.dev.vars
+/backend/.env
+/backend/wrangler.toml
+/backend/wrangler.prod.toml
+/backend/wrangler.json
+/backend/coverage/
+/backend/dist/
+/backend/*.log
+/lwjgl3/account-dev.properties
+/lwjgl3/account-prod.properties
 
 ## Special cases:
 

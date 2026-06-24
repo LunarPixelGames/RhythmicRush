@@ -1,0 +1,12 @@
+environment=development
+firebaseProjectId=rhythmic-rush-dev
+firebaseWebApiKey=PASTE_FIREBASE_WEB_API_KEY
+backendBaseUrl=https://rhythmic-rush-api-dev.YOUR_SUBDOMAIN.workers.dev
+apiVersion=1
+contentVersion=1
+
+# Optional local emulator overrides:
+# firebaseAuthEmulatorHost=127.0.0.1
+# firebaseAuthEmulatorPort=9099
+# localWorkerHost=127.0.0.1
+# localWorkerPort=8787

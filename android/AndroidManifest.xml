@@ -7,6 +7,7 @@
         android:required="true" />
     <uses-permission android:name="android.permission.INTERNET" />
     <application
+        android:name="io.github.msameer0.rhythmicrush.android.RhythmicRushAndroidApplication"
         android:allowBackup="true"
         android:appCategory="game"
         android:fullBackupContent="true"
@@ -20,6 +21,10 @@
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-3940256099942544~3347511713" />
+
+        <meta-data
+            android:name="com.google.android.gms.games.APP_ID"
+            android:value="@string/game_services_project_id" />
 
         <activity
             android:name="io.github.msameer0.rhythmicrush.android.AndroidLauncher"

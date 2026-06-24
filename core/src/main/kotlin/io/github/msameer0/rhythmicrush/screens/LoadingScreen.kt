@@ -33,7 +33,7 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
     private var statusFont: BitmapFont? = null
 
     companion object {
-        private const val TOTAL_STEPS = 10
+        private const val TOTAL_STEPS = 11
     }
 
     override fun show() {
@@ -76,20 +76,25 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             }
 
             6 -> {
+                statusText = "Restoring Account..."
+                game.initializeAccounts()
+            }
+
+            7 -> {
                 statusText = "Scanning Levels..."
                 game.levelManager = LevelManager()
             }
 
-            7 -> {
+            8 -> {
                 statusText = "Preparing Level Previews..."
             }
 
-            8 -> {
+            9 -> {
                 game.levelThumbnailManager =
                     LevelThumbnailManager(game.levelManager.getLevels())
             }
 
-            9 -> {
+            10 -> {
                 statusText = "Finalizing..."
                 finalizeLoading()
                 finished = true
