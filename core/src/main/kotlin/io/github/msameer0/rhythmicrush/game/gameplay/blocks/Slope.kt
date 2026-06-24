@@ -75,33 +75,7 @@ class Slope : Block {
         return line
     }
 
-    fun coversSupportBlock(block: Block, player: AbstractPlayer): Boolean {
-        val playerBounds = player.getBounds()
-        val overlapLeft = maxOf(x, block.x, playerBounds.x)
-        val overlapRight = minOf(
-            x + width,
-            block.x + block.width,
-            playerBounds.x + playerBounds.width
-        )
-        if (overlapRight - overlapLeft <= 0.01f) return false
 
-        val overlapBottom = maxOf(y, block.y)
-        val overlapTop = minOf(y + height, block.y + block.height)
-        if (overlapTop - overlapBottom <= 0.01f) return false
-
-        val line = getSlopeLine()
-        val sampleX = (overlapLeft + overlapRight) * 0.5f
-        val lineAmount = (sampleX - line[0]) / (line[2] - line[0])
-        val surfaceY = line[1] + (line[3] - line[1]) * lineAmount
-        val blockCenterY = (overlapBottom + overlapTop) * 0.5f
-        val rotation = normalizedRotation()
-
-        return if (rotation == 0 || rotation == 270) {
-            blockCenterY <= surfaceY
-        } else {
-            blockCenterY >= surfaceY
-        }
-    }
 
     override fun tryTouch(player: AbstractPlayer) {
         tryTouch(player, false)

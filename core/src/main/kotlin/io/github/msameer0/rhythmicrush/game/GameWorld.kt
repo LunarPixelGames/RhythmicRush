@@ -630,16 +630,37 @@ class GameWorld : Tickable {
         val scrollAmount = min(scrollSpeed * delta, remainingScrollToLock)
         val scrollDelta = if (scrollSpeed > 0f) scrollAmount / scrollSpeed else 0f
 
-        for (i in portalCull until portals.size) portals.get(i).updatePosition(scrollSpeed, scrollDelta)
-        for (i in hazardCull until hazards.size) hazards.get(i).updatePosition(scrollSpeed, scrollDelta)
-        for (i in blockCull until blocks.size) blocks.get(i).updatePosition(scrollSpeed, scrollDelta)
-        for (i in orbCull until orbs.size) orbs.get(i).updatePosition(scrollSpeed, scrollDelta)
-        for (i in padCull until pads.size) pads.get(i).updatePosition(scrollSpeed, scrollDelta)
-        for (i in 0 until portalGlows.size) portalGlows[i].x -= scrollAmount
-
         val playerX = currentPlayer.x
         val rangeMin = playerX - 600f
         val rangeMax = playerX + COLLISION_LOOKAHEAD
+        val updateLimit = rangeMax + 1000f
+
+        for (i in portalCull until portals.size) {
+            val p = portals.get(i)
+            if (p.worldX - worldScrolled > updateLimit) break
+            p.updatePosition(worldScrolled)
+        }
+        for (i in hazardCull until hazards.size) {
+            val h = hazards.get(i)
+            if (h.worldX - worldScrolled > updateLimit) break
+            h.updatePosition(worldScrolled)
+        }
+        for (i in blockCull until blocks.size) {
+            val b = blocks.get(i)
+            if (b.worldX - worldScrolled > updateLimit) break
+            b.updatePosition(worldScrolled)
+        }
+        for (i in orbCull until orbs.size) {
+            val o = orbs.get(i)
+            if (o.worldX - worldScrolled > updateLimit) break
+            o.updatePosition(worldScrolled, delta)
+        }
+        for (i in padCull until pads.size) {
+            val p = pads.get(i)
+            if (p.worldX - worldScrolled > updateLimit) break
+            p.updatePosition(worldScrolled)
+        }
+        for (i in 0 until portalGlows.size) portalGlows[i].x -= scrollAmount
 
         if (blockStart < blockCull) blockStart = blockCull
         if (hazardStart < hazardCull) hazardStart = hazardCull
@@ -669,20 +690,7 @@ class GameWorld : Tickable {
             if (block is Slope) continue
             if (!currentPlayer.bounds.overlaps(block.bounds)) continue
 
-            var coveredBySlope = false
-            for (slopeIndex in blockStart until blocks.size) {
-                val possibleSlope = blocks.get(slopeIndex)
-                if (possibleSlope.x > rangeMax) break
-                if (
-                    possibleSlope is Slope &&
-                    possibleSlope.coversSupportBlock(block, currentPlayer)
-                ) {
-                    coveredBySlope = true
-                    break
-                }
-            }
-
-            if (!coveredBySlope) block.tryTouch(currentPlayer)
+            block.tryTouch(currentPlayer)
         }
 
         val leftAscendingSlope =

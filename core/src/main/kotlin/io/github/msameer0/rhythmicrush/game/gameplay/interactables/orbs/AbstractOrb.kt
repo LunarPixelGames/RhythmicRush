@@ -22,6 +22,7 @@ abstract class AbstractOrb {
 
     var type: OrbType = OrbType.YELLOW
     var x: Float = 0f
+    var worldX: Float = 0f
     var y: Float = 0f
     var width: Float = 110f
     var height: Float = 110f
@@ -36,13 +37,14 @@ abstract class AbstractOrb {
 
     constructor(x: Float, y: Float, multiActivate: Boolean = false) {
         this.x = x
+        this.worldX = x
         this.y = y
         this.multiActivate = multiActivate
         this.bounds = Rectangle(x, y, width, height)
     }
 
-    fun updatePosition(scrollSpeed: Float, delta: Float) {
-        x -= scrollSpeed * delta
+    fun updatePosition(worldScrolled: Float, delta: Float) {
+        x = worldX - worldScrolled
         bounds.setPosition(x, y)
         activationPulseAge =
             (activationPulseAge + delta).coerceAtMost(ACTIVATION_PULSE_DURATION)
@@ -50,6 +52,7 @@ abstract class AbstractOrb {
 
     open fun init(x: Float, y: Float): AbstractOrb {
         this.x = x
+        this.worldX = x
         this.y = y
         this.bounds.set(x, y, width, height)
         reset()

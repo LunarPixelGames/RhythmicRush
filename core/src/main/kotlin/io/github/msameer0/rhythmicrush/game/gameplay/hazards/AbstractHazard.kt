@@ -12,6 +12,7 @@ import io.github.msameer0.rhythmicrush.game.gameplay.players.AbstractPlayer
 abstract class AbstractHazard(
     var x: Float, var y: Float, var width: Float, var height: Float
 ) {
+    var worldX: Float = x
     /**
      * Enumeration of supported hazard types.
      */
@@ -23,8 +24,8 @@ abstract class AbstractHazard(
     var bounds: Rectangle = Rectangle(x, y, width, height)
     val hazardPolygon: Polygon = Polygon(floatArrayOf(0f, 0f, width, 0f, width, height, 0f, height))
 
-    open fun updatePosition(scrollSpeed: Float, delta: Float) {
-        x -= scrollSpeed * delta
+    open fun updatePosition(worldScrolled: Float) {
+        x = worldX - worldScrolled
         updateBounds()
     }
 
@@ -36,6 +37,7 @@ abstract class AbstractHazard(
 
     open fun reset() {
         this.x = 0f
+        this.worldX = 0f
         this.y = 0f
         this.bounds.set(0f, 0f, 0f, 0f)
     }

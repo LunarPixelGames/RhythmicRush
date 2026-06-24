@@ -22,6 +22,7 @@ abstract class AbstractPad {
 
     var type: PadType = PadType.YELLOW
     var x: Float = 0f
+    var worldX: Float = 0f
     var y: Float = 0f
     var width: Float = 100f
     var height: Float = 100f
@@ -36,18 +37,20 @@ abstract class AbstractPad {
 
     constructor(x: Float, y: Float, rotation: Float = 0f) {
         this.x = x
+        this.worldX = x
         this.y = y
         this.rotation = rotation
         updateHitbox()
     }
 
-    fun updatePosition(scrollSpeed: Float, delta: Float) {
-        x -= scrollSpeed * delta
+    fun updatePosition(worldScrolled: Float) {
+        x = worldX - worldScrolled
         updateHitbox()
     }
 
     open fun init(x: Float, y: Float, rotation: Float): AbstractPad {
         this.x = x
+        this.worldX = x
         this.y = y
         this.rotation = rotation
         updateHitbox()

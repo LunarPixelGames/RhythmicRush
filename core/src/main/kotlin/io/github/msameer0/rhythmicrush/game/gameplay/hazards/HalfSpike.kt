@@ -27,6 +27,7 @@ class HalfSpike : AbstractHazard, Rotatable {
 
     fun init(x: Float, y: Float, rotation: Float): HalfSpike {
         this.x = x
+        this.worldX = x
         this.y = y
         this.width = TEXTURE_SIZE
         this.height = TEXTURE_SIZE

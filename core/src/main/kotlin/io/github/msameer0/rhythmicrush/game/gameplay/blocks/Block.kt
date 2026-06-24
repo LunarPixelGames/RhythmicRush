@@ -15,6 +15,7 @@ import io.github.msameer0.rhythmicrush.game.registries.Registry
 open class Block : Tickable, Rotatable {
     override var rotation: Float = 0f
     var x: Float = 0f
+    var worldX: Float = 0f
     var y: Float = 0f
     var width: Float = 0f
     var height: Float = 0f
@@ -39,6 +40,7 @@ open class Block : Tickable, Rotatable {
 
     open fun init(x: Float, y: Float, size: Float, type: BlockType, rotation: Float): Block {
         this.x = x
+        this.worldX = x
         this.y = y
         this.width = size
         this.height = size
@@ -53,8 +55,8 @@ open class Block : Tickable, Rotatable {
         return init(x, y, size, type, 0f)
     }
 
-    fun updatePosition(scrollSpeed: Float, delta: Float) {
-        x -= scrollSpeed * delta
+    fun updatePosition(worldScrolled: Float) {
+        x = worldX - worldScrolled
         updateBounds()
     }
 
@@ -68,6 +70,7 @@ open class Block : Tickable, Rotatable {
 
     open fun reset() {
         this.x = 0f
+        this.worldX = 0f
         this.y = 0f
         this.width = 0f
         this.height = 0f

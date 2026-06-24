@@ -31,6 +31,7 @@ class SawBlade : AbstractHazard {
         x: Float, y: Float, diameter: Float, degreesPerSec: Float = degreesPerSecond
     ): SawBlade {
         this.x = x
+        this.worldX = x
         this.y = y
         this.width = diameter
         this.height = diameter
@@ -42,8 +43,8 @@ class SawBlade : AbstractHazard {
         return this
     }
 
-    override fun updatePosition(scrollSpeed: Float, delta: Float) {
-        super.updatePosition(scrollSpeed, delta)
+    override fun updatePosition(worldScrolled: Float) {
+        super.updatePosition(worldScrolled)
     }
 
     override fun tryTouch(player: AbstractPlayer) {

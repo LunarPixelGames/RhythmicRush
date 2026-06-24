@@ -22,6 +22,7 @@ abstract class AbstractPortal : Rotatable {
 
     var type: PortalType? = null
     var x: Float = 0f
+    var worldX: Float = 0f
     var y: Float = 0f
     var width: Float = 100f
     var height: Float = 250f
@@ -30,6 +31,7 @@ abstract class AbstractPortal : Rotatable {
 
     constructor(x: Float, y: Float) {
         this.x = x
+        this.worldX = x
         this.y = y
         bounds = Rectangle(x, y, width, height)
     }
@@ -40,6 +42,7 @@ abstract class AbstractPortal : Rotatable {
 
     open fun reset() {
         this.x = 0f
+        this.worldX = 0f
         this.y = 0f
         this.rotation = 0f
         this.isUsed = false
@@ -48,6 +51,7 @@ abstract class AbstractPortal : Rotatable {
 
     open fun init(x: Float, y: Float, rotation: Float): AbstractPortal? {
         this.x = x
+        this.worldX = x
         this.y = y
         this.rotation = rotation
         this.isUsed = false
@@ -59,8 +63,8 @@ abstract class AbstractPortal : Rotatable {
         return init(x, y, 0f)
     }
 
-    fun updatePosition(scrollSpeed: Float, delta: Float) {
-        x -= scrollSpeed * delta
+    fun updatePosition(worldScrolled: Float) {
+        x = worldX - worldScrolled
         updateBounds()
     }
 
