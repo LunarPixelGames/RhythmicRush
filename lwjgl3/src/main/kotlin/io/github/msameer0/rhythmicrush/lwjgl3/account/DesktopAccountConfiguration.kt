@@ -7,7 +7,17 @@ import java.util.Properties
 
 class DesktopAccountConfiguration : AccountConfigurationProvider {
     override fun getConfiguration(): AccountConfiguration {
-        val properties = loadProperties() ?: return AccountConfiguration.unavailable()
+        val properties = loadProperties()
+        if (properties == null) {
+            return AccountConfiguration(
+                environment = "production",
+                firebaseProjectId = "rhythmic-rush",
+                firebaseWebApiKey = "AIzaSyAdkIaAWHybv8dO-i-NpY3Mnc3u1G0J_1M",
+                backendBaseUrl = "https://rhythmic-rush-api.sameerthecoolguy2006.workers.dev",
+                apiVersion = 1,
+                contentVersion = 1
+            )
+        }
         val environment = properties.getProperty("environment", "development").trim()
         val localWorkerHost = properties.getProperty("localWorkerHost")?.trim()?.takeIf { it.isNotEmpty() }
         val localWorkerPort = properties.getProperty("localWorkerPort")?.toIntOrNull()
