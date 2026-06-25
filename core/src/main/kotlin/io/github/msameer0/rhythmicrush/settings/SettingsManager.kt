@@ -30,7 +30,7 @@ class SettingsManager {
     var showProgressBar: Boolean = true
     var showAttempts: Boolean = true
     var showBest: Boolean = true
-    var uiPadding: Float = 12f
+    var uiPadding: Float = 50f
     var practiceButtonOpacity: Float = 0.5f
     var pulseOrbs: Boolean = true
     var textureQuality: TextureQuality = TextureQuality.HIGH
@@ -52,7 +52,7 @@ class SettingsManager {
         var showProgressBar: Boolean = true
         var showAttempts: Boolean = true
         var showBest: Boolean = true
-        var uiPadding: Float = 12f
+        var uiPadding: Float = 50f
         var practiceButtonOpacity: Float = 0.5f
         var pulseOrbs: Boolean = true
         var textureQuality: String = "HIGH"

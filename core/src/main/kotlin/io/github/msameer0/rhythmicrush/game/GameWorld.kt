@@ -423,25 +423,25 @@ class GameWorld : Tickable {
             if (e.x + e.size < startScrolled - 400) return
             val bt = resolveBlockType(e.blockType)
             if ("slope" == e.type) {
-                blocks.add(pools.obtainSlope().init(rx, e.y, e.size, bt, e.rotation))
+                blocks.add(pools.obtainSlope().init(e.x, e.y, e.size, bt, e.rotation))
             } else {
-                val block = pools.obtainBlock().init(rx, e.y, e.size, bt, e.rotation)
+                val block = pools.obtainBlock().init(e.x, e.y, e.size, bt, e.rotation)
                 block.untouchable = e.untouchable
                 blocks.add(block)
             }
         } else if (Registries.HAZARDS.has(e.type)) {
             val hW = if ("saw_blade" == e.type) e.size else 100f
             if (e.x + hW < startScrolled - 200) return
-            spawnHazard(e, rx)
+            spawnHazard(e, e.x)
         } else if (Registries.PORTALS.has(e.type)) {
             if (e.x + 100f < startScrolled - 200) return
-            spawnPortal(e, rx)
+            spawnPortal(e, e.x)
         } else if (Registries.ORBS.has(e.type)) {
             if (e.x + e.size < startScrolled - 200) return
-            spawnOrb(e, rx)
+            spawnOrb(e, e.x)
         } else if (Registries.PADS.has(e.type)) {
             if (e.x + e.size < startScrolled - 100) return
-            spawnPad(e, rx)
+            spawnPad(e, e.x)
         } else if (Registries.TRIGGERS.has(e.type)) {
             spawnTrigger(e)
         }

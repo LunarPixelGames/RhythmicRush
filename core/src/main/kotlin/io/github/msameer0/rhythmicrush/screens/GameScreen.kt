@@ -320,6 +320,7 @@ class GameScreen @JvmOverloads constructor(
             deathTimer += delta
             world.updateVisuals(delta)
             hud.update(delta)
+            if (practiceMode && Gdx.input.isKeyJustPressed(Input.Keys.X)) removeLastCheckpoint()
             if (deathTimer >= DEATH_PAUSE_DURATION) triggerRespawn()
             return
         }
@@ -642,8 +643,7 @@ class GameScreen @JvmOverloads constructor(
 
     private fun removeLastCheckpoint() {
         if (!practiceMode) return
-        val stillHasCheckpoints = practice?.removeLastCheckpoint() ?: false
-        if (deathPaused && stillHasCheckpoints) triggerRespawn()
+        practice?.removeLastCheckpoint()
     }
 
     private fun exitToLevelSelect() {

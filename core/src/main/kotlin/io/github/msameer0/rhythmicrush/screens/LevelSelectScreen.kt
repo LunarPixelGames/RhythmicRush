@@ -51,6 +51,7 @@ class LevelSelectScreen @JvmOverloads constructor(
     private lateinit var right: AnimatedButton
     private lateinit var practice: AnimatedButton
     private lateinit var play: AnimatedButton
+    private lateinit var showcases: AnimatedButton
 
     private var cardX = 0f
     private var cardY = 0f
@@ -72,6 +73,7 @@ class LevelSelectScreen @JvmOverloads constructor(
         private const val CAROUSEL_SPRING = 105f
         private const val CAROUSEL_DAMPING = 17f
         private const val CAROUSEL_MAX_SPEED = 14f
+        private const val SHOWCASES_URL = "https://www.youtube.com/playlist?list=PLAUN09ItCChM"
     }
 
     override fun show() {
@@ -98,6 +100,7 @@ class LevelSelectScreen @JvmOverloads constructor(
         right = AnimatedButton(rightRegion, 0f, 0f, 0f, 0f, null)
         practice = AnimatedButton(null, 0f, 0f, 0f, 0f) { launch(true) }
         play = AnimatedButton(null, 0f, 0f, 0f, 0f) { launch(false) }
+        showcases = AnimatedButton(null, 0f, 0f, 0f, 0f) { Gdx.net.openURI(SHOWCASES_URL) }
         updateLayout()
     }
 
@@ -106,6 +109,9 @@ class LevelSelectScreen @JvmOverloads constructor(
         val vh = viewport.worldHeight
         val backSize = minOf(vw * 0.065f, vh * 0.105f)
         back.setBounds(vw * 0.028f, vh - backSize - vh * 0.04f, backSize, backSize)
+        val showcaseW = minOf(vw * 0.28f, 380f)
+        val showcaseH = minOf(vh * 0.065f, 56f)
+        showcases.setBounds(vw - showcaseW - vw * 0.028f, vh - showcaseH - vh * 0.04f, showcaseW, showcaseH)
         cardW = minOf(vw * 0.68f, 1320f)
         cardH = minOf(vh * 0.48f, 530f)
         cardX = (vw - cardW) / 2f
@@ -130,6 +136,7 @@ class LevelSelectScreen @JvmOverloads constructor(
         right.update(delta)
         practice.update(delta)
         play.update(delta)
+        showcases.update(delta)
         updateCarouselMotion(delta)
 
         touch.set(Gdx.input.x.toFloat(), Gdx.input.y.toFloat())
@@ -140,6 +147,7 @@ class LevelSelectScreen @JvmOverloads constructor(
             right.onTouchDown(touchPosition.x, touchPosition.y)
             practice.onTouchDown(touchPosition.x, touchPosition.y)
             play.onTouchDown(touchPosition.x, touchPosition.y)
+            showcases.onTouchDown(touchPosition.x, touchPosition.y)
             if (levels.size > 1 && hitsCard(touchPosition.x, touchPosition.y)) {
                 draggingCard = true
                 dragStartX = touchPosition.x
@@ -161,6 +169,7 @@ class LevelSelectScreen @JvmOverloads constructor(
             right.onTouchUp(touchPosition.x, touchPosition.y)
             practice.onTouchUp(touchPosition.x, touchPosition.y)
             play.onTouchUp(touchPosition.x, touchPosition.y)
+            showcases.onTouchUp(touchPosition.x, touchPosition.y)
             if (leftPressed && left.hits(touchPosition.x, touchPosition.y)) navigate(-1)
             if (rightPressed && right.hits(touchPosition.x, touchPosition.y)) navigate(1)
             if (draggingCard) finishCardDrag()
@@ -181,6 +190,7 @@ class LevelSelectScreen @JvmOverloads constructor(
         drawCarouselCardShapes()
         drawButtonShape(practice, false)
         drawButtonShape(play, true)
+        drawShowcasesButtonShape()
         shapes.end()
         Gdx.gl.glDisable(GL20.GL_BLEND)
 
@@ -193,6 +203,7 @@ class LevelSelectScreen @JvmOverloads constructor(
         drawCarouselCardContents()
         drawButtonText(practice, "PRACTICE MODE", UI.TEXT)
         drawButtonText(play, "PLAY", playTextColor)
+        drawShowcasesButton()
         game.batch.end()
     }
 
@@ -289,6 +300,33 @@ class LevelSelectScreen @JvmOverloads constructor(
         font.draw(game.batch, text, x + 2f, y - 2f)
         font.color = color
         font.draw(game.batch, text, x, y)
+    }
+
+    private fun drawShowcasesButtonShape() {
+        val scale = showcases.scale
+        val scaledWidth = showcases.width * scale
+        val scaledHeight = showcases.height * scale
+        val scaledX = showcases.x + (showcases.width - scaledWidth) / 2f
+        val scaledY = showcases.y + (showcases.height - scaledHeight) / 2f
+        drawSimplePanel(
+            scaledX, scaledY, scaledWidth, scaledHeight,
+            scaledHeight * 0.30f,
+            secondaryColor, subtleBorder, 2f
+        )
+    }
+
+    private fun drawShowcasesButton() {
+        val label = "Watch Showcases"
+        bodyFont.data.setScale(0.48f * showcases.scale)
+        layout.setText(bodyFont, label)
+        drawShadow(
+            bodyFont,
+            label,
+            showcases.x + showcases.width / 2f - layout.width / 2f,
+            showcases.y + showcases.height / 2f + layout.height / 2f,
+            UI.TEXT
+        )
+        bodyFont.data.setScale(1f)
     }
 
     private fun difficultyColor(value: String?) = when (value?.lowercase()) {
