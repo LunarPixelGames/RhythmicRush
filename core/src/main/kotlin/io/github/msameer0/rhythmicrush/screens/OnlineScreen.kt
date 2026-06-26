@@ -259,18 +259,18 @@ class OnlineScreen(game: RhythmicRushGame) : AbstractScreen(game), InputProcesso
         val centerX = panelX + panelW / 2f
         when (val state = status.state) {
             AccountState.Unavailable -> {
-                drawCentered(bodyFont, "Online services are unavailable on this build.", centerX, panelY + panelH * 0.56f, UI.TEXT, 0.8f)
+                drawCentered(bodyFont, "Online services are unavailable on this build.", centerX, panelY + panelH * 0.75f, UI.TEXT, 0.8f)
             }
             AccountState.SignedOut -> drawSignedOut(panelX, panelY, panelW, panelH)
             AccountState.NeedsEmailVerification -> {
-                drawCentered(bodyFont, "VERIFY YOUR EMAIL", centerX, panelY + panelH * 0.70f, UI.YELLOW, 1.04f)
-                drawCenteredFit(smallFont, status.profile?.email ?: "", centerX, panelY + panelH * 0.615f, UI.TEXT, 0.82f, 0.52f, panelW - 160f)
-                drawCenteredFit(smallFont, "Open the verification email, then refresh your account.", centerX, panelY + panelH * 0.535f, UI.TEXT_SECONDARY, 0.78f, 0.54f, panelW - 140f)
-                drawCentered(smallFont, "If you cannot find it, check your spam folder.", centerX, panelY + panelH * 0.475f, UI.YELLOW, 0.74f)
+                drawCentered(bodyFont, "VERIFY YOUR EMAIL", centerX, panelY + panelH * 0.82f, UI.YELLOW, 1.04f)
+                drawCenteredFit(smallFont, status.profile?.email ?: "", centerX, panelY + panelH * 0.735f, UI.TEXT, 0.82f, 0.52f, panelW - 160f)
+                drawCenteredFit(smallFont, "Open the verification email, then refresh your account.", centerX, panelY + panelH * 0.665f, UI.TEXT_SECONDARY, 0.78f, 0.54f, panelW - 140f)
+                drawCentered(smallFont, "If you cannot find it, check your spam folder.", centerX, panelY + panelH * 0.605f, UI.YELLOW, 0.74f)
             }
             AccountState.NeedsUsername -> {
-                drawCentered(bodyFont, "CHOOSE YOUR USERNAME", centerX, panelY + panelH * 0.70f, UI.YELLOW, 1.04f)
-                drawCenteredFit(smallFont, pendingUsername.ifBlank { "3-20 letters, numbers, or underscores" }, centerX, panelY + panelH * 0.59f, UI.TEXT, 0.86f, 0.58f, panelW - 160f)
+                drawCentered(bodyFont, "CHOOSE YOUR USERNAME", centerX, panelY + panelH * 0.82f, UI.YELLOW, 1.04f)
+                drawCenteredFit(smallFont, pendingUsername.ifBlank { "3-20 letters, numbers, or underscores" }, centerX, panelY + panelH * 0.72f, UI.TEXT, 0.86f, 0.58f, panelW - 160f)
             }
             AccountState.SignedIn,
             AccountState.Syncing,
@@ -279,13 +279,13 @@ class OnlineScreen(game: RhythmicRushGame) : AbstractScreen(game), InputProcesso
                 if (status.profile != null) {
                     drawSignedIn(panelX, panelY, panelW, panelH)
                 } else {
-                    drawCentered(bodyFont, "SOMETHING WENT WRONG", centerX, panelY + panelH * 0.67f, UI.DANGER, 0.86f)
-                    drawCentered(smallFont, state.error.userMessage, centerX, panelY + panelH * 0.57f, UI.TEXT, 0.68f)
+                    drawCentered(bodyFont, "SOMETHING WENT WRONG", centerX, panelY + panelH * 0.82f, UI.DANGER, 0.86f)
+                    drawCentered(smallFont, state.error.userMessage, centerX, panelY + panelH * 0.72f, UI.TEXT, 0.68f)
                 }
             }
-            AccountState.Authenticating -> drawCentered(bodyFont, "CONNECTING...", centerX, panelY + panelH * 0.56f, UI.TEXT, 0.86f)
+            AccountState.Authenticating -> drawCentered(bodyFont, "CONNECTING...", centerX, panelY + panelH * 0.75f, UI.TEXT, 0.86f)
             AccountState.MergeRequired,
-            AccountState.MergeInProgress -> drawCentered(bodyFont, "ACCOUNT MERGE REQUIRED", centerX, panelY + panelH * 0.56f, UI.YELLOW, 0.86f)
+            AccountState.MergeInProgress -> drawCentered(bodyFont, "ACCOUNT MERGE REQUIRED", centerX, panelY + panelH * 0.75f, UI.YELLOW, 0.86f)
         }
     }
 
@@ -671,7 +671,7 @@ class OnlineScreen(game: RhythmicRushGame) : AbstractScreen(game), InputProcesso
         val h = 72f
         val gap = 22f
         val total = specs.size * h + (specs.size - 1) * gap
-        val startY = panelY + panelH * 0.25f + total / 2f - h
+        val startY = panelY + panelH * 0.40f + total / 2f - h
         specs.forEachIndexed { index, spec ->
             buttons += HubButton(
                 panelX + panelW / 2f - w / 2f,
