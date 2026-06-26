@@ -263,7 +263,7 @@ function handleError(env: Env, id: string, error: unknown): Response {
 class MethodError extends Error {}
 
 async function getAdminPortal(): Promise<string> {
-  // Return embedded admin portal HTML (minified for production)
+  // Return embedded admin portal HTML
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -346,7 +346,210 @@ async function getAdminPortal(): Promise<string> {
     </div>
   </div>
   <script>
-const API_BASE=window.location.origin+'/v1/dev';let idToken=null;window.addEventListener('load',async()=>{await initializeAuth();updateStatus()});async function initializeAuth(){try{const stored=localStorage.getItem('admin_token');if(stored){idToken=stored;return}const token=prompt('Enter your Firebase ID token:','');if(!token){updateStatus('❌ No token provided',false);return}idToken=token;localStorage.setItem('admin_token',token)}catch(e){console.error('Auth error:',e);updateStatus('❌ Authentication failed',false)}}function updateStatus(message='✅ Connected',connected=true){const el=document.getElementById('status');el.textContent=message;el.className=connected?'status connected':'status'}function switchTab(tabName){document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));if('logout'===tabName){localStorage.removeItem('admin_token');idToken=null;updateStatus('❌ Logged out',false);location.reload();return}document.getElementById(tabName).classList.add('active');event.target.classList.add('active')}async function fetchAPI(endpoint,options={}){if(!idToken){updateStatus('❌ Not authenticated',false);throw new Error('Not authenticated')}try{const response=await fetch(API_BASE+endpoint,{...options,headers:{'Authorization':'Bearer '+idToken,'Content-Type':'application/json',...options.headers}});const data=await response.json();if(!response.ok)throw new Error((data.error?.message||'API error'));return data.data}catch(e){console.error('API error:',e);showAlert('Error: '+e.message,'error');throw e}}async function loadLeaderboard(){const limit=document.getElementById('leaderboardLimit').value||100;const container=document.getElementById('leaderboardContainer');container.innerHTML='<div class="loading"><div class="spinner"></div> Loading...</div>';try{const data=await fetchAPI('/leaderboard?limit='+limit);let html='<table class="leaderboard-table"><thead><tr><th>Rank</th><th>UID</th><th>Username</th><th>Points</th><th>Levels</th><th>Eligible</th><th>Status</th><th>Banned</th><th>Action</th></tr></thead><tbody>';data.forEach((entry,idx)=>{const banned=1===entry.leaderboard_banned?'🚫 Yes':'No';const eligible=1===entry.eligible?'✅':'❌';html+='<tr '+(1===entry.leaderboard_banned?'style="opacity: 0.6;"':'')+'>\\n            <td>'+(idx+1)+'</td>\\n            <td>'+entry.uid.substring(0,8)+'...</td>\\n            <td>'+(entry.username||'(unnamed)')+'</td>\\n            <td>'+entry.points+'</td>\\n            <td>'+entry.completed_levels+'</td>\\n            <td>'+eligible+'</td>\\n            <td>'+entry.status+'</td>\\n            <td class="'+(1===entry.leaderboard_banned?'banned':'')\\'">'+banned+'</td>\\n            <td><button class="secondary" onclick="document.getElementById(\\'userUid\\').value=\\''+entry.uid+'\\'; loadUserDetails();">View</button></td>\\n          </tr>'});html+='</tbody></table>';container.innerHTML=html}catch(e){container.innerHTML='<div class="alert error">Failed to load leaderboard</div>'}}async function loadUserDetails(){const uid=document.getElementById('userUid').value.trim();if(!uid){showAlert('Please enter a UID','error');return}try{const data=await fetchAPI('/user?uid='+uid);displayUserDetails(data);document.getElementById('userDetailsPanel').style.display='block'}catch(e){showAlert('User not found or error loading details','error');document.getElementById('userDetailsPanel').style.display='none'}}function displayUserDetails(data){let html='';if(data.account){const acc=data.account;html+='<div class="detail-card"><strong>UID:</strong> '+acc.uid+'<br><strong>Username:</strong> '+(acc.username||'(none)')+'<br><strong>Email Verified:</strong> '+(acc.email_verified?'✅':'❌')+'<br><strong>Status:</strong> '+acc.status+'<br><strong>Leaderboard Banned:</strong> '+(1===acc.leaderboard_banned?'🚫 Yes':'No')+'<br>'+(acc.leaderboard_ban_reason?'<strong>Ban Reason:</strong> '+acc.leaderboard_ban_reason+'<br>':'')+'<strong>Created:</strong> '+new Date(acc.created_at).toLocaleString()+'<br><strong>Updated:</strong> '+new Date(acc.updated_at).toLocaleString()+'</div>'}if(data.save){const save=data.save;html+='<div class="detail-card"><strong>Points:</strong> '+save.points+'<br><strong>Coins Earned:</strong> '+save.earned_coins+'<br><strong>Levels Completed:</strong> '+save.completed_levels+'<br><strong>Total Attempts:</strong> '+save.schema_version+'<br><strong>Last Played:</strong> '+new Date(save.updated_at).toLocaleString()+'</div>'}if(data.level_progress&&data.level_progress.length>0){html+='<div class="level-stats"><strong>Level Progress:</strong>';data.level_progress.forEach(lp=>{html+='<div class="level-stat"><span>Level '+lp.level_id+': '+lp.best_percent+'% '+(1===lp.completed?'✅ Done':'⏳ In Progress')+'</span><span>'+new Date(lp.updated_at).toLocaleString()+'</span></div>'});html+='</div>'}if(data.device_attempts&&data.device_attempts.length>0){html+='<div style="margin-top:15px"><strong>Device Attempts Summary:</strong>';data.device_attempts.forEach(da=>{html+='<div class="level-stat"><span>Device '+da.device_id.substring(0,8)+'...</span> <span>'+da.accepted_total+' attempts</span></div>'});html+='</div>'}document.getElementById('userInfo').innerHTML=html}async function banUser(ban){const uid=document.getElementById('userUid').value.trim();const reason=document.getElementById('banReason').value.trim();if(!uid){showAlert('Please enter a UID','error');return}if(!confirm('Are you sure you want to '+(ban?'ban':'unban')+' this user?'))return;try{await fetchAPI('/user',{method:'POST',body:JSON.stringify({action:'ban',uid:uid,ban:ban,reason:reason||null})});showAlert('User '+(ban?'banned':'unbanned')+' successfully!','success');loadUserDetails()}catch(e){showAlert('Failed to update ban status','error')}}async function renameUser(force){const uid=document.getElementById('userUid').value.trim();const newUsername=document.getElementById('newUsername').value.trim();if(!uid||!newUsername){showAlert('Please enter a UID and new username','error');return}if(!confirm('Rename user to "'+newUsername+'"?'))return;try{await fetchAPI('/user',{method:'POST',body:JSON.stringify({action:'rename',uid:uid,newUsername:newUsername,force:force})});showAlert('User renamed successfully!','success');loadUserDetails()}catch(e){showAlert('Failed to rename user','error')}}async function deleteUser(){const uid=document.getElementById('userUid').value.trim();if(!uid){showAlert('Please enter a UID','error');return}if(!confirm('⚠️ DELETE ALL DATA FOR UID '+uid+'? This cannot be undone!'))return;if(!confirm('Are you absolutely sure? Type YES to confirm.'))return;try{await fetchAPI('/user',{method:'POST',body:JSON.stringify({action:'delete',uid:uid})});showAlert('User and all data deleted!','success');clearUserPanel()}catch(e){showAlert('Failed to delete user','error')}}function clearUserPanel(){document.getElementById('userUid').value='';document.getElementById('userDetailsPanel').style.display='none'}function showAlert(message,type='info'){const alertEl=document.createElement('div');alertEl.className='alert '+type;alertEl.textContent=message;document.querySelector('.container').insertBefore(alertEl,document.querySelector('.tabs'));setTimeout(()=>alertEl.remove(),5e3)}
+const API_BASE = window.location.origin + '/v1/dev';
+let idToken = null;
+
+window.addEventListener('load', async () => {
+  await initializeAuth();
+  updateStatus();
+});
+
+async function initializeAuth() {
+  try {
+    const stored = localStorage.getItem('admin_token');
+    if (stored) {
+      idToken = stored;
+      return;
+    }
+    const token = prompt('Enter your Firebase ID token:', '');
+    if (!token) {
+      updateStatus('❌ No token provided', false);
+      return;
+    }
+    idToken = token;
+    localStorage.setItem('admin_token', token);
+  } catch (e) {
+    console.error('Auth error:', e);
+    updateStatus('❌ Authentication failed', false);
+  }
+}
+
+function updateStatus(msg = '✅ Connected', ok = true) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = ok ? 'status connected' : 'status';
+}
+
+function switchTab(t) {
+  document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(e => e.classList.remove('active'));
+  if (t === 'logout') {
+    localStorage.removeItem('admin_token');
+    idToken = null;
+    updateStatus('❌ Logged out', false);
+    location.reload();
+    return;
+  }
+  document.getElementById(t).classList.add('active');
+  event.target.classList.add('active');
+}
+
+async function fetchAPI(ep, opts = {}) {
+  if (!idToken) {
+    updateStatus('❌ Not authenticated', false);
+    throw new Error('Not authenticated');
+  }
+  try {
+    const r = await fetch(API_BASE + ep, {
+      ...opts,
+      headers: {
+        'Authorization': 'Bearer ' + idToken,
+        'Content-Type': 'application/json',
+        ...opts.headers,
+      },
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error?.message || 'API error');
+    return d.data;
+  } catch (e) {
+    console.error('API error:', e);
+    showAlert('Error: ' + e.message, 'error');
+    throw e;
+  }
+}
+
+async function loadLeaderboard() {
+  const limit = document.getElementById('leaderboardLimit').value || 100;
+  const c = document.getElementById('leaderboardContainer');
+  c.innerHTML = '<div class="loading"><div class="spinner"></div> Loading...</div>';
+  try {
+    const d = await fetchAPI('/leaderboard?limit=' + limit);
+    let h = '<table class="leaderboard-table"><thead><tr><th>Rank</th><th>UID</th><th>Username</th><th>Points</th><th>Levels</th><th>Eligible</th><th>Status</th><th>Banned</th><th>Action</th></tr></thead><tbody>';
+    d.forEach((e, i) => {
+      const b = e.leaderboard_banned === 1 ? '🚫 Yes' : 'No';
+      const g = e.eligible === 1 ? '✅' : '❌';
+      const s = e.leaderboard_banned === 1 ? 'opacity:0.6' : '';
+      h += '<tr style="' + s + '"><td>' + (i + 1) + '</td><td>' + e.uid.substring(0, 8) + '...</td><td>' + (e.username || '(unnamed)') + '</td><td>' + e.points + '</td><td>' + e.completed_levels + '</td><td>' + g + '</td><td>' + e.status + '</td><td class="' + (e.leaderboard_banned === 1 ? 'banned' : '') + '">' + b + '</td><td><button class="secondary" data-uid="' + e.uid + '" onclick="userLoadById(this)">View</button></td></tr>';
+    });
+    h += '</tbody></table>';
+    c.innerHTML = h;
+  } catch (e) {
+    c.innerHTML = '<div class="alert error">Failed to load leaderboard</div>';
+  }
+}
+
+function userLoadById(btn) {
+  const uid = btn.getAttribute('data-uid');
+  document.getElementById('userUid').value = uid;
+  loadUserDetails();
+}
+
+async function loadUserDetails() {
+  const uid = document.getElementById('userUid').value.trim();
+  if (!uid) {
+    showAlert('Please enter a UID', 'error');
+    return;
+  }
+  try {
+    const d = await fetchAPI('/user?uid=' + uid);
+    displayUserDetails(d);
+    document.getElementById('userDetailsPanel').style.display = 'block';
+  } catch (e) {
+    showAlert('User not found', 'error');
+    document.getElementById('userDetailsPanel').style.display = 'none';
+  }
+}
+
+function displayUserDetails(d) {
+  let h = '';
+  if (d.account) {
+    const a = d.account;
+    h += '<div class="detail-card"><strong>UID:</strong> ' + a.uid + '<br><strong>Username:</strong> ' + (a.username || '(none)') + '<br><strong>Email Verified:</strong> ' + (a.email_verified ? '✅' : '❌') + '<br><strong>Status:</strong> ' + a.status + '<br><strong>Leaderboard Banned:</strong> ' + (a.leaderboard_banned === 1 ? '🚫 Yes' : 'No') + '<br>' + (a.leaderboard_ban_reason ? '<strong>Ban Reason:</strong> ' + a.leaderboard_ban_reason + '<br>' : '') + '<strong>Created:</strong> ' + new Date(a.created_at).toLocaleString() + '</div>';
+  }
+  if (d.save) {
+    const sv = d.save;
+    h += '<div class="detail-card"><strong>Points:</strong> ' + sv.points + '<br><strong>Coins:</strong> ' + sv.earned_coins + '<br><strong>Levels Done:</strong> ' + sv.completed_levels + '<br><strong>Last Played:</strong> ' + new Date(sv.updated_at).toLocaleString() + '</div>';
+  }
+  if (d.level_progress && d.level_progress.length > 0) {
+    h += '<div class="level-stats"><strong>Level Progress:</strong>';
+    d.level_progress.forEach(lp => {
+      h += '<div class="level-stat"><span>Lvl ' + lp.level_id + ': ' + lp.best_percent + '% ' + (lp.completed === 1 ? '✅' : '⏳') + '</span><span>' + new Date(lp.updated_at).toLocaleString() + '</span></div>';
+    });
+    h += '</div>';
+  }
+  if (d.device_attempts && d.device_attempts.length > 0) {
+    h += '<div style="margin-top:15px"><strong>Devices:</strong>';
+    d.device_attempts.forEach(da => {
+      h += '<div class="level-stat"><span>' + da.device_id.substring(0, 8) + '</span><span>' + da.accepted_total + ' attempts</span></div>';
+    });
+    h += '</div>';
+  }
+  document.getElementById('userInfo').innerHTML = h;
+}
+
+async function banUser(ban) {
+  const uid = document.getElementById('userUid').value.trim();
+  const reason = document.getElementById('banReason').value.trim();
+  if (!uid) { showAlert('Enter a UID', 'error'); return; }
+  if (!confirm('Are you sure?')) return;
+  try {
+    await fetchAPI('/user', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'ban', uid, ban, reason: reason || null }),
+    });
+    showAlert('Done!', 'success');
+    loadUserDetails();
+  } catch (e) {
+    showAlert('Failed', 'error');
+  }
+}
+
+async function renameUser(force) {
+  const uid = document.getElementById('userUid').value.trim();
+  const newName = document.getElementById('newUsername').value.trim();
+  if (!uid || !newName) { showAlert('Need UID and username', 'error'); return; }
+  if (!confirm('Rename to ' + newName + '?')) return;
+  try {
+    await fetchAPI('/user', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'rename', uid, newUsername: newName, force }),
+    });
+    showAlert('Renamed!', 'success');
+    loadUserDetails();
+  } catch (e) {
+    showAlert('Failed', 'error');
+  }
+}
+
+async function deleteUser() {
+  const uid = document.getElementById('userUid').value.trim();
+  if (!uid) { showAlert('Enter UID', 'error'); return; }
+  if (!confirm('DELETE user ' + uid + '?')) return;
+  if (!confirm('Really?')) return;
+  try {
+    await fetchAPI('/user', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'delete', uid }),
+    });
+    showAlert('Deleted!', 'success');
+    clearUserPanel();
+  } catch (e) {
+    showAlert('Failed', 'error');
+  }
+}
+
+function clearUserPanel() {
+  document.getElementById('userUid').value = '';
+  document.getElementById('userDetailsPanel').style.display = 'none';
+}
+
+function showAlert(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = 'alert ' + type;
+  el.textContent = msg;
+  document.querySelector('.container').insertBefore(el, document.querySelector('.tabs'));
+  setTimeout(() => el.remove(), 5000);
+}
   <\/script>
 </body>
 </html>`;
