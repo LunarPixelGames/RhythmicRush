@@ -671,7 +671,7 @@ class OnlineScreen(game: RhythmicRushGame) : AbstractScreen(game), InputProcesso
         val h = 72f
         val gap = 22f
         val total = specs.size * h + (specs.size - 1) * gap
-        val startY = panelY + panelH * 0.435f + total / 2f - h
+        val startY = panelY + panelH * 0.25f + total / 2f - h
         specs.forEachIndexed { index, spec ->
             buttons += HubButton(
                 panelX + panelW / 2f - w / 2f,
