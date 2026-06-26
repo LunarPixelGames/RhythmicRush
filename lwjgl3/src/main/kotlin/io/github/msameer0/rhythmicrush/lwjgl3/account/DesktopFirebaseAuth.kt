@@ -49,13 +49,18 @@ internal class DesktopFirebaseAuth(
             ),
             mapOf("Content-Type" to "application/x-www-form-urlencoded")
         )
-        return DesktopSession(
+        val session =  DesktopSession(
             idToken = response.requireString("id_token"),
             refreshToken = response.requireString("refresh_token"),
             uid = response.requireString("user_id"),
             expiresAt = System.currentTimeMillis() +
                 response.getString("expires_in", "3600").toLong() * 1000L
         )
+
+        println("UID: ${session.uid}")
+        println("ID Token: ${session.idToken}")
+
+        return session
     }
 
     fun lookup(idToken: String, username: String?): AccountProfile {
@@ -129,14 +134,20 @@ internal class DesktopFirebaseAuth(
         }
     }
 
-    private fun sessionFromCamelCase(response: JsonValue): DesktopSession =
-        DesktopSession(
+    private fun sessionFromCamelCase(response: JsonValue): DesktopSession {
+        val session = DesktopSession(
             idToken = response.requireString("idToken"),
             refreshToken = response.requireString("refreshToken"),
             uid = response.requireString("localId"),
             expiresAt = System.currentTimeMillis() +
                 response.getString("expiresIn", "3600").toLong() * 1000L
         )
+
+        println("UID: ${session.uid}")
+        println("ID Token: ${session.idToken}")
+
+        return session
+    }
 
     private fun parseError(exception: DesktopHttpException): AccountOperationError {
         val message = exception.response.get("error")?.getString("message", "")
