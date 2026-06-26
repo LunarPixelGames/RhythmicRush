@@ -76,6 +76,14 @@ class GameCamera(val camera: OrthographicCamera, private val world: GameWorld) {
         }
         captureCameraLocked = false
 
+        if (world.overrideCameraY != null) {
+            camera.position.y = world.overrideCameraY!!
+            windowBottom = world.overrideCameraWindowBottom!!
+            cameraTargetY = camera.position.y
+            world.overrideCameraY = null
+            world.overrideCameraWindowBottom = null
+        }
+
         var targetX = player.x + CAMERA_X_OFFSET
         if (player.isMini()) targetX -= 25f
         camera.position.x = targetX
@@ -130,6 +138,7 @@ class GameCamera(val camera: OrthographicCamera, private val world: GameWorld) {
         world.endWallVisibleCenterY = camera.position.y
         world.endWallLockX =
             camera.position.x + camera.viewportWidth / 2f - GameConstants.Editor.GRID_SIZE
+        world.cameraWindowBottom = windowBottom
 
         camera.update()
 

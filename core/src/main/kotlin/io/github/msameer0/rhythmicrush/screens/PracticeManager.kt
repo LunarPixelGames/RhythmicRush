@@ -26,6 +26,14 @@ class PracticeManager(private val world: GameWorld) {
         var mini = false
         var slopeRotation = 0f
         var triggerIndex = 0
+        var cameraY = 0f
+        var windowBottom = 0f
+        var scrollSpeed = 0f
+        var lastPortalCenterY = 0f
+        var lastPortalBottomY = 0f
+        var jumpConsumed = false
+        var justPressed = false
+        var playerRotation = 0f
         val baseBgColor = Color()
         val baseGroundColor = Color()
         val backgroundColor = Color()
@@ -48,8 +56,16 @@ class PracticeManager(private val world: GameWorld) {
             checkpoint.gravityFlipped = player.isGravityFlipped()
             checkpoint.mini = player.isMini()
             checkpoint.slopeRotation = player.getCurrentSlopeRotation()
+            checkpoint.lastPortalCenterY = player.lastPortalCenterY
+            checkpoint.lastPortalBottomY = player.lastPortalBottomY
+            checkpoint.jumpConsumed = player.isJumpConsumed()
+            checkpoint.justPressed = player.isJustPressed()
+            checkpoint.playerRotation = player.getRotation()
         }
         checkpoint.triggerIndex = world.triggerIdx
+        checkpoint.scrollSpeed = world.scrollSpeed
+        checkpoint.cameraY = world.endWallVisibleCenterY
+        checkpoint.windowBottom = world.cameraWindowBottom
 
         checkpoint.baseBgColor.set(world.baseBgColor)
         checkpoint.baseGroundColor.set(world.baseGroundColor)
@@ -79,6 +95,8 @@ class PracticeManager(private val world: GameWorld) {
         world.backgroundColor = checkpoint.backgroundColor
         world.groundColor = checkpoint.groundColor
         world.triggerIdx = checkpoint.triggerIndex
+        world.scrollSpeed = checkpoint.scrollSpeed
+        world.overrideCameraState(checkpoint.cameraY, checkpoint.windowBottom)
 
         val player = world.obtainPlayer(
             if (checkpoint.playerType == AbstractPlayer.PlayerType.CUBE) "cube" else "ship"
@@ -93,6 +111,11 @@ class PracticeManager(private val world: GameWorld) {
         player.setGravityFlipped(checkpoint.gravityFlipped)
         player.setMini(checkpoint.mini)
         player.setCurrentSlopeRotation(checkpoint.slopeRotation)
+        player.lastPortalCenterY = checkpoint.lastPortalCenterY
+        player.lastPortalBottomY = checkpoint.lastPortalBottomY
+        player.setJumpConsumed(checkpoint.jumpConsumed)
+        if (checkpoint.justPressed) player.setJumpHeld(true)
+        player.setRotation(checkpoint.playerRotation)
         world.setPlayer(player)
 
         return checkpoint.worldScrolled / world.scrollSpeed

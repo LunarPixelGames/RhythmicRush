@@ -218,6 +218,14 @@ class GameWorld : Tickable {
             ).coerceIn(0f, 1f)
     var endWallVisibleCenterY = 540f
     var endWallLockX = Float.MAX_VALUE
+    var cameraWindowBottom = 0f
+    var overrideCameraY: Float? = null
+    var overrideCameraWindowBottom: Float? = null
+
+    fun overrideCameraState(y: Float, windowBottom: Float) {
+        overrideCameraY = y
+        overrideCameraWindowBottom = windowBottom
+    }
     private var endCaptureStartY = 0f
     private var endCaptureTargetY = 0f
     private var endCaptureStartX = 0f
