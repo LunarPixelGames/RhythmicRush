@@ -37,6 +37,7 @@ export interface AuthenticatedUser {
 
 export type ErrorCode =
   | "ACCOUNT_DELETED"
+  | "ADMIN_REQUIRED"
   | "AUTH_REQUIRED"
   | "AUTH_INVALID"
   | "AUTH_EXPIRED"
