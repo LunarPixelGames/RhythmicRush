@@ -196,9 +196,6 @@ class MainMenuScreen @JvmOverloads constructor(
     /** Describes one configurable row in the settings panel. */
     private class SettingRow(val type: RowType, val label: String, val id: String)
 
-    init {
-        game.updateManager.checkForUpdate()
-    }
 
     override fun show() {
         super.show()

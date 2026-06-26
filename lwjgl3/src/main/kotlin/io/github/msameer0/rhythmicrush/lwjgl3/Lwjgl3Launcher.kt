@@ -82,6 +82,14 @@ class Lwjgl3Launcher {
         override fun checkForUpdate() {
             Gdx.app.log("UpdateManager", "Not checking for updates on PC.")
         }
+
+        override fun forceUpdate() {
+            Gdx.app.log("UpdateManager", "Force update not available on PC.")
+        }
+
+        override fun isUpdatePending(): Boolean = false
+
+        override fun isUpdateAvailable(): Boolean = false
     }
 
 }

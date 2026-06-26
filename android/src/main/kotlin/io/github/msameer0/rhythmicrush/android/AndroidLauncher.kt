@@ -71,19 +71,19 @@ class AndroidLauncher : AndroidApplication() {
     }
 
     override fun onStop() {
-        updateManager.onStop()
+        (updateManager as AndroidUpdateManager).onStop()
         super.onStop()
     }
 
     override fun onResume() {
         super.onResume()
         adController.onResume()
-        updateManager.onResume()
+        (updateManager as AndroidUpdateManager).onResume()
     }
 
     override fun onDestroy() {
         adController.onDestroy()
-        updateManager.onDestroy()
+        (updateManager as AndroidUpdateManager).onDestroy()
         super.onDestroy()
     }
 

@@ -33,7 +33,7 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
     private var statusFont: BitmapFont? = null
 
     companion object {
-        private const val TOTAL_STEPS = 11
+        private const val TOTAL_STEPS = 12
     }
 
     override fun show() {
@@ -44,57 +44,62 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
 
         when (loadStep) {
             0 -> {
+                statusText = "Checking for Updates..."
+                game.updateManager.checkForUpdate()
+            }
+
+            1 -> {
                 statusText = "Initializing Registries..."
                 Registries.init()
             }
 
-            1 -> {
+            2 -> {
                 statusText = "Loading Settings..."
                 game.settingsManager = SettingsManager()
             }
 
-            2 -> {
+            3 -> {
                 statusText = "Loading Textures..."
                 game.atlasManager = AtlasManager(game.settingsManager.textureQuality)
                 titleRegion = game.atlasManager.menuAtlas.findRegion("title")
             }
 
-            3 -> {
+            4 -> {
                 statusText = "Loading Fonts..."
                 game.fontManager = FontManager()
                 statusFont = game.fontManager.get(FontManager.SIZE_SMALL)
             }
 
-            4 -> {
+            5 -> {
                 statusText = "Loading Audio..."
                 game.soundManager = SoundManager()
             }
 
-            5 -> {
+            6 -> {
                 statusText = "Loading Progress..."
                 game.progressManager = ProgressManager()
             }
 
-            6 -> {
+            7 -> {
                 statusText = "Restoring Account..."
                 game.initializeAccounts()
             }
 
-            7 -> {
+            8 -> {
                 statusText = "Scanning Levels..."
                 game.levelManager = LevelManager()
             }
 
-            8 -> {
+            9 -> {
                 statusText = "Preparing Level Previews..."
             }
 
-            9 -> {
+            10 -> {
                 game.levelThumbnailManager =
                     LevelThumbnailManager(game.levelManager.getLevels())
             }
 
-            10 -> {
+            11 -> {
                 statusText = "Finalizing..."
                 finalizeLoading()
                 finished = true
@@ -117,7 +122,13 @@ class LoadingScreen(game: RhythmicRushGame) : AbstractScreen(game) {
             game.soundManager.playMenuMusic()
         }
 
-        game.screen = MainMenuScreen(game)
+        // Check if update is pending - if so, show blocker screen instead of main menu
+        if (game.updateManager.isUpdatePending()) {
+            Gdx.app.log("LoadingScreen", "Update pending, showing update blocker screen")
+            game.screen = UpdateBlockerScreen(game)
+        } else {
+            game.screen = MainMenuScreen(game)
+        }
     }
 
     override fun draw() {
