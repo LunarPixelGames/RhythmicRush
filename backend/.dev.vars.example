@@ -1,4 +1,0 @@
-# Copy this file to .dev.vars only if a future server-only secret is added.
-# Do not put Firebase Web API keys here; the Worker does not need one.
-#
-# APP_CHECK_MODE=off

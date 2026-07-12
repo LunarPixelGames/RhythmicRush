@@ -160,17 +160,6 @@ Thumbs.db
 /assets/saves/
 GEMINI.md
 
-## Cloudflare Worker backend:
-/backend/node_modules/
-/backend/.wrangler/
-/backend/.dev.vars
-/backend/.env
-/backend/wrangler.toml
-/backend/wrangler.prod.toml
-/backend/wrangler.json
-/backend/coverage/
-/backend/dist/
-/backend/*.log
 /lwjgl3/account-dev.properties
 /lwjgl3/account-prod.properties
 

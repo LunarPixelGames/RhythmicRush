@@ -13,14 +13,14 @@ npm audit: 0 vulnerabilities
 ```
 
 ### Sensitive Files Review
-✅ **RESOLVED**: All sensitive configuration files are properly ignored by `.gitignore`:
-- ✅ `backend/wrangler.toml` - Firebase project config (ignored)
-- ✅ `backend/wrangler.prod.toml` - Production Firebase config (ignored)
+✅ **RESOLVED**: Sensitive backend configuration now lives in the sibling `rhythmicrush-backend` repo and is ignored there by that repo's `.gitignore`:
+- ✅ `../rhythmicrush-backend/wrangler.toml` - Firebase project config (ignored)
+- ✅ `../rhythmicrush-backend/wrangler.prod.toml` - Production Firebase config (ignored)
 - ✅ `lwjgl3/account-dev.properties` - Desktop dev secrets (ignored)
 - ✅ `lwjgl3/account-prod.properties` - Desktop prod secrets (ignored)
-- ✅ `backend/.dev.vars` - Wrangler secrets (ignored)
+- ✅ `../rhythmicrush-backend/.dev.vars` - Wrangler secrets (ignored)
 - ✅ `android/google-services.json` - Firebase Android config (ignored)
-- ✅ `backend/node_modules/` - Dependencies (ignored)
+- ✅ `../rhythmicrush-backend/node_modules/` - Dependencies (ignored)
 
 **Note**: These files are properly excluded from version control and should never be committed. The `.example` templates are provided for developers to configure locally.
 
