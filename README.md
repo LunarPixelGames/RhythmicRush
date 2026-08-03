@@ -4,8 +4,6 @@
   <img src="lwjgl3/icons/logo.png" alt="Rhythmic Rush logo" width="220" />
 </p>
 
-![Rhythmic Rush banner](assets/menu3.png)
-
 Rhythmic Rush is a fast rhythm platformer where you dodge obstacles, time your jumps, and keep moving to the beat.
 
 ## Download
