@@ -26,5 +26,3 @@ Run the desktop build locally:
 ```
 
 If you are working on backend services, use the separate sibling repo: `../rhythmicrush-backend`.
-
-![Rhythmic Rush footer](assets/menu2.png)
